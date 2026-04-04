@@ -749,7 +749,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
             </div>
 
             {/* Content Builder Area */}
-            <div 
+            <div
                 className={`flex-1 relative ${isPdfFullCover ? "overflow-hidden" : "overflow-y-auto p-8"} ${viewMode === "student" ? "select-none" : ""}`}
                 onContextMenu={(e) => viewMode === 'student' && e.preventDefault()}
                 onCopy={(e) => viewMode === 'student' && e.preventDefault()}

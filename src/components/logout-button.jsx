@@ -1,22 +1,25 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 export function LogoutButton() {
-  const router = useRouter()
+  const [loggingOut, setLoggingOut] = useState(false)
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" })
-    router.push("/login")
-    router.refresh()
+    if (loggingOut) return
+    setLoggingOut(true)
+
+    // Server-side redirect guarantees cookie clear + navigation happen together.
+    window.location.assign("/api/auth/logout?redirect=/login")
   }
 
   return (
     <button
       onClick={handleLogout}
+      disabled={loggingOut}
       className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
     >
-      Logout
+      {loggingOut ? "Logging out..." : "Logout"}
     </button>
   )
 }

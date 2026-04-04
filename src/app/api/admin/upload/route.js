@@ -18,17 +18,26 @@ async function createUploadsTable() {
             id SERIAL PRIMARY KEY,
             filename TEXT NOT NULL,
             content_type TEXT,
+            size BIGINT NOT NULL DEFAULT 0,
             data BYTEA NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
     `)
 }
 
-async function insertUploadedFile({ filename, contentType, buffer }) {
+async function insertUploadedFile({ filename, contentType, buffer, size }) {
+    const safeSize = Number.isFinite(size) ? Number(size) : buffer.length
+
+    const insertWithSizeQuery =
+        "INSERT INTO uploaded_files (filename, content_type, size, data) VALUES ($1, $2, $3, $4) RETURNING id"
+
+    const insertWithoutSizeQuery =
+        "INSERT INTO uploaded_files (filename, content_type, data) VALUES ($1, $2, $3) RETURNING id"
+
     try {
         return await pool.query(
-            "INSERT INTO uploaded_files (filename, content_type, data) VALUES ($1, $2, $3) RETURNING id",
-            [filename, contentType, buffer]
+            insertWithSizeQuery,
+            [filename, contentType, safeSize, buffer]
         )
     } catch (err) {
         // Undefined table: try to create once, then retry insert.
@@ -43,10 +52,16 @@ async function insertUploadedFile({ filename, contentType, buffer }) {
             }
 
             return await pool.query(
-                "INSERT INTO uploaded_files (filename, content_type, data) VALUES ($1, $2, $3) RETURNING id",
-                [filename, contentType, buffer]
+                insertWithSizeQuery,
+                [filename, contentType, safeSize, buffer]
             )
         }
+
+        // Some environments may still use an older table without the size column.
+        if (err?.code === "42703") {
+            return await pool.query(insertWithoutSizeQuery, [filename, contentType, buffer])
+        }
+
         throw err
     }
 }
@@ -106,7 +121,7 @@ export async function POST(request) {
             console.error("[admin/upload blob fallback]", blobErr)
         }
 
-        const result = await insertUploadedFile({ filename, contentType, buffer })
+        const result = await insertUploadedFile({ filename, contentType, buffer, size: file.size })
 
         const fileId = result.rows[0]?.id
         if (!fileId) {

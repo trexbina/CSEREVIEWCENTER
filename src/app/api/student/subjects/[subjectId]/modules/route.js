@@ -8,7 +8,7 @@ export async function GET(request, props) {
         if (!session?.userId || session.role !== "student") {
             return NextResponse.json({ error: "Forbidden." }, { status: 403 })
         }
-        
+
         const params = await props.params
         const { subjectId } = params
 
@@ -26,7 +26,7 @@ export async function GET(request, props) {
             "SELECT id, title, order_index, created_at FROM subject_modules WHERE subject_id = $1 ORDER BY order_index ASC, created_at ASC",
             [subjectId]
         )
-        
+
         const modules = modulesResult.rows
 
         // Fetch lessons
@@ -34,7 +34,22 @@ export async function GET(request, props) {
         if (modules.length > 0) {
             const moduleIds = modules.map(m => m.id)
             const contentsResult = await pool.query(
-                "SELECT id, module_id, title, lesson_type, order_index, created_at FROM subject_contents WHERE module_id = ANY($1) ORDER BY order_index ASC, created_at ASC",
+                `SELECT
+                    id,
+                    module_id,
+                    title,
+                    COALESCE(
+                        NULLIF(LOWER(lesson_type), ''),
+                        CASE
+                            WHEN jsonb_typeof(pdf_files) = 'array' AND jsonb_array_length(pdf_files) > 0 THEN 'pdf'
+                            ELSE 'module'
+                        END
+                    ) AS lesson_type,
+                    order_index,
+                    created_at
+                 FROM subject_contents
+                 WHERE module_id = ANY($1)
+                 ORDER BY order_index ASC, created_at ASC`,
                 [moduleIds]
             )
             contents = contentsResult.rows

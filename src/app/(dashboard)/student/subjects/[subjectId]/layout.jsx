@@ -4,11 +4,17 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Loader2, ChevronLeft, Menu, X } from "lucide-react"
 
+function normalizeLessonType(rawType) {
+    const value = String(rawType || "").trim().toLowerCase()
+    if (value === "pdf" || value === "file" || value === "files") return "pdf"
+    return "module"
+}
+
 function pickFirstLesson(modules, tab = "modules") {
     const wantsPdf = tab === "files"
     for (const mod of modules || []) {
         for (const lesson of mod.lessons || []) {
-            const lessonType = lesson.lesson_type || "module"
+            const lessonType = normalizeLessonType(lesson.lesson_type)
             if (wantsPdf && lessonType === "pdf") return lesson
             if (!wantsPdf && lessonType !== "pdf") return lesson
         }
@@ -37,6 +43,14 @@ export default function StudentSubjectLayout({ children }) {
     }, [subjectId])
 
     useEffect(() => {
+        const lessonType = normalizeLessonType(searchParams.get("type"))
+        const nextTab = lessonType === "pdf" ? "files" : "modules"
+        if (nextTab !== activeTab) {
+            setActiveTab(nextTab)
+        }
+    }, [searchParams, activeTab])
+
+    useEffect(() => {
         if (loading) return
         if (!modules.length) return
 
@@ -46,8 +60,9 @@ export default function StudentSubjectLayout({ children }) {
         const firstLesson = pickFirstLesson(modules, activeTab)
         if (!firstLesson) return
 
+        const normalizedType = normalizeLessonType(firstLesson.lesson_type)
         router.replace(
-            `/student/subjects/${subjectId}?lessonId=${firstLesson.id}&type=${firstLesson.lesson_type || 'module'}`
+            `/student/subjects/${subjectId}?lessonId=${firstLesson.id}&type=${normalizedType}`
         )
     }, [loading, modules, searchParams, activeTab, router, subjectId])
 
@@ -175,67 +190,69 @@ export default function StudentSubjectLayout({ children }) {
                                 <div className="space-y-4 pl-2 pt-2">
                                     {(module.lessons || [])
                                         .filter((lesson) => {
-                                            const lessonType = lesson.lesson_type || "module"
+                                            const lessonType = normalizeLessonType(lesson.lesson_type)
                                             return activeTab === "files" ? lessonType === "pdf" : lessonType !== "pdf"
                                         })
                                         .map((lesson) => {
-                                        const isActive = searchParams.get("lessonId") === lesson.id.toString()
+                                            const isActive = searchParams.get("lessonId") === lesson.id.toString()
 
-                                        const isQuiz = lesson.title.toLowerCase().includes("quiz") || lesson.title.toLowerCase().includes("exam")
-                                        const lessonParts = lesson.title.split(":")
-                                        const hasLessonPrefix = lessonParts.length > 1
+                                            const isQuiz = lesson.title.toLowerCase().includes("quiz") || lesson.title.toLowerCase().includes("exam")
+                                            const lessonParts = lesson.title.split(":")
+                                            const hasLessonPrefix = lessonParts.length > 1
 
-                                        // Render Quiz differently
-                                        if (isQuiz) {
+                                            // Render Quiz differently
+                                            if (isQuiz) {
+                                                return (
+                                                    <div
+                                                        key={lesson.id}
+                                                        onClick={() => {
+                                                            const lessonType = normalizeLessonType(lesson.lesson_type)
+                                                            router.push(`/student/subjects/${subjectId}?lessonId=${lesson.id}&type=${lessonType}`);
+                                                            setIsSidebarOpen(false);
+                                                        }}
+                                                        className={`cursor-pointer px-4 py-2.5 rounded-xl ml-4 mr-2 transition-all duration-200 ${isActive
+                                                            ? 'bg-gray-300/50 text-gray-700 shadow-sm transform scale-[1.02]'
+                                                            : 'bg-gray-100 hover:bg-gray-200 text-gray-500'
+                                                            }`}
+                                                    >
+                                                        <p className="text-[13px]">
+                                                            {hasLessonPrefix ? (
+                                                                <>
+                                                                    <span className="font-bold">{lessonParts[0]}:</span>
+                                                                    {lessonParts.slice(1).join(":")}
+                                                                </>
+                                                            ) : (
+                                                                <span className="font-bold">{lesson.title}</span>
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                )
+                                            }
+
+                                            // Standard Lesson formatting
                                             return (
                                                 <div
                                                     key={lesson.id}
                                                     onClick={() => {
-                                                        router.push(`/student/subjects/${subjectId}?lessonId=${lesson.id}&type=${lesson.lesson_type || 'module'}`);
+                                                        const lessonType = normalizeLessonType(lesson.lesson_type)
+                                                        router.push(`/student/subjects/${subjectId}?lessonId=${lesson.id}&type=${lessonType}`);
                                                         setIsSidebarOpen(false);
                                                     }}
-                                                    className={`cursor-pointer px-4 py-2.5 rounded-xl ml-4 mr-2 transition-all duration-200 ${isActive
-                                                            ? 'bg-gray-300/50 text-gray-700 shadow-sm transform scale-[1.02]'
-                                                            : 'bg-gray-100 hover:bg-gray-200 text-gray-500'
-                                                        }`}
+                                                    className={`cursor-pointer transition-colors px-2 py-1 -mx-2 rounded-lg ${isActive ? 'bg-[#fef5f6] text-[#ba5a62]' : 'hover:bg-gray-50'}`}
                                                 >
-                                                    <p className="text-[13px]">
+                                                    <p className={`text-[13px] ${isActive ? 'text-[#ba5a62]' : 'text-[#a0a0a0]'}`}>
                                                         {hasLessonPrefix ? (
                                                             <>
-                                                                <span className="font-bold">{lessonParts[0]}:</span>
+                                                                <span className={`font-bold ${isActive ? 'text-[#ba5a62]' : 'text-[#7a7a7a]'}`}>{lessonParts[0]}:</span>
                                                                 {lessonParts.slice(1).join(":")}
                                                             </>
                                                         ) : (
-                                                            <span className="font-bold">{lesson.title}</span>
+                                                            <span className={`font-bold ${isActive ? 'text-[#ba5a62]' : 'text-[#7a7a7a]'}`}>{lesson.title}</span>
                                                         )}
                                                     </p>
                                                 </div>
                                             )
-                                        }
-
-                                        // Standard Lesson formatting
-                                        return (
-                                            <div
-                                                key={lesson.id}
-                                                onClick={() => {
-                                                    router.push(`/student/subjects/${subjectId}?lessonId=${lesson.id}&type=${lesson.lesson_type || 'module'}`);
-                                                    setIsSidebarOpen(false);
-                                                }}
-                                                className={`cursor-pointer transition-colors px-2 py-1 -mx-2 rounded-lg ${isActive ? 'bg-[#fef5f6] text-[#ba5a62]' : 'hover:bg-gray-50'}`}
-                                            >
-                                                <p className={`text-[13px] ${isActive ? 'text-[#ba5a62]' : 'text-[#a0a0a0]'}`}>
-                                                    {hasLessonPrefix ? (
-                                                        <>
-                                                            <span className={`font-bold ${isActive ? 'text-[#ba5a62]' : 'text-[#7a7a7a]'}`}>{lessonParts[0]}:</span>
-                                                            {lessonParts.slice(1).join(":")}
-                                                        </>
-                                                    ) : (
-                                                        <span className={`font-bold ${isActive ? 'text-[#ba5a62]' : 'text-[#7a7a7a]'}`}>{lesson.title}</span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                        )
-                                    })}
+                                        })}
                                 </div>
                             </div>
                         )
@@ -244,16 +261,16 @@ export default function StudentSubjectLayout({ children }) {
                     {modules.length > 0 && !modules.some((m) =>
                         (m.lessons || []).some((lesson) =>
                             activeTab === "files"
-                                ? (lesson.lesson_type || "module") === "pdf"
-                                : (lesson.lesson_type || "module") !== "pdf"
+                                ? normalizeLessonType(lesson.lesson_type) === "pdf"
+                                : normalizeLessonType(lesson.lesson_type) !== "pdf"
                         )
                     ) && (
-                        <div className="rounded-lg border border-dashed border-gray-200 p-4 text-xs text-gray-500">
-                            {activeTab === "files"
-                                ? "No PDF lessons available yet."
-                                : "No module lessons available yet."}
-                        </div>
-                    )}
+                            <div className="rounded-lg border border-dashed border-gray-200 p-4 text-xs text-gray-500">
+                                {activeTab === "files"
+                                    ? "No PDF lessons available yet."
+                                    : "No module lessons available yet."}
+                            </div>
+                        )}
                 </div>
             </div>
 

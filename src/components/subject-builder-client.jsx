@@ -89,6 +89,14 @@ const BLOCK_CATEGORIES = [
         ]
     }
 ];
+
+function normalizeLessonType(rawType, hasPdfFiles = false) {
+    const value = String(rawType || "").trim().toLowerCase()
+    if (value === "pdf" || value === "file" || value === "files") return "pdf"
+    if (value === "module") return "module"
+    return hasPdfFiles ? "pdf" : "module"
+}
+
 export default function SubjectBuilderClient({ subject, isStudent = false, currentUserName = "" }) {
     const searchParams = useSearchParams()
     const lessonId = searchParams.get("lessonId")
@@ -110,6 +118,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
     const [uploadingBlockId, setUploadingBlockId] = useState(null)
     const [fullscreenImage, setFullscreenImage] = useState(null)
     const [uiAlert, setUiAlert] = useState({ open: false, title: "Notice", description: "" })
+    const [resolvedLessonType, setResolvedLessonType] = useState(normalizeLessonType(lessonType))
 
     function showAlert(message, title = "Action failed") {
         setUiAlert({
@@ -133,6 +142,10 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
         return found;
     }, [activeBlockId, blocks]);
 
+    useEffect(() => {
+        setResolvedLessonType(normalizeLessonType(lessonType))
+    }, [lessonType])
+
     // Clear the canvas whenever the user switches lessons
     useEffect(() => {
         setBlocks([])
@@ -152,13 +165,17 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                 const res = await fetch(endpoint)
                 if (res.ok) {
                     const { lesson } = await res.json()
-                    const resolvedLessonType =
-                        lessonType || lesson.lesson_type || (lesson.pdf_files?.length ? "pdf" : "module")
+                    const normalizedPdfFiles = Array.isArray(lesson?.pdf_files) ? lesson.pdf_files : []
+                    const nextLessonType = normalizeLessonType(
+                        lessonType || lesson?.lesson_type,
+                        normalizedPdfFiles.length > 0
+                    )
+                    setResolvedLessonType(nextLessonType)
 
-                    if (resolvedLessonType === "pdf" && lesson.pdf_files?.length > 0) {
-                        setPdfFiles(lesson.pdf_files)
-                        setActivePdf(lesson.pdf_files[0].url)
-                    } else if (resolvedLessonType === "module" && lesson.quiz_content) {
+                    if (nextLessonType === "pdf" && normalizedPdfFiles.length > 0) {
+                        setPdfFiles(normalizedPdfFiles)
+                        setActivePdf(normalizedPdfFiles[0]?.url || null)
+                    } else if (nextLessonType === "module" && lesson.quiz_content) {
                         try {
                             setBlocks(JSON.parse(lesson.quiz_content))
                         } catch (e) {
@@ -725,7 +742,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
         );
     }
 
-    const isPdfFullCover = lessonType === "pdf" && activePdf;
+    const isPdfFullCover = resolvedLessonType === "pdf" && activePdf;
 
     return (
         <div className="flex flex-col h-full w-full bg-white relative">
@@ -800,7 +817,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                         <div className="w-full space-y-8 pb-32">
 
                             {/* ── PDF BUILDER UPLOAD STATE ── */}
-                            {lessonType === "pdf" && !activePdf && (
+                            {resolvedLessonType === "pdf" && !activePdf && (
                                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300 max-w-2xl mx-auto mt-20">
                                     {!isStudent ? (
                                         <div
@@ -841,7 +858,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                             )}
 
                             {/* ── MODULE BUILDER CANVAS ── */}
-                            {lessonType === "module" && (
+                            {resolvedLessonType === "module" && (
                                 <div className="relative">
                                     {!isStudent && (
                                         <div className="flex justify-end mb-4 items-center gap-3">
@@ -906,7 +923,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
             </div>
 
             {/* STICKY TOOLBOX for MODULE BUILDER */}
-            {viewMode === 'admin' && lessonId && lessonType === "module" && (
+            {viewMode === 'admin' && lessonId && resolvedLessonType === "module" && (
                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-200 flex flex-col z-40 w-[600px] overflow-hidden">
                     {/* Tabs */}
                     <div className="flex items-center gap-1 bg-gray-50 p-2 border-b border-gray-100 overflow-x-auto custom-scrollbar">

@@ -19,6 +19,7 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
     const [loadError, setLoadError] = useState("")
     const [viewerWidth, setViewerWidth] = useState(0)
     const [qualityTier, setQualityTier] = useState(1)
+    const [enhanceImage, setEnhanceImage] = useState(true)
     const watermarkText = useMemo(() => {
         const companyName = "Peak-Execellence-Review-Center-Inc"
         const safeUserName = String(userName || "").trim().replace(/\s+/g, "")
@@ -74,27 +75,53 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
         const cores = window.navigator.hardwareConcurrency || 8
         const memory = window.navigator.deviceMemory || 8
 
+        const shouldUseVeryLowQuality = memory <= 2 || cores <= 4
         const shouldUseMediumQuality = isMobileUa || isCoarsePointer || cores <= 6 || memory <= 4
+
+        if (shouldUseVeryLowQuality) {
+            setQualityTier(3)
+            setEnhanceImage(false)
+            return
+        }
+
         setQualityTier(shouldUseMediumQuality ? 2 : 1)
     }, [])
 
     const pageWidth = useMemo(() => {
         if (!viewerWidth) return undefined
-        const sidePadding = qualityTier === 1 ? 32 : 48
+        const sidePadding = qualityTier === 1 ? 32 : qualityTier === 2 ? 48 : 64
         return Math.max(320, viewerWidth - sidePadding)
     }, [viewerWidth, qualityTier])
 
     const pageDevicePixelRatio = useMemo(() => {
-        if (typeof window === "undefined") return qualityTier === 1 ? 2.4 : 1.7
+        if (typeof window === "undefined") {
+            if (qualityTier === 1) return 2.4
+            if (qualityTier === 2) return 1.7
+            return 1.15
+        }
 
         const deviceDpr = window.devicePixelRatio || 1
-        const baseTarget = qualityTier === 1 ? 2.4 : 1.7
-        const dprCap = qualityTier === 1 ? 3 : 2.25
+        const baseTarget = qualityTier === 1 ? 2.4 : qualityTier === 2 ? 1.7 : 1.1
+        const dprCap = qualityTier === 1 ? 3 : qualityTier === 2 ? 2.25 : 1.45
+        const enhancementBoost = enhanceImage && qualityTier !== 3 ? 0.35 : 0
+        const enhancementCapBoost = enhanceImage && qualityTier !== 3 ? 0.4 : 0
         const zoomPenalty = scale >= 150 ? 0.2 : 0
 
-        const target = Math.max(deviceDpr, baseTarget) - zoomPenalty
-        return Math.min(dprCap, Math.max(1.25, target))
-    }, [qualityTier, scale])
+        const target = Math.max(deviceDpr, baseTarget + enhancementBoost) - zoomPenalty
+        const minDpr = qualityTier === 3 ? 1 : 1.25
+        return Math.min(dprCap + enhancementCapBoost, Math.max(minDpr, target))
+    }, [enhanceImage, qualityTier, scale])
+
+    const maxZoom = qualityTier === 3 ? 150 : 200
+    const watermarkOpacity = isStudent
+        ? (qualityTier === 3 ? 0.13 : 0.1)
+        : (qualityTier === 3 ? 0.1 : 0.08)
+
+    useEffect(() => {
+        if (scale > maxZoom) {
+            setScale(maxZoom)
+        }
+    }, [maxZoom, scale])
 
     function onDocumentLoadSuccess({ numPages: loadedPages }) {
         setNumPages(loadedPages)
@@ -120,7 +147,7 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
     }
 
     function handleZoomIn() {
-        setScale(prev => Math.min(200, prev + 25))
+        setScale(prev => Math.min(maxZoom, prev + 25))
     }
 
     function handleZoomOut() {
@@ -164,7 +191,7 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
                     </span>
                     <button
                         onClick={handleZoomIn}
-                        disabled={scale >= 200}
+                        disabled={scale >= maxZoom}
                         className="p-1.5 hover:bg-white/10 rounded transition-colors disabled:opacity-30"
                         title="Zoom In"
                     >
@@ -173,9 +200,19 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
                 </div>
 
                 {!isStudent && (
-                    <span className="hidden sm:inline-flex rounded-md border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-white/80">
-                        {qualityTier === 1 ? "Adaptive Q1" : "Adaptive Q2"}
-                    </span>
+                    <div className="hidden sm:flex items-center gap-2">
+                        <span className="inline-flex rounded-md border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-white/80">
+                            {qualityTier === 1 ? "Adaptive Q1" : qualityTier === 2 ? "Adaptive Q2" : "Adaptive Q3"}
+                        </span>
+                        <button
+                            onClick={() => setEnhanceImage(prev => !prev)}
+                            disabled={qualityTier === 3}
+                            className="rounded-md border border-white/20 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-white/85 hover:bg-white/10 transition-colors"
+                            title="Toggle enhanced image clarity"
+                        >
+                            {qualityTier === 3 ? "Image+ AUTO" : enhanceImage ? "Image+ ON" : "Image+ OFF"}
+                        </button>
+                    </div>
                 )}
 
                 <button
@@ -217,7 +254,7 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
                             {Array.from({ length: numPages }, (_, index) => (
                                 <div
                                     key={`page-${index + 1}`}
-                                    className="shadow-[0_4px_24px_rgba(0,0,0,0.1)] rounded overflow-hidden"
+                                    className="relative shadow-[0_4px_24px_rgba(0,0,0,0.1)] rounded overflow-hidden"
                                     onContextMenu={(e) => isStudent && e.preventDefault()}
                                 >
                                     <Page
@@ -225,25 +262,31 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
                                         width={pageWidth}
                                         scale={scale / 100}
                                         devicePixelRatio={pageDevicePixelRatio}
+                                        canvasBackground="#ffffff"
                                         renderMode="canvas"
                                         renderTextLayer={false}
                                         renderAnnotationLayer={false}
-                                        className={isStudent ? "pointer-events-none select-none" : "select-none"}
+                                        className={[
+                                            "pdf-page",
+                                            enhanceImage ? "pdf-page-enhanced" : "pdf-page-standard",
+                                            `pdf-page-tier-${qualityTier}`,
+                                            isStudent ? "pointer-events-none select-none" : "select-none"
+                                        ].join(" ")}
                                     />
+
+                                    <div className="pointer-events-none absolute inset-0 overflow-hidden select-none z-10">
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div
+                                                className="rotate-[-22deg] whitespace-nowrap text-center text-[clamp(18px,2.2vw,32px)] font-semibold tracking-[0.18em] uppercase"
+                                                style={{ color: "#111111", opacity: watermarkOpacity }}
+                                            >
+                                                {watermarkText}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                         </Document>
-
-                        <div className="pointer-events-none absolute inset-0 overflow-hidden select-none z-20">
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <div
-                                    className="rotate-[-22deg] whitespace-nowrap text-center text-[clamp(13px,1.3vw,18px)] font-semibold tracking-[0.18em] uppercase"
-                                    style={{ color: "#111111", opacity: 0.07 }}
-                                >
-                                    {watermarkText}
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 )}
             </div>

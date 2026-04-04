@@ -85,7 +85,7 @@ export default function StudentSubjectLayout({ children }) {
                 <div className="p-6 pb-4 flex flex-row items-center justify-between border-b border-gray-50">
                     <div className="flex flex-col items-start">
                         <img
-                            src="/assets/Peak_excellence_logo.png"
+                            src="/landingpageassets/logo.png"
                             alt="Peak Excellence"
                             className="h-10 md:h-12 w-auto object-contain mb-2 md:mb-3"
                             onError={(e) => { e.target.style.display = 'none' }}

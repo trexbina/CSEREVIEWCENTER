@@ -276,7 +276,7 @@ export default function SubjectContentLayout({ children }) {
                 <div className="p-6 pb-4 flex items-center justify-between border-b border-gray-100">
                     <div className="flex flex-col items-start gap-1">
                         <img 
-                            src="/assets/Peak_excellence_logo.png" 
+                            src="/landingpageassets/logo.png" 
                             alt="Peak Excellence" 
                             className="h-10 md:h-12 w-auto object-contain"
                             onError={(e) => { e.target.style.display = 'none' }}

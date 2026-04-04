@@ -264,3 +264,20 @@
   white-space: nowrap;
   color: hsl(var(--foreground));
 }
+
+.pdf-page .react-pdf__Page__canvas {
+  width: 100% !important;
+  height: auto !important;
+}
+
+.pdf-page-enhanced .react-pdf__Page__canvas {
+  image-rendering: optimizeQuality;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  filter: contrast(1.05) saturate(1.04);
+}
+
+.pdf-page-tier-3 .react-pdf__Page__canvas {
+  image-rendering: auto;
+  filter: none;
+}

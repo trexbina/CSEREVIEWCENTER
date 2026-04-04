@@ -134,10 +134,13 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                 const res = await fetch(endpoint)
                 if (res.ok) {
                     const { lesson } = await res.json()
-                    if (lessonType === "pdf" && lesson.pdf_files?.length > 0) {
+                    const resolvedLessonType =
+                        lessonType || lesson.lesson_type || (lesson.pdf_files?.length ? "pdf" : "module")
+
+                    if (resolvedLessonType === "pdf" && lesson.pdf_files?.length > 0) {
                         setPdfFiles(lesson.pdf_files)
                         setActivePdf(lesson.pdf_files[0].url)
-                    } else if (lessonType === "module" && lesson.quiz_content) {
+                    } else if (resolvedLessonType === "module" && lesson.quiz_content) {
                         try {
                             setBlocks(JSON.parse(lesson.quiz_content))
                         } catch (e) {

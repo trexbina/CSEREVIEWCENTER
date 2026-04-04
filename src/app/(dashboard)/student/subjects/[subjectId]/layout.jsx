@@ -4,6 +4,23 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Loader2, ChevronLeft, Menu, X } from "lucide-react"
 
+function pickFirstLesson(modules, tab = "modules") {
+    const wantsPdf = tab === "files"
+    for (const mod of modules || []) {
+        for (const lesson of mod.lessons || []) {
+            const lessonType = lesson.lesson_type || "module"
+            if (wantsPdf && lessonType === "pdf") return lesson
+            if (!wantsPdf && lessonType !== "pdf") return lesson
+        }
+    }
+
+    // Fallback to any first lesson if the tab-specific lesson does not exist.
+    for (const mod of modules || []) {
+        if (mod.lessons?.length) return mod.lessons[0]
+    }
+    return null
+}
+
 export default function StudentSubjectLayout({ children }) {
     const params = useParams()
     const router = useRouter()
@@ -19,6 +36,21 @@ export default function StudentSubjectLayout({ children }) {
         fetchModules()
     }, [subjectId])
 
+    useEffect(() => {
+        if (loading) return
+        if (!modules.length) return
+
+        const currentLessonId = searchParams.get("lessonId")
+        if (currentLessonId) return
+
+        const firstLesson = pickFirstLesson(modules, activeTab)
+        if (!firstLesson) return
+
+        router.replace(
+            `/student/subjects/${subjectId}?lessonId=${firstLesson.id}&type=${firstLesson.lesson_type || 'module'}`
+        )
+    }, [loading, modules, searchParams, activeTab, router, subjectId])
+
     async function fetchModules() {
         try {
             const res = await fetch(`/api/student/subjects/${subjectId}/modules`)
@@ -26,17 +58,6 @@ export default function StudentSubjectLayout({ children }) {
                 const data = await res.json()
                 const fetchedModules = data.modules || []
                 setModules(fetchedModules)
-
-                // If no lesson is selected, automatically select the first available one
-                if (!searchParams.get("lessonId")) {
-                    for (const mod of fetchedModules) {
-                        if (mod.lessons && mod.lessons.length > 0) {
-                            const firstLesson = mod.lessons[0]
-                            router.replace(`/student/subjects/${subjectId}?lessonId=${firstLesson.id}&type=${firstLesson.lesson_type || 'module'}`)
-                            break
-                        }
-                    }
-                }
             } else if (res.status === 403) {
                 router.push("/student/subjects")
             }
@@ -152,7 +173,12 @@ export default function StudentSubjectLayout({ children }) {
 
                                 {/* Lessons Inner List */}
                                 <div className="space-y-4 pl-2 pt-2">
-                                    {module.lessons?.map((lesson) => {
+                                    {(module.lessons || [])
+                                        .filter((lesson) => {
+                                            const lessonType = lesson.lesson_type || "module"
+                                            return activeTab === "files" ? lessonType === "pdf" : lessonType !== "pdf"
+                                        })
+                                        .map((lesson) => {
                                         const isActive = searchParams.get("lessonId") === lesson.id.toString()
 
                                         const isQuiz = lesson.title.toLowerCase().includes("quiz") || lesson.title.toLowerCase().includes("exam")
@@ -214,6 +240,20 @@ export default function StudentSubjectLayout({ children }) {
                             </div>
                         )
                     })}
+
+                    {modules.length > 0 && !modules.some((m) =>
+                        (m.lessons || []).some((lesson) =>
+                            activeTab === "files"
+                                ? (lesson.lesson_type || "module") === "pdf"
+                                : (lesson.lesson_type || "module") !== "pdf"
+                        )
+                    ) && (
+                        <div className="rounded-lg border border-dashed border-gray-200 p-4 text-xs text-gray-500">
+                            {activeTab === "files"
+                                ? "No PDF lessons available yet."
+                                : "No module lessons available yet."}
+                        </div>
+                    )}
                 </div>
             </div>
 

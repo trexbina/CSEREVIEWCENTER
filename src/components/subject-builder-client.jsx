@@ -155,6 +155,16 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
         fetchLessonData()
     }, [lessonId, lessonType, subject.id])
 
+    async function readUploadError(response) {
+        try {
+            const data = await response.json()
+            if (data?.error) return data.error
+        } catch (err) {
+            // Ignore parse errors and fall back to status text.
+        }
+        return `Upload failed (${response.status})`
+    }
+
     async function handlePdfUpload(e) {
         const files = Array.from(e.target.files || [])
         if (!files.length) return
@@ -167,7 +177,10 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                 method: 'POST',
                 body: formData
             })
-            if (!uploadRes.ok) throw new Error("Upload failed")
+            if (!uploadRes.ok) {
+                const message = await readUploadError(uploadRes)
+                throw new Error(message)
+            }
             const uploadData = await uploadRes.json()
 
             const newFile = {
@@ -187,7 +200,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
             console.log("PDF Auto-saved!")
         } catch (err) {
             console.error(err)
-            alert("Failed to upload PDF")
+            alert(err?.message || "Failed to upload PDF")
         } finally {
             setUploading(false)
             if (fileInputRef.current) fileInputRef.current.value = ""
@@ -214,13 +227,16 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                 method: 'POST',
                 body: formData
             });
-            if (!uploadRes.ok) throw new Error("Upload failed");
+            if (!uploadRes.ok) {
+                const message = await readUploadError(uploadRes)
+                throw new Error(message)
+            }
             const uploadData = await uploadRes.json();
 
             updateBlockContent(blockId, uploadData.url);
         } catch (err) {
             console.error(err);
-            alert("Failed to upload media");
+            alert(err?.message || "Failed to upload media");
         } finally {
             setUploadingBlockId(null);
         }

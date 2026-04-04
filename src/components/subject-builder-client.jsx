@@ -14,6 +14,15 @@ import {
     Palette, Layers, ChevronLeft, Trash2, Plus, Maximize, BookOpen
 } from "lucide-react"
 import dynamic from "next/dynamic"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const CustomPdfViewer = dynamic(() => import("@/components/custom-pdf-viewer"), {
     ssr: false,
@@ -100,6 +109,15 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
     const [viewMode, setViewMode] = useState(isStudent ? "student" : "admin")
     const [uploadingBlockId, setUploadingBlockId] = useState(null)
     const [fullscreenImage, setFullscreenImage] = useState(null)
+    const [uiAlert, setUiAlert] = useState({ open: false, title: "Notice", description: "" })
+
+    function showAlert(message, title = "Action failed") {
+        setUiAlert({
+            open: true,
+            title,
+            description: String(message || "Something went wrong."),
+        })
+    }
 
     const activeBlock = useMemo(() => {
         if (!activeBlockId) return null;
@@ -203,7 +221,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
             console.log("PDF Auto-saved!")
         } catch (err) {
             console.error(err)
-            alert(err?.message || "Failed to upload PDF")
+            showAlert(err?.message || "Failed to upload PDF")
         } finally {
             setUploading(false)
             if (fileInputRef.current) fileInputRef.current.value = ""
@@ -239,7 +257,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
             updateBlockContent(blockId, uploadData.url);
         } catch (err) {
             console.error(err);
-            alert(err?.message || "Failed to upload media");
+            showAlert(err?.message || "Failed to upload media");
         } finally {
             setUploadingBlockId(null);
         }
@@ -483,7 +501,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
             if (!res.ok) throw new Error("Save failed")
         } catch (err) {
             console.error(err)
-            alert("Failed to save module content.")
+            showAlert("Failed to save module content.")
         } finally {
             setSaving(false)
         }
@@ -1031,6 +1049,20 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                     </div>
                 </div>
             )}
+
+            <AlertDialog open={uiAlert.open} onOpenChange={(open) => setUiAlert((prev) => ({ ...prev, open }))}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{uiAlert.title}</AlertDialogTitle>
+                        <AlertDialogDescription>{uiAlert.description}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setUiAlert((prev) => ({ ...prev, open: false }))}>
+                            OK
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

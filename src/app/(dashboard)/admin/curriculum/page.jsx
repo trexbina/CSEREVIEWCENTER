@@ -3,6 +3,16 @@
 import { useEffect, useState, useCallback } from "react"
 import { Loader2, X, Pencil, Trash, ArrowLeft, Image as ImageIcon } from "lucide-react"
 import Link from "next/link"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function CurriculumManagerPage() {
     const [categories, setCategories] = useState([])
@@ -47,6 +57,45 @@ export default function CurriculumManagerPage() {
         unlock_date: "",
         status: "active"
     })
+    const [uiDialog, setUiDialog] = useState({
+        open: false,
+        title: "Notice",
+        description: "",
+        confirmText: "OK",
+        onConfirm: null,
+    })
+
+    function closeDialog() {
+        setUiDialog((prev) => ({ ...prev, open: false, onConfirm: null }))
+    }
+
+    function showError(message, title = "Action failed") {
+        setUiDialog({
+            open: true,
+            title,
+            description: String(message || "Something went wrong."),
+            confirmText: "OK",
+            onConfirm: null,
+        })
+    }
+
+    function showConfirm({ title, description, onConfirm, confirmText = "Delete" }) {
+        setUiDialog({
+            open: true,
+            title,
+            description,
+            confirmText,
+            onConfirm,
+        })
+    }
+
+    async function handleDialogAction() {
+        const action = uiDialog.onConfirm
+        closeDialog()
+        if (typeof action === "function") {
+            await action()
+        }
+    }
 
     // ── Data Fetching ──
     const fetchData = useCallback(async () => {
@@ -110,7 +159,7 @@ export default function CurriculumManagerPage() {
             if (!selectedCategory) setSelectedCategory(data.category)
             setNewCatName("")
             setShowCatInput(false)
-        } catch (err) { alert(err.message) } finally { setSaving(false) }
+        } catch (err) { showError(err.message) } finally { setSaving(false) }
     }
 
     async function handleEditCategory(catId) {
@@ -127,11 +176,10 @@ export default function CurriculumManagerPage() {
             setCategories((prev) => prev.map(c => c.id === catId ? data.category : c))
             if (selectedCategory?.id === catId) setSelectedCategory(data.category)
             setEditingCategoryId(null)
-        } catch (err) { alert(err.message) } finally { setSaving(false) }
+        } catch (err) { showError(err.message) } finally { setSaving(false) }
     }
 
-    async function handleDeleteCategory(catId) {
-        if (!confirm("Delete this category and all its subcategories?")) return
+    async function deleteCategory(catId) {
         try {
             const res = await fetch(`/api/admin/categories?id=${catId}`, { method: "DELETE" })
             if (!res.ok) throw new Error("Failed to delete category")
@@ -141,7 +189,15 @@ export default function CurriculumManagerPage() {
                 setSelectedSubcategory(null)
                 setSubcategories([])
             }
-        } catch (err) { alert(err.message) }
+        } catch (err) { showError(err.message) }
+    }
+
+    function handleDeleteCategory(catId) {
+        showConfirm({
+            title: "Delete category?",
+            description: "This will remove the category and its subcategories.",
+            onConfirm: () => deleteCategory(catId),
+        })
     }
 
     // ── Subcategory Methods ──
@@ -173,17 +229,24 @@ export default function CurriculumManagerPage() {
             else setSubcategories((prev) => prev.map(s => s.id === subModalData.id ? data.subcategory : s))
             
             setIsSubModalOpen(false)
-        } catch (err) { alert(err.message) } finally { setSaving(false) }
+        } catch (err) { showError(err.message) } finally { setSaving(false) }
     }
 
-    async function handleDeleteSubcategory(subId) {
-        if (!confirm("Delete this subcategory?")) return
+    async function deleteSubcategory(subId) {
         try {
             const res = await fetch(`/api/admin/subcategories?id=${subId}`, { method: "DELETE" })
             if (!res.ok) throw new Error("Failed to delete subcategory")
             setSubcategories((prev) => prev.filter((s) => s.id !== subId))
             if (selectedSubcategory?.id === subId) setSelectedSubcategory(null)
-        } catch (err) { alert(err.message) }
+        } catch (err) { showError(err.message) }
+    }
+
+    function handleDeleteSubcategory(subId) {
+        showConfirm({
+            title: "Delete subcategory?",
+            description: "This will remove the selected subcategory.",
+            onConfirm: () => deleteSubcategory(subId),
+        })
     }
 
     // ── Subject Methods ──
@@ -239,16 +302,23 @@ export default function CurriculumManagerPage() {
             else setSubjects((prev) => prev.map(s => s.id === subjectModalData.id ? data.subject : s))
             
             setIsSubjectModalOpen(false)
-        } catch (err) { alert(err.message) } finally { setSaving(false) }
+        } catch (err) { showError(err.message) } finally { setSaving(false) }
     }
 
-    async function handleDeleteSubject(subId) {
-        if (!confirm("Delete this subject?")) return
+    async function deleteSubject(subId) {
         try {
             const res = await fetch(`/api/admin/subjects?id=${subId}`, { method: "DELETE" })
             if (!res.ok) throw new Error("Failed to delete subject")
             setSubjects((prev) => prev.filter((s) => s.id !== subId))
-        } catch (err) { alert(err.message) }
+        } catch (err) { showError(err.message) }
+    }
+
+    function handleDeleteSubject(subId) {
+        showConfirm({
+            title: "Delete subject?",
+            description: "This subject and its related content will be removed.",
+            onConfirm: () => deleteSubject(subId),
+        })
     }
 
     if (loading) {
@@ -779,6 +849,27 @@ export default function CurriculumManagerPage() {
                     </div>
                 </div>
             )}
+
+            <AlertDialog open={uiDialog.open} onOpenChange={(open) => !open && closeDialog()}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{uiDialog.title}</AlertDialogTitle>
+                        <AlertDialogDescription>{uiDialog.description}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        {uiDialog.onConfirm ? (
+                            <>
+                                <AlertDialogCancel onClick={closeDialog}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction className="bg-red-600 text-white hover:bg-red-700" onClick={handleDialogAction}>
+                                    {uiDialog.confirmText}
+                                </AlertDialogAction>
+                            </>
+                        ) : (
+                            <AlertDialogAction onClick={closeDialog}>OK</AlertDialogAction>
+                        )}
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

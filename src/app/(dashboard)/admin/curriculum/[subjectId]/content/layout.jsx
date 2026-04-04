@@ -3,6 +3,16 @@
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Loader2, ChevronLeft, Plus, FileText, LayoutDashboard, Pencil, Trash, PenTool, GripVertical, Menu, X } from "lucide-react"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function SubjectContentLayout({ children }) {
     const params = useParams()
@@ -26,6 +36,7 @@ export default function SubjectContentLayout({ children }) {
     // Drag state
     const [dragItem, setDragItem] = useState(null) // { type: 'module'|'lesson', id, moduleId?, index }
     const [dragOverItem, setDragOverItem] = useState(null) // same shape
+    const [deleteTarget, setDeleteTarget] = useState(null) // { type, id }
 
     useEffect(() => {
         fetchModules()
@@ -148,8 +159,7 @@ export default function SubjectContentLayout({ children }) {
         }
     }
 
-    async function handleDelete(type, id) {
-        if (!confirm(`Are you sure you want to delete this ${type}?`)) return
+    async function deleteItem(type, id) {
         try {
             const res = await fetch(`/api/admin/subjects/${subjectId}/modules?type=${type}&id=${id}`, {
                 method: "DELETE"
@@ -167,6 +177,10 @@ export default function SubjectContentLayout({ children }) {
         } catch (error) {
             console.error(error)
         }
+    }
+
+    function handleDelete(type, id) {
+        setDeleteTarget({ type, id })
     }
 
     // ── DRAG & DROP HANDLERS ──
@@ -541,6 +555,31 @@ export default function SubjectContentLayout({ children }) {
             <div className="flex-1 overflow-y-auto bg-[#f5f5f5]">
                 {children}
             </div>
+
+            <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete {deleteTarget?.type || "item"}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. The selected {deleteTarget?.type || "item"} will be permanently removed.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeleteTarget(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-red-600 text-white hover:bg-red-700"
+                            onClick={async () => {
+                                if (!deleteTarget) return
+                                const { type, id } = deleteTarget
+                                setDeleteTarget(null)
+                                await deleteItem(type, id)
+                            }}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar {

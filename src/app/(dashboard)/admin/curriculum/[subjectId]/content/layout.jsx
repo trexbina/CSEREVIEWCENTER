@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { Loader2, ChevronLeft, Plus, FileText, LayoutDashboard, Pencil, Trash, PenTool, GripVertical } from "lucide-react"
+import { Loader2, ChevronLeft, Plus, FileText, LayoutDashboard, Pencil, Trash, PenTool, GripVertical, Menu, X } from "lucide-react"
 
 export default function SubjectContentLayout({ children }) {
     const params = useParams()
@@ -13,6 +13,7 @@ export default function SubjectContentLayout({ children }) {
     const [modules, setModules] = useState([])
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState("modules") // modules or files
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false) // responsive sidebar state
     
     const [newModuleName, setNewModuleName] = useState("")
     const [addingModule, setAddingModule] = useState(false)
@@ -239,28 +240,58 @@ export default function SubjectContentLayout({ children }) {
 
     if (loading) {
         return (
-            <div className="flex h-screen w-full items-center justify-center">
+            <div className="flex h-screen w-full items-center justify-center bg-white">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
             </div>
         )
     }
 
     return (
-        <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-white">
+        <div className="flex relative h-[calc(100vh-64px)] w-full overflow-hidden bg-white">
+            
+            {/* Mobile Sidebar Toggle Button */}
+            <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="md:hidden absolute bottom-6 right-6 z-40 h-14 w-14 bg-[#ba5a62] text-white rounded-full shadow-2xl shadow-black/30 flex items-center justify-center hover:bg-[#a64e56] transition-transform active:scale-95"
+            >
+                <Menu className="h-6 w-6" />
+            </button>
+
+            {/* Mobile Backdrop */}
+            {isSidebarOpen && (
+                <div 
+                    className="md:hidden fixed inset-0 bg-black/50 z-40 transition-opacity"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             {/* Subject Sidebar */}
-            <div className="w-80 shrink-0 border-r border-gray-200 bg-white flex flex-col h-full overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10 transition-all">
+            <div className={`
+                absolute md:static inset-y-0 left-0 z-50 
+                w-80 shrink-0 border-r border-gray-200 bg-white flex flex-col h-full overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-transform duration-300 ease-in-out
+                ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 md:shadow-none'}
+            `}>
                 
                 {/* School Branding / Header */}
-                <div className="p-6 border-b border-gray-100 flex flex-col items-center">
-                    <img 
-                        src="/assets/Peak_excellence_logo.png" 
-                        alt="Peak Excellence" 
-                        className="h-12 w-auto object-contain mb-3"
-                        onError={(e) => { e.target.style.display = 'none' }}
-                    />
-                    <h2 className="text-sm font-extrabold tracking-widest text-[#4d4d4d] uppercase font-sans">
-                        PEAK EXCELLENCE
-                    </h2>
+                <div className="p-6 pb-4 flex items-center justify-between border-b border-gray-100">
+                    <div className="flex flex-col items-start gap-1">
+                        <img 
+                            src="/assets/Peak_excellence_logo.png" 
+                            alt="Peak Excellence" 
+                            className="h-10 md:h-12 w-auto object-contain"
+                            onError={(e) => { e.target.style.display = 'none' }}
+                        />
+                        <h2 className="text-xs md:text-sm font-extrabold tracking-widest text-[#4d4d4d] uppercase font-sans mt-2">
+                            PEAK EXCELLENCE
+                        </h2>
+                    </div>
+                    {/* Close button for mobile */}
+                    <button 
+                        className="md:hidden p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+                        onClick={() => setIsSidebarOpen(false)}
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
                 </div>
 
                 {/* Back button & Toggle Tabs */}
@@ -356,7 +387,10 @@ export default function SubjectContentLayout({ children }) {
                                         onDrop={(e) => handleLessonDrop(e, module.id, lIdx)}
                                         onDragEnd={handleDragEnd}
                                         onClick={() => {
-                                            if (editingLessonId !== lesson.id) router.push(`/admin/curriculum/${subjectId}/content?lessonId=${lesson.id}&type=${lesson.lesson_type || 'module'}`)
+                                            if (editingLessonId !== lesson.id) {
+                                                router.push(`/admin/curriculum/${subjectId}/content?lessonId=${lesson.id}&type=${lesson.lesson_type || 'module'}`);
+                                                setIsSidebarOpen(false);
+                                            }
                                         }}
                                         className={`p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:border-blue-400 hover:shadow-md transition-all group flex items-center justify-between ${
                                             dragOverItem?.type === 'lesson' && dragOverItem?.id === lesson.id && dragItem?.id !== lesson.id 

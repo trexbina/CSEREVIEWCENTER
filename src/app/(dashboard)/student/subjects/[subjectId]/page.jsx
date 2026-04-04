@@ -7,6 +7,12 @@ export default async function StudentSubjectContentPage({ params }) {
     const session = await getSession()
     if (!session || session.role !== "student") redirect("/login")
 
+    const userResult = await pool.query(
+        "SELECT name FROM users WHERE id = $1",
+        [session.userId]
+    )
+    const currentUserName = userResult.rows[0]?.name || "Student"
+
     const { subjectId } = await params
 
     const { rows } = await pool.query(
@@ -16,5 +22,5 @@ export default async function StudentSubjectContentPage({ params }) {
 
     if (rows.length === 0) redirect("/student/subjects")
 
-    return <SubjectBuilderClient subject={rows[0]} isStudent={true} />
+    return <SubjectBuilderClient subject={rows[0]} isStudent={true} currentUserName={currentUserName} />
 }

@@ -1,0 +1,5 @@
+export { HeroSection } from "./hero-section"
+export { AboutSystemSection } from "./about-system-section"
+export { AboutUsSection } from "./about-us-section"
+export { ProgramsSection } from "./programs-section"
+export { LandingFooter } from "./landing-footer"

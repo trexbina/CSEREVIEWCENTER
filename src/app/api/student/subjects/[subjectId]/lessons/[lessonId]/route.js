@@ -21,7 +21,11 @@ export async function GET(request, props) {
                         WHEN jsonb_typeof(sc.pdf_files) = 'array' AND jsonb_array_length(sc.pdf_files) > 0 THEN 'pdf'
                         ELSE 'module'
                     END
-                ) AS normalized_lesson_type
+                ) AS normalized_lesson_type,
+                CASE
+                    WHEN jsonb_typeof(sc.pdf_files) = 'array' AND jsonb_array_length(sc.pdf_files) > 0 THEN true
+                    ELSE false
+                END AS has_pdf
              FROM subject_contents sc
              JOIN subject_modules sm ON sm.id = sc.module_id
              WHERE sc.id = $1 AND sm.subject_id = $2`,

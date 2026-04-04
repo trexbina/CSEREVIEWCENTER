@@ -23,7 +23,7 @@ export default function CurriculumManagerPage() {
 
     const [selectedCategory, setSelectedCategory] = useState(null)
     const [selectedSubcategory, setSelectedSubcategory] = useState(null)
-    
+
     // UI states
     const [showCatInput, setShowCatInput] = useState(false)
     const [newCatName, setNewCatName] = useState("")
@@ -105,23 +105,23 @@ export default function CurriculumManagerPage() {
                 selectedCategory ? fetch(`/api/admin/subcategories?category_id=${selectedCategory.id}`) : Promise.resolve({ ok: true, json: () => ({ subcategories: [] }) }),
                 fetch("/api/admin/subjects")
             ])
-            
+
             if (!catRes.ok) throw new Error("Failed to load categories")
             let catData = await catRes.json()
             setCategories(catData.categories || [])
-            
+
             if (selectedCategory && subRes.ok) {
                 let subData = await subRes.json()
                 setSubcategories(subData.subcategories || [])
             } else {
                 setSubcategories([])
             }
-            
+
             if (subjRes.ok) {
                 let subjData = await subjRes.json()
                 setSubjects(subjData.subjects || [])
             }
-            
+
             if (!selectedCategory && catData.categories?.length > 0) {
                 setSelectedCategory(catData.categories[0])
             }
@@ -138,7 +138,7 @@ export default function CurriculumManagerPage() {
 
     // Filter subjects by the currently selected subcategory
     const currentSubjects = subjects.filter(
-        s => s.subcategory_id === selectedSubcategory?.id 
+        s => s.subcategory_id === selectedSubcategory?.id
         // Fallback: if migrating old data with only string category, we might check that too, 
         // but new design uses subcategory_id
     )
@@ -224,10 +224,10 @@ export default function CurriculumManagerPage() {
             })
             if (!res.ok) throw new Error((await res.json()).error || `Failed to ${subModalMode} subcategory`)
             const data = await res.json()
-            
+
             if (subModalMode === "add") setSubcategories((prev) => [...prev, data.subcategory])
             else setSubcategories((prev) => prev.map(s => s.id === subModalData.id ? data.subcategory : s))
-            
+
             setIsSubModalOpen(false)
         } catch (err) { showError(err.message) } finally { setSaving(false) }
     }
@@ -253,16 +253,16 @@ export default function CurriculumManagerPage() {
     function openSubjectModal(mode, sub = null) {
         setSubjectModalMode(mode)
         if (mode === "edit" && sub) {
-            setSubjectModalData({ 
-                id: sub.id, 
-                title: sub.title, 
-                code: sub.code, 
-                description: sub.description || "", 
+            setSubjectModalData({
+                id: sub.id,
+                title: sub.title,
+                code: sub.code,
+                description: sub.description || "",
                 image_url: sub.image_url || "",
                 imageFile: null,
                 // Ensure date format "YYYY-MM-DDTHH:mm" for datetime-local input
                 unlock_date: sub.unlock_date ? new Date(sub.unlock_date).toISOString().slice(0, 16) : "",
-                status: sub.status || "active" 
+                status: sub.status || "active"
             })
         } else {
             setSubjectModalData({ id: null, title: "", code: "", description: "", image_url: "", imageFile: null, unlock_date: "", status: "active" })
@@ -276,7 +276,7 @@ export default function CurriculumManagerPage() {
         try {
             const method = subjectModalMode === "add" ? "POST" : "PUT"
             const url = subjectModalMode === "add" ? "/api/admin/subjects" : `/api/admin/subjects?id=${subjectModalData.id}`
-            
+
             const formData = new FormData()
             formData.append("title", subjectModalData.title.trim())
             formData.append("code", subjectModalData.code.trim())
@@ -285,7 +285,7 @@ export default function CurriculumManagerPage() {
             if (subjectModalData.unlock_date) formData.append("unlock_date", new Date(subjectModalData.unlock_date).toISOString())
             formData.append("subcategory_id", selectedSubcategory.id)
             formData.append("category", selectedCategory.name)
-            
+
             if (subjectModalData.imageFile) {
                 formData.append("image", subjectModalData.imageFile)
             } else if (subjectModalData.image_url) {
@@ -297,10 +297,10 @@ export default function CurriculumManagerPage() {
             })
             if (!res.ok) throw new Error((await res.json()).error || `Failed to ${subjectModalMode} subject`)
             const data = await res.json()
-            
+
             if (subjectModalMode === "add") setSubjects((prev) => [data.subject, ...prev])
             else setSubjects((prev) => prev.map(s => s.id === subjectModalData.id ? data.subject : s))
-            
+
             setIsSubjectModalOpen(false)
         } catch (err) { showError(err.message) } finally { setSaving(false) }
     }
@@ -383,7 +383,7 @@ export default function CurriculumManagerPage() {
 
     return (
         <div className="space-y-12 w-full max-w-6xl mx-auto px-4 py-8 relative">
-            
+
             {/* ════════════════════ CATEGORIES SECTION ════════════════════ */}
             {!selectedSubcategory && (
                 <div className="space-y-6">
@@ -398,7 +398,7 @@ export default function CurriculumManagerPage() {
                     <div className="flex flex-wrap items-center gap-4">
                         {categories.map((cat) => {
                             const isSelected = selectedCategory?.id === cat.id
-                            
+
                             if (editingCategoryId === cat.id) {
                                 return (
                                     <div key={cat.id} className="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-2 py-1.5 shadow-sm">
@@ -411,7 +411,7 @@ export default function CurriculumManagerPage() {
                                             className="w-32 text-sm uppercase font-semibold text-[#4d4d4d] focus:outline-none"
                                         />
                                         <button onClick={() => handleEditCategory(cat.id)} disabled={saving} className="text-green-600 hover:text-green-700 p-1">
-                                            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <span className="text-xs font-bold">SAVE</span>}
+                                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <span className="text-xs font-bold">SAVE</span>}
                                         </button>
                                         <button onClick={() => setEditingCategoryId(null)} className="text-gray-400 hover:text-gray-600 p-1">
                                             <X className="w-4 h-4" />
@@ -421,29 +421,28 @@ export default function CurriculumManagerPage() {
                             }
 
                             return (
-                                <div 
+                                <div
                                     key={cat.id}
                                     onClick={() => setSelectedCategory(cat)}
-                                    className={`group cursor-pointer flex items-center gap-3 rounded-lg px-5 py-2.5 transition-all ${
-                                        isSelected
+                                    className={`group cursor-pointer flex items-center gap-3 rounded-lg px-5 py-2.5 transition-all ${isSelected
                                             ? "bg-[#f5cdd0] text-[#ba5a62] shadow-sm transform scale-105"
                                             : "bg-gray-50 text-[#4d4d4d] border border-gray-200 shadow-sm hover:border-gray-300 hover:bg-gray-100"
-                                    }`}
+                                        }`}
                                 >
                                     <span className="text-sm font-semibold uppercase tracking-wide">
                                         {cat.name}
                                     </span>
-                                    
+
                                     {/* Edit & Delete icons */}
                                     <div className={`flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isSelected ? "text-[#ba5a62]" : "text-gray-400"}`}>
-                                        <button 
+                                        <button
                                             onClick={(e) => { e.stopPropagation(); setEditingCategoryId(cat.id); setEditCatName(cat.name) }}
                                             className="hover:text-blue-500 transition-colors"
                                             title="Edit category"
                                         >
                                             <Pencil className="h-4 w-4" />
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id) }}
                                             className="hover:text-red-500 transition-colors"
                                             title="Delete category"
@@ -525,7 +524,7 @@ export default function CurriculumManagerPage() {
                                             </p>
                                         )}
                                     </div>
-                                    
+
                                     {/* Edit & Delete Actions */}
                                     <div className="h-8 flex items-end justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity w-full pb-2 relative z-20">
                                         <button
@@ -540,7 +539,7 @@ export default function CurriculumManagerPage() {
                                             className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors"
                                             title="Delete subcategory"
                                         >
-                                            <Trash className="h-3.5 w-3.5" /> 
+                                            <Trash className="h-3.5 w-3.5" />
                                         </button>
                                     </div>
                                 </div>
@@ -591,23 +590,22 @@ export default function CurriculumManagerPage() {
                                 <div
                                     key={sub.id}
                                     onClick={() => setSelectedSubcategory(sub)}
-                                    className={`group cursor-pointer flex items-center gap-2 rounded-lg px-4 py-2 transition-all text-[13px] font-bold uppercase tracking-wide ${
-                                        isSelected 
-                                            ? "bg-[#f5cdd0] text-[#ba5a62] shadow-sm transform scale-[1.02]" 
+                                    className={`group cursor-pointer flex items-center gap-2 rounded-lg px-4 py-2 transition-all text-[13px] font-bold uppercase tracking-wide ${isSelected
+                                            ? "bg-[#f5cdd0] text-[#ba5a62] shadow-sm transform scale-[1.02]"
                                             : "bg-gray-50 text-[#4d4d4d] border border-gray-200 shadow-sm hover:border-gray-300 hover:bg-gray-100"
-                                    }`}
+                                        }`}
                                 >
                                     <span>{sub.name}</span>
                                     {isSelected && (
                                         <div className="flex items-center gap-1.5 ml-1">
-                                            <button 
+                                            <button
                                                 onClick={(e) => { e.stopPropagation(); openSubModal("edit", sub) }}
                                                 className="hover:text-[#ba5a62]/70 transition-colors"
                                                 title="Edit Subcategory"
                                             >
                                                 <Pencil className="h-3.5 w-3.5" />
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={(e) => { e.stopPropagation(); handleDeleteSubcategory(sub.id) }}
                                                 className="hover:text-red-500 transition-colors"
                                                 title="Delete Subcategory"
@@ -638,16 +636,16 @@ export default function CurriculumManagerPage() {
                                             <ImageIcon className="h-10 w-10 text-[#ba5a62] opacity-30" />
                                         )}
                                     </div>
-                                    
+
                                     {/* Content Area */}
                                     <div className="flex-1 flex flex-col justify-between py-1">
                                         <div>
                                             <h3 className="text-xl font-extrabold text-[#4d4d4d] uppercase mb-2">
-                                                {subject.title} 
+                                                {subject.title}
                                                 {subject.status === "inactive" && <span className="ml-2 text-[10px] text-red-500 font-bold bg-red-100 px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm border border-red-200">(Locked)</span>}
                                                 {subject.unlock_date && new Date(subject.unlock_date) > new Date() && (
                                                     <span className="ml-2 text-[10px] text-blue-600 font-bold bg-blue-100 px-2 py-0.5 rounded-full shadow-sm border border-blue-200">
-                                                        ⏰ Scheduled: {new Date(subject.unlock_date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'})}
+                                                        ⏰ Scheduled: {new Date(subject.unlock_date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                                                     </span>
                                                 )}
                                             </h3>
@@ -655,7 +653,7 @@ export default function CurriculumManagerPage() {
                                                 {subject.description || "No description provided."}
                                             </p>
                                         </div>
-                                        
+
                                         <div className="flex items-center gap-4 text-xs font-semibold text-gray-500">
                                             <span className="bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
                                                 Date added: {new Date(subject.created_at).toLocaleDateString()}
@@ -675,14 +673,14 @@ export default function CurriculumManagerPage() {
 
                                     {/* Top Right Edit/Delete Icons */}
                                     <div className="absolute top-4 right-4 flex opacity-0 group-hover:opacity-100 transition-opacity gap-2">
-                                        <button 
+                                        <button
                                             onClick={() => openSubjectModal("edit", subject)}
                                             className="p-1.5 text-gray-400 hover:text-blue-500 bg-white rounded-md shadow-sm border border-gray-200 transition-colors"
                                             title="Edit Subject Details"
                                         >
                                             <Pencil className="h-4 w-4" />
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => handleDeleteSubject(subject.id)}
                                             className="p-1.5 text-gray-400 hover:text-red-500 bg-white rounded-md shadow-sm border border-gray-200 transition-colors"
                                             title="Delete Subject"
@@ -714,16 +712,16 @@ export default function CurriculumManagerPage() {
                         <div className="space-y-6">
                             <div>
                                 <label className="block text-[#7a7a7a] text-lg font-semibold mb-2">Name:</label>
-                                <input type="text" value={subModalData.name} onChange={e => setSubModalData({...subModalData, name: e.target.value})} className="w-full h-12 rounded-xl border border-gray-200 bg-[#fefefe] px-4 focus:outline-none focus:ring-1 focus:ring-[#f5cdd0] focus:border-[#f5cdd0]" />
+                                <input type="text" value={subModalData.name} onChange={e => setSubModalData({ ...subModalData, name: e.target.value })} className="w-full h-12 rounded-xl border border-gray-200 bg-[#fefefe] px-4 focus:outline-none focus:ring-1 focus:ring-[#f5cdd0] focus:border-[#f5cdd0]" />
                             </div>
                             <div>
                                 <label className="block text-[#7a7a7a] text-lg font-semibold mb-2">Description:</label>
-                                <textarea value={subModalData.description} onChange={e => setSubModalData({...subModalData, description: e.target.value})} rows={3} className="w-full rounded-xl border border-gray-200 bg-[#fefefe] px-4 py-3 resize-none focus:outline-none focus:ring-1 focus:ring-[#f5cdd0] focus:border-[#f5cdd0]" />
+                                <textarea value={subModalData.description} onChange={e => setSubModalData({ ...subModalData, description: e.target.value })} rows={3} className="w-full rounded-xl border border-gray-200 bg-[#fefefe] px-4 py-3 resize-none focus:outline-none focus:ring-1 focus:ring-[#f5cdd0] focus:border-[#f5cdd0]" />
                             </div>
                             <div className="flex items-center justify-between pt-4">
                                 <div className="flex items-center gap-4">
                                     <label className="text-[#7a7a7a] text-lg font-semibold">Status:</label>
-                                    <button type="button" onClick={() => setSubModalData({...subModalData, status: subModalData.status === "active" ? "inactive" : "active"})} className="relative flex items-center gap-3">
+                                    <button type="button" onClick={() => setSubModalData({ ...subModalData, status: subModalData.status === "active" ? "inactive" : "active" })} className="relative flex items-center gap-3">
                                         <div className={`w-[46px] h-6 rounded-full transition-colors flex items-center px-0.5 ${subModalData.status === 'active' ? 'bg-[#98d4b3]' : 'bg-[#e0e0e0]'}`}>
                                             <div className={`w-5 h-5 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${subModalData.status === 'active' ? 'translate-x-[22px]' : 'translate-x-0'}`} />
                                         </div>
@@ -754,16 +752,16 @@ export default function CurriculumManagerPage() {
                             </h2>
                         </div>
                         <div className="w-full h-px bg-gray-200 mb-6" />
-                        
+
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[#7a7a7a] text-sm font-semibold mb-1">Title:</label>
-                                    <input type="text" value={subjectModalData.title} onChange={e => setSubjectModalData({...subjectModalData, title: e.target.value})} className="w-full h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#f5cdd0]" />
+                                    <input type="text" value={subjectModalData.title} onChange={e => setSubjectModalData({ ...subjectModalData, title: e.target.value })} className="w-full h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#f5cdd0]" />
                                 </div>
                                 <div>
                                     <label className="block text-[#7a7a7a] text-sm font-semibold mb-1">Code:</label>
-                                    <input type="text" value={subjectModalData.code} onChange={e => setSubjectModalData({...subjectModalData, code: e.target.value})} className="w-full h-10 rounded-lg border border-gray-200 px-3 text-sm uppercase focus:outline-none focus:ring-1 focus:ring-[#f5cdd0]" />
+                                    <input type="text" value={subjectModalData.code} onChange={e => setSubjectModalData({ ...subjectModalData, code: e.target.value })} className="w-full h-10 rounded-lg border border-gray-200 px-3 text-sm uppercase focus:outline-none focus:ring-1 focus:ring-[#f5cdd0]" />
                                 </div>
                             </div>
 
@@ -786,12 +784,12 @@ export default function CurriculumManagerPage() {
                                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                             <span className="text-white text-xs font-bold uppercase tracking-wider">Change</span>
                                         </div>
-                                        <input 
-                                            type="file" 
+                                        <input
+                                            type="file"
                                             accept="image/*"
                                             onChange={(e) => {
                                                 if (e.target.files && e.target.files[0]) {
-                                                    setSubjectModalData({...subjectModalData, imageFile: e.target.files[0]})
+                                                    setSubjectModalData({ ...subjectModalData, imageFile: e.target.files[0] })
                                                 }
                                             }}
                                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
@@ -804,18 +802,18 @@ export default function CurriculumManagerPage() {
                                 {/* Text Fields Area */}
                                 <div className="flex-1 flex flex-col">
                                     <label className="block text-[#7a7a7a] text-sm font-semibold mb-1">Description:</label>
-                                    <textarea value={subjectModalData.description} onChange={e => setSubjectModalData({...subjectModalData, description: e.target.value})} className="w-full flex-1 rounded-xl border border-gray-200 px-4 py-3 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-[#f5cdd0] shadow-sm bg-[#fefefe]" />
+                                    <textarea value={subjectModalData.description} onChange={e => setSubjectModalData({ ...subjectModalData, description: e.target.value })} className="w-full flex-1 rounded-xl border border-gray-200 px-4 py-3 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-[#f5cdd0] shadow-sm bg-[#fefefe]" />
                                 </div>
                             </div>
 
                             <div>
                                 <label className="block text-[#7a7a7a] text-sm font-semibold mb-1 mt-2">Unlock Date & Time (Optional Drip Content):</label>
                                 <div className="flex items-center gap-2">
-                                    <input type="datetime-local" value={subjectModalData.unlock_date || ""} onChange={e => setSubjectModalData({...subjectModalData, unlock_date: e.target.value})} className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#f5cdd0] shadow-sm bg-[#fefefe] flex-1 max-w-[250px]" />
+                                    <input type="datetime-local" value={subjectModalData.unlock_date || ""} onChange={e => setSubjectModalData({ ...subjectModalData, unlock_date: e.target.value })} className="h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#f5cdd0] shadow-sm bg-[#fefefe] flex-1 max-w-[250px]" />
                                     {subjectModalData.unlock_date && (
-                                        <button 
+                                        <button
                                             type="button"
-                                            onClick={() => setSubjectModalData({...subjectModalData, unlock_date: ""})}
+                                            onClick={() => setSubjectModalData({ ...subjectModalData, unlock_date: "" })}
                                             className="rounded-full bg-red-50 p-1.5 text-red-500 hover:bg-red-100 hover:text-red-700 transition-colors"
                                             title="Clear Date"
                                         >
@@ -831,7 +829,7 @@ export default function CurriculumManagerPage() {
                             <div className="flex items-center justify-between pt-4">
                                 <div className="flex items-center gap-4">
                                     <label className="text-[#7a7a7a] text-sm font-semibold">Status:</label>
-                                    <button type="button" onClick={() => setSubjectModalData({...subjectModalData, status: subjectModalData.status === "active" ? "inactive" : "active"})} className="relative flex items-center gap-2">
+                                    <button type="button" onClick={() => setSubjectModalData({ ...subjectModalData, status: subjectModalData.status === "active" ? "inactive" : "active" })} className="relative flex items-center gap-2">
                                         <div className={`w-[36px] h-5 rounded-full transition-colors flex items-center px-0.5 ${subjectModalData.status === 'active' ? 'bg-[#98d4b3]' : 'bg-[#e0e0e0]'}`}>
                                             <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${subjectModalData.status === 'active' ? 'translate-x-[16px]' : 'translate-x-0'}`} />
                                         </div>

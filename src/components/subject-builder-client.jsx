@@ -167,8 +167,8 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                     const { lesson } = await res.json()
                     const normalizedPdfFiles = Array.isArray(lesson?.pdf_files) ? lesson.pdf_files : []
                     const nextLessonType = normalizeLessonType(
-                        lessonType || lesson?.lesson_type,
-                        normalizedPdfFiles.length > 0
+                        lesson?.lesson_type,
+                        Boolean(lesson?.has_pdf) || normalizedPdfFiles.length > 0
                     )
                     setResolvedLessonType(nextLessonType)
 

@@ -45,6 +45,10 @@ export async function GET(request, props) {
                             ELSE 'module'
                         END
                     ) AS lesson_type,
+                    CASE
+                        WHEN jsonb_typeof(pdf_files) = 'array' AND jsonb_array_length(pdf_files) > 0 THEN true
+                        ELSE false
+                    END AS has_pdf,
                     order_index,
                     created_at
                  FROM subject_contents

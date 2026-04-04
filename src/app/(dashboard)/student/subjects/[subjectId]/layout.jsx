@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Loader2, ChevronLeft, Menu, X } from "lucide-react"
 
-function normalizeLessonType(rawType) {
+function normalizeLessonType(rawType, hasPdf = false) {
+    if (hasPdf) return "pdf"
     const value = String(rawType || "").trim().toLowerCase()
     if (value === "pdf" || value === "file" || value === "files") return "pdf"
     return "module"
@@ -14,7 +15,7 @@ function pickFirstLesson(modules, tab = "modules") {
     const wantsPdf = tab === "files"
     for (const mod of modules || []) {
         for (const lesson of mod.lessons || []) {
-            const lessonType = normalizeLessonType(lesson.lesson_type)
+            const lessonType = normalizeLessonType(lesson.lesson_type, lesson.has_pdf)
             if (wantsPdf && lessonType === "pdf") return lesson
             if (!wantsPdf && lessonType !== "pdf") return lesson
         }
@@ -60,10 +61,36 @@ export default function StudentSubjectLayout({ children }) {
         const firstLesson = pickFirstLesson(modules, activeTab)
         if (!firstLesson) return
 
-        const normalizedType = normalizeLessonType(firstLesson.lesson_type)
+        const normalizedType = normalizeLessonType(firstLesson.lesson_type, firstLesson.has_pdf)
         router.replace(
             `/student/subjects/${subjectId}?lessonId=${firstLesson.id}&type=${normalizedType}`
         )
+    }, [loading, modules, searchParams, activeTab, router, subjectId])
+
+    useEffect(() => {
+        if (loading) return
+        if (!modules.length) return
+
+        const lessonId = searchParams.get("lessonId")
+        if (!lessonId) return
+
+        let selectedLesson = null
+        for (const mod of modules) {
+            selectedLesson = (mod.lessons || []).find((lesson) => String(lesson.id) === String(lessonId))
+            if (selectedLesson) break
+        }
+
+        if (!selectedLesson) return
+
+        const selectedType = normalizeLessonType(selectedLesson.lesson_type, selectedLesson.has_pdf)
+        const tabType = activeTab === "files" ? "pdf" : "module"
+
+        if (selectedType !== tabType) {
+            const nextLesson = pickFirstLesson(modules, activeTab)
+            if (!nextLesson) return
+            const nextType = normalizeLessonType(nextLesson.lesson_type, nextLesson.has_pdf)
+            router.replace(`/student/subjects/${subjectId}?lessonId=${nextLesson.id}&type=${nextType}`)
+        }
     }, [loading, modules, searchParams, activeTab, router, subjectId])
 
     async function fetchModules() {
@@ -190,7 +217,7 @@ export default function StudentSubjectLayout({ children }) {
                                 <div className="space-y-4 pl-2 pt-2">
                                     {(module.lessons || [])
                                         .filter((lesson) => {
-                                            const lessonType = normalizeLessonType(lesson.lesson_type)
+                                            const lessonType = normalizeLessonType(lesson.lesson_type, lesson.has_pdf)
                                             return activeTab === "files" ? lessonType === "pdf" : lessonType !== "pdf"
                                         })
                                         .map((lesson) => {
@@ -206,7 +233,7 @@ export default function StudentSubjectLayout({ children }) {
                                                     <div
                                                         key={lesson.id}
                                                         onClick={() => {
-                                                            const lessonType = normalizeLessonType(lesson.lesson_type)
+                                                            const lessonType = normalizeLessonType(lesson.lesson_type, lesson.has_pdf)
                                                             router.push(`/student/subjects/${subjectId}?lessonId=${lesson.id}&type=${lessonType}`);
                                                             setIsSidebarOpen(false);
                                                         }}
@@ -234,7 +261,7 @@ export default function StudentSubjectLayout({ children }) {
                                                 <div
                                                     key={lesson.id}
                                                     onClick={() => {
-                                                        const lessonType = normalizeLessonType(lesson.lesson_type)
+                                                        const lessonType = normalizeLessonType(lesson.lesson_type, lesson.has_pdf)
                                                         router.push(`/student/subjects/${subjectId}?lessonId=${lesson.id}&type=${lessonType}`);
                                                         setIsSidebarOpen(false);
                                                     }}
@@ -261,8 +288,8 @@ export default function StudentSubjectLayout({ children }) {
                     {modules.length > 0 && !modules.some((m) =>
                         (m.lessons || []).some((lesson) =>
                             activeTab === "files"
-                                ? normalizeLessonType(lesson.lesson_type) === "pdf"
-                                : normalizeLessonType(lesson.lesson_type) !== "pdf"
+                                ? normalizeLessonType(lesson.lesson_type, lesson.has_pdf) === "pdf"
+                                : normalizeLessonType(lesson.lesson_type, lesson.has_pdf) !== "pdf"
                         )
                     ) && (
                             <div className="rounded-lg border border-dashed border-gray-200 p-4 text-xs text-gray-500">

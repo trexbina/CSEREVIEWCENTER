@@ -24,7 +24,7 @@ export default function SubjectContentLayout({ children }) {
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState("modules") // modules or files
     const [isSidebarOpen, setIsSidebarOpen] = useState(false) // responsive sidebar state
-    
+
     const [newModuleName, setNewModuleName] = useState("")
     const [addingModule, setAddingModule] = useState(false)
 
@@ -262,9 +262,9 @@ export default function SubjectContentLayout({ children }) {
 
     return (
         <div className="flex relative h-[calc(100vh-64px)] w-full overflow-hidden bg-white">
-            
+
             {/* Mobile Sidebar Toggle Button */}
-            <button 
+            <button
                 onClick={() => setIsSidebarOpen(true)}
                 className="md:hidden absolute bottom-6 right-6 z-40 h-14 w-14 bg-[#ba5a62] text-white rounded-full shadow-2xl shadow-black/30 flex items-center justify-center hover:bg-[#a64e56] transition-transform active:scale-95"
             >
@@ -273,7 +273,7 @@ export default function SubjectContentLayout({ children }) {
 
             {/* Mobile Backdrop */}
             {isSidebarOpen && (
-                <div 
+                <div
                     className="md:hidden fixed inset-0 bg-black/50 z-40 transition-opacity"
                     onClick={() => setIsSidebarOpen(false)}
                 />
@@ -285,13 +285,13 @@ export default function SubjectContentLayout({ children }) {
                 w-80 shrink-0 border-r border-gray-200 bg-white flex flex-col h-full overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-transform duration-300 ease-in-out
                 ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 md:shadow-none'}
             `}>
-                
+
                 {/* School Branding / Header */}
                 <div className="p-6 pb-4 flex items-center justify-between border-b border-gray-100">
                     <div className="flex flex-col items-start gap-1">
-                        <img 
-                            src="/landingpageassets/logo.png" 
-                            alt="Peak Excellence" 
+                        <img
+                            src="/landingpageassets/logo.png"
+                            alt="Peak Excellence"
                             className="h-10 md:h-12 w-auto object-contain"
                             onError={(e) => { e.target.style.display = 'none' }}
                         />
@@ -300,7 +300,7 @@ export default function SubjectContentLayout({ children }) {
                         </h2>
                     </div>
                     {/* Close button for mobile */}
-                    <button 
+                    <button
                         className="md:hidden p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
                         onClick={() => setIsSidebarOpen(false)}
                     >
@@ -310,22 +310,22 @@ export default function SubjectContentLayout({ children }) {
 
                 {/* Back button & Toggle Tabs */}
                 <div className="p-4 border-b border-gray-100 flex items-center gap-3">
-                    <button 
+                    <button
                         onClick={() => router.push('/admin/curriculum')}
                         className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors"
                         title="Back to Subjects"
                     >
                         <ChevronLeft className="h-4 w-4" />
                     </button>
-                    
+
                     <div className="flex bg-gray-100 rounded-lg p-1 flex-1">
-                        <button 
+                        <button
                             onClick={() => setActiveTab("modules")}
                             className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === "modules" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                         >
                             Modules
                         </button>
-                        <button 
+                        <button
                             onClick={() => setActiveTab("files")}
                             className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === "files" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                         >
@@ -337,8 +337,8 @@ export default function SubjectContentLayout({ children }) {
                 {/* Modules List Scrolling Area */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
                     {modules.map((module, idx) => (
-                        <div 
-                            key={module.id} 
+                        <div
+                            key={module.id}
                             className={`space-y-3 transition-all ${dragOverItem?.type === 'module' && dragOverItem?.id === module.id && dragItem?.id !== module.id ? 'border-t-2 border-blue-400 pt-2' : ''}`}
                             onDragOver={(e) => handleModuleDragOver(e, module.id, idx)}
                             onDrop={(e) => handleModuleDrop(e, idx)}
@@ -346,7 +346,7 @@ export default function SubjectContentLayout({ children }) {
                         >
                             {/* Module Header */}
                             <div className="border-b border-gray-100 pb-2 flex justify-between items-center group">
-                                <div 
+                                <div
                                     className="flex items-center gap-1.5 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors shrink-0"
                                     draggable
                                     onDragStart={(e) => handleModuleDragStart(e, module.id, idx)}
@@ -355,13 +355,13 @@ export default function SubjectContentLayout({ children }) {
                                 </div>
                                 {editingModuleId === module.id ? (
                                     <div className="flex-1 flex items-center gap-2 mr-2">
-                                        <input 
-                                            type="text" 
-                                            value={editTitle} 
+                                        <input
+                                            type="text"
+                                            value={editTitle}
                                             onChange={e => setEditTitle(e.target.value)}
                                             onKeyDown={e => e.key === "Enter" && handleEdit("module", module.id, module.title)}
                                             autoFocus
-                                            className="w-full text-[13px] font-bold text-gray-700 bg-white border border-gray-300 rounded px-2 py-1 outline-none focus:border-[#f5cdd0]" 
+                                            className="w-full text-[13px] font-bold text-gray-700 bg-white border border-gray-300 rounded px-2 py-1 outline-none focus:border-[#f5cdd0]"
                                         />
                                     </div>
                                 ) : (
@@ -371,14 +371,14 @@ export default function SubjectContentLayout({ children }) {
                                 )}
 
                                 <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button 
+                                    <button
                                         onClick={(e) => { e.stopPropagation(); handleEdit("module", module.id, module.title) }}
                                         className={`p-1 rounded hover:bg-gray-100 transition-colors ${editingModuleId === module.id ? "text-green-600 font-bold text-[10px] w-auto px-2" : "text-gray-400 hover:text-blue-500"}`}
                                         title="Edit Module"
                                     >
                                         {editingModuleId === module.id ? "SAVE" : <Pencil className="h-3 w-3" />}
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={(e) => { e.stopPropagation(); handleDelete("module", module.id) }}
                                         className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-gray-100 transition-colors"
                                         title="Delete Module"
@@ -392,10 +392,10 @@ export default function SubjectContentLayout({ children }) {
                                 <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider pl-1">
                                     LESSONS
                                 </p>
-                                
+
                                 {/* Lessons */}
                                 {module.lessons?.map((lesson, lIdx) => (
-                                    <div 
+                                    <div
                                         key={lesson.id}
                                         onDragOver={(e) => handleLessonDragOver(e, lesson.id, module.id, lIdx)}
                                         onDrop={(e) => handleLessonDrop(e, module.id, lIdx)}
@@ -406,15 +406,14 @@ export default function SubjectContentLayout({ children }) {
                                                 setIsSidebarOpen(false);
                                             }
                                         }}
-                                        className={`p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:border-blue-400 hover:shadow-md transition-all group flex items-center justify-between ${
-                                            dragOverItem?.type === 'lesson' && dragOverItem?.id === lesson.id && dragItem?.id !== lesson.id 
-                                                ? 'border-blue-400 border-t-2' 
+                                        className={`p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:border-blue-400 hover:shadow-md transition-all group flex items-center justify-between ${dragOverItem?.type === 'lesson' && dragOverItem?.id === lesson.id && dragItem?.id !== lesson.id
+                                                ? 'border-blue-400 border-t-2'
                                                 : 'border-gray-200'
-                                        }`}
+                                            }`}
                                     >
                                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                                            <div 
-                                                className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors shrink-0" 
+                                            <div
+                                                className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors shrink-0"
                                                 draggable
                                                 onDragStart={(e) => handleLessonDragStart(e, lesson.id, module.id, lIdx)}
                                                 onClick={(e) => e.stopPropagation()}
@@ -423,14 +422,14 @@ export default function SubjectContentLayout({ children }) {
                                             </div>
                                             {editingLessonId === lesson.id ? (
                                                 <div className="flex-1 flex items-center gap-2 mr-2">
-                                                    <input 
-                                                        type="text" 
-                                                        value={editTitle} 
+                                                    <input
+                                                        type="text"
+                                                        value={editTitle}
                                                         onChange={e => setEditTitle(e.target.value)}
                                                         onKeyDown={e => e.key === "Enter" && handleEdit("lesson", lesson.id, lesson.title)}
                                                         autoFocus
                                                         onClick={(e) => e.stopPropagation()}
-                                                        className="w-full text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded px-2 py-1 outline-none focus:border-[#f5cdd0]" 
+                                                        className="w-full text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded px-2 py-1 outline-none focus:border-[#f5cdd0]"
                                                     />
                                                 </div>
                                             ) : (
@@ -441,14 +440,14 @@ export default function SubjectContentLayout({ children }) {
                                         </div>
 
                                         <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button 
+                                            <button
                                                 onClick={(e) => { e.stopPropagation(); handleEdit("lesson", lesson.id, lesson.title) }}
                                                 className={`p-1.5 rounded bg-gray-50 hover:bg-blue-50 transition-colors ${editingLessonId === lesson.id ? "text-green-600 font-bold text-[10px] w-auto px-2" : "text-gray-400 hover:text-blue-500"}`}
                                                 title="Edit Lesson"
                                             >
                                                 {editingLessonId === lesson.id ? "SAVE" : <Pencil className="h-3.5 w-3.5" />}
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={(e) => { e.stopPropagation(); handleDelete("lesson", lesson.id) }}
                                                 className="p-1.5 text-gray-400 hover:text-red-500 rounded bg-gray-50 hover:bg-red-50 transition-colors"
                                                 title="Delete Lesson"
@@ -461,7 +460,7 @@ export default function SubjectContentLayout({ children }) {
 
                                 {/* Lesson drop zone at the end of a module's lesson list */}
                                 {dragItem?.type === 'lesson' && (
-                                    <div 
+                                    <div
                                         className="h-8 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50/50 flex items-center justify-center text-blue-400 text-xs font-bold"
                                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverItem({ type: 'lesson', id: 'end', moduleId: module.id, index: (module.lessons?.length || 0) }) }}
                                         onDrop={(e) => handleLessonDrop(e, module.id, module.lessons?.length || 0)}
@@ -486,12 +485,12 @@ export default function SubjectContentLayout({ children }) {
                                             ) : (
                                                 <div className="p-3 bg-gray-50 flex flex-col gap-2">
                                                     <div className="flex items-center gap-2 mb-1 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                                                        {newLessonType === 'module' ? <PenTool className="h-3 w-3"/> : <FileText className="h-3 w-3"/>}
+                                                        {newLessonType === 'module' ? <PenTool className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
                                                         New {newLessonType} Lesson
                                                     </div>
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="Name lesson here..." 
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Name lesson here..."
                                                         value={newLessonTitle}
                                                         onChange={(e) => setNewLessonTitle(e.target.value)}
                                                         onKeyDown={(e) => {
@@ -509,7 +508,7 @@ export default function SubjectContentLayout({ children }) {
                                             )}
                                         </div>
                                     ) : (
-                                        <button 
+                                        <button
                                             onClick={() => setAddingLessonToModule(module.id)}
                                             className="w-full flex items-center justify-center py-2.5 bg-gray-50 hover:bg-gray-100 border border-transparent hover:border-gray-200 text-gray-400 hover:text-gray-600 rounded-lg transition-all"
                                         >
@@ -524,7 +523,7 @@ export default function SubjectContentLayout({ children }) {
                     {/* Add Module Area */}
                     <div className="pt-4 border-t border-gray-100">
                         {!addingModule ? (
-                            <button 
+                            <button
                                 onClick={() => setAddingModule(true)}
                                 className="w-full py-2.5 bg-[#fef5f6] hover:bg-[#fce9ea] text-[#ba5a62] text-sm font-bold rounded-lg border border-[#f5cdd0] border-dashed transition-colors"
                             >
@@ -532,9 +531,9 @@ export default function SubjectContentLayout({ children }) {
                             </button>
                         ) : (
                             <div className="space-y-2 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                                <input 
-                                    type="text" 
-                                    placeholder="Module Name..." 
+                                <input
+                                    type="text"
+                                    placeholder="Module Name..."
                                     className="w-full p-2 text-sm rounded border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#f5cdd0]"
                                     value={newModuleName}
                                     onChange={e => setNewModuleName(e.target.value)}
@@ -580,7 +579,7 @@ export default function SubjectContentLayout({ children }) {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            
+
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 4px;

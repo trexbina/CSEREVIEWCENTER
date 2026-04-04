@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth-session"
-import { writeFile, mkdir } from "fs/promises"
-import path from "path"
-import { put } from "@vercel/blob"
+import pool from "@/lib/db"
 
 export const runtime = "nodejs"
 
@@ -10,6 +8,18 @@ async function adminGuard() {
     const session = await getSession()
     if (session?.role !== "admin") return null
     return session
+}
+
+async function ensureUploadsTable() {
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS uploaded_files (
+            id SERIAL PRIMARY KEY,
+            filename TEXT NOT NULL,
+            content_type TEXT,
+            data BYTEA NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `)
 }
 
 export async function POST(request) {
@@ -24,43 +34,26 @@ export async function POST(request) {
             return NextResponse.json({ error: "No file uploaded" }, { status: 400 })
         }
 
+        await ensureUploadsTable()
+
         const buffer = Buffer.from(await file.arrayBuffer())
-        // Replace spaces to prevent URL issues
-        const filename = Date.now() + "_" + file.name.replace(/\s+/g, "_")
+        const filename = file.name || `upload_${Date.now()}.pdf`
+        const contentType = file.type || "application/pdf"
 
-        if (process.env.VERCEL || process.env.BLOB_READ_WRITE_TOKEN) {
-            if (!process.env.BLOB_READ_WRITE_TOKEN) {
-                return NextResponse.json({ error: "Missing BLOB_READ_WRITE_TOKEN" }, { status: 500 })
-            }
+        const result = await pool.query(
+            "INSERT INTO uploaded_files (filename, content_type, data) VALUES ($1, $2, $3) RETURNING id",
+            [filename, contentType, buffer]
+        )
 
-            const blob = await put(filename, buffer, {
-                access: "public",
-                contentType: file.type || "application/octet-stream",
-            })
-
-            return NextResponse.json({
-                success: true,
-                url: blob.url,
-                name: file.name,
-            })
+        const fileId = result.rows[0]?.id
+        if (!fileId) {
+            return NextResponse.json({ error: "Failed to save file" }, { status: 500 })
         }
-
-        const uploadDir = path.join(process.cwd(), "public", "uploads")
-
-        // Ensure directory exists
-        try {
-            await mkdir(uploadDir, { recursive: true })
-        } catch (err) {
-            if (err.code !== "EEXIST") throw err
-        }
-
-        const filePath = path.join(uploadDir, filename)
-        await writeFile(filePath, buffer)
 
         return NextResponse.json({
             success: true,
-            url: `/uploads/${filename}`,
-            name: file.name,
+            url: `/api/files/${fileId}`,
+            name: filename,
         })
     } catch (err) {
         console.error("[admin/upload POST]", err)

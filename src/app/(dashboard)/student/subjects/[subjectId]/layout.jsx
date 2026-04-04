@@ -11,13 +11,17 @@ function normalizeLessonType(rawType, hasPdf = false) {
     return "module"
 }
 
+function shouldShowLessonInTab(lesson, tab = "modules") {
+    const lessonType = normalizeLessonType(lesson.lesson_type, lesson.has_pdf)
+    if (tab === "files") return lessonType === "pdf"
+    // Modules tab should show everything created by admin (module + pdf).
+    return true
+}
+
 function pickFirstLesson(modules, tab = "modules") {
-    const wantsPdf = tab === "files"
     for (const mod of modules || []) {
         for (const lesson of mod.lessons || []) {
-            const lessonType = normalizeLessonType(lesson.lesson_type, lesson.has_pdf)
-            if (wantsPdf && lessonType === "pdf") return lesson
-            if (!wantsPdf && lessonType !== "pdf") return lesson
+            if (shouldShowLessonInTab(lesson, tab)) return lesson
         }
     }
 
@@ -42,14 +46,6 @@ export default function StudentSubjectLayout({ children }) {
     useEffect(() => {
         fetchModules()
     }, [subjectId])
-
-    useEffect(() => {
-        const lessonType = normalizeLessonType(searchParams.get("type"))
-        const nextTab = lessonType === "pdf" ? "files" : "modules"
-        if (nextTab !== activeTab) {
-            setActiveTab(nextTab)
-        }
-    }, [searchParams, activeTab])
 
     useEffect(() => {
         if (loading) return
@@ -82,10 +78,7 @@ export default function StudentSubjectLayout({ children }) {
 
         if (!selectedLesson) return
 
-        const selectedType = normalizeLessonType(selectedLesson.lesson_type, selectedLesson.has_pdf)
-        const tabType = activeTab === "files" ? "pdf" : "module"
-
-        if (selectedType !== tabType) {
+        if (!shouldShowLessonInTab(selectedLesson, activeTab)) {
             const nextLesson = pickFirstLesson(modules, activeTab)
             if (!nextLesson) return
             const nextType = normalizeLessonType(nextLesson.lesson_type, nextLesson.has_pdf)
@@ -216,10 +209,7 @@ export default function StudentSubjectLayout({ children }) {
                                 {/* Lessons Inner List */}
                                 <div className="space-y-4 pl-2 pt-2">
                                     {(module.lessons || [])
-                                        .filter((lesson) => {
-                                            const lessonType = normalizeLessonType(lesson.lesson_type, lesson.has_pdf)
-                                            return activeTab === "files" ? lessonType === "pdf" : lessonType !== "pdf"
-                                        })
+                                        .filter((lesson) => shouldShowLessonInTab(lesson, activeTab))
                                         .map((lesson) => {
                                             const isActive = searchParams.get("lessonId") === lesson.id.toString()
 
@@ -286,16 +276,12 @@ export default function StudentSubjectLayout({ children }) {
                     })}
 
                     {modules.length > 0 && !modules.some((m) =>
-                        (m.lessons || []).some((lesson) =>
-                            activeTab === "files"
-                                ? normalizeLessonType(lesson.lesson_type, lesson.has_pdf) === "pdf"
-                                : normalizeLessonType(lesson.lesson_type, lesson.has_pdf) !== "pdf"
-                        )
+                        (m.lessons || []).some((lesson) => shouldShowLessonInTab(lesson, activeTab))
                     ) && (
                             <div className="rounded-lg border border-dashed border-gray-200 p-4 text-xs text-gray-500">
                                 {activeTab === "files"
                                     ? "No PDF lessons available yet."
-                                    : "No module lessons available yet."}
+                                    : "No lessons available yet."}
                             </div>
                         )}
                 </div>

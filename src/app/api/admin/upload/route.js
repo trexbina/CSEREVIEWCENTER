@@ -2,6 +2,9 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth-session"
 import { writeFile, mkdir } from "fs/promises"
 import path from "path"
+import { put } from "@vercel/blob"
+
+export const runtime = "nodejs"
 
 async function adminGuard() {
     const session = await getSession()
@@ -23,23 +26,41 @@ export async function POST(request) {
 
         const buffer = Buffer.from(await file.arrayBuffer())
         // Replace spaces to prevent URL issues
-        const filename = Date.now() + "_" + file.name.replace(/\s+/g, '_')
+        const filename = Date.now() + "_" + file.name.replace(/\s+/g, "_")
+
+        if (process.env.VERCEL || process.env.BLOB_READ_WRITE_TOKEN) {
+            if (!process.env.BLOB_READ_WRITE_TOKEN) {
+                return NextResponse.json({ error: "Missing BLOB_READ_WRITE_TOKEN" }, { status: 500 })
+            }
+
+            const blob = await put(filename, buffer, {
+                access: "public",
+                contentType: file.type || "application/octet-stream",
+            })
+
+            return NextResponse.json({
+                success: true,
+                url: blob.url,
+                name: file.name,
+            })
+        }
+
         const uploadDir = path.join(process.cwd(), "public", "uploads")
 
         // Ensure directory exists
         try {
             await mkdir(uploadDir, { recursive: true })
         } catch (err) {
-            if (err.code !== 'EEXIST') throw err
+            if (err.code !== "EEXIST") throw err
         }
 
         const filePath = path.join(uploadDir, filename)
         await writeFile(filePath, buffer)
 
-        return NextResponse.json({ 
-            success: true, 
+        return NextResponse.json({
+            success: true,
             url: `/uploads/${filename}`,
-            name: file.name
+            name: file.name,
         })
     } catch (err) {
         console.error("[admin/upload POST]", err)

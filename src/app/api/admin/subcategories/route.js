@@ -1,11 +1,68 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { mkdir, writeFile } from "fs/promises"
+import path from "path"
 
 async function adminGuard() {
     const session = await getSession()
     if (session?.role !== "admin") return null
     return session
+}
+
+async function ensureSubcategorySchema() {
+    await pool.query(`
+        ALTER TABLE subcategories
+        ADD COLUMN IF NOT EXISTS image_url TEXT
+    `)
+}
+
+async function saveImage(file) {
+    if (!file || typeof file === "string") return null
+
+    try {
+        const bytes = await file.arrayBuffer()
+        const buffer = Buffer.from(bytes)
+
+        const uploadDir = path.join(process.cwd(), "public", "uploads", "subcategories")
+        await mkdir(uploadDir, { recursive: true })
+
+        const safeName = String(file.name || "subcategory-image").replace(/[^a-zA-Z0-9._-]/g, "")
+        const filename = `${Date.now()}-${safeName}`
+        const filepath = path.join(uploadDir, filename)
+
+        await writeFile(filepath, buffer)
+        return `/uploads/subcategories/${filename}`
+    } catch (err) {
+        console.error("[admin/subcategories saveImage]", err)
+        return null
+    }
+}
+
+async function readPayload(request) {
+    const contentType = request.headers.get("content-type") || ""
+
+    if (contentType.includes("multipart/form-data")) {
+        const formData = await request.formData()
+        return {
+            name: formData.get("name"),
+            description: formData.get("description"),
+            status: formData.get("status"),
+            category_id: formData.get("category_id"),
+            imageFile: formData.get("image"),
+            image_url: formData.get("image_url"),
+        }
+    }
+
+    const body = await request.json()
+    return {
+        name: body.name,
+        description: body.description,
+        status: body.status,
+        category_id: body.category_id,
+        imageFile: null,
+        image_url: body.image_url,
+    }
 }
 
 // ── GET /api/admin/subcategories?category_id=… ───────────
@@ -15,6 +72,8 @@ export async function GET(request) {
         if (!session) {
             return NextResponse.json({ error: "Forbidden." }, { status: 403 })
         }
+
+        await ensureSubcategorySchema()
 
         const { searchParams } = new URL(request.url)
         const categoryId = searchParams.get("category_id")
@@ -45,7 +104,9 @@ export async function POST(request) {
             return NextResponse.json({ error: "Forbidden." }, { status: 403 })
         }
 
-        const { name, description, status, category_id } = await request.json()
+        await ensureSubcategorySchema()
+
+        const { name, description, status, category_id, imageFile } = await readPayload(request)
 
         if (!name?.trim() || !category_id) {
             return NextResponse.json(
@@ -66,15 +127,21 @@ export async function POST(request) {
             )
         }
 
+        let image_url = null
+        if (imageFile && imageFile instanceof File && imageFile.name) {
+            image_url = await saveImage(imageFile)
+        }
+
         const { rows } = await pool.query(
-            `INSERT INTO subcategories (name, description, status, category_id)
-             VALUES ($1, $2, $3, $4)
+            `INSERT INTO subcategories (name, description, status, category_id, image_url)
+             VALUES ($1, $2, $3, $4, $5)
              RETURNING *`,
             [
                 name.trim(),
                 description?.trim() || null,
                 status === "inactive" ? "inactive" : "active",
-                category_id
+                category_id,
+                image_url,
             ]
         )
 
@@ -123,13 +190,15 @@ export async function PUT(request) {
             return NextResponse.json({ error: "Forbidden." }, { status: 403 })
         }
 
+        await ensureSubcategorySchema()
+
         const { searchParams } = new URL(request.url)
         const id = searchParams.get("id")
         if (!id) {
             return NextResponse.json({ error: "Subcategory id is required." }, { status: 400 })
         }
 
-        const { name, description, status } = await request.json()
+        const { name, description, status, imageFile, image_url: existingImageUrl } = await readPayload(request)
 
         if (!name?.trim()) {
             return NextResponse.json(
@@ -146,6 +215,9 @@ export async function PUT(request) {
         }
         const category_id = current.rows[0].category_id
 
+        const currentImage = await pool.query("SELECT image_url FROM subcategories WHERE id = $1", [id])
+        const currentImageUrl = currentImage.rows[0]?.image_url || null
+
         const existing = await pool.query(
             "SELECT id FROM subcategories WHERE LOWER(name) = LOWER($1) AND category_id = $2 AND id != $3",
             [name.trim(), category_id, id]
@@ -157,12 +229,19 @@ export async function PUT(request) {
             )
         }
 
+        let finalImageUrl = existingImageUrl || currentImageUrl
+        if (imageFile && imageFile instanceof File && imageFile.name) {
+            const uploadedPath = await saveImage(imageFile)
+            if (uploadedPath) finalImageUrl = uploadedPath
+        }
+
         const { rows } = await pool.query(
-            `UPDATE subcategories SET name = $1, description = $2, status = $3, updated_at = NOW() WHERE id = $4 RETURNING *`,
+            `UPDATE subcategories SET name = $1, description = $2, status = $3, image_url = $4, updated_at = NOW() WHERE id = $5 RETURNING *`,
             [
                 name.trim(),
                 description?.trim() || null,
                 status === "inactive" ? "inactive" : "active",
+                finalImageUrl,
                 id
             ]
         )

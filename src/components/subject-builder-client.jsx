@@ -33,6 +33,15 @@ const CustomPdfViewer = dynamic(() => import("@/components/custom-pdf-viewer"), 
     )
 })
 
+const QuizBuilder = dynamic(() => import("@/components/quiz-builder"), {
+    ssr: false,
+    loading: () => (
+        <div className="absolute inset-0 flex items-center justify-center bg-white text-gray-500 text-sm font-medium">
+            Loading Quiz Builder...
+        </div>
+    )
+})
+
 const BLOCK_CATEGORIES = [
     {
         id: "text",
@@ -92,6 +101,7 @@ const BLOCK_CATEGORIES = [
 
 function normalizeLessonType(rawType, hasPdfFiles = false) {
     const value = String(rawType || "").trim().toLowerCase()
+    if (value === "quiz") return "quiz"
     if (value === "pdf" || value === "file" || value === "files") return "pdf"
     if (value === "module") return "module"
     return hasPdfFiles ? "pdf" : "module"
@@ -902,6 +912,15 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                                         )}
                                     </div>
                                 </div>
+                            )}
+
+                            {/* ── QUIZ BUILDER CANVAS ── */}
+                            {resolvedLessonType === "quiz" && (
+                                <QuizBuilder 
+                                    lessonId={lessonId} 
+                                    subjectId={subject.id} 
+                                    isStudent={viewMode === "student"} 
+                                />
                             )}
                         </div>
                     )

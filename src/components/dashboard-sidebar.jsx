@@ -145,7 +145,7 @@ export function DashboardSidebar({ role }) {
                     {!collapsed && (
                         <div className="flex flex-col">
                             <span className="text-[8px] font-bold text-sidebar-foreground/50 tracking-widest leading-none mb-1">
-                                EXCELLENCE REVIEW CENTER, INC.
+                                Training Academy & Review Center
                             </span>
                             <span className="text-[17px] font-black tracking-tight text-sidebar-foreground leading-none">
                                 PEAK EXCELLENCE

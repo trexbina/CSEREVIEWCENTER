@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import {
@@ -28,6 +28,7 @@ export default function AddUserPage() {
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [role, setRole] = useState("student")
+    const [jobRoleDescription, setJobRoleDescription] = useState("")
 
     // ── Personal Information ──
     const [firstName, setFirstName] = useState("")
@@ -43,10 +44,26 @@ export default function AddUserPage() {
     const [zipCode, setZipCode] = useState("")
 
     // ── Education Background ──
-    const [school, setSchool] = useState("")
-    const [course, setCourse] = useState("")
+    const [schoolId, setSchoolId] = useState("")
+    const [academicCourseId, setAcademicCourseId] = useState("")
     const [yearGraduated, setYearGraduated] = useState("")
     const [highestEducation, setHighestEducation] = useState("")
+
+    // ── Master Data ──
+    const [examId, setExamId] = useState("")
+    const [batchId, setBatchId] = useState("")
+    const [programId, setProgramId] = useState("")
+    const [majorId, setMajorId] = useState("")
+    const [dropdownData, setDropdownData] = useState({ examinations: [], batches: [], programs: [], majors: [], schools: [], academic_courses: [] })
+
+    useEffect(() => {
+        fetch("/api/admin/master-data/dropdowns")
+            .then(res => res.json())
+            .then(data => {
+                if (data.examinations) setDropdownData(data)
+            })
+            .catch(console.error)
+    }, [])
 
     async function handleSubmit(e) {
         e.preventDefault()
@@ -54,6 +71,14 @@ export default function AddUserPage() {
 
         if (password !== confirmPassword) {
             setError("Passwords do not match.")
+            return
+        }
+        if (role !== "admin" && (!examId || !batchId)) {
+            setError("Target Examination and Batch are required.")
+            return
+        }
+        if (role === "admin" && !jobRoleDescription) {
+            setError("Job Role Description is required for admins.")
             return
         }
 
@@ -84,10 +109,15 @@ export default function AddUserPage() {
                     city: city || null,
                     province: province || null,
                     zip_code: zipCode || null,
-                    school: school || null,
-                    course: course || null,
+                    school_id: schoolId ? parseInt(schoolId) : null,
+                    academic_course_id: academicCourseId ? parseInt(academicCourseId) : null,
                     year_graduated: yearGraduated || null,
                     highest_education: highestEducation || null,
+                    exam_id: examId ? parseInt(examId) : null,
+                    batch_id: role !== "admin" && batchId ? parseInt(batchId) : null,
+                    program_id: role !== "admin" && programId ? parseInt(programId) : null,
+                    major_id: role !== "admin" && majorId ? parseInt(majorId) : null,
+                    job_role_description: role === "admin" ? jobRoleDescription : null,
                 }),
             })
 
@@ -229,12 +259,30 @@ export default function AddUserPage() {
                             </Select>
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="school">School / University</Label>
-                            <Input id="school" value={school} onChange={(e) => setSchool(e.target.value)} placeholder="University of the Philippines" />
+                            <Label>School / University</Label>
+                            <Select value={schoolId} onValueChange={setSchoolId}>
+                                <SelectTrigger className="w-full"><SelectValue placeholder="Select School" /></SelectTrigger>
+                                <SelectContent>
+                                    {dropdownData.schools.map(s => (
+                                        <SelectItem key={s.id} value={s.id.toString()}>
+                                          {s.name} {s.address ? `— ${s.address}` : ""}
+                                        </SelectItem>
+                                    ))}
+                                    {dropdownData.schools.length === 0 && <SelectItem value="none" disabled>No schools available</SelectItem>}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="course">Course / Program</Label>
-                            <Input id="course" value={course} onChange={(e) => setCourse(e.target.value)} placeholder="BS Computer Science" />
+                            <Label>Course / Program</Label>
+                            <Select value={academicCourseId} onValueChange={setAcademicCourseId}>
+                                <SelectTrigger className="w-full"><SelectValue placeholder="Select Course" /></SelectTrigger>
+                                <SelectContent>
+                                    {dropdownData.academic_courses.map(c => (
+                                        <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                                    ))}
+                                    {dropdownData.academic_courses.length === 0 && <SelectItem value="none" disabled>No courses available</SelectItem>}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="year-grad">Year Graduated</Label>
@@ -264,8 +312,18 @@ export default function AddUserPage() {
                             <Input id="confirm-password" type="password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" />
                         </div>
                         <div className="space-y-1.5">
-                            <Label>Role *</Label>
-                            <Select value={role} onValueChange={setRole}>
+                            <Label>User Type *</Label>
+                            <Select value={role} onValueChange={(val) => {
+                                setRole(val);
+                                if (val === "admin") {
+                                    setExamId("");
+                                    setProgramId("");
+                                    setMajorId("");
+                                    setBatchId("");
+                                } else {
+                                    setJobRoleDescription("");
+                                }
+                            }}>
                                 <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="student">Student</SelectItem>
@@ -274,6 +332,74 @@ export default function AddUserPage() {
                                 </SelectContent>
                             </Select>
                         </div>
+                        
+                        {role === "admin" && (
+                            <div className="space-y-1.5">
+                                <Label htmlFor="job-role">Job Role Description *</Label>
+                                <Input id="job-role" value={jobRoleDescription} onChange={(e) => setJobRoleDescription(e.target.value)} placeholder="e.g. System Administrator, Content Manager" required />
+                            </div>
+                        )}
+
+                        {role !== "admin" && (
+                            <>
+                                <div className="space-y-1.5">
+                                    <Label>Target Examination *</Label>
+                                    <Select value={examId} onValueChange={(val) => { setExamId(val); setProgramId(""); setMajorId(""); }}>
+                                        <SelectTrigger className="w-full"><SelectValue placeholder="Select Exam" /></SelectTrigger>
+                                        <SelectContent>
+                                            {dropdownData.examinations.map(e => (
+                                                <SelectItem key={e.id} value={e.id.toString()}>{e.name}</SelectItem>
+                                            ))}
+                                            {dropdownData.examinations.length === 0 && <SelectItem value="none" disabled>No exams available</SelectItem>}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {examId && dropdownData.programs?.some(p => p.exam_id.toString() === examId) && (
+                                    <div className="space-y-1.5">
+                                        <Label>Course / Program</Label>
+                                        <Select value={programId} onValueChange={(val) => { setProgramId(val); setMajorId(""); }}>
+                                            <SelectTrigger className="w-full"><SelectValue placeholder="Select Program" /></SelectTrigger>
+                                            <SelectContent>
+                                                {dropdownData.programs
+                                                    .filter(p => p.exam_id.toString() === examId)
+                                                    .map(p => (
+                                                    <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+                                {programId && dropdownData.majors?.some(m => m.program_id.toString() === programId) && (
+                                    <div className="space-y-1.5">
+                                        <Label>Specialization / Major</Label>
+                                        <Select value={majorId} onValueChange={setMajorId}>
+                                            <SelectTrigger className="w-full"><SelectValue placeholder="Select Major" /></SelectTrigger>
+                                            <SelectContent>
+                                                {dropdownData.majors
+                                                    .filter(m => m.program_id.toString() === programId)
+                                                    .map(m => (
+                                                    <SelectItem key={m.id} value={m.id.toString()}>{m.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+                                <div className="space-y-1.5">
+                                    <Label>Batch *</Label>
+                                    <Select value={batchId} onValueChange={setBatchId}>
+                                        <SelectTrigger className="w-full"><SelectValue placeholder="Select Batch" /></SelectTrigger>
+                                        <SelectContent>
+                                            {dropdownData.batches
+                                                .filter(b => !examId || b.exam_id.toString() === examId)
+                                                .map(b => (
+                                                <SelectItem key={b.id} value={b.id.toString()}>{b.name} ({b.target_year})</SelectItem>
+                                            ))}
+                                            {dropdownData.batches.length === 0 && <SelectItem value="none" disabled>No batches available</SelectItem>}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </section>
 

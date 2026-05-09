@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS subcategories (
   category_id INT          NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
   name        VARCHAR(255) NOT NULL,
   description TEXT,
+  image_url   TEXT,
   status      VARCHAR(20)  NOT NULL DEFAULT 'active'
                 CHECK (status IN ('active', 'inactive')),
   created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -175,3 +176,43 @@ INSERT INTO submissions (assignment_id, student_id, content, status, grade, feed
   (3, 3, 'Essay about social justice...',    'reviewed', 'B+', 'Strong thesis, work on transitions.', NOW()),
   (1, 4, 'Bob''s math quiz answers.',       'pending',  NULL, NULL, NULL),
   (3, 4, 'Bob''s essay on the novel...',     'reviewed', 'A',  'Excellent analysis.', NOW());
+
+-- ═══════════════════════════════════════════════════════════
+-- 8. MASTER DATA TREES & BATCHES
+-- ═══════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS examinations (
+  id          SERIAL PRIMARY KEY,
+  name        VARCHAR(255) NOT NULL UNIQUE,
+  created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS programs (
+  id          SERIAL PRIMARY KEY,
+  exam_id     INT          NOT NULL REFERENCES examinations(id) ON DELETE CASCADE,
+  name        VARCHAR(255) NOT NULL,
+  created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS majors (
+  id          SERIAL PRIMARY KEY,
+  program_id  INT          NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
+  name        VARCHAR(255) NOT NULL,
+  created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS batches (
+  id          SERIAL PRIMARY KEY,
+  name        VARCHAR(255) NOT NULL,
+  exam_id     INT          NOT NULL REFERENCES examinations(id) ON DELETE CASCADE,
+  target_year INT          NOT NULL,
+  status      VARCHAR(50)  NOT NULL DEFAULT 'upcoming'
+                CHECK (status IN ('active', 'upcoming', 'completed')),
+  created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_programs_exam ON programs (exam_id);
+CREATE INDEX IF NOT EXISTS idx_majors_program ON majors (program_id);
+CREATE INDEX IF NOT EXISTS idx_batches_exam ON batches (exam_id);
+

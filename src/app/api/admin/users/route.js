@@ -55,9 +55,11 @@ export async function POST(request) {
         name, email, password, role,
         first_name, middle_name, last_name, suffix,
         birthday, gender, phone, address, city, province, zip_code,
-        school, course, year_graduated, highest_education
+        school, course, year_graduated, highest_education,
+        exam_id, batch_id, program_id, major_id, job_role_description,
+        school_id, academic_course_id
       )
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)
        ON CONFLICT (email) DO NOTHING
        RETURNING id, name, email, role, created_at`,
       [
@@ -80,6 +82,13 @@ export async function POST(request) {
         body.course?.trim() || null,
         body.year_graduated?.toString().trim() || null,
         body.highest_education || null,
+        body.exam_id || null,
+        body.batch_id || null,
+        body.program_id || null,
+        body.major_id || null,
+        body.job_role_description?.trim() || null,
+        body.school_id || null,
+        body.academic_course_id || null,
       ]
     )
 

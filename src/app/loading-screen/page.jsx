@@ -102,13 +102,13 @@ function LoadingScreenInner() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes loading-bar-slide {
           0% { width: 10%; margin-left: 0; }
           50% { width: 60%; margin-left: 20%; }
           100% { width: 10%; margin-left: 90%; }
         }
-      `}</style>
+      `}} />
     </div>
   )
 }

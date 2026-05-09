@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { Loader2, ChevronLeft, Plus, FileText, LayoutDashboard, Pencil, Trash, PenTool, GripVertical, Menu, X } from "lucide-react"
+import { Loader2, ChevronLeft, Plus, FileText, LayoutDashboard, Pencil, Trash, PenTool, GripVertical, Menu, X, HelpCircle } from "lucide-react"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -478,14 +478,17 @@ export default function SubjectContentLayout({ children }) {
                                                     <button onClick={() => setNewLessonType('module')} className="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100 transition-colors">
                                                         <PenTool className="h-3.5 w-3.5 text-gray-400" /> Module Builder
                                                     </button>
-                                                    <button onClick={() => setNewLessonType('pdf')} className="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                                                    <button onClick={() => setNewLessonType('pdf')} className="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100 transition-colors">
                                                         <FileText className="h-3.5 w-3.5 text-gray-400" /> PDF Builder
+                                                    </button>
+                                                    <button onClick={() => setNewLessonType('quiz')} className="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                                                        <HelpCircle className="h-3.5 w-3.5 text-gray-400" /> Quiz Builder
                                                     </button>
                                                 </div>
                                             ) : (
                                                 <div className="p-3 bg-gray-50 flex flex-col gap-2">
                                                     <div className="flex items-center gap-2 mb-1 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                                                        {newLessonType === 'module' ? <PenTool className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                                                        {newLessonType === 'module' ? <PenTool className="h-3 w-3" /> : (newLessonType === 'pdf' ? <FileText className="h-3 w-3" /> : <HelpCircle className="h-3 w-3" />)}
                                                         New {newLessonType} Lesson
                                                     </div>
                                                     <input

@@ -40,6 +40,8 @@ export default function CurriculumManagerPage() {
         id: null,
         name: "",
         description: "",
+        image_url: "",
+        imageFile: null,
         status: "active"
     })
 
@@ -204,9 +206,16 @@ export default function CurriculumManagerPage() {
     function openSubModal(mode, sub = null) {
         setSubModalMode(mode)
         if (mode === "edit" && sub) {
-            setSubModalData({ id: sub.id, name: sub.name, description: sub.description || "", status: sub.status || "active" })
+            setSubModalData({
+                id: sub.id,
+                name: sub.name,
+                description: sub.description || "",
+                image_url: sub.image_url || "",
+                imageFile: null,
+                status: sub.status || "active",
+            })
         } else {
-            setSubModalData({ id: null, name: "", description: "", status: "active" })
+            setSubModalData({ id: null, name: "", description: "", image_url: "", imageFile: null, status: "active" })
         }
         setIsSubModalOpen(true)
     }
@@ -217,11 +226,20 @@ export default function CurriculumManagerPage() {
         try {
             const method = subModalMode === "add" ? "POST" : "PUT"
             const url = subModalMode === "add" ? "/api/admin/subcategories" : `/api/admin/subcategories?id=${subModalData.id}`
-            const payload = { ...subModalData, ...(subModalMode === "add" && { category_id: selectedCategory.id }) }
+            const formData = new FormData()
+            formData.append("name", subModalData.name.trim())
+            if (subModalData.description) formData.append("description", subModalData.description.trim())
+            formData.append("status", subModalData.status)
+            if (subModalMode === "add") {
+                formData.append("category_id", selectedCategory.id)
+            }
+            if (subModalData.imageFile) {
+                formData.append("image", subModalData.imageFile)
+            } else if (subModalData.image_url) {
+                formData.append("image_url", subModalData.image_url)
+            }
 
-            const res = await fetch(url, {
-                method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
-            })
+            const res = await fetch(url, { method, body: formData })
             if (!res.ok) throw new Error((await res.json()).error || `Failed to ${subModalMode} subcategory`)
             const data = await res.json()
 
@@ -425,8 +443,8 @@ export default function CurriculumManagerPage() {
                                     key={cat.id}
                                     onClick={() => setSelectedCategory(cat)}
                                     className={`group cursor-pointer flex items-center gap-3 rounded-lg px-5 py-2.5 transition-all ${isSelected
-                                            ? "bg-[#f5cdd0] text-[#ba5a62] shadow-sm transform scale-105"
-                                            : "bg-gray-50 text-[#4d4d4d] border border-gray-200 shadow-sm hover:border-gray-300 hover:bg-gray-100"
+                                        ? "bg-[#f5cdd0] text-[#ba5a62] shadow-sm transform scale-105"
+                                        : "bg-gray-50 text-[#4d4d4d] border border-gray-200 shadow-sm hover:border-gray-300 hover:bg-gray-100"
                                         }`}
                                 >
                                     <span className="text-sm font-semibold uppercase tracking-wide">
@@ -498,8 +516,19 @@ export default function CurriculumManagerPage() {
                                 <div
                                     key={sub.id}
                                     onClick={() => setSelectedSubcategory(sub)}
-                                    className={`group cursor-pointer relative flex aspect-[1/1] w-full flex-col p-4 rounded-[1.25rem] bg-gray-50 border shadow-sm transition-all hover:-translate-y-1 hover:shadow-md ${isInactive ? 'border-gray-200' : 'border-gray-200 hover:border-gray-300'}`}
+                                    className={`group cursor-pointer relative flex aspect-[1/1] w-full flex-col overflow-hidden rounded-[1.25rem] bg-gray-50 border shadow-sm transition-all hover:-translate-y-1 hover:shadow-md ${isInactive ? 'border-gray-200' : 'border-gray-200 hover:border-gray-300'}`}
                                 >
+                                    <div className="absolute inset-0">
+                                        {sub.image_url ? (
+                                            <img src={sub.image_url} alt={sub.name} className="absolute inset-0 h-full w-full object-cover" />
+                                        ) : (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#f9ecee] to-[#f7f7f7]">
+                                                <ImageIcon className="h-12 w-12 text-[#ba5a62] opacity-25" />
+                                            </div>
+                                        )}
+                                        <div className={`absolute inset-0 ${isInactive ? 'bg-white/55' : 'bg-gradient-to-t from-black/75 via-black/20 to-transparent'}`} />
+                                    </div>
+
                                     {/* Lock overlay for inactive cards */}
                                     {isInactive && (
                                         <div className="absolute inset-0 rounded-[1.25rem] bg-white/70 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 pointer-events-none">
@@ -514,32 +543,40 @@ export default function CurriculumManagerPage() {
                                         </div>
                                     )}
 
-                                    <div className="flex-1 flex flex-col items-center justify-center gap-3 mt-4">
-                                        <span className={`text-lg font-bold tracking-[0.1em] uppercase text-center line-clamp-2 ${isInactive ? 'text-[#b0b0b0]' : 'text-[#7a7a7a]'}`}>
-                                            {sub.name}
-                                        </span>
-                                        {sub.description && (
-                                            <p className={`text-xs text-center line-clamp-3 ${isInactive ? 'text-[#c0c0c0]' : 'text-[#8c8c8c]'}`}>
-                                                {sub.description}
-                                            </p>
-                                        )}
+                                    <div className="relative z-20 flex h-full flex-col justify-end">
+                                        <div
+                                            className={
+                                                isInactive
+                                                    ? "bg-white/80 p-5 pt-6 backdrop-blur-sm"
+                                                    : "bg-[#763636]/80 p-5 pt-6 backdrop-blur-sm"
+                                            }
+                                        >
+                                            <span className={`block text-xl font-extrabold tracking-[0.1em] uppercase line-clamp-2 pr-12 ${isInactive ? 'text-[#7a7a7a]' : 'text-white'}`}>
+                                                {sub.name}
+                                            </span>
+                                            {sub.description && (
+                                                <p className={`mt-1.5 text-sm leading-relaxed line-clamp-3 pr-12 ${isInactive ? 'text-[#8c8c8c]' : 'text-white/95'}`}>
+                                                    {sub.description}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Edit & Delete Actions */}
-                                    <div className="h-8 flex items-end justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity w-full pb-2 relative z-20">
+                                    <div className="absolute bottom-5 right-5 z-30 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             onClick={(e) => { e.stopPropagation(); openSubModal("edit", sub) }}
-                                            className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-blue-500 transition-colors"
+                                            className="text-white/80 hover:text-white transition-colors"
                                             title="Edit subcategory"
                                         >
-                                            <Pencil className="h-3.5 w-3.5" />
+                                            <Pencil className="h-5 w-5" />
                                         </button>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleDeleteSubcategory(sub.id) }}
-                                            className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors"
+                                            className="text-white/80 hover:text-red-400 transition-colors"
                                             title="Delete subcategory"
                                         >
-                                            <Trash className="h-3.5 w-3.5" />
+                                            <Trash className="h-5 w-5" />
                                         </button>
                                     </div>
                                 </div>
@@ -591,8 +628,8 @@ export default function CurriculumManagerPage() {
                                     key={sub.id}
                                     onClick={() => setSelectedSubcategory(sub)}
                                     className={`group cursor-pointer flex items-center gap-2 rounded-lg px-4 py-2 transition-all text-[13px] font-bold uppercase tracking-wide ${isSelected
-                                            ? "bg-[#f5cdd0] text-[#ba5a62] shadow-sm transform scale-[1.02]"
-                                            : "bg-gray-50 text-[#4d4d4d] border border-gray-200 shadow-sm hover:border-gray-300 hover:bg-gray-100"
+                                        ? "bg-[#f5cdd0] text-[#ba5a62] shadow-sm transform scale-[1.02]"
+                                        : "bg-gray-50 text-[#4d4d4d] border border-gray-200 shadow-sm hover:border-gray-300 hover:bg-gray-100"
                                         }`}
                                 >
                                     <span>{sub.name}</span>
@@ -698,25 +735,60 @@ export default function CurriculumManagerPage() {
             {/* ════════════════════ SUBCATEGORY MODAL ════════════════════ */}
             {isSubModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-                    <div className="w-full max-w-[600px] bg-[#fafafa] rounded-xl shadow-xl border border-gray-200 p-8 animate-in zoom-in duration-200">
+                    <div className="w-full max-w-[760px] bg-[#fafafa] rounded-xl shadow-xl border border-gray-200 p-8 animate-in zoom-in duration-200">
                         {/* modal content same as before ... */}
                         <div className="mb-8">
                             <h2 className="text-2xl font-extrabold tracking-wide text-[#7a7a7a] uppercase mb-2">
                                 {subModalMode === "add" ? "ADD SUB-CATEGORY" : "EDIT SUB-CATEGORY"}
                             </h2>
                             <p className="text-[15px] font-medium text-[#8c8c8c]">
-                                Add sub-category name, description, and toggle button for status (activate/inactivate)
+                                Add sub-category name, image, description, and toggle button for status (activate/inactivate)
                             </p>
                         </div>
                         <div className="w-full h-px bg-gray-200 mb-8" />
                         <div className="space-y-6">
-                            <div>
-                                <label className="block text-[#7a7a7a] text-lg font-semibold mb-2">Name:</label>
-                                <input type="text" value={subModalData.name} onChange={e => setSubModalData({ ...subModalData, name: e.target.value })} className="w-full h-12 rounded-xl border border-gray-200 bg-[#fefefe] px-4 focus:outline-none focus:ring-1 focus:ring-[#f5cdd0] focus:border-[#f5cdd0]" />
-                            </div>
-                            <div>
-                                <label className="block text-[#7a7a7a] text-lg font-semibold mb-2">Description:</label>
-                                <textarea value={subModalData.description} onChange={e => setSubModalData({ ...subModalData, description: e.target.value })} rows={3} className="w-full rounded-xl border border-gray-200 bg-[#fefefe] px-4 py-3 resize-none focus:outline-none focus:ring-1 focus:ring-[#f5cdd0] focus:border-[#f5cdd0]" />
+                            <div className="flex gap-6 items-stretch">
+                                <div className="shrink-0 flex flex-col items-center gap-2">
+                                    <label className="text-[#7a7a7a] text-sm font-semibold self-start">Subcategory Image:</label>
+                                    <div className="relative h-36 w-36 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center overflow-hidden hover:bg-gray-100 transition-colors group">
+                                        {subModalData.imageFile ? (
+                                            <img src={URL.createObjectURL(subModalData.imageFile)} alt="Preview" className="absolute inset-0 h-full w-full object-cover z-10" />
+                                        ) : subModalData.image_url ? (
+                                            <img src={subModalData.image_url} alt="Preview" className="absolute inset-0 h-full w-full object-cover z-10" />
+                                        ) : (
+                                            <div className="text-center p-2">
+                                                <ImageIcon className="h-8 w-8 text-gray-400 mx-auto mb-2 opacity-50" />
+                                                <span className="text-[11px] text-gray-500 font-bold uppercase tracking-wide">Upload Image</span>
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                            <span className="text-white text-xs font-bold uppercase tracking-wider">Change</span>
+                                        </div>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                if (e.target.files && e.target.files[0]) {
+                                                    setSubModalData({ ...subModalData, imageFile: e.target.files[0] })
+                                                }
+                                            }}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
+                                            title="Choose an image"
+                                        />
+                                    </div>
+                                    <p className="text-[11px] font-medium text-gray-400 text-center uppercase tracking-wide">Square Ratio (1:1)</p>
+                                </div>
+
+                                <div className="flex-1 space-y-4">
+                                    <div>
+                                        <label className="block text-[#7a7a7a] text-lg font-semibold mb-2">Name:</label>
+                                        <input type="text" value={subModalData.name} onChange={e => setSubModalData({ ...subModalData, name: e.target.value })} className="w-full h-12 rounded-xl border border-gray-200 bg-[#fefefe] px-4 focus:outline-none focus:ring-1 focus:ring-[#f5cdd0] focus:border-[#f5cdd0]" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[#7a7a7a] text-lg font-semibold mb-2">Description:</label>
+                                        <textarea value={subModalData.description} onChange={e => setSubModalData({ ...subModalData, description: e.target.value })} rows={4} className="w-full rounded-xl border border-gray-200 bg-[#fefefe] px-4 py-3 resize-none focus:outline-none focus:ring-1 focus:ring-[#f5cdd0] focus:border-[#f5cdd0]" />
+                                    </div>
+                                </div>
                             </div>
                             <div className="flex items-center justify-between pt-4">
                                 <div className="flex items-center gap-4">

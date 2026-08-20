@@ -1,0 +1,422 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/peakassestsimage/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ],
+      "regex": "^/peakassestsimage(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    }
+  ],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/admin/curriculum/[subjectId]/content",
+      "regex": "^/admin/curriculum/([^/]+?)/content(?:/)?$",
+      "routeKeys": {
+        "nxtPsubjectId": "nxtPsubjectId"
+      },
+      "namedRegex": "^/admin/curriculum/(?<nxtPsubjectId>[^/]+?)/content(?:/)?$"
+    },
+    {
+      "page": "/admin/mock-exams/[examId]",
+      "regex": "^/admin/mock\\-exams/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPexamId": "nxtPexamId"
+      },
+      "namedRegex": "^/admin/mock\\-exams/(?<nxtPexamId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/admin/users/[id]",
+      "regex": "^/admin/users/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/users/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/admin/gradebook/[id]",
+      "regex": "^/api/admin/gradebook/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/admin/gradebook/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/admin/mock-exams/[examId]",
+      "regex": "^/api/admin/mock\\-exams/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPexamId": "nxtPexamId"
+      },
+      "namedRegex": "^/api/admin/mock\\-exams/(?<nxtPexamId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/admin/subjects/[subjectId]/lessons/[lessonId]",
+      "regex": "^/api/admin/subjects/([^/]+?)/lessons/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPsubjectId": "nxtPsubjectId",
+        "nxtPlessonId": "nxtPlessonId"
+      },
+      "namedRegex": "^/api/admin/subjects/(?<nxtPsubjectId>[^/]+?)/lessons/(?<nxtPlessonId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/admin/subjects/[subjectId]/modules",
+      "regex": "^/api/admin/subjects/([^/]+?)/modules(?:/)?$",
+      "routeKeys": {
+        "nxtPsubjectId": "nxtPsubjectId"
+      },
+      "namedRegex": "^/api/admin/subjects/(?<nxtPsubjectId>[^/]+?)/modules(?:/)?$"
+    },
+    {
+      "page": "/api/files/[fileId]",
+      "regex": "^/api/files/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPfileId": "nxtPfileId"
+      },
+      "namedRegex": "^/api/files/(?<nxtPfileId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/student/subjects/[subjectId]/lessons/[lessonId]",
+      "regex": "^/api/student/subjects/([^/]+?)/lessons/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPsubjectId": "nxtPsubjectId",
+        "nxtPlessonId": "nxtPlessonId"
+      },
+      "namedRegex": "^/api/student/subjects/(?<nxtPsubjectId>[^/]+?)/lessons/(?<nxtPlessonId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/student/subjects/[subjectId]/modules",
+      "regex": "^/api/student/subjects/([^/]+?)/modules(?:/)?$",
+      "routeKeys": {
+        "nxtPsubjectId": "nxtPsubjectId"
+      },
+      "namedRegex": "^/api/student/subjects/(?<nxtPsubjectId>[^/]+?)/modules(?:/)?$"
+    },
+    {
+      "page": "/student/subjects/[subjectId]",
+      "regex": "^/student/subjects/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPsubjectId": "nxtPsubjectId"
+      },
+      "namedRegex": "^/student/subjects/(?<nxtPsubjectId>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/admin",
+      "regex": "^/admin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin(?:/)?$"
+    },
+    {
+      "page": "/admin/curriculum",
+      "regex": "^/admin/curriculum(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/curriculum(?:/)?$"
+    },
+    {
+      "page": "/admin/master-data",
+      "regex": "^/admin/master\\-data(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/master\\-data(?:/)?$"
+    },
+    {
+      "page": "/admin/mock-exams",
+      "regex": "^/admin/mock\\-exams(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/mock\\-exams(?:/)?$"
+    },
+    {
+      "page": "/admin/notifications",
+      "regex": "^/admin/notifications(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/notifications(?:/)?$"
+    },
+    {
+      "page": "/admin/security",
+      "regex": "^/admin/security(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/security(?:/)?$"
+    },
+    {
+      "page": "/admin/settings",
+      "regex": "^/admin/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/settings(?:/)?$"
+    },
+    {
+      "page": "/admin/users",
+      "regex": "^/admin/users(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/users(?:/)?$"
+    },
+    {
+      "page": "/admin/users/add",
+      "regex": "^/admin/users/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/users/add(?:/)?$"
+    },
+    {
+      "page": "/admin/users/all",
+      "regex": "^/admin/users/all(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/users/all(?:/)?$"
+    },
+    {
+      "page": "/api/admin/categories",
+      "regex": "^/api/admin/categories(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/categories(?:/)?$"
+    },
+    {
+      "page": "/api/admin/master-data",
+      "regex": "^/api/admin/master\\-data(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/master\\-data(?:/)?$"
+    },
+    {
+      "page": "/api/admin/master-data/dropdowns",
+      "regex": "^/api/admin/master\\-data/dropdowns(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/master\\-data/dropdowns(?:/)?$"
+    },
+    {
+      "page": "/api/admin/mock-exams",
+      "regex": "^/api/admin/mock\\-exams(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/mock\\-exams(?:/)?$"
+    },
+    {
+      "page": "/api/admin/student-subjects",
+      "regex": "^/api/admin/student\\-subjects(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/student\\-subjects(?:/)?$"
+    },
+    {
+      "page": "/api/admin/subcategories",
+      "regex": "^/api/admin/subcategories(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/subcategories(?:/)?$"
+    },
+    {
+      "page": "/api/admin/subjects",
+      "regex": "^/api/admin/subjects(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/subjects(?:/)?$"
+    },
+    {
+      "page": "/api/admin/subjects/content",
+      "regex": "^/api/admin/subjects/content(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/subjects/content(?:/)?$"
+    },
+    {
+      "page": "/api/admin/upload",
+      "regex": "^/api/admin/upload(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/upload(?:/)?$"
+    },
+    {
+      "page": "/api/admin/users",
+      "regex": "^/api/admin/users(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/users(?:/)?$"
+    },
+    {
+      "page": "/api/admin/users/profile-update",
+      "regex": "^/api/admin/users/profile\\-update(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/admin/users/profile\\-update(?:/)?$"
+    },
+    {
+      "page": "/api/auth/login",
+      "regex": "^/api/auth/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/login(?:/)?$"
+    },
+    {
+      "page": "/api/auth/logout",
+      "regex": "^/api/auth/logout(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/logout(?:/)?$"
+    },
+    {
+      "page": "/api/auth/me",
+      "regex": "^/api/auth/me(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/me(?:/)?$"
+    },
+    {
+      "page": "/api/student/categories",
+      "regex": "^/api/student/categories(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/student/categories(?:/)?$"
+    },
+    {
+      "page": "/api/student/mock-exams",
+      "regex": "^/api/student/mock\\-exams(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/student/mock\\-exams(?:/)?$"
+    },
+    {
+      "page": "/api/student/subjects",
+      "regex": "^/api/student/subjects(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/student/subjects(?:/)?$"
+    },
+    {
+      "page": "/favicon.ico",
+      "regex": "^/favicon\\.ico(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/loading-screen",
+      "regex": "^/loading\\-screen(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/loading\\-screen(?:/)?$"
+    },
+    {
+      "page": "/student",
+      "regex": "^/student(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/student(?:/)?$"
+    },
+    {
+      "page": "/student/groups",
+      "regex": "^/student/groups(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/student/groups(?:/)?$"
+    },
+    {
+      "page": "/student/mock-exams",
+      "regex": "^/student/mock\\-exams(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/student/mock\\-exams(?:/)?$"
+    },
+    {
+      "page": "/student/notifications",
+      "regex": "^/student/notifications(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/student/notifications(?:/)?$"
+    },
+    {
+      "page": "/student/profile",
+      "regex": "^/student/profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/student/profile(?:/)?$"
+    },
+    {
+      "page": "/student/progress",
+      "regex": "^/student/progress(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/student/progress(?:/)?$"
+    },
+    {
+      "page": "/student/settings",
+      "regex": "^/student/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/student/settings(?:/)?$"
+    },
+    {
+      "page": "/student/subjects",
+      "regex": "^/student/subjects(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/student/subjects(?:/)?$"
+    },
+    {
+      "page": "/teacher",
+      "regex": "^/teacher(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/teacher(?:/)?$"
+    },
+    {
+      "page": "/teacher/content",
+      "regex": "^/teacher/content(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/teacher/content(?:/)?$"
+    },
+    {
+      "page": "/teacher/exams",
+      "regex": "^/teacher/exams(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/teacher/exams(?:/)?$"
+    },
+    {
+      "page": "/teacher/notifications",
+      "regex": "^/teacher/notifications(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/teacher/notifications(?:/)?$"
+    },
+    {
+      "page": "/teacher/settings",
+      "regex": "^/teacher/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/teacher/settings(?:/)?$"
+    },
+    {
+      "page": "/teacher/students",
+      "regex": "^/teacher/students(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/teacher/students(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

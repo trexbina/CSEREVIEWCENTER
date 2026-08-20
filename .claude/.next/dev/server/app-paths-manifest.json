@@ -1,0 +1,11 @@
+{
+  "/api/admin/mock-exams/route": "app/api/admin/mock-exams/route.js",
+  "/api/admin/master-data/dropdowns/route": "app/api/admin/master-data/dropdowns/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/auth/me/route": "app/api/auth/me/route.js",
+  "/(dashboard)/admin/users/[id]/page": "app/(dashboard)/admin/users/[id]/page.js",
+  "/(dashboard)/admin/master-data/page": "app/(dashboard)/admin/master-data/page.js",
+  "/(dashboard)/admin/curriculum/page": "app/(dashboard)/admin/curriculum/page.js",
+  "/(dashboard)/admin/page": "app/(dashboard)/admin/page.js",
+  "/(dashboard)/admin/mock-exams/page": "app/(dashboard)/admin/mock-exams/page.js"
+}

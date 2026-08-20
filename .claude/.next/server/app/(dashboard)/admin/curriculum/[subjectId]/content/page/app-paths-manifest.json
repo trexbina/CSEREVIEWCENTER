@@ -1,0 +1,3 @@
+{
+  "/(dashboard)/admin/curriculum/[subjectId]/content/page": "app/(dashboard)/admin/curriculum/[subjectId]/content/page.js"
+}

@@ -522,18 +522,18 @@ export default function CurriculumManagerPage() {
                                         {sub.image_url ? (
                                             <img src={sub.image_url} alt={sub.name} className="absolute inset-0 h-full w-full object-cover" />
                                         ) : (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#f9ecee] to-[#f7f7f7]">
-                                                <ImageIcon className="h-12 w-12 text-[#ba5a62] opacity-25" />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                                                <ImageIcon className="h-12 w-12 text-gray-400 opacity-40" />
                                             </div>
                                         )}
-                                        <div className={`absolute inset-0 ${isInactive ? 'bg-white/55' : 'bg-gradient-to-t from-black/75 via-black/20 to-transparent'}`} />
+                                        {isInactive && <div className="absolute inset-0 bg-white/55" />}
                                     </div>
 
                                     {/* Lock overlay for inactive cards */}
                                     {isInactive && (
                                         <div className="absolute inset-0 rounded-[1.25rem] bg-white/70 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 pointer-events-none">
                                             <div className="flex flex-col items-center gap-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-10 w-10 text-[#c0392b]">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-10 w-10 text-gray-600">
                                                     <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clipRule="evenodd" />
                                                 </svg>
                                                 <p className="text-xs text-center font-medium text-[#8c8c8c] px-4 leading-snug">
@@ -543,19 +543,14 @@ export default function CurriculumManagerPage() {
                                         </div>
                                     )}
 
+                                    {/* Translucent White Text Placeholder Banner */}
                                     <div className="relative z-20 flex h-full flex-col justify-end">
-                                        <div
-                                            className={
-                                                isInactive
-                                                    ? "bg-white/80 p-5 pt-6 backdrop-blur-sm"
-                                                    : "bg-[#763636]/80 p-5 pt-6 backdrop-blur-sm"
-                                            }
-                                        >
-                                            <span className={`block text-xl font-extrabold tracking-[0.1em] uppercase line-clamp-2 pr-12 ${isInactive ? 'text-[#7a7a7a]' : 'text-white'}`}>
+                                        <div className="bg-white/85 p-5 pt-6 backdrop-blur-md">
+                                            <span className="block text-xl font-extrabold tracking-[0.1em] text-[#4d4d4d] uppercase line-clamp-2 pr-12">
                                                 {sub.name}
                                             </span>
                                             {sub.description && (
-                                                <p className={`mt-1.5 text-sm leading-relaxed line-clamp-3 pr-12 ${isInactive ? 'text-[#8c8c8c]' : 'text-white/95'}`}>
+                                                <p className="mt-1.5 text-sm leading-relaxed text-[#8c8c8c] line-clamp-3 pr-12">
                                                     {sub.description}
                                                 </p>
                                             )}
@@ -566,20 +561,21 @@ export default function CurriculumManagerPage() {
                                     <div className="absolute bottom-5 right-5 z-30 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             onClick={(e) => { e.stopPropagation(); openSubModal("edit", sub) }}
-                                            className="text-white/80 hover:text-white transition-colors"
+                                            className="text-gray-600 hover:text-blue-600 transition-colors"
                                             title="Edit subcategory"
                                         >
                                             <Pencil className="h-5 w-5" />
                                         </button>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleDeleteSubcategory(sub.id) }}
-                                            className="text-white/80 hover:text-red-400 transition-colors"
+                                            className="text-gray-600 hover:text-red-600 transition-colors"
                                             title="Delete subcategory"
                                         >
                                             <Trash className="h-5 w-5" />
                                         </button>
                                     </div>
                                 </div>
+
                             )
                         })}
 
@@ -666,13 +662,14 @@ export default function CurriculumManagerPage() {
                             currentSubjects.map((subject) => (
                                 <div key={subject.id} className="group relative flex bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:-translate-y-0.5 hover:shadow-sm hover:border-gray-300 transition-all p-4 items-stretch">
                                     {/* Image Area */}
-                                    <div className="h-40 w-40 shrink-0 rounded-2xl overflow-hidden bg-[#fdf2f3] border border-[#f5cdd0]/50 shadow-sm flex items-center justify-center self-center mr-8 relative">
+                                    <div className="h-40 w-40 shrink-0 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm flex items-center justify-center self-center mr-8 relative">
                                         {subject.image_url ? (
                                             <img src={subject.image_url} alt={subject.title} className="absolute inset-0 h-full w-full object-cover rounded-xl" />
                                         ) : (
-                                            <ImageIcon className="h-10 w-10 text-[#ba5a62] opacity-30" />
+                                            <ImageIcon className="h-10 w-10 text-gray-400 opacity-40" />
                                         )}
                                     </div>
+
 
                                     {/* Content Area */}
                                     <div className="flex-1 flex flex-col justify-between py-1">

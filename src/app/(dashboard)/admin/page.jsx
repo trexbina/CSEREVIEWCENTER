@@ -1,5 +1,15 @@
+import dynamic from "next/dynamic"
 import { getSession } from "@/lib/auth-session"
 import pool from "@/lib/db"
+
+const DashboardCarousel = dynamic(
+  () => import("@/components/dashboard-carousel").then((m) => m.DashboardCarousel),
+  {
+    loading: () => (
+      <div className="w-full aspect-[21/7] rounded-xl border border-border bg-muted animate-pulse" />
+    ),
+  }
+)
 
 async function getAdminData() {
   const [usersResult, assignmentsResult, submissionsResult] =
@@ -40,6 +50,7 @@ export default async function AdminDashboard() {
   const session = await getSession()
 
   let data = {
+
     totalUsers: 0,
     usersByRole: {},
     totalAssignments: 0,
@@ -65,6 +76,9 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-8">
+      {/* ── Hero Banner / Carousel ── */}
+      <DashboardCarousel />
+
       <div>
         <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
         <p className="mt-1 text-muted-foreground">

@@ -35,7 +35,8 @@ export function DashboardShell({ role, children }) {
     
     const isCourseViewer = 
         (/^\/admin\/curriculum\/[^/]+\/content/.test(pathname)) ||
-        (/^\/student\/subjects\/[^/]+/.test(pathname))
+        (/^\/student\/subjects\/[^/]+/.test(pathname)) ||
+        (/^\/admin\/mock-exams\/[^/]+/.test(pathname))
 
     return (
         <div className="flex min-h-screen bg-background">

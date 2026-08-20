@@ -1,0 +1,207 @@
+{
+  "main": {
+    "id": "4cbe5d9562633463",
+    "type": "split",
+    "children": [
+      {
+        "id": "7bfa0afd2ed7ace8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ca683b77621439ca",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Documentation/Skills_Library_And_Obsidian_Integration.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Skills_Library_And_Obsidian_Integration"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "c1c35b5b6baa04ab",
+    "type": "split",
+    "children": [
+      {
+        "id": "334c4cc83a2d6a00",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "902efb2697408fe0",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "cab4c20e32ee2151",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "0a23e621a027c157",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "bedce41db59a1256",
+    "type": "split",
+    "children": [
+      {
+        "id": "714d7e6236032943",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7db1455c89b10f01",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Documentation/Database_Deployment_Guide.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Database_Deployment_Guide"
+            }
+          },
+          {
+            "id": "0f1fc46ba3ff1287",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Documentation/Database_Deployment_Guide.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Database_Deployment_Guide"
+            }
+          },
+          {
+            "id": "315e63148516b43d",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "f3fa64f6fb36ed30",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "510b9c833ac665d3",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Documentation/Database_Deployment_Guide.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Database_Deployment_Guide"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "ca683b77621439ca",
+  "lastOpenFiles": [
+    "skills/obsidian-markdown/references/EMBEDS.md",
+    "Documentation/Skills_Library_And_Obsidian_Integration.md",
+    "skills/obsidian-markdown/references/PROPERTIES.md",
+    "skills/obsidian-markdown/references/CALLOUTS.md",
+    "skills/json-canvas/references/EXAMPLES.md",
+    "skills/obsidian-cli/SKILL.md",
+    "README.md",
+    "Untitled.base",
+    "Home.md",
+    "Documentation/AI_Skills_Library_Configuration.md",
+    "Documentation/Subject_Builder_Architecture.md",
+    "Documentation/Project_Readme.md",
+    "Documentation/PDF_Viewer_Strategy_And_Tuning.md",
+    "Documentation/Intellectual_Property_Protection.md",
+    "Documentation/Database_Deployment_Guide.md",
+    "skills/obsidian-bases/references/FUNCTIONS_REFERENCE.md",
+    "Documentation",
+    "skills/json-canvas/SKILL.md"
+  ]
+}

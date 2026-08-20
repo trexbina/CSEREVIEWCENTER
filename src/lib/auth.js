@@ -16,7 +16,7 @@ export async function signToken(payload) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: ALG })
     .setIssuedAt()
-    .setExpirationTime("1h")
+    .setExpirationTime("7d")
     .sign(SECRET)
 }
 
@@ -36,7 +36,7 @@ export const SESSION_COOKIE_OPTIONS = {
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax",
   path: "/",
-  maxAge: 60 * 60, // 1 hour — matches JWT expiry
+  maxAge: 60 * 60 * 24 * 7, // 7 days — matches JWT expiry
 }
 
 /** Role → home page mapping. */

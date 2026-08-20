@@ -89,7 +89,7 @@ function LoginFormInner() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-12 border-[#cbd5e1] focus-visible:ring-[#3b82f6]/40 focus-visible:border-[#3b82f6] transition-all rounded-lg shadow-sm text-base px-4"
+            className="h-12 border-[#cbd5e1] bg-white text-slate-900 focus-visible:ring-[#3b82f6]/40 focus-visible:border-[#3b82f6] transition-all rounded-lg shadow-sm text-base px-4"
           />
         </div>
 
@@ -101,7 +101,7 @@ function LoginFormInner() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="h-12 border-[#cbd5e1] focus-visible:ring-[#3b82f6]/40 focus-visible:border-[#3b82f6] transition-all rounded-lg shadow-sm text-base px-4"
+            className="h-12 border-[#cbd5e1] bg-white text-slate-900 focus-visible:ring-[#3b82f6]/40 focus-visible:border-[#3b82f6] transition-all rounded-lg shadow-sm text-base px-4"
           />
         </div>
 

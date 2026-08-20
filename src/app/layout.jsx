@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { FontProvider } from "@/components/font-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,7 +30,9 @@ export default function RootLayout({ children }) {
           themes={["modern", "classic", "focus", "minimal-dark"]}
           disableTransitionOnChange
         >
-          {children}
+          <FontProvider>
+            {children}
+          </FontProvider>
         </ThemeProvider>
       </body>
     </html>

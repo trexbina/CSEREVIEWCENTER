@@ -56,6 +56,34 @@ export default function AddUserPage() {
     const [majorId, setMajorId] = useState("")
     const [dropdownData, setDropdownData] = useState({ examinations: [], batches: [], programs: [], majors: [], schools: [], academic_courses: [] })
 
+    // ── Avatar Upload ──
+    const [avatarUrl, setAvatarUrl] = useState("")
+    const [uploadingAvatar, setUploadingAvatar] = useState(false)
+
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setUploadingAvatar(true)
+        const formData = new FormData()
+        formData.append("file", file)
+
+        try {
+            const res = await fetch("/api/admin/upload", {
+                method: "POST",
+                body: formData,
+            })
+            if (!res.ok) throw new Error("Upload failed")
+            const data = await res.json()
+            setAvatarUrl(data.url)
+        } catch (err) {
+            console.error(err)
+            alert("Failed to upload image.")
+        } finally {
+            setUploadingAvatar(false)
+        }
+    }
+
     useEffect(() => {
         fetch("/api/admin/master-data/dropdowns")
             .then(res => res.json())
@@ -118,6 +146,7 @@ export default function AddUserPage() {
                     program_id: role !== "admin" && programId ? parseInt(programId) : null,
                     major_id: role !== "admin" && majorId ? parseInt(majorId) : null,
                     job_role_description: role === "admin" ? jobRoleDescription : null,
+                    avatar_url: avatarUrl || null,
                 }),
             })
 
@@ -171,6 +200,35 @@ export default function AddUserPage() {
                     <div className="flex items-center gap-2 border-b border-border pb-3">
                         <User className="h-5 w-5 text-primary" />
                         <h2 className="text-lg font-semibold text-foreground">Personal Information</h2>
+                    </div>
+
+                    {/* Avatar Upload */}
+                    <div className="flex flex-col sm:flex-row items-center gap-5 pb-4 border-b border-border/50">
+                        <div className="relative h-20 w-20 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-border flex items-center justify-center overflow-hidden">
+                            {avatarUrl ? (
+                                <img src={avatarUrl} alt="Avatar Preview" className="h-full w-full object-cover" />
+                            ) : (
+                                <User className="h-8 w-8 text-muted-foreground" />
+                            )}
+                            {uploadingAvatar && (
+                                <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="space-y-1 text-center sm:text-left">
+                            <Label htmlFor="avatar-file" className="cursor-pointer inline-flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground hover:bg-secondary/80 transition-colors">
+                                Upload Photo
+                            </Label>
+                            <input
+                                id="avatar-file"
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleAvatarUpload}
+                            />
+                            <p className="text-[10px] text-muted-foreground">JPG, PNG or WEBP. Max size 2MB.</p>
+                        </div>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -1,7 +1,9 @@
 "use client"
 
+import { Type } from "lucide-react"
 import { Settings } from "@/components/animate-ui/icons/settings"
 import { ThemeSwitcher } from "@/components/theme-switcher"
+import { FontSwitcher } from "@/components/font-switcher"
 
 export default function StudentSettingsPage() {
 
@@ -13,8 +15,22 @@ export default function StudentSettingsPage() {
                     <h1 className="text-3xl font-bold text-foreground">Settings</h1>
                 </div>
                 <p className="mt-2 text-muted-foreground">
-                    Manage your notification preferences and account settings.
+                    Manage your appearance, typography, and account preferences.
                 </p>
+            </div>
+
+            {/* Typography / Font Preference */}
+            <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
+                <div className="flex items-center gap-2">
+                    <Type className="h-5 w-5 text-primary" />
+                    <h2 className="text-lg font-semibold text-foreground">Typography & Font Preference</h2>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    Customize the font used across your dashboard.
+                </p>
+                <div className="mt-4">
+                    <FontSwitcher />
+                </div>
             </div>
 
             <div className="rounded-lg border border-border bg-card p-6 shadow-sm">

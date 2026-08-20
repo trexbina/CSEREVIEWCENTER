@@ -110,22 +110,8 @@ export default async function StudentDashboard() {
   return (
     <div className="space-y-8">
       {/* ── Hero Banner / Carousel ── */}
-      <div className="relative overflow-hidden rounded-xl">
-        <DashboardCarousel />
-        {/* Overlay content on top of carousel */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-        <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-10 pointer-events-none">
-          <span className="pointer-events-auto inline-block w-fit rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary-foreground">
-            New Course Available
-          </span>
-          <h2 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight max-w-lg">
-            Advancing Through Neural Networks
-          </h2>
-          <p className="mt-2 text-sm sm:text-base text-white/70 max-w-md">
-            Explore the foundations of modern AI with our comprehensive advanced study module.
-          </p>
-        </div>
-      </div>
+      <DashboardCarousel />
+
 
       {/* ── Dashboard heading row ── */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">

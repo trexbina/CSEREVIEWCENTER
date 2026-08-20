@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Bell } from "lucide-react"
+import { Search, Bell, Maximize, Minimize } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 
@@ -23,13 +23,32 @@ const ROLE_LABELS = {
 
 export function DashboardHeader({ role }) {
   const [user, setUser] = useState(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => d.user && setUser(d.user))
       .catch(() => { })
+
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener("fullscreenchange", handleFullscreenChange)
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
   }, [])
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error("Error attempting fullscreen:", err)
+      })
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+      }
+    }
+  }
 
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-4 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-8">
@@ -48,8 +67,18 @@ export function DashboardHeader({ role }) {
         </div>
       </div>
 
-      {/* Right — notification + avatar + name + role */}
-      <div className="flex items-center gap-3 shrink-0">
+      {/* Right — notification + fullscreen + avatar + name + logout */}
+      <div className="flex items-center gap-2.5 shrink-0">
+        {/* Fullscreen mode button */}
+        <button
+          onClick={toggleFullscreen}
+          className="relative inline-flex items-center justify-center size-9 rounded-full border border-border bg-muted/50 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+          aria-label="Toggle Fullscreen"
+          title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+        >
+          {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+        </button>
+
         {/* Notification bell */}
         <button
           className="relative inline-flex items-center justify-center size-9 rounded-full border border-border bg-muted/50 hover:bg-muted transition-colors"
@@ -79,3 +108,5 @@ export function DashboardHeader({ role }) {
     </header>
   )
 }
+
+

@@ -131,20 +131,32 @@ export default function StudentSubjectsPage() {
                                 <button
                                     key={subcat.id}
                                     onClick={() => setSelectedSubcategory(subcat)}
-                                    className="group flex aspect-[1/1] w-full flex-col p-4 rounded-[1.25rem] bg-gray-50 border border-gray-200 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-gray-300 active:translate-y-0"
+                                    className="group relative flex aspect-[1/1] w-full flex-col overflow-hidden rounded-[1.25rem] bg-gray-50 border border-gray-200 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-gray-300 active:translate-y-0 text-left"
                                 >
-                                    <div className="flex-1 flex flex-col items-center justify-center gap-3 mt-4 w-full">
-                                        <span className="text-lg font-bold tracking-[0.1em] text-[#7a7a7a] uppercase text-center line-clamp-2 transition-colors group-hover:text-black">
-                                            {subcat.name}
-                                        </span>
-                                        {subcat.description && (
-                                            <p className="text-xs text-center text-[#8c8c8c] line-clamp-3">
-                                                {subcat.description}
-                                            </p>
+                                    {/* Background Image */}
+                                    <div className="absolute inset-0">
+                                        {subcat.image_url ? (
+                                            <img src={subcat.image_url} alt={subcat.name} className="absolute inset-0 h-full w-full object-cover" />
+                                        ) : (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                                                <BookOpen className="h-12 w-12 text-gray-400 opacity-40" />
+                                            </div>
                                         )}
                                     </div>
-                                    {/* Empty spacer to precisely match the height taken up by edit/delete buttons on the admin side, ensuring text remains at identical vertical alignment */}
-                                    <div className="h-8 w-full" />
+
+                                    {/* Translucent White Text Banner at Bottom */}
+                                    <div className="relative z-20 flex h-full flex-col justify-end">
+                                        <div className="bg-white/85 p-5 pt-6 backdrop-blur-md">
+                                            <span className="block text-xl font-extrabold tracking-[0.1em] text-[#4d4d4d] uppercase line-clamp-2">
+                                                {subcat.name}
+                                            </span>
+                                            {subcat.description && (
+                                                <p className="mt-1.5 text-sm leading-relaxed text-[#8c8c8c] line-clamp-3">
+                                                    {subcat.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
                                 </button>
                             ))}
                         </div>

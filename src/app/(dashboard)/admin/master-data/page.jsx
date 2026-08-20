@@ -13,12 +13,16 @@ import {
   Save,
   Clock,
   CheckCircle,
+  Check,
   XCircle,
   Plus,
   Settings,
   X,
   Filter,
-  ArrowLeft
+  ArrowLeft,
+  Calculator,
+  Percent,
+  GraduationCap
 } from "lucide-react"
 
 import {
@@ -30,6 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+import GradebookView from "./GradebookView"
 
 
 // Custom Prompt Dialog Component
@@ -231,7 +236,7 @@ const BatchDialog = ({ isOpen, batchForm, setBatchForm, onSubmit, onCancel, tree
   )
 }
 
-// Exam Settings Dialog Component (Level 1 — rename + depth limit)
+// Exam Settings Dialog Component (Level 1 â€” rename + depth limit)
 const ExamSettingsDialog = ({ isOpen, examSettings, setExamSettings, onSave, onCancel }) => {
   if (!isOpen) return null;
   return (
@@ -272,7 +277,7 @@ const ExamSettingsDialog = ({ isOpen, examSettings, setExamSettings, onSave, onC
               placeholder="e.g. 3"
               className="w-full bg-background border border-input rounded-lg px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
             />
-            <p className="text-[11px] text-muted-foreground mt-1.5">Controls how many nested levels (Courses → Specializations) are allowed under this examination.</p>
+            <p className="text-[11px] text-muted-foreground mt-1.5">Controls how many nested levels (Courses â†’ Specializations) are allowed under this examination.</p>
           </div>
         </div>
         <div className="p-4 border-t border-border bg-muted/30 flex gap-3">
@@ -287,6 +292,9 @@ const ExamSettingsDialog = ({ isOpen, examSettings, setExamSettings, onSave, onC
     </div>
   )
 }
+
+// GradebookView is imported from ./GradebookView.jsx
+
 
 export default function MasterDataBuilderPage() {
   const [activeTab, setActiveTab] = useState("menu") // "menu" | "tree" | "batches" | "schools" | "courses"
@@ -318,6 +326,7 @@ export default function MasterDataBuilderPage() {
       setBatches(data.batches || [])
       setSchools(data.schools || [])
       setAcademicCourses(data.academic_courses || [])
+      setGradebooks(data.gradebooks || [])
       setIsLoading(false)
     } catch (e) {
       console.error("Failed to fetch master data", e)
@@ -363,6 +372,7 @@ export default function MasterDataBuilderPage() {
   // Schools & Courses State
   const [schools, setSchools] = useState([])
   const [academicCourses, setAcademicCourses] = useState([])
+  const [gradebooks, setGradebooks] = useState([])
   const [isSchoolsExpanded, setIsSchoolsExpanded] = useState(false)
   const [isCoursesExpanded, setIsCoursesExpanded] = useState(false)
   const [isBatchDialogOpen, setIsBatchDialogOpen] = useState(false)
@@ -655,7 +665,7 @@ export default function MasterDataBuilderPage() {
                   <div>
                     <h3 className="font-bold text-foreground text-lg">Examination Management Data</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Manage examinations, courses, and specializations · {tree.length} examination{tree.length !== 1 ? "s" : ""} registered
+                      Manage examinations, courses, and specializations Â· {tree.length} examination{tree.length !== 1 ? "s" : ""} registered
                     </p>
                   </div>
                 </div>
@@ -673,7 +683,7 @@ export default function MasterDataBuilderPage() {
                   <div>
                     <h3 className="font-bold text-foreground text-lg">Batch Management Data</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Manage cohorts and timelines · {batches.length} batch{batches.length !== 1 ? "es" : ""} registered
+                      Manage cohorts and timelines Â· {batches.length} batch{batches.length !== 1 ? "es" : ""} registered
                     </p>
                   </div>
                 </div>
@@ -692,6 +702,24 @@ export default function MasterDataBuilderPage() {
                     <h3 className="font-bold text-foreground text-lg">Academic Institutions & Courses</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       Manage {schools.length} school{schools.length !== 1 ? "s" : ""} and {academicCourses.length} course{academicCourses.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+
+              <div 
+                className="bg-card border border-border rounded-2xl p-6 flex items-center justify-between cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
+                onClick={() => setActiveTab("gradebook")}
+              >
+                <div className="flex items-center gap-5">
+                  <div className="p-3 rounded-xl bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">
+                    <Calculator className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground text-lg">Gradebook</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Computation, formula, and view of grades of student for readiness score
                     </p>
                   </div>
                 </div>
@@ -754,7 +782,7 @@ export default function MasterDataBuilderPage() {
                               <div>
                                 <h3 className="font-bold text-foreground text-base">{exam.name}</h3>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                  {exam.programs.length} course{exam.programs.length !== 1 ? "s" : ""} · {totalMajors} specialization{totalMajors !== 1 ? "s" : ""} · Max depth: {exam.maxLevel || 3}
+                                  {exam.programs.length} course{exam.programs.length !== 1 ? "s" : ""} Â· {totalMajors} specialization{totalMajors !== 1 ? "s" : ""} Â· Max depth: {exam.maxLevel || 3}
                                 </p>
                               </div>
                             </div>
@@ -1160,6 +1188,18 @@ export default function MasterDataBuilderPage() {
                 )}
               </div>
             </motion.div>
+          )}
+
+          {activeTab === "gradebook" && (
+            <GradebookView 
+              onBack={() => setActiveTab("menu")}
+              batches={batches}
+              tree={tree}
+              schools={schools}
+              gradebooks={gradebooks}
+              fetchData={fetchData}
+              apiCall={apiCall}
+            />
           )}
 
         </AnimatePresence>

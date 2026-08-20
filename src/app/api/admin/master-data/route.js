@@ -115,6 +115,43 @@ export async function POST(req) {
       }
     }
 
+    // ── GRADEBOOK ──
+    if (entity === "GRADEBOOK") {
+      if (action === "ADD") {
+        const { name, code, batch_id } = payload
+        const res = await pool.query(
+          `INSERT INTO gradebooks (name, code, batch_id, exam_id)
+           SELECT $1, $2, $3, exam_id FROM batches WHERE id = $3
+           RETURNING *`,
+          [name, code, parseInt(batch_id)]
+        )
+        if (res.rows.length === 0) {
+          return NextResponse.json({ error: "Failed to create gradebook. Batch not found." }, { status: 400 })
+        }
+        return NextResponse.json(res.rows[0])
+      }
+      if (action === "UPDATE") {
+        const { id, name, code, batch_id, status } = payload
+        const res = await pool.query(
+          `UPDATE gradebooks 
+           SET name = $1, code = $2, batch_id = $3, 
+               exam_id = COALESCE((SELECT exam_id FROM batches WHERE id = $3), exam_id), 
+               status = $4, updated_at = NOW() 
+           WHERE id = $5
+           RETURNING id`,
+          [name, code, parseInt(batch_id), status || 'ACTIVE', parseInt(id)]
+        )
+        if (res.rows.length === 0) {
+          return NextResponse.json({ error: "Gradebook not found." }, { status: 404 })
+        }
+        return NextResponse.json({ success: true })
+      }
+      if (action === "DELETE") {
+        await pool.query("DELETE FROM gradebooks WHERE id = $1", [parseInt(payload.id)])
+        return NextResponse.json({ success: true })
+      }
+    }
+
     return NextResponse.json({ error: "Invalid action or entity." }, { status: 400 })
   } catch (err) {
     console.error("[POST /api/admin/master-data]", err)

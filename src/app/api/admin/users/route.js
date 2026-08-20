@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
@@ -57,11 +58,11 @@ export async function POST(request) {
         birthday, gender, phone, address, city, province, zip_code,
         school, course, year_graduated, highest_education,
         exam_id, batch_id, program_id, major_id, job_role_description,
-        school_id, academic_course_id
+        school_id, academic_course_id, avatar_url
       )
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27)
        ON CONFLICT (email) DO NOTHING
-       RETURNING id, name, email, role, created_at`,
+       RETURNING id, name, email, role, created_at, avatar_url`,
       [
         name.trim(),
         email.toLowerCase().trim(),
@@ -89,6 +90,7 @@ export async function POST(request) {
         body.job_role_description?.trim() || null,
         body.school_id || null,
         body.academic_course_id || null,
+        body.avatar_url || null,
       ]
     )
 
@@ -99,6 +101,9 @@ export async function POST(request) {
       )
     }
 
+    revalidatePath("/admin/users")
+    revalidatePath("/admin/users/all")
+
     return NextResponse.json({ user: result.rows[0] }, { status: 201 })
   } catch (err) {
     console.error("[admin/users POST] error:", err)
@@ -106,7 +111,7 @@ export async function POST(request) {
   }
 }
 
-/** DELETE /api/admin/users?id=123 — delete a user (admin only, cannot delete self). */
+/** DELETE /api/admin/users — delete single user (?id=123) or multiple users ({ ids: [123, 456] } or ?ids=123,456). */
 export async function DELETE(request) {
   try {
     const session = await getSession()
@@ -114,24 +119,53 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get("id")
-
-    if (!userId) {
-      return NextResponse.json({ error: "User id is required." }, { status: 400 })
+    let targetIds = []
+    let bodyData = null
+    try {
+      bodyData = await request.json()
+    } catch {
+      // Body parsing optional
     }
 
-    if (Number(userId) === session.userId) {
+    if (bodyData?.ids && Array.isArray(bodyData.ids)) {
+      targetIds = bodyData.ids.map((id) => Number(id)).filter((id) => !isNaN(id))
+    } else if (bodyData?.id) {
+      targetIds = [Number(bodyData.id)].filter((id) => !isNaN(id))
+    } else {
+      const { searchParams } = new URL(request.url)
+      const idsParam = searchParams.get("ids")
+      const idParam = searchParams.get("id")
+      if (idsParam) {
+        targetIds = idsParam.split(",").map((id) => Number(id.trim())).filter((id) => !isNaN(id))
+      } else if (idParam) {
+        targetIds = [Number(idParam)].filter((id) => !isNaN(id))
+      }
+    }
+
+    if (targetIds.length === 0) {
+      return NextResponse.json({ error: "User id(s) required." }, { status: 400 })
+    }
+
+    // Exclude current session admin from deletion
+    const validIdsToDelete = targetIds.filter((id) => id !== Number(session.userId))
+
+    if (validIdsToDelete.length === 0) {
       return NextResponse.json({ error: "Cannot delete yourself." }, { status: 400 })
     }
 
-    const { rowCount } = await pool.query("DELETE FROM users WHERE id = $1", [userId])
+    const { rowCount } = await pool.query(
+      "DELETE FROM users WHERE id = ANY($1::int[])",
+      [validIdsToDelete]
+    )
 
     if (rowCount === 0) {
-      return NextResponse.json({ error: "User not found." }, { status: 404 })
+      return NextResponse.json({ error: "User(s) not found." }, { status: 404 })
     }
 
-    return NextResponse.json({ ok: true })
+    revalidatePath("/admin/users")
+    revalidatePath("/admin/users/all")
+
+    return NextResponse.json({ ok: true, deletedCount: rowCount })
   } catch (err) {
     console.error("[admin/users DELETE] error:", err)
     return NextResponse.json({ error: "Internal server error." }, { status: 500 })
@@ -153,7 +187,8 @@ export async function PUT(request) {
       return NextResponse.json({ error: "User id is required." }, { status: 400 })
     }
 
-    const { name, email, role, password } = await request.json()
+    const body = await request.json()
+    const { name, email, role, password } = body
 
     if (!name?.trim() || !email?.trim()) {
       return NextResponse.json(
@@ -183,27 +218,97 @@ export async function PUT(request) {
 
     let result
     if (password?.trim()) {
-      // Update with new password
       const hash = await bcrypt.hash(password.trim(), 10)
       result = await pool.query(
-        `UPDATE users SET name = $1, email = $2, role = $3, password = $4
-         WHERE id = $5
-         RETURNING id, name, email, role, created_at`,
-        [name.trim(), email.toLowerCase().trim(), role || "student", hash, userId]
+        `UPDATE users SET
+          name = $1, email = $2, role = $3, password = $4,
+          first_name = $5, middle_name = $6, last_name = $7, suffix = $8,
+          birthday = $9, gender = $10, phone = $11, address = $12, city = $13, province = $14, zip_code = $15,
+          school = $16, course = $17, year_graduated = $18, highest_education = $19,
+          exam_id = $20, batch_id = $21, program_id = $22, major_id = $23, job_role_description = $24,
+          school_id = $25, academic_course_id = $26, avatar_url = $27
+         WHERE id = $28
+         RETURNING id, name, email, role, created_at, avatar_url`,
+        [
+          name.trim(),
+          email.toLowerCase().trim(),
+          role || "student",
+          hash,
+          body.first_name?.trim() || null,
+          body.middle_name?.trim() || null,
+          body.last_name?.trim() || null,
+          body.suffix?.trim() || null,
+          body.birthday || null,
+          body.gender || null,
+          body.phone?.trim() || null,
+          body.address?.trim() || null,
+          body.city?.trim() || null,
+          body.province?.trim() || null,
+          body.zip_code?.trim() || null,
+          body.school?.trim() || null,
+          body.course?.trim() || null,
+          body.year_graduated?.toString().trim() || null,
+          body.highest_education || null,
+          body.exam_id || null,
+          body.batch_id || null,
+          body.program_id || null,
+          body.major_id || null,
+          body.job_role_description?.trim() || null,
+          body.school_id || null,
+          body.academic_course_id || null,
+          body.avatar_url || null,
+          userId,
+        ]
       )
     } else {
-      // Update without changing password
       result = await pool.query(
-        `UPDATE users SET name = $1, email = $2, role = $3
-         WHERE id = $4
-         RETURNING id, name, email, role, created_at`,
-        [name.trim(), email.toLowerCase().trim(), role || "student", userId]
+        `UPDATE users SET
+          name = $1, email = $2, role = $3,
+          first_name = $4, middle_name = $5, last_name = $6, suffix = $7,
+          birthday = $8, gender = $9, phone = $10, address = $11, city = $12, province = $13, zip_code = $14,
+          school = $15, course = $16, year_graduated = $17, highest_education = $18,
+          exam_id = $19, batch_id = $20, program_id = $21, major_id = $22, job_role_description = $23,
+          school_id = $24, academic_course_id = $25, avatar_url = $26
+         WHERE id = $27
+         RETURNING id, name, email, role, created_at, avatar_url`,
+        [
+          name.trim(),
+          email.toLowerCase().trim(),
+          role || "student",
+          body.first_name?.trim() || null,
+          body.middle_name?.trim() || null,
+          body.last_name?.trim() || null,
+          body.suffix?.trim() || null,
+          body.birthday || null,
+          body.gender || null,
+          body.phone?.trim() || null,
+          body.address?.trim() || null,
+          body.city?.trim() || null,
+          body.province?.trim() || null,
+          body.zip_code?.trim() || null,
+          body.school?.trim() || null,
+          body.course?.trim() || null,
+          body.year_graduated?.toString().trim() || null,
+          body.highest_education || null,
+          body.exam_id || null,
+          body.batch_id || null,
+          body.program_id || null,
+          body.major_id || null,
+          body.job_role_description?.trim() || null,
+          body.school_id || null,
+          body.academic_course_id || null,
+          body.avatar_url || null,
+          userId,
+        ]
       )
     }
 
     if (result.rows.length === 0) {
       return NextResponse.json({ error: "User not found." }, { status: 404 })
     }
+
+    revalidatePath("/admin/users")
+    revalidatePath("/admin/users/all")
 
     return NextResponse.json({ user: result.rows[0] })
   } catch (err) {

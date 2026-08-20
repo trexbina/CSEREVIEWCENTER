@@ -4,9 +4,19 @@ import Link from "next/link"
 import { Users, Plus } from "lucide-react"
 import { UserSearchTable } from "../user-management"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 async function getAllUsers() {
     const result = await pool.query(
-        "SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC"
+        `SELECT 
+            id, name, email, role, created_at, avatar_url,
+            first_name, middle_name, last_name, suffix,
+            birthday, gender, phone, address, city, province, zip_code,
+            school, course, year_graduated, highest_education,
+            exam_id, batch_id, program_id, major_id, job_role_description,
+            school_id, academic_course_id
+         FROM users ORDER BY created_at DESC`
     )
     return result.rows
 }

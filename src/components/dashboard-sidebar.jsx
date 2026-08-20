@@ -26,6 +26,7 @@ import {
     PencilLine,
     Star,
 } from "lucide-react"
+
 import { Settings as AnimatedSettingsBase } from "@/components/animate-ui/icons/settings"
 import { LogoutButton } from "@/components/logout-button"
 
@@ -36,7 +37,10 @@ function Settings(props) {
     return <AnimatedSettingsBase animateOnHover {...props} />
 }
 
+import { Home } from "lucide-react"
+
 const iconMap = {
+    Home,
     LayoutDashboard,
     Users,
     FileText,
@@ -84,13 +88,13 @@ const teacherNav = [
 ]
 
 const adminNav = [
-    { label: "Command Center", href: "/admin", icon: "LayoutDashboard", description: "System overview, active users & enrollment stats" },
-    { label: "User Management", href: "/admin/users", icon: "Users", description: "Manage students, instructors & staff roles" },
-    { label: "Master Data", href: "/admin/master-data", icon: "FolderOpen", description: "Manage core data entities" },
-    { label: "System Report", href: "/admin/system-report", icon: "FileText", description: "View and export system reports" },
-    { label: "Analytical Overview", href: "/admin/analytical-overview", icon: "BarChart3", description: "Analytics and insights dashboard" },
-    { label: "Security & IP Control", href: "/admin/security", icon: "Shield", description: "Session monitoring, access logs & watermark settings" },
-    { label: "Curriculum Manager", href: "/admin/curriculum", icon: "BookOpen", description: "Manage LET competencies & subjects" },
+    { label: "Admin Dashboard", href: "/admin", icon: "Home", description: "System overview, active users, & enrollment stats" },
+    { label: "User Management", href: "/admin/users", icon: "User", description: "Manage students and staff roles" },
+    { label: "Curriculum Manager", href: "/admin/curriculum", icon: "FileText", description: "Manage LEPT competencies & subjects" },
+    { label: "Mock Exams", href: "/admin/mock-exams", icon: "PencilLine", description: "Mock exam score encoding" },
+    { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "Manage core data entities" },
+    { label: "Analytical Overview", href: "/admin/analytical-overview", icon: "BarChart3", description: "Analytics & insights dashboard" },
+    { section: "Other" },
     { label: "Notifications", href: "/admin/notifications", icon: "Bell" },
     { label: "System Settings", href: "/admin/settings", icon: "Settings" },
 ]
@@ -125,6 +129,7 @@ export function DashboardSidebar({ role }) {
         })
     }, [navItems, router])
 
+
     function isActive(href) {
         if (href === `/${role}`) return pathname === href
         return pathname.startsWith(href)
@@ -135,19 +140,18 @@ export function DashboardSidebar({ role }) {
         return (
             <div className="flex h-full flex-col">
                 {/* Logo */}
-                <div className={`flex items-center gap-3 px-4 pt-6 pb-6 ${collapsed ? "justify-center px-2" : ""}`}>
+                <div className={`flex items-center gap-3 px-4 pt-6 pb-4 ${collapsed ? "justify-center px-2" : ""}`}>
                     <img
-                        src="/peakassestsimage/peak.jpg"
+                        src="/peak_loading_screen-removebg-preview.png"
                         alt="Peak Excellence Review Center"
-                        className={`rounded-md object-contain transition-all ${collapsed ? "h-8 w-8" : "h-11 w-11"}`}
-                        style={{ mixBlendMode: "lighten" }}
+                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-8 w-8" : "h-10 w-10"}`}
                     />
                     {!collapsed && (
-                        <div className="flex flex-col">
-                            <span className="text-[8px] font-bold text-sidebar-foreground/50 tracking-widest leading-none mb-1">
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[9px] font-bold text-sidebar-foreground/60 uppercase tracking-wider leading-tight truncate">
                                 Training Academy & Review Center
                             </span>
-                            <span className="text-[17px] font-black tracking-tight text-sidebar-foreground leading-none">
+                            <span className="text-[16px] font-black tracking-tight text-sidebar-foreground leading-tight truncate">
                                 PEAK EXCELLENCE
                             </span>
                         </div>
@@ -156,20 +160,20 @@ export function DashboardSidebar({ role }) {
 
                 {/* Role badge */}
                 {badge && !collapsed && (
-                    <div className="px-4 pt-4">
+                    <div className="px-4 pt-2">
                         <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${badge.color}`}>
                             {badge.label}
                         </span>
                     </div>
                 )}
                 {badge && collapsed && (
-                    <div className="flex justify-center pt-4">
+                    <div className="flex justify-center pt-2">
                         <span className={`inline-block h-2 w-2 rounded-full ${badge.color}`} />
                     </div>
                 )}
 
                 {/* Nav links */}
-                <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+                <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-6 pb-4">
                     {navItems.map((item, idx) => {
                         // Section header support
                         if (item.section) {
@@ -251,13 +255,14 @@ export function DashboardSidebar({ role }) {
 
                 {/* Bottom section */}
                 <div className="border-t border-sidebar-border p-3 space-y-2">
-                    <div className={`flex ${collapsed ? "justify-center" : ""}`}>
-                        <LogoutButton />
+                    <div className={`flex ${collapsed ? "justify-center" : "justify-start"}`}>
+                        <LogoutButton iconOnly={collapsed} />
                     </div>
                 </div>
             </div>
         )
     }
+
 
     return (
         <>
@@ -314,3 +319,4 @@ export function DashboardSidebar({ role }) {
         </>
     )
 }
+

@@ -150,7 +150,7 @@ export function HeroSection() {
             </nav>
 
             <LoginDialog>
-              <Button className="rounded-full bg-[#E9C46A] text-white font-bold h-8 px-4 text-xs shadow-none border-none transition-opacity duration-300 hover:opacity-85 hover:bg-[#E9C46A] hover:translate-y-0 active:translate-y-0 active:opacity-75 cursor-pointer">
+              <Button className="rounded-full bg-[#E9C46A] text-white font-medium h-8 px-4 text-xs md:text-sm tracking-wide shadow-none border-none transition-opacity duration-300 hover:opacity-85 hover:bg-[#E9C46A] hover:translate-y-0 active:translate-y-0 active:opacity-75 cursor-pointer">
                 Log In
               </Button>
             </LoginDialog>

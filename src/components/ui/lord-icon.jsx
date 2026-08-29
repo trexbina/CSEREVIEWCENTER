@@ -6,7 +6,7 @@ export function LordIcon({
   src,
   size = 130,
   speed = 0.65,      // Lower, smoother pace (65% of normal speed)
-  delay = 2500,      // 2.5 second rest/pause before repeating
+  delay = 3500,      // 3.5 second rest/pause before repeating
   className = "",
 }) {
   const containerRef = useRef(null)

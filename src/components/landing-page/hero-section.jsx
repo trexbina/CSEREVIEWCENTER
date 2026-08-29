@@ -74,24 +74,24 @@ export function HeroSection() {
           <img
             src="/landingpageassets/logo.png"
             alt="Peak Excellence Logo"
-            className="h-8 sm:h-9.5 w-auto object-contain drop-shadow-md"
+            className="h-8 sm:h-10 w-auto object-contain drop-shadow-md"
           />
-          <span className="text-sm sm:text-base md:text-[17px] font-semibold tracking-wider text-white uppercase drop-shadow-sm">
-            PEAK EXCELLENCE CDO
+          <span className="text-sm sm:text-base md:text-lg font-black tracking-wider text-white font-sans drop-shadow-sm">
+            PEAK Excellence
           </span>
         </div>
 
         {/* Top-Right: Nav & Action Buttons */}
-        <div className="flex items-center gap-6 sm:gap-8 md:gap-9">
-          <nav className="hidden sm:flex items-center gap-6 sm:gap-8 md:gap-9">
+        <div className="flex items-center gap-5 sm:gap-7 md:gap-8">
+          <nav className="hidden sm:flex items-center gap-5 sm:gap-7 md:gap-8">
             {/* Contact Us button with sliding dropdown modal */}
             <div className="relative" ref={contactRef}>
               <button
                 type="button"
                 onClick={() => setContactOpen((prev) => !prev)}
-                className={`text-xs md:text-sm font-medium tracking-wide transition-colors duration-300 ease-in-out py-1.5 flex items-center gap-1.5 cursor-pointer outline-none ${contactOpen
-                    ? "text-[#E9C46A] font-semibold"
-                    : "text-white/90 hover:text-white"
+                className={`text-xs md:text-sm font-semibold tracking-wide transition-colors duration-300 ease-in-out py-1.5 flex items-center gap-1.5 cursor-pointer outline-none ${contactOpen
+                    ? "text-[#E9C46A] font-bold"
+                    : "text-slate-200 hover:text-white"
                   }`}
               >
                 Contact Us
@@ -135,21 +135,21 @@ export function HeroSection() {
 
             <a
               href="#faq"
-              className="text-xs md:text-sm font-medium tracking-wide text-white/90 hover:text-white transition-colors duration-300 ease-in-out py-1.5"
+              className="text-xs md:text-sm font-semibold tracking-wide text-slate-200 hover:text-white transition-colors duration-300 ease-in-out py-1.5"
             >
               FAQ
             </a>
 
             <a
               href="/pre-register"
-              className="text-xs md:text-sm font-medium tracking-wide text-white/90 hover:text-white transition-colors duration-300 ease-in-out py-1.5"
+              className="text-xs md:text-sm font-semibold tracking-wide text-slate-200 hover:text-white transition-colors duration-300 ease-in-out py-1.5"
             >
               Pre-Register
             </a>
           </nav>
 
           <LoginDialog>
-            <Button className="rounded-full bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold h-8.5 px-5 text-xs shadow-md border-none transition-all duration-300 hover:opacity-95 active:scale-95 cursor-pointer">
+            <Button className="rounded-full bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold h-8.5 px-5 text-xs shadow-md border-none transition-all duration-300 hover:opacity-95 active:scale-95 cursor-pointer">
               Log In
             </Button>
           </LoginDialog>

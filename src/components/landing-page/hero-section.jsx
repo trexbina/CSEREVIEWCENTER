@@ -63,46 +63,35 @@ export function HeroSection() {
             </div>
           )
         })}
-        {/* Multi-stop cinematic scrim for rich contrast across bright photos */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/80 via-black/35 to-black/95 pointer-events-none" />
-        <div className="absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/20 to-black/70 pointer-events-none" />
+        {/* Subtle top & bottom cinematic gradients for clean text readability */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/40 via-black/20 to-black/80 pointer-events-none" />
       </div>
 
       {/* Top Header Bar */}
-      <header className="relative z-20 w-full px-6 sm:px-10 md:px-14 pt-5 sm:pt-7 flex items-center justify-between">
+      <header className="relative z-20 w-full px-6 sm:px-10 md:px-14 pt-6 sm:pt-8 flex items-center justify-between">
         {/* Top-Left: Logo & Title */}
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex items-center gap-3 sm:gap-3.5 bg-black/30 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-sm"
-        >
+        <div className="flex items-center gap-3 sm:gap-3.5">
           <img
             src="/landingpageassets/logo.png"
             alt="Peak Excellence Logo"
-            className="h-8 sm:h-9 w-auto object-contain drop-shadow-md"
+            className="h-8 sm:h-10 w-auto object-contain drop-shadow-md"
           />
-          <span className="text-sm sm:text-base font-bold tracking-wide text-white drop-shadow-sm pr-1.5">
+          <span className="text-base sm:text-lg md:text-xl font-bold tracking-tight text-white font-[family-name:var(--font-outfit)] drop-shadow-sm">
             PEAK Excellence
           </span>
-        </motion.div>
+        </div>
 
         {/* Top-Right: Nav & Action Buttons */}
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex items-center gap-5 sm:gap-7 md:gap-8 bg-black/30 backdrop-blur-md px-4 sm:px-5 py-1.5 rounded-full border border-white/10 shadow-sm"
-        >
+        <div className="flex items-center gap-5 sm:gap-7 md:gap-8">
           <nav className="hidden sm:flex items-center gap-5 sm:gap-7 md:gap-8">
             {/* Contact Us button with sliding dropdown modal */}
             <div className="relative" ref={contactRef}>
               <button
                 type="button"
                 onClick={() => setContactOpen((prev) => !prev)}
-                className={`text-xs md:text-sm font-medium tracking-wide transition-all duration-300 ease-in-out py-1 flex items-center gap-1.5 cursor-pointer outline-none ${contactOpen
-                    ? "text-[#E9C46A] font-semibold"
-                    : "text-slate-200 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+                className={`text-xs md:text-sm font-semibold tracking-wide transition-colors duration-300 ease-in-out py-1.5 flex items-center gap-1.5 cursor-pointer outline-none ${contactOpen
+                    ? "text-[#E9C46A] font-bold"
+                    : "text-slate-200 hover:text-white"
                   }`}
               >
                 Contact Us
@@ -110,7 +99,7 @@ export function HeroSection() {
 
               {/* Minimalist Contact Modal */}
               {contactOpen && (
-                <div className="absolute top-full mt-3 right-[-10px] sm:right-0 w-[290px] sm:w-[320px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl p-4 shadow-[0_12px_35px_rgba(0,0,0,0.25)] border border-slate-100/80 dark:border-slate-800 z-50 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-150">
+                <div className="absolute top-full mt-3 right-[-10px] sm:right-0 w-[290px] sm:w-[320px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl p-4 shadow-[0_12px_35px_rgba(0,0,0,0.12)] border border-slate-100/80 dark:border-slate-800 z-50 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-150">
                   <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Contact Info</span>
                     <button
@@ -146,64 +135,51 @@ export function HeroSection() {
 
             <a
               href="#faq"
-              className="text-xs md:text-sm font-medium tracking-wide text-slate-200 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.4)] transition-all duration-300 ease-in-out py-1"
+              className="text-xs md:text-sm font-semibold tracking-wide text-slate-200 hover:text-white transition-colors duration-300 ease-in-out py-1.5"
             >
               FAQ
             </a>
 
             <a
               href="/pre-register"
-              className="text-xs md:text-sm font-medium tracking-wide text-slate-200 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.4)] transition-all duration-300 ease-in-out py-1"
+              className="text-xs md:text-sm font-semibold tracking-wide text-slate-200 hover:text-white transition-colors duration-300 ease-in-out py-1.5"
             >
               Pre-Register
             </a>
           </nav>
 
           <LoginDialog>
-            <Button className="rounded-full bg-gradient-to-r from-[#E9C46A] to-[#e0b753] hover:from-[#dfb550] hover:to-[#d4a840] text-[#1c1917] font-extrabold h-8 px-5 text-xs shadow-[0_2px_14px_rgba(233,196,106,0.35)] border-none transition-all duration-300 hover:shadow-[0_4px_20px_rgba(233,196,106,0.5)] active:scale-95 cursor-pointer">
+            <Button className="rounded-full bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold h-8.5 px-5 text-xs shadow-md border-none transition-all duration-300 hover:opacity-95 active:scale-95 cursor-pointer">
               Log In
             </Button>
           </LoginDialog>
-        </motion.div>
+        </div>
       </header>
 
       {/* Hero Content (Center Bottom) */}
       <motion.div 
-        initial={{ opacity: 0, y: 35 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
         className="relative z-10 w-full max-w-4xl px-4 sm:px-6 pb-12 sm:pb-16 md:pb-20 mt-auto flex flex-col items-center text-center"
       >
-        {/* Subtle pill tag */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mb-3.5 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] sm:text-xs font-semibold tracking-wider uppercase text-[#fcd34d]"
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-[#fcd34d] animate-pulse" />
-          The Premier Review Destination
-        </motion.div>
-
-        {/* Main Headline */}
+        {/* Main Headline with subtle kinetic motion */}
         <motion.h1 
-          initial={{ scale: 0.96, filter: "blur(4px)" }}
+          initial={{ scale: 0.95, filter: "blur(4px)" }}
           animate={{ scale: 1, filter: "blur(0px)" }}
-          transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-black text-white uppercase tracking-[0.06em] sm:tracking-[0.08em] leading-[1.1] sm:leading-[1.05] drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]"
+          transition={{ duration: 0.9, ease: "easeOut" }}
+          className="text-2xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-sans font-black text-white uppercase tracking-[0.08em] sm:tracking-[0.12em] leading-tight sm:leading-none drop-shadow-md"
         >
           THE HIGHEST LEVEL OF <br className="hidden sm:block" />
-          <span className="bg-gradient-to-r from-white via-slate-100 to-[#fde68a] bg-clip-text text-transparent drop-shadow-md">
-            EXCELLENCE
-          </span>
+          <span className="text-white drop-shadow-lg">EXCELLENCE</span>
         </motion.h1>
 
         {/* Subtitle */}
         <motion.p 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.45 }}
-          className="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg text-slate-200/95 font-normal tracking-wide leading-relaxed max-w-2xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="mt-3.5 sm:mt-4 text-xs sm:text-base md:text-lg text-slate-200/90 font-normal tracking-wide leading-relaxed max-w-2xl mx-auto drop-shadow-sm"
         >
           Empowering future topnotchers with unmatched professionalism, proven review methodologies, and compassionate mentorship.
         </motion.p>

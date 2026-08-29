@@ -145,7 +145,7 @@ export function AboutSystemSection() {
           >
             <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
               <LordIcon
-                src="https://cdn.lordicon.com/fpmsrkep.json"
+                src="/icons/allinonespot.json"
                 trigger="loop"
                 delay={2500}
                 colors="primary:#505459,secondary:#808489"

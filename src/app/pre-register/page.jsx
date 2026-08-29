@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { SecurityShield } from "@/components/security-shield"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -163,8 +162,7 @@ export default function PreRegisterPage() {
   }
 
   return (
-    <SecurityShield>
-      <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row">
         {/* Left Visual Sidebar with Carousel Fade-in */}
         <aside className="relative lg:w-[380px] xl:w-[440px] shrink-0 bg-slate-950 text-white overflow-hidden flex flex-col justify-between p-6 sm:p-8 lg:p-10 min-h-[280px] lg:min-h-screen border-b lg:border-b-0 lg:border-r border-border/50">
           {/* Background Fade-In Carousel Slides */}
@@ -632,6 +630,5 @@ export default function PreRegisterPage() {
         </main>
         </div>
       </div>
-    </SecurityShield>
   )
 }

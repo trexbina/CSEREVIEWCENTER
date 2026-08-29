@@ -2,6 +2,7 @@
 
 import { CheckCircle2, Zap, LayoutDashboard } from "lucide-react"
 import { motion } from "framer-motion"
+import { LordIcon } from "@/components/ui/lord-icon"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -99,9 +100,13 @@ export function AboutSystemSection() {
             className="bg-[#F2F2F3] rounded-md shadow-xs flex flex-col min-h-[280px] sm:min-h-[320px] md:min-h-[350px] overflow-hidden"
           >
             <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
-              <div>
-                <CheckCircle2 className="h-14 w-14 sm:h-16 sm:w-16 text-[#505459] stroke-[1.5]" />
-              </div>
+              <LordIcon
+                src="https://cdn.lordicon.com/egmlnyku.json"
+                trigger="loop"
+                delay={2500}
+                colors="primary:#505459,secondary:#808489"
+                size={64}
+              />
             </div>
             <div className="p-6 sm:p-8 md:p-10 pt-4">
               <h3 className="text-base sm:text-lg font-semibold text-[#505459] text-center mb-3 sm:mb-4 tracking-wide">Know If You&apos;re Ready</h3>
@@ -117,9 +122,13 @@ export function AboutSystemSection() {
             className="bg-[#F2F2F3] rounded-md shadow-xs flex flex-col min-h-[280px] sm:min-h-[320px] md:min-h-[350px] overflow-hidden"
           >
             <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
-              <div>
-                <Zap className="h-14 w-14 sm:h-16 sm:w-16 text-[#505459] stroke-[1.5]" />
-              </div>
+              <LordIcon
+                src="https://cdn.lordicon.com/hgqdtxby.json"
+                trigger="loop"
+                delay={2500}
+                colors="primary:#505459,secondary:#808489"
+                size={64}
+              />
             </div>
             <div className="p-6 sm:p-8 md:p-10 pt-4">
               <h3 className="text-base sm:text-lg font-semibold text-[#505459] text-center mb-3 sm:mb-4 tracking-wide">Instant Results</h3>
@@ -135,9 +144,13 @@ export function AboutSystemSection() {
             className="bg-[#F2F2F3] rounded-md shadow-xs flex flex-col min-h-[280px] sm:min-h-[320px] md:min-h-[350px] overflow-hidden sm:col-span-2 md:col-span-1 sm:max-w-sm sm:mx-auto md:max-w-none"
           >
             <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
-              <div>
-                <LayoutDashboard className="h-14 w-14 sm:h-16 sm:w-16 text-[#505459] stroke-[1.5]" />
-              </div>
+              <LordIcon
+                src="https://cdn.lordicon.com/fpmsrkep.json"
+                trigger="loop"
+                delay={2500}
+                colors="primary:#505459,secondary:#808489"
+                size={64}
+              />
             </div>
             <div className="p-6 sm:p-8 md:p-10 pt-4">
               <h3 className="text-base sm:text-lg font-semibold text-[#505459] text-center mb-3 sm:mb-4 tracking-wide">All-in-One Spot</h3>

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
     LayoutDashboard,
     Users,
@@ -145,6 +145,57 @@ export function DashboardSidebar({ role }) {
         return pathname.startsWith(href)
     }
 
+/* ------------------------------------------------------------------ */
+/*  Sidebar Nav Item component with hover interaction                  */
+/* ------------------------------------------------------------------ */
+function SidebarNavItem({ item, active, collapsed, onNavigate }) {
+    const iconRef = useRef(null)
+    const jsonSrc = sidebarJsonMap[item.icon]
+    const Icon = iconMap[item.icon] || LayoutDashboard
+
+    return (
+        <Link
+            href={item.href}
+            onClick={onNavigate}
+            onMouseEnter={() => {
+                if (iconRef.current) {
+                    iconRef.current.play()
+                }
+            }}
+            title={collapsed ? item.label : undefined}
+            className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                } ${collapsed ? "justify-center" : ""}`}
+        >
+            {jsonSrc ? (
+                <div className="shrink-0 transition-transform duration-200 group-hover:scale-110 flex items-center justify-center pointer-events-none">
+                    <LordIcon
+                        ref={iconRef}
+                        src={jsonSrc}
+                        trigger="manual"
+                        size={20}
+                        speed={1}
+                        className={`${active ? "[&_svg_*]:stroke-[#E9C46A]" : ""}`}
+                    />
+                </div>
+            ) : (
+                <Icon className={`h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${active ? "text-[#E9C46A]" : ""}`} />
+            )}
+            {!collapsed && (
+                <div className="flex flex-col">
+                    <span>{item.label}</span>
+                    {item.description && (
+                        <span className="text-xs font-normal text-sidebar-foreground/50 leading-tight">
+                            {item.description}
+                        </span>
+                    )}
+                </div>
+            )}
+        </Link>
+    )
+}
+
     /* ---- Sidebar content (shared between mobile & desktop) ---- */
     function SidebarContent() {
         return (
@@ -158,8 +209,8 @@ export function DashboardSidebar({ role }) {
                     />
                     {!collapsed && (
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[9px] font-bold text-sidebar-foreground/60 uppercase tracking-wider leading-tight truncate">
-                                Training Academy & Review Center
+                            <span className="text-[10px] font-semibold text-sidebar-foreground/50 tracking-wider uppercase truncate">
+                                TRAINING ACADEMY & REVIEW CE...
                             </span>
                             <span className="text-[15px] font-black tracking-tight text-sidebar-foreground leading-tight truncate">
                                 PEAK EXCELLENCE
@@ -180,45 +231,16 @@ export function DashboardSidebar({ role }) {
                             )
                         }
 
-                        const jsonSrc = sidebarJsonMap[item.icon]
-                        const Icon = iconMap[item.icon] || LayoutDashboard
                         const active = isActive(item.href)
 
                         return (
-                            <Link
+                            <SidebarNavItem
                                 key={item.href}
-                                href={item.href}
-                                onClick={() => setMobileOpen(false)}
-                                title={collapsed ? item.label : undefined}
-                                className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
-                                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                                    } ${collapsed ? "justify-center" : ""}`}
-                            >
-                                {jsonSrc ? (
-                                    <div className="shrink-0 transition-transform duration-200 group-hover:scale-110 flex items-center justify-center">
-                                        <LordIcon
-                                            src={jsonSrc}
-                                            trigger="hover"
-                                            size={20}
-                                            speed={1}
-                                            className={`${active ? "[&_svg_*]:stroke-[#E9C46A]" : ""}`}
-                                        />
-                                    </div>
-                                ) : (
-                                    <Icon className={`h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${active ? "text-[#E9C46A]" : ""}`} />
-                                )}
-                                {!collapsed && (
-                                    <div className="flex flex-col">
-                                        <span>{item.label}</span>
-                                        {item.description && (
-                                            <span className="text-xs font-normal text-sidebar-foreground/50 leading-tight">
-                                                {item.description}
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
-                            </Link>
+                                item={item}
+                                active={active}
+                                collapsed={collapsed}
+                                onNavigate={() => setMobileOpen(false)}
+                            />
                         )
                     })}
                 </nav>

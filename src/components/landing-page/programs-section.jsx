@@ -7,19 +7,19 @@ export function ProgramsSection() {
     <section className="py-10 sm:py-16 bg-white overflow-hidden">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 35, scale: 0.96 }}
+          initial={{ opacity: 0, y: 35, scale: 0.97 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: false, amount: 0.25 }}
+          viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
           className="rounded-2xl bg-[#e5e7eb] overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-500"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 items-center">
             {/* Left: Text */}
             <motion.div
-              initial={{ opacity: 0, x: -25 }}
+              initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: false, amount: 0.3 }}
-              transition={{ duration: 0.7, delay: 0.15 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.2 }}
               className="p-6 sm:p-8 md:p-12 lg:p-14 order-2 md:order-1"
             >
               <p className="text-[#4b5563] text-xs sm:text-sm md:text-[15px] leading-relaxed font-medium text-justify">

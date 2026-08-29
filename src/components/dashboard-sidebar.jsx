@@ -169,14 +169,17 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                 } ${collapsed ? "justify-center" : ""}`}
         >
             {jsonSrc ? (
-                <div className="shrink-0 flex items-center justify-center pointer-events-none">
+                <div className={`shrink-0 flex items-center justify-center pointer-events-none transition-colors duration-200 ${
+                    active 
+                        ? "[&_path]:!stroke-[#E9C46A] [&_path]:!fill-[#E9C46A]/20 [&_circle]:!stroke-[#E9C46A] [&_rect]:!stroke-[#E9C46A]" 
+                        : ""
+                }`}>
                     <LordIcon
                         ref={iconRef}
                         src={jsonSrc}
                         trigger="manual"
                         size={26}
                         speed={1}
-                        color={active ? "#E9C46A" : undefined}
                     />
                 </div>
             ) : (

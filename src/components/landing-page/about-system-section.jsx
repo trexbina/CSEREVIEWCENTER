@@ -102,10 +102,7 @@ export function AboutSystemSection() {
             <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
               <LordIcon
                 src="/icons/knowifready.json"
-                trigger="loop"
-                delay={2500}
-                colors="primary:#505459,secondary:#808489"
-                size={96}
+                size={130}
               />
             </div>
             <div className="p-6 sm:p-8 md:p-10 pt-4">
@@ -124,10 +121,7 @@ export function AboutSystemSection() {
             <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
               <LordIcon
                 src="/icons/instantresults.json"
-                trigger="loop"
-                delay={2500}
-                colors="primary:#505459,secondary:#808489"
-                size={96}
+                size={130}
               />
             </div>
             <div className="p-6 sm:p-8 md:p-10 pt-4">
@@ -146,10 +140,7 @@ export function AboutSystemSection() {
             <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
               <LordIcon
                 src="/icons/allinonespot.json"
-                trigger="loop"
-                delay={2500}
-                colors="primary:#505459,secondary:#808489"
-                size={96}
+                size={130}
               />
             </div>
             <div className="p-6 sm:p-8 md:p-10 pt-4">

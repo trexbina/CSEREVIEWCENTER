@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react"
 
 export function LordIcon({
   src,
-  size = 96,
+  size = 120,
   className = "",
 }) {
   const containerRef = useRef(null)
@@ -31,6 +31,11 @@ export function LordIcon({
             loop: true,
             autoplay: true,
             animationData: data,
+            rendererSettings: {
+              preserveAspectRatio: "xMidYMid meet",
+              progressiveLoad: true,
+              hideOnTransparent: false,
+            },
           })
         })
         .catch((err) => console.error("Error loading animation data:", err))
@@ -45,7 +50,7 @@ export function LordIcon({
     <div
       ref={containerRef}
       style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
-      className={`inline-flex items-center justify-center [&_svg]:w-full [&_svg]:h-full ${className}`}
+      className={`inline-flex items-center justify-center [&_svg]:!w-full [&_svg]:!h-full [&_svg]:!block ${className}`}
     />
   )
 }

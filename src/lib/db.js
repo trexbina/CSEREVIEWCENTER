@@ -6,8 +6,8 @@ import pg from "pg"
 
 const { Pool } = pg
 
-function getConnectionString() {
-  return (
+function getCleanConnectionString() {
+  const raw =
     process.env.DATABASE_URL ||
     process.env.POSTGRES_URL ||
     process.env.POSTGRES_PRISMA_URL ||
@@ -16,23 +16,35 @@ function getConnectionString() {
     process.env.Database_URL1_PRISMA_DATABASE_URL ||
     process.env.POSTGRES_URL_NON_POOLING ||
     ""
-  )
+
+  // Remove sslmode query parameter to prevent pg connection string parser from overriding ssl options
+  try {
+    if (raw && (raw.includes("prisma.io") || raw.includes("supabase") || raw.includes("sslmode="))) {
+      const url = new URL(raw)
+      url.searchParams.delete("sslmode")
+      url.searchParams.delete("uselibpqcompat")
+      return url.toString()
+    }
+  } catch (e) {}
+
+  return raw
 }
 
 function createPool() {
-  const connectionString = getConnectionString()
+  const connectionString = getCleanConnectionString()
   const isRemoteDb =
     connectionString &&
-    (connectionString.includes("supabase.co") ||
-      connectionString.includes("supabase.com") ||
-      connectionString.includes("pooler.supabase.com") ||
+    (connectionString.includes("supabase") ||
       connectionString.includes("prisma.io") ||
-      connectionString.includes("sslmode=require") ||
       process.env.NODE_ENV === "production")
 
   const pool = new Pool({
     connectionString: connectionString || undefined,
-    ssl: isRemoteDb ? { rejectUnauthorized: false } : undefined,
+    ssl: isRemoteDb
+      ? {
+          rejectUnauthorized: false,
+        }
+      : undefined,
     max: 10,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,

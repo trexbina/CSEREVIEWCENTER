@@ -73,19 +73,15 @@ export function AboutSystemSection() {
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="text-center mb-10 sm:mb-16 flex flex-col items-center"
         >
-          <div className="flex items-center gap-3 text-[#4a4a4a] justify-center mb-4">
-            <motion.div
-              whileHover={{ rotate: 15, scale: 1.1 }}
-              transition={{ type: "spring", stiffness: 300 }}
-              className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-current"
-            >
+          <div className="flex items-center gap-3 text-[#505459] justify-center mb-4">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#505459]">
               <span className="font-serif italic font-bold text-sm leading-none translate-y-[-0.5px]">i</span>
-            </motion.div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-wide">
+            </div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-wide text-[#505459]">
               About this system
             </h2>
           </div>
-          <p className="text-xs sm:text-sm md:text-base text-gray-400 font-medium max-w-3xl mx-auto tracking-wide px-2">
+          <p className="text-xs sm:text-sm md:text-base text-[#808489] font-medium max-w-3xl mx-auto tracking-wide px-2">
             Leadership, Compassion, Empowerment, Professionalism and Excellence - that is what we believe in.
           </p>
         </motion.div>
@@ -100,25 +96,16 @@ export function AboutSystemSection() {
           {/* Card 1 */}
           <motion.div
             variants={cardVariants}
-            whileHover={{
-              y: -8,
-              scale: 1.02,
-              boxShadow: "0 20px 30px -10px rgba(0, 0, 0, 0.08)",
-              transition: { duration: 0.25, ease: "easeOut" },
-            }}
-            className="bg-[#ebd9a6]/70 rounded-md shadow-sm flex flex-col min-h-[280px] sm:min-h-[320px] md:min-h-[350px] overflow-hidden transition-all duration-300"
+            className="bg-[#F2F2F3] rounded-md shadow-xs flex flex-col min-h-[280px] sm:min-h-[320px] md:min-h-[350px] overflow-hidden"
           >
             <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
-              <motion.div
-                whileHover={{ rotate: [0, -10, 10, 0], scale: 1.15 }}
-                transition={{ duration: 0.5 }}
-              >
-                <CheckCircle2 className="h-14 w-14 sm:h-16 sm:w-16 text-[#4a4a4a] stroke-[1.5]" />
-              </motion.div>
+              <div>
+                <CheckCircle2 className="h-14 w-14 sm:h-16 sm:w-16 text-[#505459] stroke-[1.5]" />
+              </div>
             </div>
             <div className="p-6 sm:p-8 md:p-10 pt-4">
-              <h3 className="text-base sm:text-lg font-bold text-[#4a4a4a] text-center mb-3 sm:mb-4 tracking-wide">Know If You&apos;re Ready</h3>
-              <p className="text-[#595959] text-xs sm:text-sm leading-relaxed text-center font-medium min-h-[4.5rem]">
+              <h3 className="text-base sm:text-lg font-semibold text-[#505459] text-center mb-3 sm:mb-4 tracking-wide">Know If You&apos;re Ready</h3>
+              <p className="text-[#808489] text-xs sm:text-sm leading-relaxed text-center font-normal min-h-[4.5rem]">
                 The system tracks which subjects you are good at and which ones you are failing, giving you a clear score that shows if you are actually ready for the board exam.
               </p>
             </div>
@@ -127,25 +114,16 @@ export function AboutSystemSection() {
           {/* Card 2 */}
           <motion.div
             variants={cardVariants}
-            whileHover={{
-              y: -8,
-              scale: 1.02,
-              boxShadow: "0 20px 30px -10px rgba(0, 0, 0, 0.08)",
-              transition: { duration: 0.25, ease: "easeOut" },
-            }}
-            className="bg-[#ebd9a6]/70 rounded-md shadow-sm flex flex-col min-h-[280px] sm:min-h-[320px] md:min-h-[350px] overflow-hidden transition-all duration-300"
+            className="bg-[#F2F2F3] rounded-md shadow-xs flex flex-col min-h-[280px] sm:min-h-[320px] md:min-h-[350px] overflow-hidden"
           >
             <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
-              <motion.div
-                whileHover={{ rotate: [0, -10, 10, 0], scale: 1.15 }}
-                transition={{ duration: 0.5 }}
-              >
-                <Zap className="h-14 w-14 sm:h-16 sm:w-16 text-[#4a4a4a] stroke-[1.5]" />
-              </motion.div>
+              <div>
+                <Zap className="h-14 w-14 sm:h-16 sm:w-16 text-[#505459] stroke-[1.5]" />
+              </div>
             </div>
             <div className="p-6 sm:p-8 md:p-10 pt-4">
-              <h3 className="text-base sm:text-lg font-bold text-[#4a4a4a] text-center mb-3 sm:mb-4 tracking-wide">Instant Results</h3>
-              <p className="text-[#595959] text-xs sm:text-sm leading-relaxed text-center font-medium min-h-[4.5rem]">
+              <h3 className="text-base sm:text-lg font-semibold text-[#505459] text-center mb-3 sm:mb-4 tracking-wide">Instant Results</h3>
+              <p className="text-[#808489] text-xs sm:text-sm leading-relaxed text-center font-normal min-h-[4.5rem]">
                 You don&apos;t have to wait days for a teacher to grade your work; you get your score and see your mistakes the second you finish a practice exam.
               </p>
             </div>
@@ -154,25 +132,16 @@ export function AboutSystemSection() {
           {/* Card 3 */}
           <motion.div
             variants={cardVariants}
-            whileHover={{
-              y: -8,
-              scale: 1.02,
-              boxShadow: "0 20px 30px -10px rgba(0, 0, 0, 0.08)",
-              transition: { duration: 0.25, ease: "easeOut" },
-            }}
-            className="bg-[#ebd9a6]/70 rounded-md shadow-sm flex flex-col min-h-[280px] sm:min-h-[320px] md:min-h-[350px] overflow-hidden sm:col-span-2 md:col-span-1 sm:max-w-sm sm:mx-auto md:max-w-none transition-all duration-300"
+            className="bg-[#F2F2F3] rounded-md shadow-xs flex flex-col min-h-[280px] sm:min-h-[320px] md:min-h-[350px] overflow-hidden sm:col-span-2 md:col-span-1 sm:max-w-sm sm:mx-auto md:max-w-none"
           >
             <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
-              <motion.div
-                whileHover={{ rotate: [0, -10, 10, 0], scale: 1.15 }}
-                transition={{ duration: 0.5 }}
-              >
-                <LayoutDashboard className="h-14 w-14 sm:h-16 sm:w-16 text-[#4a4a4a] stroke-[1.5]" />
-              </motion.div>
+              <div>
+                <LayoutDashboard className="h-14 w-14 sm:h-16 sm:w-16 text-[#505459] stroke-[1.5]" />
+              </div>
             </div>
             <div className="p-6 sm:p-8 md:p-10 pt-4">
-              <h3 className="text-base sm:text-lg font-bold text-[#4a4a4a] text-center mb-3 sm:mb-4 tracking-wide">All-in-One Spot</h3>
-              <p className="text-[#595959] text-xs sm:text-sm leading-relaxed text-center font-medium min-h-[4.5rem]">
+              <h3 className="text-base sm:text-lg font-semibold text-[#505459] text-center mb-3 sm:mb-4 tracking-wide">All-in-One Spot</h3>
+              <p className="text-[#808489] text-xs sm:text-sm leading-relaxed text-center font-normal min-h-[4.5rem]">
                 All your videos, handouts, and quizzes are organized in one simple dashboard.
               </p>
             </div>

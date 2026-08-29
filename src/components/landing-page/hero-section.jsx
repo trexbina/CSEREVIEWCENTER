@@ -77,8 +77,8 @@ export function HeroSection() {
               alt="Peak Excellence Logo"
               className="h-8 sm:h-9.5 w-auto object-contain drop-shadow-xs"
             />
-            <span className="text-sm sm:text-base md:text-lg font-extrabold tracking-wider text-[#475569] dark:text-slate-300 uppercase font-sans">
-              PEAK EXCELLENCE CDO
+            <span className="text-sm sm:text-base md:text-lg font-bold tracking-wider text-[#505459] dark:text-slate-200 uppercase font-sans">
+              PEAK Excellence
             </span>
           </div>
 
@@ -90,9 +90,9 @@ export function HeroSection() {
                 <button
                   type="button"
                   onClick={() => setContactOpen((prev) => !prev)}
-                  className={`text-xs md:text-sm font-semibold tracking-wide transition-colors duration-300 ease-in-out py-1.5 flex items-center gap-1.5 cursor-pointer outline-none ${contactOpen
-                    ? "text-[#0f172a] dark:text-slate-100 font-bold"
-                    : "text-[#475569] dark:text-slate-300 hover:text-[#0f172a] dark:hover:text-white"
+                  className={`text-xs md:text-sm font-medium tracking-wide transition-colors duration-300 ease-in-out py-1.5 flex items-center gap-1.5 cursor-pointer outline-none ${contactOpen
+                    ? "text-[#1e293b] dark:text-slate-100 font-semibold"
+                    : "text-[#808489] hover:text-[#1e293b] dark:text-slate-300 dark:hover:text-white"
                     }`}
                 >
                   Contact Us
@@ -136,14 +136,14 @@ export function HeroSection() {
 
               <a
                 href="#faq"
-                className="text-xs md:text-sm font-semibold tracking-wide text-[#475569] dark:text-slate-300 hover:text-[#0f172a] dark:hover:text-white transition-colors duration-300 ease-in-out py-1.5"
+                className="text-xs md:text-sm font-medium tracking-wide text-[#808489] hover:text-[#1e293b] dark:text-slate-300 dark:hover:text-white transition-colors duration-300 ease-in-out py-1.5"
               >
                 FAQ
               </a>
 
               <a
                 href="/pre-register"
-                className="text-xs md:text-sm font-semibold tracking-wide text-[#475569] dark:text-slate-300 hover:text-[#0f172a] dark:hover:text-white transition-colors duration-300 ease-in-out py-1.5"
+                className="text-xs md:text-sm font-medium tracking-wide text-[#808489] hover:text-[#1e293b] dark:text-slate-300 dark:hover:text-white transition-colors duration-300 ease-in-out py-1.5"
               >
                 Pre-Register
               </a>

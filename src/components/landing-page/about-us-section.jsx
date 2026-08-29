@@ -15,7 +15,7 @@ export function AboutUsSection() {
             whileInView={{ opacity: 1, x: 0, scale: 1 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex justify-center pt-16 sm:pt-20 lg:pt-24 mb-8 md:mb-0"
+            className="relative flex justify-center pt-2 sm:pt-4 mb-8 md:mb-0"
           >
             <div className="relative w-full max-w-[20rem] sm:max-w-[24rem] md:max-w-[26rem] flex justify-center items-end">
               {/* Morphing ambient grey background box */}
@@ -51,7 +51,7 @@ export function AboutUsSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-6 sm:space-y-8 flex flex-col items-center md:pl-4 lg:pl-8 pt-0 md:pt-24 lg:pt-32 max-w-xl mx-auto md:mx-0 w-full"
+            className="space-y-6 sm:space-y-8 flex flex-col items-center md:pl-4 lg:pl-8 pt-0 max-w-xl mx-auto md:mx-0 w-full"
           >
             <div className="flex items-center justify-center gap-3 sm:gap-4 text-[#505459] w-full">
               <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 border-[#505459]">

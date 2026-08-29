@@ -3,8 +3,9 @@
 import { createContext, useContext, useEffect, useState } from "react"
 
 const FONT_OPTIONS = [
-  // Default Next.js Font
-  { key: "geist",            label: "Geist (Default)",         category: "Sans-Serif", family: "var(--font-geist-sans)", href: null },
+  // Primary Global System Font
+  { key: "inter",            label: "Inter (Default)",         category: "Modern Web", family: "var(--font-inter), 'Inter', sans-serif", href: null },
+  { key: "geist",            label: "Geist",                   category: "Sans-Serif", family: "system-ui, sans-serif", href: null },
   
   // Standard / System Fonts
   { key: "arial",            label: "Arial",                   category: "Standard Sans", family: "Arial, Helvetica, sans-serif", href: null },
@@ -18,7 +19,6 @@ const FONT_OPTIONS = [
   { key: "segoe-ui",         label: "Segoe UI",                category: "System Sans", family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", href: null },
 
   // Web / Modern Fonts
-  { key: "inter",            label: "Inter",                   category: "Modern Web", family: "'Inter', sans-serif",    href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" },
   { key: "roboto",           label: "Roboto",                  category: "Modern Web", family: "'Roboto', sans-serif",   href: "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" },
   { key: "poppins",          label: "Poppins",                 category: "Modern Web", family: "'Poppins', sans-serif",  href: "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" },
   { key: "outfit",           label: "Outfit",                  category: "Modern Web", family: "'Outfit', sans-serif",   href: "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" },
@@ -28,7 +28,7 @@ const FONT_OPTIONS = [
   { key: "montserrat",       label: "Montserrat",              category: "Modern Web", family: "'Montserrat', sans-serif",href: "https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" },
 ]
 
-const FontContext = createContext({ font: "geist", setFont: () => {} })
+const FontContext = createContext({ font: "inter", setFont: () => {} })
 
 export function useFont() {
   return useContext(FontContext)
@@ -37,7 +37,7 @@ export function useFont() {
 export { FONT_OPTIONS }
 
 export function FontProvider({ children }) {
-  const [font, setFontState] = useState("geist")
+  const [font, setFontState] = useState("inter")
   const [mounted, setMounted] = useState(false)
 
   // Load saved preference from localStorage and Database

@@ -169,7 +169,7 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                 } ${collapsed ? "justify-center" : ""}`}
         >
             {jsonSrc ? (
-                <div className="shrink-0 transition-transform duration-200 group-hover:scale-110 flex items-center justify-center pointer-events-none">
+                <div className="shrink-0 flex items-center justify-center pointer-events-none">
                     <LordIcon
                         ref={iconRef}
                         src={jsonSrc}
@@ -180,7 +180,7 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                     />
                 </div>
             ) : (
-                <Icon className={`h-6 w-6 shrink-0 transition-transform duration-200 group-hover:scale-110 ${active ? "text-[#E9C46A]" : ""}`} />
+                <Icon className={`h-6 w-6 shrink-0 ${active ? "text-[#E9C46A]" : ""}`} />
             )}
             {!collapsed && (
                 <div className="flex flex-col">

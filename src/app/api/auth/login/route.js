@@ -51,9 +51,13 @@ export async function POST(request) {
     response.cookies.set("session", token, SESSION_COOKIE_OPTIONS)
     return response
   } catch (err) {
-    console.error("[login] error:", err)
+    console.error("[login] error details:", err)
     return NextResponse.json(
-      { error: "Internal server error." },
+      { 
+        error: err?.message || "Internal server error.",
+        code: err?.code,
+        hint: !process.env.DATABASE_URL && !process.env.POSTGRES_URL ? "Missing DATABASE_URL or POSTGRES_URL environment variable." : undefined
+      },
       { status: 500 }
     )
   }

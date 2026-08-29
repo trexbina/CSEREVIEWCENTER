@@ -77,22 +77,22 @@ export function HeroSection() {
               alt="Peak Excellence Logo"
               className="h-8 sm:h-9.5 w-auto object-contain drop-shadow-xs"
             />
-            <span className="text-sm sm:text-base md:text-lg font-extrabold tracking-wider text-slate-600 dark:text-slate-300 uppercase font-sans">
+            <span className="text-sm sm:text-base md:text-lg font-extrabold tracking-wider text-[#64748b] dark:text-slate-400 uppercase font-sans">
               PEAK EXCELLENCE CDO
             </span>
           </div>
 
           {/* Nav & Action Buttons */}
           <div className="flex items-center gap-3 sm:gap-5 pr-1">
-            <nav className="hidden sm:flex items-center gap-2">
+            <nav className="hidden sm:flex items-center gap-4 md:gap-5">
               {/* Contact Us button with sliding dropdown modal */}
               <div className="relative" ref={contactRef}>
                 <button
                   type="button"
                   onClick={() => setContactOpen((prev) => !prev)}
-                  className={`text-xs md:text-sm font-semibold tracking-wide transition-all px-3.5 py-2 rounded-full flex items-center gap-1.5 cursor-pointer outline-none ${contactOpen
-                      ? "text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800/80 font-bold"
-                      : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-800/50"
+                  className={`text-xs md:text-sm font-medium tracking-wide transition-colors duration-300 ease-in-out py-1.5 flex items-center gap-1.5 cursor-pointer outline-none ${contactOpen
+                      ? "text-[#1e293b] dark:text-slate-100 font-bold"
+                      : "text-[#64748b] dark:text-slate-400 hover:text-[#1e293b] dark:hover:text-slate-100"
                     }`}
                 >
                   Contact Us
@@ -105,7 +105,7 @@ export function HeroSection() {
                       <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Contact Info</span>
                       <button
                         onClick={() => setContactOpen(false)}
-                        className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
@@ -114,9 +114,9 @@ export function HeroSection() {
                     <div className="py-3 space-y-2.5 text-xs">
                       <a
                         href="mailto:info@peakexcellence.edu.ph"
-                        className="flex items-center gap-2.5 p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors group"
+                        className="flex items-center gap-2.5 p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors duration-300 group"
                       >
-                        <Mail className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#E9C46A] transition-colors shrink-0" />
+                        <Mail className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#E9C46A] transition-colors duration-300 shrink-0" />
                         <span className="truncate">peakexcellencecdo@gmail.com</span>
                       </a>
 
@@ -136,14 +136,14 @@ export function HeroSection() {
 
               <a
                 href="#faq"
-                className="text-xs md:text-sm font-semibold tracking-wide text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-800/50 px-3.5 py-2 rounded-full transition-all"
+                className="text-xs md:text-sm font-medium tracking-wide text-[#64748b] dark:text-slate-400 hover:text-[#1e293b] dark:hover:text-slate-100 transition-colors duration-300 ease-in-out py-1.5"
               >
                 FAQ
               </a>
 
               <a
                 href="/pre-register"
-                className="text-xs md:text-sm font-semibold tracking-wide text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-800/50 px-3.5 py-2 rounded-full transition-all"
+                className="text-xs md:text-sm font-medium tracking-wide text-[#64748b] dark:text-slate-400 hover:text-[#1e293b] dark:hover:text-slate-100 transition-colors duration-300 ease-in-out py-1.5"
               >
                 Pre-Register
               </a>
@@ -152,7 +152,7 @@ export function HeroSection() {
             <div className="hidden sm:block h-5 w-[1px] bg-slate-200 dark:bg-slate-700" />
 
             <LoginDialog>
-              <Button className="rounded-full bg-[#E9C46A] text-white font-bold h-8 px-4 text-xs shadow-none border-none transition-opacity duration-200 hover:opacity-80 hover:bg-[#E9C46A] hover:translate-y-0 active:translate-y-0 active:opacity-70 cursor-pointer">
+              <Button className="rounded-full bg-[#E9C46A] text-white font-bold h-8 px-4 text-xs shadow-none border-none transition-opacity duration-300 hover:opacity-85 hover:bg-[#E9C46A] hover:translate-y-0 active:translate-y-0 active:opacity-75 cursor-pointer">
                 Log In
               </Button>
             </LoginDialog>

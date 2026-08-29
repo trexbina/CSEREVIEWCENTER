@@ -17,15 +17,21 @@ const isRemoteDb =
   connectionString &&
   (connectionString.includes("supabase.co") ||
     connectionString.includes("supabase.com") ||
+    connectionString.includes("pooler.supabase.com") ||
     connectionString.includes("sslmode=require"))
 
 if (!global._pgPool) {
   global._pgPool = new Pool({
-    connectionString,
+    connectionString: connectionString || undefined,
     ssl: isRemoteDb ? { rejectUnauthorized: false } : undefined,
-    max: 10,
+    max: process.env.NODE_ENV === "production" ? 5 : 10,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
+  })
+
+  // Prevent uncaught errors from crashing the Node.js process
+  global._pgPool.on("error", (err) => {
+    console.error("[pgPool error]:", err.message)
   })
 }
 

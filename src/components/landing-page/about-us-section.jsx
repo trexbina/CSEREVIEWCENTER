@@ -18,7 +18,7 @@ export function AboutUsSection() {
             className="relative flex justify-center pt-2 sm:pt-4 mb-8 md:mb-0"
           >
             <div className="relative w-full max-w-[20rem] sm:max-w-[24rem] md:max-w-[26rem] flex justify-center items-end">
-              {/* Morphing ambient grey background box */}
+              {/* Continuously slowly moving gradient background box (red, yellow, green) */}
               <motion.div
                 animate={{
                   borderRadius: [
@@ -26,13 +26,26 @@ export function AboutUsSection() {
                     "2.5rem 1.5rem 2.5rem 1.5rem",
                     "1.5rem 2.5rem 1.5rem 2rem",
                   ],
+                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
                 }}
                 transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
+                  borderRadius: {
+                    duration: 10,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  },
+                  backgroundPosition: {
+                    duration: 8,
+                    repeat: Infinity,
+                    ease: "linear",
+                  },
                 }}
-                className="absolute inset-0 top-[20%] bg-[#e5e7eb] z-0 shadow-sm"
+                style={{
+                  backgroundSize: "250% 250%",
+                  backgroundImage:
+                    "linear-gradient(135deg, rgba(239,68,68,0.45) 0%, rgba(245,158,11,0.5) 35%, rgba(233,196,106,0.55) 60%, rgba(34,197,94,0.45) 100%)",
+                }}
+                className="absolute inset-0 top-[18%] z-0 shadow-md backdrop-blur-xs"
               />
               
               <motion.img 
@@ -51,7 +64,7 @@ export function AboutUsSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-6 sm:space-y-8 flex flex-col items-center md:pl-4 lg:pl-8 pt-0 max-w-xl mx-auto md:mx-0 w-full"
+            className="space-y-6 sm:space-y-8 flex flex-col items-center md:pl-4 lg:pl-8 pt-0 max-w-xl mx-auto md:mx-0 w-full text-center"
           >
             <div className="flex items-center justify-center gap-3 sm:gap-4 text-[#505459] w-full">
               <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 border-[#505459]">
@@ -62,7 +75,7 @@ export function AboutUsSection() {
               </h2>
             </div>
             
-            <div className="space-y-4 sm:space-y-6 text-xs sm:text-sm md:text-base text-[#808489] font-normal leading-relaxed text-justify w-full px-2 sm:px-0">
+            <div className="space-y-4 sm:space-y-6 text-xs sm:text-sm md:text-base text-[#808489] font-normal leading-relaxed text-center w-full px-2 sm:px-0">
               <p>
                 The company has been involved in various review programs for more than sixteen (16) years and has maintained its quality and innovative review programs with certified top caliber National and Resident Specialist involved in providing comprehensive Lectures and Integrated Test series to improve the reviewees passing rate.
               </p>

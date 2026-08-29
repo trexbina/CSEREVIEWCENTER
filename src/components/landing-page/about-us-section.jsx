@@ -11,9 +11,9 @@ export function AboutUsSection() {
           
           {/* Left Side: Image with organic morphing background */}
           <motion.div
-            initial={{ opacity: 0, x: -50, scale: 0.95 }}
+            initial={{ opacity: 0, x: -50, scale: 0.94 }}
             whileInView={{ opacity: 1, x: 0, scale: 1 }}
-            viewport={{ once: true, margin: "-80px" }}
+            viewport={{ once: false, amount: 0.2 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="relative flex justify-center pt-16 sm:pt-20 lg:pt-24 mb-8 md:mb-0"
           >
@@ -47,10 +47,10 @@ export function AboutUsSection() {
 
           {/* Right Side: Text & Button */}
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, x: 50, scale: 0.96 }}
+            whileInView={{ opacity: 1, x: 0, scale: 1 }}
+            viewport={{ once: false, amount: 0.2 }}
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
             className="space-y-6 sm:space-y-8 flex flex-col items-center md:pl-4 lg:pl-8 pt-0 md:pt-24 lg:pt-32 max-w-xl mx-auto md:mx-0 w-full"
           >
             <div className="flex items-center justify-center gap-3 sm:gap-4 text-[#4a4a4a] w-full">

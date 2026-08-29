@@ -62,6 +62,20 @@ const iconMap = {
     Star,
 }
 
+import { LordIcon } from "@/components/ui/lord-icon"
+
+const sidebarJsonMap = {
+    Home: "/icons/sidebar/home.json",
+    LayoutDashboard: "/icons/sidebar/home.json",
+    User: "/icons/sidebar/users.json",
+    Users: "/icons/sidebar/users.json",
+    FileText: "/icons/sidebar/curriculum.json",
+    PencilLine: "/icons/sidebar/exam.json",
+    Layers: "/icons/sidebar/layers.json",
+    BarChart3: "/icons/sidebar/analytics.json",
+    Settings: "/icons/sidebar/settings.json",
+}
+
 /* ------------------------------------------------------------------ */
 /*  Navigation definitions per role                                    */
 /* ------------------------------------------------------------------ */
@@ -166,6 +180,7 @@ export function DashboardSidebar({ role }) {
                             )
                         }
 
+                        const jsonSrc = sidebarJsonMap[item.icon]
                         const Icon = iconMap[item.icon] || LayoutDashboard
                         const active = isActive(item.href)
 
@@ -180,7 +195,19 @@ export function DashboardSidebar({ role }) {
                                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                                     } ${collapsed ? "justify-center" : ""}`}
                             >
-                                <Icon className={`h-5 w-5 shrink-0 ${active ? "text-[#E9C46A]" : ""}`} />
+                                {jsonSrc ? (
+                                    <div className="shrink-0 transition-transform duration-200 group-hover:scale-110 flex items-center justify-center">
+                                        <LordIcon
+                                            src={jsonSrc}
+                                            trigger="hover"
+                                            size={20}
+                                            speed={1}
+                                            className={`${active ? "[&_svg_*]:stroke-[#E9C46A]" : ""}`}
+                                        />
+                                    </div>
+                                ) : (
+                                    <Icon className={`h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${active ? "text-[#E9C46A]" : ""}`} />
+                                )}
                                 {!collapsed && (
                                     <div className="flex flex-col">
                                         <span>{item.label}</span>

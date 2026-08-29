@@ -1,20 +1,37 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useImperativeHandle, forwardRef } from "react"
 
-export function LordIcon({
-  src,
-  size = 130,
-  speed = 0.65,      // Lower, smoother pace (65% of normal speed)
-  delay = 3500,      // 3.5 second rest/pause before repeating
-  className = "",
-}) {
+export const LordIcon = forwardRef(function LordIcon(
+  {
+    src,
+    size = 24,
+    speed = 1,
+    trigger = "loop", // "loop" | "hover" | "manual"
+    delay = 3500,
+    className = "",
+  },
+  ref
+) {
   const containerRef = useRef(null)
+  const animRef = useRef(null)
+
+  useImperativeHandle(ref, () => ({
+    play: () => {
+      if (animRef.current) {
+        animRef.current.goToAndPlay(0, true)
+      }
+    },
+    stop: () => {
+      if (animRef.current) {
+        animRef.current.goToAndStop(0, true)
+      }
+    },
+  }))
 
   useEffect(() => {
     if (!containerRef.current || !src) return
 
-    let anim = null
     let timer = null
     let isCancelled = false
 
@@ -29,11 +46,11 @@ export function LordIcon({
 
           containerRef.current.innerHTML = ""
 
-          anim = lottie.loadAnimation({
+          const anim = lottie.loadAnimation({
             container: containerRef.current,
             renderer: "svg",
-            loop: false, // We handle looping manually to allow the pause delay
-            autoplay: true,
+            loop: false,
+            autoplay: trigger === "loop",
             animationData: data,
             rendererSettings: {
               preserveAspectRatio: "xMidYMid meet",
@@ -42,18 +59,22 @@ export function LordIcon({
             },
           })
 
-          // Set custom playback speed
+          animRef.current = anim
           anim.setSpeed(speed)
 
-          // When the animation cycle finishes, pause for `delay` ms before playing again
-          anim.addEventListener("complete", () => {
-            if (timer) clearTimeout(timer)
-            timer = setTimeout(() => {
-              if (!isCancelled && anim) {
-                anim.goToAndPlay(0, true)
-              }
-            }, delay)
-          })
+          if (trigger === "hover") {
+            // Start on frame 0
+            anim.goToAndStop(0, true)
+          } else if (trigger === "loop") {
+            anim.addEventListener("complete", () => {
+              if (timer) clearTimeout(timer)
+              timer = setTimeout(() => {
+                if (!isCancelled && animRef.current) {
+                  animRef.current.goToAndPlay(0, true)
+                }
+              }, delay)
+            })
+          }
         })
         .catch((err) => console.error("Error loading animation data:", err))
     }).catch((err) => console.error("Error importing lottie-web:", err))
@@ -61,15 +82,23 @@ export function LordIcon({
     return () => {
       isCancelled = true
       if (timer) clearTimeout(timer)
-      if (anim) anim.destroy()
+      if (animRef.current) {
+        animRef.current.destroy()
+        animRef.current = null
+      }
     }
-  }, [src, speed, delay])
+  }, [src, speed, delay, trigger])
 
   return (
     <div
       ref={containerRef}
       style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
+      onMouseEnter={() => {
+        if (trigger === "hover" && animRef.current) {
+          animRef.current.goToAndPlay(0, true)
+        }
+      }}
       className={`inline-flex items-center justify-center [&_svg]:!w-full [&_svg]:!h-full [&_svg]:!block ${className}`}
     />
   )
-}
+})

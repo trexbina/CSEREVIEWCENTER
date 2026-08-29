@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FontProvider } from "@/components/font-provider";
 import "./globals.css";
@@ -35,6 +36,7 @@ export default function RootLayout({ children }) {
             {children}
           </FontProvider>
         </ThemeProvider>
+        <Script src="https://cdn.lordicon.com/lordicon.js" strategy="lazyOnload" />
       </body>
     </html>
   );

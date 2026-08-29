@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { LoginDialog } from "@/components/login-dialog"
 import { Button } from "@/components/ui/button"
 import { Phone, Mail, MapPin, X } from "lucide-react"
+import { motion } from "framer-motion"
 
 // Dedicated banner carousel slides
 // To add or replace photos, just add your files to: /public/banners/
@@ -160,18 +161,33 @@ export function HeroSection() {
       </header>
 
       {/* Hero Content (Center Bottom) */}
-      <div className="relative z-10 w-full max-w-4xl px-4 sm:px-6 pb-12 sm:pb-16 md:pb-20 mt-auto flex flex-col items-center text-center">
-        {/* Main Headline */}
-        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-sans font-black text-white uppercase tracking-[0.08em] sm:tracking-[0.12em] leading-tight sm:leading-none drop-shadow-md">
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+        className="relative z-10 w-full max-w-4xl px-4 sm:px-6 pb-12 sm:pb-16 md:pb-20 mt-auto flex flex-col items-center text-center"
+      >
+        {/* Main Headline with subtle kinetic motion */}
+        <motion.h1 
+          initial={{ scale: 0.95, filter: "blur(4px)" }}
+          animate={{ scale: 1, filter: "blur(0px)" }}
+          transition={{ duration: 0.9, ease: "easeOut" }}
+          className="text-2xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-sans font-black text-white uppercase tracking-[0.08em] sm:tracking-[0.12em] leading-tight sm:leading-none drop-shadow-md"
+        >
           THE HIGHEST LEVEL OF <br className="hidden sm:block" />
           <span className="text-white drop-shadow-lg">EXCELLENCE</span>
-        </h1>
+        </motion.h1>
 
         {/* Subtitle */}
-        <p className="mt-3.5 sm:mt-4 text-xs sm:text-base md:text-lg text-slate-200/90 font-normal tracking-wide leading-relaxed max-w-2xl mx-auto drop-shadow-sm">
+        <motion.p 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="mt-3.5 sm:mt-4 text-xs sm:text-base md:text-lg text-slate-200/90 font-normal tracking-wide leading-relaxed max-w-2xl mx-auto drop-shadow-sm"
+        >
           Empowering future topnotchers with unmatched professionalism, proven review methodologies, and compassionate mentorship.
-        </p>
-      </div>
+        </motion.p>
+      </motion.div>
     </section>
   )
 }

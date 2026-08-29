@@ -169,7 +169,7 @@ export async function GET(request) {
     const scoreDistribution = [
       { range: "0% - 50%", count: 0, fill: "#ef4444" },
       { range: "51% - 70%", count: 0, fill: "#f59e0b" },
-      { range: "71% - 85%", count: 0, fill: "#3b82f6" },
+      { range: "71% - 85%", count: 0, fill: "#E9C46A" },
       { range: "86% - 100%", count: 0, fill: "#10b981" },
     ]
 

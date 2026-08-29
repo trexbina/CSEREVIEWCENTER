@@ -1,40 +1,157 @@
+"use client"
+
+import { useState, useRef, useEffect } from "react"
 import { LoginDialog } from "@/components/login-dialog"
 import { Button } from "@/components/ui/button"
+import { Phone, Mail, MapPin, X } from "lucide-react"
+
+// Dedicated banner carousel slides
+// To add or replace photos, just add your files to: /public/banners/
+const BANNER_SLIDES = [
+  { id: 1, src: "/banners/banner-1.png", alt: "Peak Excellence Graduates" },
+  { id: 2, src: "/banners/banner-2.jpg", alt: "Peak Excellence Students" },
+  { id: 3, src: "/banners/banner-3.jpg", alt: "Peak Excellence Sessions" },
+  { id: 4, src: "/banners/banner-4.jpg", alt: "Peak Excellence Campus" },
+]
 
 export function HeroSection() {
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [contactOpen, setContactOpen] = useState(false)
+  const contactRef = useRef(null)
+
+  // Auto-advance banner slides with a relaxed pace (every 10 seconds)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % BANNER_SLIDES.length)
+    }, 10000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Close contact modal when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (contactRef.current && !contactRef.current.contains(event.target)) {
+        setContactOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
   return (
-    <section className="relative w-full h-screen min-h-[500px] sm:min-h-[600px] flex flex-col items-center justify-between overflow-hidden">
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0 bg-black">
-        <img
-          src="/landingpageassets/banner.png"
-          alt="Peak Excellence Graduates"
-          className="w-full h-full object-cover object-center opacity-95"
-        />
+    <section className="relative w-full h-[90vh] min-h-[540px] max-h-[840px] sm:min-h-[580px] flex flex-col items-center justify-between overflow-hidden bg-slate-950">
+      {/* Background Banner Carousel with Guaranteed Smooth Fade-In */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none bg-slate-950">
+        {BANNER_SLIDES.map((slide, index) => {
+          const isActive = index === currentSlide
+          return (
+            <div
+              key={slide.id}
+              className="absolute inset-0"
+              style={{
+                opacity: isActive ? 1 : 0,
+                zIndex: isActive ? 2 : 1,
+                transition: "opacity 1800ms cubic-bezier(0.4, 0, 0.2, 1)",
+              }}
+            >
+              <img
+                src={slide.src}
+                alt={slide.alt}
+                className="h-full w-full object-cover object-center filter brightness-[0.82] saturate-[0.85]"
+              />
+            </div>
+          )
+        })}
+        {/* Subtle top & bottom cinematic gradients for clean text readability */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/40 via-black/20 to-black/80 pointer-events-none" />
       </div>
 
       {/* Floating Pill Header */}
-      <header className="relative z-20 mt-6 sm:mt-10 md:mt-16 lg:mt-[116px] w-full max-w-5xl px-3 sm:px-4">
-        <div className="mx-auto flex h-14 sm:h-16 md:h-20 items-center justify-between rounded-full bg-white px-2 pr-2 shadow-2xl">
-          <div className="flex items-center gap-2 sm:gap-3 pl-3 sm:pl-4 md:pl-6">
+      <header className="relative z-20 mt-8 sm:mt-12 md:mt-16 lg:mt-20 w-full max-w-5xl px-4 sm:px-6">
+        <div className="mx-auto flex h-15 sm:h-17 items-center justify-between rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 sm:px-6 shadow-[0_10px_35px_rgb(0,0,0,0.14)] border border-white/60 dark:border-slate-800/80 ring-1 ring-black/5 transition-all duration-300">
+          {/* Logo & Title */}
+          <div className="flex items-center gap-3 sm:gap-3.5 pl-1 sm:pl-2">
             <img
               src="/landingpageassets/logo.png"
               alt="Peak Excellence Logo"
-              className="h-8 sm:h-10 w-auto object-contain"
+              className="h-8 sm:h-9.5 w-auto object-contain drop-shadow-xs"
             />
-            <span className="text-sm sm:text-lg md:text-xl font-bold tracking-tight text-black">
-              PEAK Excellence
+            <span className="text-sm sm:text-base md:text-lg font-extrabold tracking-wider text-slate-600 dark:text-slate-300 uppercase font-sans">
+              PEAK EXCELLENCE CDO
             </span>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-6 md:gap-10 pr-1 sm:pr-2 md:pr-4">
-            <nav className="hidden sm:flex gap-4 md:gap-8 text-xs md:text-sm font-bold text-gray-500 tracking-wide">
-              <a href="#contact" className="hover:text-black transition-colors">Contact Us</a>
-              <a href="#faq" className="hover:text-black transition-colors">FAQ</a>
+          {/* Nav & Action Buttons */}
+          <div className="flex items-center gap-3 sm:gap-5 pr-1">
+            <nav className="hidden sm:flex items-center gap-2">
+              {/* Contact Us button with sliding dropdown modal */}
+              <div className="relative" ref={contactRef}>
+                <button
+                  type="button"
+                  onClick={() => setContactOpen((prev) => !prev)}
+                  className={`text-xs md:text-sm font-semibold tracking-wide transition-all px-3.5 py-2 rounded-full flex items-center gap-1.5 cursor-pointer outline-none ${contactOpen
+                      ? "text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800/80 font-bold"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-800/50"
+                    }`}
+                >
+                  Contact Us
+                </button>
+
+                {/* Minimalist Contact Modal */}
+                {contactOpen && (
+                  <div className="absolute top-full mt-3 right-[-10px] sm:right-0 w-[290px] sm:w-[320px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl p-4 shadow-[0_12px_35px_rgba(0,0,0,0.12)] border border-slate-100/80 dark:border-slate-800 z-50 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-150">
+                    <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Contact Info</span>
+                      <button
+                        onClick={() => setContactOpen(false)}
+                        className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="py-3 space-y-2.5 text-xs">
+                      <a
+                        href="mailto:info@peakexcellence.edu.ph"
+                        className="flex items-center gap-2.5 p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors group"
+                      >
+                        <Mail className="h-3.5 w-3.5 text-slate-400 group-hover:text-[#E9C46A] transition-colors shrink-0" />
+                        <span className="truncate">peakexcellencecdo@gmail.com</span>
+                      </a>
+
+                      <div className="flex items-center gap-2.5 p-2 rounded-xl text-slate-600 dark:text-slate-300">
+                        <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        <span>+63 917 123 4567</span>
+                      </div>
+
+                      <div className="flex items-start gap-2.5 p-2 rounded-xl text-slate-600 dark:text-slate-300">
+                        <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
+                        <span className="leading-snug">3/F GJL Bldg. Julio Pacana St. Licoan, Cagayan de Oro City</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <a
+                href="#faq"
+                className="text-xs md:text-sm font-semibold tracking-wide text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-800/50 px-3.5 py-2 rounded-full transition-all"
+              >
+                FAQ
+              </a>
+
+              <a
+                href="/pre-register"
+                className="text-xs md:text-sm font-semibold tracking-wide text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-800/50 px-3.5 py-2 rounded-full transition-all"
+              >
+                Pre-Register
+              </a>
             </nav>
 
+            <div className="hidden sm:block h-5 w-[1px] bg-slate-200 dark:bg-slate-700" />
+
             <LoginDialog>
-              <Button className="rounded-full bg-[#fcc926] hover:bg-[#eab308] text-black font-bold h-8 sm:h-10 md:h-12 px-4 sm:px-6 md:px-10 text-xs sm:text-sm shadow-none border-none transition-colors">
+              <Button className="rounded-full bg-[#E9C46A] text-white font-bold h-8 px-4 text-xs shadow-none border-none transition-opacity duration-200 hover:opacity-80 hover:bg-[#E9C46A] hover:translate-y-0 active:translate-y-0 active:opacity-70 cursor-pointer">
                 Log In
               </Button>
             </LoginDialog>
@@ -43,17 +160,19 @@ export function HeroSection() {
       </header>
 
       {/* Hero Content (Center Bottom) */}
-      <div className="relative z-10 w-full max-w-7xl px-4 sm:px-8 pb-10 sm:pb-16 md:pb-24 mt-auto mb-6 sm:mb-10 flex flex-col items-center text-center">
-        <div className="max-w-5xl space-y-2">
-          <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[4.5rem] font-sans font-black text-white uppercase tracking-[0.05em] sm:tracking-[0.1em] drop-shadow-2xl leading-tight sm:leading-none">
-            THE HIGHEST LEVEL OF
-          </h1>
-          <p className="text-sm sm:text-lg md:text-xl lg:text-2xl xl:text-[1.85rem] text-white/95 font-serif italic drop-shadow-xl leading-relaxed max-w-4xl mx-auto">
-            professionalism and experience with an empowerment <br className="hidden md:block" />
-            and compassion to serve others.
-          </p>
-        </div>
+      <div className="relative z-10 w-full max-w-4xl px-4 sm:px-6 pb-12 sm:pb-16 md:pb-20 mt-auto flex flex-col items-center text-center">
+        {/* Main Headline */}
+        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-sans font-black text-white uppercase tracking-[0.08em] sm:tracking-[0.12em] leading-tight sm:leading-none drop-shadow-md">
+          THE HIGHEST LEVEL OF <br className="hidden sm:block" />
+          <span className="text-white drop-shadow-lg">EXCELLENCE</span>
+        </h1>
+
+        {/* Subtitle */}
+        <p className="mt-3.5 sm:mt-4 text-xs sm:text-base md:text-lg text-slate-200/90 font-normal tracking-wide leading-relaxed max-w-2xl mx-auto drop-shadow-sm">
+          Empowering future topnotchers with unmatched professionalism, proven review methodologies, and compassionate mentorship.
+        </p>
       </div>
     </section>
   )
 }
+

@@ -1,30 +1,35 @@
+// this tells nextjs to run this page in the browser
 "use client"
 
+// helper tools from react to handle data state and page effects
 import React, { useState, useMemo, useEffect } from "react"
+
+// animation helpers for smooth transitions
 import { motion, AnimatePresence } from "motion/react"
+
+// small icons used on cards and tables
 import {
-  Trash2,
-  PlusCircle,
+  Trash,
   FolderTree,
   ChevronDown,
   ChevronRight,
   Calendar,
   Layers,
   Save,
-  Clock,
-  CheckCircle,
-  Check,
-  XCircle,
   Plus,
   Settings,
   X,
   Filter,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   ArrowLeft,
   Calculator,
   Percent,
   GraduationCap
 } from "lucide-react"
 
+// table styling components
 import {
   Table,
   TableBody,
@@ -34,284 +39,40 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+// gradebook view component
 import GradebookView from "./GradebookView"
 
+// modal dialog to confirm deleting items
+import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 
-// Custom Prompt Dialog Component
-const CustomPrompt = ({ isOpen, title, value, onChange, onCancel, onConfirm, placeholder }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <motion.div 
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-card w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-border"
-      >
-        <div className="flex justify-between items-center p-4 border-b border-border bg-muted/30">
-          <h3 className="font-semibold text-foreground">{title}</h3>
-          <button onClick={onCancel} className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="p-6">
-          <input 
-            type="text" 
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            className="w-full bg-background border border-input rounded-lg px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
-            autoFocus
-            onKeyDown={(e) => e.key === 'Enter' && onConfirm()}
-          />
-        </div>
-        <div className="p-4 border-t border-border bg-muted/30 flex justify-end gap-3">
-          <button onClick={onCancel} className="px-5 py-2 rounded-lg text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors">
-            Cancel
-          </button>
-          <button onClick={onConfirm} className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all focus:ring-2 focus:ring-primary focus:ring-offset-2">
-            <Save className="h-4 w-4" /> Save
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
-// Batch Dialog Component
-const SchoolDialog = ({ isOpen, schoolForm, setSchoolForm, onSubmit, onCancel, isEdit }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <motion.div 
-        initial={{ scale: 0.95, y: 20, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        className="bg-card w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-border"
-      >
-        <div className="flex justify-between items-center p-4 border-b border-border bg-muted/30">
-          <h3 className="font-semibold text-foreground flex items-center gap-2">
-            {isEdit ? <Settings className="h-5 w-5 text-primary" /> : <PlusCircle className="h-5 w-5 text-primary" />}
-            {isEdit ? "Edit School Details" : "Register New School"}
-          </h3>
-          <button onClick={onCancel} className="text-muted-foreground hover:text-foreground transition-colors"><X className="h-5 w-5" /></button>
-        </div>
-        
-        <form onSubmit={onSubmit} className="p-6 space-y-5">
-          <div>
-            <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">School Name</label>
-            <input 
-              type="text" 
-              placeholder="e.g. University of the Philippines"
-              value={schoolForm.name}
-              onChange={e => setSchoolForm({...schoolForm, name: e.target.value})}
-              className="w-full bg-background border border-input rounded-lg px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium text-sm"
-              required autoFocus
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Address</label>
-            <input 
-              type="text" 
-              placeholder="e.g. Diliman, Quezon City"
-              value={schoolForm.address}
-              onChange={e => setSchoolForm({...schoolForm, address: e.target.value})}
-              className="w-full bg-background border border-input rounded-lg px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium text-sm"
-            />
-          </div>
-          <div className="pt-2 flex justify-end gap-3">
-             <button type="button" onClick={onCancel} className="px-5 py-2.5 rounded-lg text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors">Cancel</button>
-             <button type="submit" className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all"><Save className="h-4 w-4"/> Save Record</button>
-          </div>
-        </form>
-      </motion.div>
-    </div>
-  )
-}
-
-const BatchDialog = ({ isOpen, batchForm, setBatchForm, onSubmit, onCancel, tree, isEdit }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <motion.div 
-        initial={{ scale: 0.95, y: 20, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        className="bg-card w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-border"
-      >
-        <div className="flex justify-between items-center p-4 border-b border-border bg-muted/30">
-          <h3 className="font-semibold text-foreground flex items-center gap-2">
-            {isEdit ? (
-              <Settings className="h-5 w-5 text-primary" />
-            ) : (
-              <PlusCircle className="h-5 w-5 text-primary" />
-            )}
-            {isEdit ? "Edit Batch Details" : "Create New Batch"}
-          </h3>
-          <button onClick={onCancel} className="text-muted-foreground hover:text-foreground transition-colors">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        
-        <form onSubmit={onSubmit} className="p-6 space-y-5">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Batch Number</label>
-              <div className="flex items-center bg-background border border-input rounded-lg overflow-hidden transition-all focus-within:ring-2 focus-within:ring-primary/50 text-sm">
-                 <span className="px-3 py-2.5 bg-muted text-muted-foreground font-bold border-r border-input">Batch</span>
-                 <input 
-                  type="number" 
-                  min="1"
-                  placeholder="e.g. 1"
-                  value={batchForm.batchNumber}
-                  onChange={e => setBatchForm({...batchForm, batchNumber: e.target.value})}
-                  className="w-full px-3 py-2.5 text-foreground focus:outline-none font-medium bg-transparent"
-                  required
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Target Year</label>
-              <select 
-                value={batchForm.year}
-                onChange={e => setBatchForm({...batchForm, year: e.target.value})}
-                className="w-full bg-background border border-input rounded-lg px-3 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium text-sm"
-                required
-              >
-                  <option value="" disabled>Select Year...</option>
-                  <option value="2024">2024</option>
-                  <option value="2025">2025</option>
-                  <option value="2026">2026</option>
-                  <option value="2027">2027</option>
-                  <option value="2028">2028</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Target Examination</label>
-            <select 
-              value={batchForm.examId}
-              onChange={e => setBatchForm({...batchForm, examId: e.target.value})}
-              className="w-full bg-background border border-input rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium text-sm"
-              required
-            >
-              <option value="" disabled>Select an Exam...</option>
-              {tree.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Status</label>
-            <div className="flex gap-2">
-              {["upcoming", "active", "completed"].map(s => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setBatchForm({...batchForm, status: s})}
-                  className={`flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all border ${
-                    batchForm.status === s 
-                      ? s === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/50' 
-                        : s === 'upcoming' ? 'bg-amber-50 text-amber-600 border-amber-200 shadow-sm dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/50'
-                        : 'bg-slate-50 text-slate-600 border-slate-200 shadow-sm dark:bg-slate-500/20 dark:text-slate-400 dark:border-slate-500/50'
-                      : 'bg-background text-muted-foreground border-input hover:border-border'
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="pt-4 border-t border-border flex gap-3">
-             <button type="button" onClick={onCancel} className="flex-1 bg-muted hover:bg-muted/80 text-foreground font-semibold py-2.5 px-4 rounded-lg flex justify-center items-center transition-colors">
-               Cancel
-            </button>
-            <button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors">
-              <Save className="h-4 w-4" /> Save Batch Config
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </div>
-  )
-}
-
-// Exam Settings Dialog Component (Level 1 â€” rename + depth limit)
-const ExamSettingsDialog = ({ isOpen, examSettings, setExamSettings, onSave, onCancel }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <motion.div 
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-card w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-border"
-      >
-        <div className="flex justify-between items-center p-4 border-b border-border bg-muted/30">
-          <h3 className="font-semibold text-foreground flex items-center gap-2">
-            <Settings className="h-5 w-5 text-primary" /> Examination Settings
-          </h3>
-          <button onClick={onCancel} className="text-muted-foreground hover:text-foreground transition-colors">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="p-6 space-y-5">
-          <div>
-            <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Examination Name</label>
-            <input 
-              type="text" 
-              value={examSettings.name}
-              onChange={(e) => setExamSettings({...examSettings, name: e.target.value})}
-              placeholder="e.g. LEPT"
-              className="w-full bg-background border border-input rounded-lg px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Maximum Depth Level</label>
-            <input 
-              type="number" 
-              min="1"
-              max="10"
-              value={examSettings.maxLevel}
-              onChange={(e) => setExamSettings({...examSettings, maxLevel: e.target.value})}
-              placeholder="e.g. 3"
-              className="w-full bg-background border border-input rounded-lg px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
-            />
-            <p className="text-[11px] text-muted-foreground mt-1.5">Controls how many nested levels (Courses â†’ Specializations) are allowed under this examination.</p>
-          </div>
-        </div>
-        <div className="p-4 border-t border-border bg-muted/30 flex gap-3">
-          <button onClick={onCancel} className="flex-1 bg-muted hover:bg-muted/80 text-foreground font-semibold py-2.5 px-4 rounded-lg flex justify-center items-center transition-colors">
-            Cancel
-          </button>
-          <button onClick={onSave} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors">
-            <Save className="h-4 w-4" /> Save Settings
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
-// GradebookView is imported from ./GradebookView.jsx
-
-
+// main master data settings screen
 export default function MasterDataBuilderPage() {
-  const [activeTab, setActiveTab] = useState("menu") // "menu" | "tree" | "batches" | "schools" | "courses"
-  
-  // Tree State
+  // tracks which sub menu or tab the user is viewing
+  const [activeTab, setActiveTab] = useState("menu")
+
+  // changes the active tab and updates the url history
+  const handleTabChange = (tab, pushHistory = true) => {
+    setActiveTab(tab)
+    if (typeof window !== "undefined") {
+      if (pushHistory) {
+        window.history.pushState({ tab }, "", tab === "menu" ? window.location.pathname : `?tab=${tab}`)
+      }
+    }
+  }
+
+  // list of exams programs and majors in tree format
   const [tree, setTree] = useState([])
-  const [expandedNodes, setExpandedNodes] = useState({}) 
+  const [expandedNodes, setExpandedNodes] = useState({})
   const [selectedExamId, setSelectedExamId] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch initial data
+  // downloads master data lists from the database
   const fetchData = async () => {
     try {
       const res = await fetch('/api/admin/master-data/dropdowns')
       const data = await res.json()
-      
-      // Build tree
+
+      // organize exams programs and majors into a hierarchy
       const builtTree = (data.examinations || []).map(exam => ({
         id: exam.id, name: exam.name, maxLevel: 3, hasSettings: true,
         programs: (data.programs || []).filter(p => p.exam_id === exam.id).map(prog => ({
@@ -321,7 +82,7 @@ export default function MasterDataBuilderPage() {
           }))
         }))
       }))
-      
+
       setTree(builtTree)
       setBatches(data.batches || [])
       setSchools(data.schools || [])
@@ -334,24 +95,69 @@ export default function MasterDataBuilderPage() {
     }
   }
 
+  // runs once when the screen loads to check url tab and fetch data
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const tab = params.get("tab")
+      if (tab) {
+        setActiveTab(tab)
+      }
+    }
+
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search)
+      const tab = params.get("tab") || "menu"
+      setActiveTab(tab)
+    }
+
+    window.addEventListener("popstate", handlePopState)
     fetchData()
+    return () => window.removeEventListener("popstate", handlePopState)
   }, [])
-  
-  // Auto-reset if selected exam gets deleted
+
+  // reset selected exam if it gets removed from the tree
   useEffect(() => {
     if (selectedExamId && !tree.find(e => e.id === selectedExamId)) {
       setSelectedExamId(null)
     }
   }, [tree, selectedExamId])
 
-  // Custom Prompt State
+  // state for popup text prompt to add or rename items
   const [promptData, setPromptData] = useState({ isOpen: false, title: "", value: "", actionType: null, targetParams: null, placeholder: "" })
-  
-  // Exam Settings Dialog State
+
+  // state for popup exam settings
   const [isExamSettingsOpen, setIsExamSettingsOpen] = useState(false)
+
+  // state for popup delete confirmation box
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    title: "Confirm Deletion",
+    description: "Are you sure you want to delete this item? This action cannot be undone.",
+    onConfirm: null,
+    isDeleting: false
+  })
+
+  // helper function to open the delete confirmation popup
+  const triggerDelete = (title, description, onConfirmAction) => {
+    setDeleteModal({
+      isOpen: true,
+      title,
+      description,
+      onConfirm: async () => {
+        setDeleteModal(prev => ({ ...prev, isDeleting: true }))
+        try {
+          await onConfirmAction()
+        } finally {
+          setDeleteModal({ isOpen: false, title: "", description: "", onConfirm: null, isDeleting: false })
+        }
+      },
+      isDeleting: false
+    })
+  }
+
   const [examSettings, setExamSettings] = useState({ examId: "", name: "", maxLevel: 3 })
-  
+
   const openExamSettings = (exam) => {
     setExamSettings({ examId: exam.id, name: exam.name, maxLevel: exam.maxLevel || 3 })
     setIsExamSettingsOpen(true)
@@ -365,10 +171,10 @@ export default function MasterDataBuilderPage() {
     }))
     setIsExamSettingsOpen(false)
   }
-  
+
   // Batch State
   const [batches, setBatches] = useState([])
-  
+
   // Schools & Courses State
   const [schools, setSchools] = useState([])
   const [academicCourses, setAcademicCourses] = useState([])
@@ -378,7 +184,7 @@ export default function MasterDataBuilderPage() {
   const [isBatchDialogOpen, setIsBatchDialogOpen] = useState(false)
   const [isBatchEdit, setIsBatchEdit] = useState(false)
   const [batchForm, setBatchForm] = useState({ id: "", batchNumber: "", year: "2025", examId: "", status: "upcoming" })
-  
+
   const [isSchoolDialogOpen, setIsSchoolDialogOpen] = useState(false)
   const [isSchoolEdit, setIsSchoolEdit] = useState(false)
   const [schoolForm, setSchoolForm] = useState({ id: "", name: "", address: "" })
@@ -393,7 +199,7 @@ export default function MasterDataBuilderPage() {
         await apiCall("ADD", "SCHOOL", { name: schoolForm.name, address: schoolForm.address });
       }
       await fetchData();
-    } catch(err) {
+    } catch (err) {
       console.error(err);
     }
     setIsSchoolDialogOpen(false)
@@ -405,11 +211,22 @@ export default function MasterDataBuilderPage() {
     setIsSchoolDialogOpen(true)
   }
 
-  
-  // Batch Filters
+
+  // Batch Filters & Sorting
   const [filterExam, setFilterExam] = useState("all")
   const [filterYear, setFilterYear] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [batchSortField, setBatchSortField] = useState("name")
+  const [batchSortDir, setBatchSortDir] = useState("asc")
+
+  const handleBatchSort = (field) => {
+    if (batchSortField === field) {
+      setBatchSortDir(prev => prev === "asc" ? "desc" : "asc")
+    } else {
+      setBatchSortField(field)
+      setBatchSortDir("asc")
+    }
+  }
 
   // --- Prompt Handling ---
   const openPrompt = (title, actionType, targetParams, placeholder = "", prefill = "") => {
@@ -428,18 +245,18 @@ export default function MasterDataBuilderPage() {
 
   const handlePromptConfirm = async () => {
     if (!promptData.value.trim()) return;
-    
+
     const { actionType, targetParams, value } = promptData;
 
     try {
       if (actionType === "ADD_EXAM") {
         await apiCall("ADD", "EXAM", { name: value })
-      } 
+      }
       else if (actionType === "ADD_PROGRAM") {
         await apiCall("ADD", "PROGRAM", { examId: targetParams.examId, name: value })
       }
       else if (actionType === "ADD_MAJOR") {
-         await apiCall("ADD", "MAJOR", { programId: targetParams.programId, name: value })
+        await apiCall("ADD", "MAJOR", { programId: targetParams.programId, name: value })
       }
       else if (actionType === "RENAME_EXAM") {
         await apiCall("RENAME", "EXAM", { id: targetParams.examId, name: value })
@@ -462,12 +279,12 @@ export default function MasterDataBuilderPage() {
       else if (actionType === "RENAME_COURSE") {
         await apiCall("RENAME", "COURSE", { id: targetParams.id, name: value })
       }
-      
+
       await fetchData(); // Refresh all state natively from backend
-    } catch(e) {
+    } catch (e) {
       console.error(e)
     }
-    
+
     closePrompt();
   }
 
@@ -476,17 +293,37 @@ export default function MasterDataBuilderPage() {
     setExpandedNodes(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
-  const handleDeleteExam = async (examId) => {
-    await apiCall("DELETE", "EXAM", { id: examId });
-    await fetchData();
+  const handleDeleteExam = (examId, examName = "this examination") => {
+    triggerDelete(
+      "Delete Examination",
+      `Are you sure you want to delete "${examName}"? All nested courses and specializations will also be removed. This cannot be undone.`,
+      async () => {
+        await apiCall("DELETE", "EXAM", { id: examId });
+        await fetchData();
+      }
+    )
   }
-  const handleDeleteProgram = async (examId, programId) => {
-    await apiCall("DELETE", "PROGRAM", { id: programId });
-    await fetchData();
+
+  const handleDeleteProgram = (examId, programId, progName = "this course") => {
+    triggerDelete(
+      "Delete Course",
+      `Are you sure you want to delete "${progName}"? All specializations under this course will also be removed. This cannot be undone.`,
+      async () => {
+        await apiCall("DELETE", "PROGRAM", { id: programId });
+        await fetchData();
+      }
+    )
   }
-  const handleDeleteMajor = async (examId, programId, majorId) => {
-    await apiCall("DELETE", "MAJOR", { id: majorId });
-    await fetchData();
+
+  const handleDeleteMajor = (examId, programId, majorId, majorName = "this specialization") => {
+    triggerDelete(
+      "Delete Specialization",
+      `Are you sure you want to delete "${majorName}"? This action cannot be undone.`,
+      async () => {
+        await apiCall("DELETE", "MAJOR", { id: majorId });
+        await fetchData();
+      }
+    )
   }
 
   // --- Batch Actions ---
@@ -498,11 +335,11 @@ export default function MasterDataBuilderPage() {
 
   const handleOpenEditBatch = (batch) => {
     const batchNum = batch.name ? batch.name.replace("Batch ", "") : ""
-    setBatchForm({ 
-      id: batch.id, 
-      batchNumber: batchNum, 
-      year: batch.target_year || "2025", 
-      examId: batch.exam_id || "", 
+    setBatchForm({
+      id: batch.id,
+      batchNumber: batchNum,
+      year: batch.target_year || "2025",
+      examId: batch.exam_id || "",
       status: batch.status || "upcoming"
     })
     setIsBatchEdit(true)
@@ -521,34 +358,74 @@ export default function MasterDataBuilderPage() {
         await apiCall("ADD", "BATCH", { name: newName, target_year: parseInt(batchForm.year), exam_id: batchForm.examId, status: batchForm.status });
       }
       await fetchData();
-    } catch(err) {
+    } catch (err) {
       console.error(err);
     }
     setIsBatchDialogOpen(false)
   }
 
-  const handleDeleteBatch = async (batchId) => {
-    try {
-       await apiCall("DELETE", "BATCH", { id: batchId });
-       await fetchData();
-    } catch (e) {
-       console.error("Failed to delete", e);
-    }
+  const handleDeleteBatch = (batchId, batchName = "this batch") => {
+    triggerDelete(
+      "Delete Batch",
+      `Are you sure you want to delete "${batchName}"? This action cannot be undone.`,
+      async () => {
+        try {
+          await apiCall("DELETE", "BATCH", { id: batchId });
+          await fetchData();
+        } catch (e) {
+          console.error("Failed to delete", e);
+        }
+      }
+    )
   }
-  
-  // Computed Batches Filter
+
+  // Computed Years for Filter
+  const yearsList = useMemo(() => {
+    const years = new Set(batches.map(b => b.target_year).filter(Boolean));
+    const currentYear = new Date().getFullYear();
+    years.add(currentYear);
+    years.add(currentYear + 1);
+    return Array.from(years).sort((a, b) => b - a);
+  }, [batches]);
+
+  // Computed Batches Filter & Sort
   const filteredBatches = useMemo(() => {
-    return batches.filter(batch => {
+    let result = batches.filter(batch => {
       if (filterExam !== "all" && batch.exam_id !== parseInt(filterExam)) return false;
       if (filterStatus !== "all" && batch.status !== filterStatus) return false;
       if (filterYear !== "all" && batch.target_year !== parseInt(filterYear)) return false;
       return true;
     });
-  }, [batches, filterExam, filterStatus, filterYear]);
+
+    result.sort((a, b) => {
+      let valA, valB;
+      if (batchSortField === "status") {
+        valA = (a.status || "").toLowerCase();
+        valB = (b.status || "").toLowerCase();
+      } else if (batchSortField === "name") {
+        valA = (a.name || "").toLowerCase();
+        valB = (b.name || "").toLowerCase();
+      } else if (batchSortField === "exam") {
+        const examA = tree.find(e => e.id === a.exam_id);
+        const examB = tree.find(e => e.id === b.exam_id);
+        valA = (examA?.name || "").toLowerCase();
+        valB = (examB?.name || "").toLowerCase();
+      } else if (batchSortField === "target_year") {
+        valA = a.target_year || 0;
+        valB = b.target_year || 0;
+      }
+
+      if (valA < valB) return batchSortDir === "asc" ? -1 : 1;
+      if (valA > valB) return batchSortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [batches, filterExam, filterStatus, filterYear, batchSortField, batchSortDir, tree]);
 
   // --- Helper Components ---
   const NodeButton = ({ icon: Icon, label, colorClass, onClick }) => (
-    <button 
+    <button
       onClick={onClick}
       className={`absolute -bottom-3 left-1/2 -translate-x-1/2 bg-background px-1.5 flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider rounded-md hover:scale-110 transition-transform ${colorClass}`}
     >
@@ -557,24 +434,56 @@ export default function MasterDataBuilderPage() {
   )
 
   const DeleteBtn = ({ onClick }) => (
-    <button 
+    <button
       onClick={onClick}
-      className="p-1.5 rounded bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors"
+      className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
       title="Delete"
     >
-      <Trash2 className="h-4 w-4" />
+      <Trash className="h-4 w-4" />
     </button>
   )
-  
+
   const SettingsBtn = ({ onClick }) => (
-    <button 
+    <button
       onClick={onClick}
-      className="p-1.5 rounded bg-muted/50 text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors"
+      className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
       title="Settings"
     >
       <Settings className="h-4 w-4" />
     </button>
   )
+
+  const getStatusStyle = (status) => {
+    switch (status?.toLowerCase()) {
+      case "active":
+        return "text-emerald-600 font-medium"
+      case "upcoming":
+        return "text-blue-600 font-medium"
+      case "completed":
+        return "text-gray-500 font-medium"
+      default:
+        return "text-muted-foreground font-medium"
+    }
+  }
+
+  const SortButton = ({ label, field, sortField, sortDir, onSort }) => {
+    const active = sortField === field
+    return (
+      <button
+        onClick={() => onSort(field)}
+        className="flex items-center gap-1 hover:text-foreground transition-colors font-semibold cursor-pointer text-foreground select-none"
+      >
+        <span>{label}</span>
+        <span className="flex flex-col text-[10px] leading-[8px] opacity-70">
+          {active ? (
+            sortDir === "asc" ? <ArrowUp className="h-3 w-3 text-primary stroke-[2.5]" /> : <ArrowDown className="h-3 w-3 text-primary stroke-[2.5]" />
+          ) : (
+            <ArrowUpDown className="h-3 w-3 opacity-40 hover:opacity-100 transition-opacity" />
+          )}
+        </span>
+      </button>
+    )
+  }
 
   const ExpandBtn = ({ isOpen, onClick }) => (
     <button onClick={onClick} className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors mr-2">
@@ -582,14 +491,194 @@ export default function MasterDataBuilderPage() {
     </button>
   )
 
+  // simple custom text input prompt modal
+  const CustomPrompt = ({ isOpen, title, value, onChange, onConfirm, onCancel, placeholder }) => {
+    if (!isOpen) return null
+    return (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full shadow-lg space-y-4">
+          <h3 className="font-bold text-foreground text-base">{title}</h3>
+          <input
+            type="text"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onConfirm()
+              if (e.key === "Escape") onCancel()
+            }}
+          />
+          <div className="flex justify-end gap-2">
+            <button onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
+            <button onClick={onConfirm} className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">Confirm</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // school create and edit modal
+  const SchoolDialog = ({ isOpen, schoolForm, setSchoolForm, onSubmit, onCancel, isEdit }) => {
+    if (!isOpen) return null
+    return (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-lg space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-foreground text-base">{isEdit ? "Edit School" : "Add School"}</h3>
+            <button onClick={onCancel} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+          </div>
+          <form onSubmit={onSubmit} className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">School Name</label>
+              <input
+                type="text"
+                required
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                value={schoolForm.name}
+                onChange={(e) => setSchoolForm({ ...schoolForm, name: e.target.value })}
+                placeholder="e.g. University of the Philippines"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Address / Campus</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                value={schoolForm.address}
+                onChange={(e) => setSchoolForm({ ...schoolForm, address: e.target.value })}
+                placeholder="e.g. Diliman, Quezon City"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
+              <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">{isEdit ? "Save Changes" : "Add School"}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
+  // batch create and edit modal
+  const BatchDialog = ({ isOpen, batchForm, setBatchForm, onSubmit, onCancel, tree, isEdit }) => {
+    if (!isOpen) return null
+    return (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-lg space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-foreground text-base">{isEdit ? "Edit Batch" : "Add Batch"}</h3>
+            <button onClick={onCancel} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+          </div>
+          <form onSubmit={onSubmit} className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Batch Name / Number</label>
+              <input
+                type="text"
+                required
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                value={batchForm.batchNumber}
+                onChange={(e) => setBatchForm({ ...batchForm, batchNumber: e.target.value })}
+                placeholder="e.g. Batch 1"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Target Year</label>
+              <input
+                type="text"
+                required
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                value={batchForm.year}
+                onChange={(e) => setBatchForm({ ...batchForm, year: e.target.value })}
+                placeholder="e.g. 2025"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Target Examination</label>
+              <select
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                value={batchForm.examId}
+                onChange={(e) => setBatchForm({ ...batchForm, examId: e.target.value })}
+                required
+              >
+                <option value="" disabled>Select Examination</option>
+                {tree.map((exam) => (
+                  <option key={exam.id} value={exam.id}>{exam.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Status</label>
+              <select
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                value={batchForm.status}
+                onChange={(e) => setBatchForm({ ...batchForm, status: e.target.value })}
+              >
+                <option value="upcoming">Upcoming</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
+              <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">{isEdit ? "Save Changes" : "Create Batch"}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
+  // exam settings modal
+  const ExamSettingsDialog = ({ isOpen, examSettings, setExamSettings, onSave, onCancel }) => {
+    if (!isOpen) return null
+    return (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-lg space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-foreground text-base">Examination Settings</h3>
+            <button onClick={onCancel} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+          </div>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Examination Name</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                value={examSettings.name}
+                onChange={(e) => setExamSettings({ ...examSettings, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Max Depth Level</label>
+              <input
+                type="number"
+                min="1"
+                max="5"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                value={examSettings.maxLevel}
+                onChange={(e) => setExamSettings({ ...examSettings, maxLevel: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
+              <button type="button" onClick={onSave} className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">Save Settings</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-background text-foreground p-8 font-sans">
-      
-      <CustomPrompt 
+    <div className="space-y-6 w-full max-w-6xl mx-auto px-4 py-4 relative animate-in fade-in duration-300">
+
+      <CustomPrompt
         isOpen={promptData.isOpen}
         title={promptData.title}
         value={promptData.value}
-        onChange={(val) => setPromptData({...promptData, value: val})}
+        onChange={(val) => setPromptData({ ...promptData, value: val })}
         onConfirm={handlePromptConfirm}
         onCancel={closePrompt}
         placeholder={promptData.placeholder}
@@ -622,589 +711,680 @@ export default function MasterDataBuilderPage() {
         onCancel={() => setIsExamSettingsOpen(false)}
       />
 
-      <div className="max-w-6xl mx-auto space-y-8">
-        
+      <div className="space-y-6">
+
         {/* Header */}
-        <div className="flex justify-between items-end border-b border-border pb-4">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2 mb-1">
-              <Layers className="h-6 w-6 text-primary" /> Master Data
+        <div className="border-b border-border pb-4">
+          <div className="flex items-center gap-2.5 mb-1">
+            <Layers className="h-6 w-6 text-[#E9C46A]" />
+            <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase">
+              MASTER DATA
             </h1>
-            <p className="text-sm text-muted-foreground">Manage core system data, structural blueprints, and cohorts.</p>
           </div>
+          <p className="text-muted-foreground text-sm font-medium">
+            Manage core system data, structural blueprints, and cohorts.
+          </p>
         </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center p-12">
-             <div className="flex flex-col items-center gap-3">
-               <span className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-               <p className="text-muted-foreground font-medium text-sm">Synchronizing Master Data...</p>
-             </div>
+            <div className="flex flex-col items-center gap-3">
+              <span className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <p className="text-muted-foreground font-medium text-sm">Synchronizing Master Data...</p>
+            </div>
           </div>
         ) : (
           <AnimatePresence mode="wait">
 
 
-          {/* === LEVEL 0: MAIN MENU === */}
-          {activeTab === "menu" && (
-            <motion.div
-              key="menu"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-3"
-            >
-              <div 
-                className="bg-card border border-border rounded-2xl p-6 flex items-center justify-between cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
-                onClick={() => setActiveTab("tree")}
+            {/* === LEVEL 0: MAIN MENU === */}
+            {activeTab === "menu" && (
+              <motion.div
+                key="menu"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-100"
               >
-                <div className="flex items-center gap-5">
-                  <div className="p-3 rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
-                    <FolderTree className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-foreground text-lg">Examination Management Data</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Manage examinations, courses, and specializations Â· {tree.length} examination{tree.length !== 1 ? "s" : ""} registered
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-
-              <div 
-                className="bg-card border border-border rounded-2xl p-6 flex items-center justify-between cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
-                onClick={() => setActiveTab("batches")}
-              >
-                <div className="flex items-center gap-5">
-                  <div className="p-3 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
-                    <Calendar className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-foreground text-lg">Batch Management Data</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Manage cohorts and timelines Â· {batches.length} batch{batches.length !== 1 ? "es" : ""} registered
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-
-              <div 
-                className="bg-card border border-border rounded-2xl p-6 flex items-center justify-between cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
-                onClick={() => setActiveTab("education")}
-              >
-                <div className="flex items-center gap-5">
-                  <div className="p-3 rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400">
-                    <Layers className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-foreground text-lg">Academic Institutions & Courses</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Manage {schools.length} school{schools.length !== 1 ? "s" : ""} and {academicCourses.length} course{academicCourses.length !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-
-              <div 
-                className="bg-card border border-border rounded-2xl p-6 flex items-center justify-between cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
-                onClick={() => setActiveTab("gradebook")}
-              >
-                <div className="flex items-center gap-5">
-                  <div className="p-3 rounded-xl bg-rose-100 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">
-                    <Calculator className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-foreground text-lg">Gradebook</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      Computation, formula, and view of grades of student for readiness score
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-            </motion.div>
-          )}
-          
-          {/* TAB 1: EXAMINATION MANAGEMENT DATA */}
-          {activeTab === "tree" && (
-            <motion.div 
-              key="tree"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="bg-card border border-border rounded-2xl p-6 shadow-sm relative"
-            >
-              <AnimatePresence mode="wait">
-
-                {/* === LIST VIEW === */}
-                {selectedExamId === null && (
-                  <motion.div
-                    key="exam-list"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                  >
-                    <div className="flex items-center gap-4 mb-6 pb-4 border-b border-border">
-                      <button 
-                        onClick={() => setActiveTab("menu")}
-                        className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <ChevronRight className="h-5 w-5 rotate-180" />
-                      </button>
-                      <div className="flex-1">
-                        <h2 className="text-lg font-bold">Examination Management Data</h2>
-                        <p className="text-sm text-muted-foreground">Select an examination to manage its structure.</p>
-                      </div>
-                      <button 
-                        onClick={() => openPrompt("Enter Examination Name:", "ADD_EXAM", null)} 
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 px-4 rounded-lg flex items-center gap-2 shadow-sm transition-all text-sm"
-                      >
-                        <PlusCircle className="h-4 w-4" /> Add Examination
-                      </button>
+                {/* Examination Management Data */}
+                {/* Examination Management Data */}
+                <div
+                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
+                  onClick={() => handleTabChange("tree")}
+                >
+                  <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+                    <FolderTree className="h-6 w-6 text-[#E9C46A] shrink-0" />
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
+                        Examination Management Data
+                      </h3>
+                      <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
+                        Manage examinations, courses, and specializations
+                      </p>
                     </div>
+                  </div>
+                  <div className="flex items-center shrink-0 ml-4">
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </div>
 
-                    <div className="space-y-3">
-                      {tree.map(exam => {
-                        const totalMajors = exam.programs.reduce((acc, p) => acc + p.majors.length, 0);
-                        return (
-                          <div 
-                            key={exam.id}
-                            className="bg-background border border-border rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-primary/50 hover:shadow-sm transition-all group"
-                            onClick={() => setSelectedExamId(exam.id)}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="p-2.5 rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
-                                <FolderTree className="h-6 w-6" />
-                              </div>
-                              <div>
-                                <h3 className="font-bold text-foreground text-base">{exam.name}</h3>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  {exam.programs.length} course{exam.programs.length !== 1 ? "s" : ""} Â· {totalMajors} specialization{totalMajors !== 1 ? "s" : ""} Â· Max depth: {exam.maxLevel || 3}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                              <SettingsBtn onClick={() => openExamSettings(exam)} />
-                              <DeleteBtn onClick={() => handleDeleteExam(exam.id)} />
-                              <ChevronRight className="h-5 w-5 text-muted-foreground ml-2 group-hover:text-primary transition-colors" />
-                            </div>
-                          </div>
-                        )
-                      })}
+                {/* Batch Management Data */}
+                <div
+                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
+                  onClick={() => handleTabChange("batches")}
+                >
+                  <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+                    <Calendar className="h-6 w-6 text-[#E9C46A] shrink-0" />
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
+                        Batch Management Data
+                      </h3>
+                      <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
+                        Manage cohorts, timelines, and student batches
+                      </p>
                     </div>
+                  </div>
+                  <div className="flex items-center shrink-0 ml-4">
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </div>
 
-                    {tree.length === 0 && (
-                      <div className="text-center py-16 text-muted-foreground bg-muted/20 rounded-xl border border-dashed border-border mt-4">
-                        <FolderTree className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-                        <p className="font-medium text-foreground">No examinations yet.</p>
-                        <p className="text-sm mt-1">Click &quot;Add Examination&quot; above to create your first one.</p>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
+                {/* Academic Institutions & Courses */}
+                <div
+                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
+                  onClick={() => handleTabChange("education")}
+                >
+                  <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+                    <Layers className="h-6 w-6 text-[#E9C46A] shrink-0" />
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
+                        Academic Institutions & Courses
+                      </h3>
+                      <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
+                        Manage registered universities, schools, and academic course offerings
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center shrink-0 ml-4">
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </div>
 
-                {/* === DETAIL VIEW (selected exam) === */}
-                {(() => {
-                  const exam = selectedExamId !== null ? tree.find(e => e.id === selectedExamId) : null;
-                  if (selectedExamId !== null && !exam) return null; // exam was deleted, useEffect below handles reset
-                  if (!exam) return null;
-                  return (
+                {/* Gradebook */}
+                <div
+                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
+                  onClick={() => handleTabChange("gradebook")}
+                >
+                  <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+                    <Calculator className="h-6 w-6 text-[#E9C46A] shrink-0" />
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
+                        Gradebook
+                      </h3>
+                      <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
+                        Computation, formula, and readiness score monitoring
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center shrink-0 ml-4">
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* TAB 1: EXAMINATION MANAGEMENT DATA */}
+            {activeTab === "tree" && (
+              <motion.div
+                key="tree"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-card border border-border rounded-2xl p-6 shadow-sm relative"
+              >
+                <AnimatePresence mode="wait">
+
+                  {/* === LIST VIEW === */}
+                  {selectedExamId === null && (
                     <motion.div
-                      key="exam-detail"
-                      initial={{ opacity: 0, x: 10 }}
+                      key="exam-list"
+                      initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 10 }}
+                      exit={{ opacity: 0, x: -10 }}
                     >
-                      {/* Back button + header */}
                       <div className="flex items-center gap-4 mb-6 pb-4 border-b border-border">
-                        <button 
-                          onClick={() => setSelectedExamId(null)}
-                          className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
+                        <button
+                          onClick={() => handleTabChange("menu")}
+                          className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                          title="Back to Master Data"
                         >
                           <ChevronRight className="h-5 w-5 rotate-180" />
                         </button>
                         <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <h2 className="text-lg font-bold">{exam.name}</h2>
-                            <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full">Max Depth: {exam.maxLevel || 3}</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">Manage courses and specializations under this examination.</p>
+                          <h2 className="text-lg font-bold text-foreground">
+                            Examination Management Data
+                          </h2>
+                          <p className="text-sm text-muted-foreground">Select an examination to manage its structure.</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => openPrompt("Enter Course / Program Name:", "ADD_PROGRAM", { examId: exam.id })}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 px-4 rounded-lg flex items-center gap-2 shadow-sm transition-all text-sm"
+                          <span className="text-xs font-semibold text-muted-foreground bg-muted border border-border px-3 py-1.5 rounded-full">
+                            {tree.length} {tree.length === 1 ? "Exam" : "Exams"}
+                          </span>
+                          <button
+                            onClick={() => openPrompt("Enter Examination Name:", "ADD_EXAM", null)}
+                            className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm transition-all text-xs uppercase cursor-pointer active:scale-95"
                           >
-                            <PlusCircle className="h-4 w-4" /> Add Course
+                            Add Examination
                           </button>
-                          <SettingsBtn onClick={() => openExamSettings(exam)} />
                         </div>
                       </div>
 
-                      {/* Tree detail for this exam */}
-                      <div className="min-h-[350px] overflow-x-auto p-4 bg-muted/20 rounded-xl border border-border/50">
+                      {tree.length > 0 && (
+                        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-100">
+                          {tree.map(exam => {
+                            const totalMajors = exam.programs.reduce((acc, p) => acc + p.majors.length, 0);
+                            return (
+                              <div
+                                key={exam.id}
+                                className="p-4 sm:p-5 flex items-center justify-between cursor-pointer transition-all group"
+                                onClick={() => setSelectedExamId(exam.id)}
+                              >
+                                <div>
+                                  <h3 className="font-bold text-foreground text-base group-hover:text-[#E9C46A] transition-colors">{exam.name}</h3>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {exam.programs.length} course{exam.programs.length !== 1 ? "s" : ""} · {totalMajors} specialization{totalMajors !== 1 ? "s" : ""} · Max depth: {exam.maxLevel || 3}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0 ml-4" onClick={e => e.stopPropagation()}>
+                                  <SettingsBtn onClick={() => openExamSettings(exam)} />
+                                  <DeleteBtn onClick={() => handleDeleteExam(exam.id, exam.name)} />
+                                  <ChevronRight className="h-4 w-4 text-muted-foreground ml-2 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {tree.length === 0 && (
+                        <div className="text-center py-16 text-muted-foreground bg-muted/20 rounded-xl border border-solid border-border mt-4">
+                          <p className="font-medium text-foreground">No examinations yet.</p>
+                          <p className="text-sm mt-1">Click &quot;Add Examination&quot; above to create your first one.</p>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* === DETAIL VIEW (selected exam) === */}
+                  {(() => {
+                    const exam = selectedExamId !== null ? tree.find(e => e.id === selectedExamId) : null;
+                    if (selectedExamId !== null && !exam) return null; // exam was deleted, useEffect below handles reset
+                    if (!exam) return null;
+                    return (
+                      <motion.div
+                        key="exam-detail"
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }}
+                      >
+                        {/* Back button + header */}
+                        <div className="flex items-center gap-4 mb-6 pb-4 border-b border-border">
+                          <button
+                            onClick={() => setSelectedExamId(null)}
+                            className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                            title="Back to Examinations"
+                          >
+                            <ChevronRight className="h-5 w-5 rotate-180" />
+                          </button>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2.5">
+                              <h2 className="text-lg font-bold text-foreground">{exam.name}</h2>
+                              <span className="text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200/70 px-2.5 py-0.5 rounded-full">
+                                Max Depth: {exam.maxLevel || 3}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-0.5">Manage courses and specializations under this examination.</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => openPrompt("Enter Course / Program Name:", "ADD_PROGRAM", { examId: exam.id })}
+                              className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm transition-all text-xs uppercase cursor-pointer active:scale-95"
+                            >
+                              Add Course
+                            </button>
+                            <SettingsBtn onClick={() => openExamSettings(exam)} />
+                          </div>
+                        </div>
+
+                        {/* Course / Program List */}
                         {exam.programs.length === 0 ? (
-                          <div className="text-center py-16 text-muted-foreground">
-                            <FolderTree className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
+                          <div className="text-center py-16 text-muted-foreground bg-white rounded-2xl border border-gray-100 shadow-2xs">
                             <p className="font-medium text-foreground">No courses added yet.</p>
                             <p className="text-sm mt-1">Click &quot;Add Course&quot; to start building this examination&apos;s structure.</p>
                           </div>
                         ) : (
-                          <div className="pl-4 space-y-3">
-                            {exam.programs.map((prog, index) => {
+                          <div className="space-y-3">
+                            {exam.programs.map((prog) => {
                               const isProgOpen = expandedNodes[prog.id];
-                              const isLastProg = index === exam.programs.length - 1;
-                              
+
                               return (
-                                <div key={prog.id} className="relative">
-                                  {/* Vertical connector between programs */}
-                                  {!isLastProg && (
-                                    <div className="absolute left-6 top-10 bottom-[-16px] w-[2px]" style={{ backgroundColor: 'rgba(59, 130, 246, 0.25)' }} />
-                                  )}
-
-                                  {/* Vertical line for Specializations inside this program */}
-                                  {isProgOpen && prog.majors.length > 0 && (
-                                    <div className="absolute left-[4.5rem] top-10 bottom-6 w-4 border-l-2 border-transparent" style={{ borderLeftColor: 'rgba(34, 197, 94, 0.35)' }} />
-                                  )}
-
-                                  {/* Level 2: Course Box */}
-                                  <div className="relative z-10 w-full max-w-[500px] bg-card border-2 border-green-500 rounded-xl px-4 py-3 flex justify-between items-center shadow-sm mb-2">
-                                    <div className="flex items-center font-bold text-foreground">
-                                      <ExpandBtn isOpen={isProgOpen} onClick={() => toggleNode(prog.id)} />
-                                      {prog.name}
+                                <div key={prog.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-2xs transition-all">
+                                  {/* Course Row Header */}
+                                  <div className="p-4 sm:p-5 flex items-center justify-between transition-colors">
+                                    <div
+                                      className="flex items-center gap-2 cursor-pointer select-none"
+                                      onClick={() => toggleNode(prog.id)}
+                                    >
+                                      <button className="p-1 text-gray-400 hover:text-gray-700 transition-colors">
+                                        {isProgOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                      </button>
+                                      <span className="font-bold text-foreground text-sm sm:text-base">{prog.name}</span>
+                                      <span className="text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200/60 px-2 py-0.5 rounded-md ml-1">
+                                        {prog.majors.length} {prog.majors.length === 1 ? 'Spec' : 'Specs'}
+                                      </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <button onClick={() => openPrompt("Enter Specialization / Major Name:", "ADD_MAJOR", { examId: exam.id, programId: prog.id })} className="text-green-500 hover:text-green-600 p-1"><PlusCircle className="h-5 w-5" /></button>
+                                      <button
+                                        onClick={() => openPrompt("Enter Specialization / Major Name:", "ADD_MAJOR", { examId: exam.id, programId: prog.id })}
+                                        className="flex items-center gap-1 text-xs font-semibold text-[#E9C46A] hover:text-[#dfb550] hover:bg-blue-50/60 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                                        title="Add Specialization"
+                                      >
+                                        <Plus className="h-3.5 w-3.5" /> Spec
+                                      </button>
                                       <SettingsBtn onClick={() => openPrompt("Rename Course / Program:", "RENAME_PROGRAM", { examId: exam.id, programId: prog.id }, prog.name, prog.name)} />
-                                      <DeleteBtn onClick={() => handleDeleteProgram(exam.id, prog.id)} />
+                                      <DeleteBtn onClick={() => handleDeleteProgram(exam.id, prog.id, prog.name)} />
                                     </div>
-                                    <NodeButton icon={Plus} label="Spec" colorClass="text-green-500" onClick={() => openPrompt("Enter Specialization / Major Name:", "ADD_MAJOR", { examId: exam.id, programId: prog.id })} />
                                   </div>
 
-                                  {/* Level 3: Specializations */}
+                                  {/* Nested Specializations */}
                                   <AnimatePresence>
                                     {isProgOpen && (
-                                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                        <div className="pl-12 pt-1 pb-1 space-y-2 relative z-0">
-                                          {prog.majors.map((major, mIndex) => {
-                                            const isLastMajor = mIndex === prog.majors.length - 1;
-                                            return (
-                                              <div key={major.id} className="relative">
-                                                <div className="absolute -left-6 top-1/2 w-6 border-t-2 border-transparent" style={{ borderTopColor: 'rgba(34, 197, 94, 0.35)' }} />
-                                                {!isLastMajor && (<div className="absolute -left-6 top-1/2 bottom-[-8px] w-[2px]" style={{ backgroundColor: 'rgba(34, 197, 94, 0.35)' }} />)}
-                                                
-                                                <div className="w-full max-w-[460px] bg-card border-2 border-purple-500 rounded-xl px-4 py-3 flex justify-between items-center shadow-sm relative z-10">
-                                                  <div className="font-bold text-foreground pl-6">
-                                                    {major.name}
-                                                  </div>
-                                                  <div className="flex items-center gap-2">
-                                                    <SettingsBtn onClick={() => openPrompt("Rename Specialization / Major:", "RENAME_MAJOR", { examId: exam.id, programId: prog.id, majorId: major.id }, major.name, major.name)} />
-                                                    <DeleteBtn onClick={() => handleDeleteMajor(exam.id, prog.id, major.id)} />
-                                                  </div>
+                                      <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden border-t border-gray-100 bg-gray-50/40"
+                                      >
+                                        {prog.majors.length === 0 ? (
+                                          <div className="py-3.5 px-6 text-xs text-muted-foreground italic">
+                                            No specializations configured yet. Click &quot;+ Spec&quot; to add one.
+                                          </div>
+                                        ) : (
+                                          <div className="divide-y divide-gray-100/80">
+                                            {prog.majors.map((major) => (
+                                              <div key={major.id} className="py-3 px-6 pl-10 flex items-center justify-between text-xs sm:text-sm font-medium text-gray-700">
+                                                <div className="flex items-center gap-2.5">
+                                                  <span className="h-1.5 w-1.5 rounded-full bg-[#E9C46A]" />
+                                                  <span className="font-semibold text-gray-800">{major.name}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                  <SettingsBtn onClick={() => openPrompt("Rename Specialization / Major:", "RENAME_MAJOR", { examId: exam.id, programId: prog.id, majorId: major.id }, major.name, major.name)} />
+                                                  <DeleteBtn onClick={() => handleDeleteMajor(exam.id, prog.id, major.id, major.name)} />
                                                 </div>
                                               </div>
-                                            )
-                                          })}
-                                        </div>
+                                            ))}
+                                          </div>
+                                        )}
                                       </motion.div>
                                     )}
                                   </AnimatePresence>
-
                                 </div>
                               )
                             })}
                           </div>
                         )}
-                      </div>
-                    </motion.div>
-                  )
-                })()}
+                      </motion.div>
+                    )
+                  })()}
 
-              </AnimatePresence>
-            </motion.div>
-          )}
+                </AnimatePresence>
+              </motion.div>
+            )}
 
-          {/* TAB 2: BATCH MANAGEMENT DATA */}
-          {activeTab === "batches" && (
-            <motion.div 
-              key="batches"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-            >
-              <div className="w-full bg-card border border-border rounded-2xl p-6 shadow-sm">
-                 
-                 {/* Back + Header */}
-                 <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
-                   <button 
-                     onClick={() => setActiveTab("menu")}
-                     className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
-                   >
-                     <ChevronRight className="h-5 w-5 rotate-180" />
-                   </button>
-                   <div className="flex-1">
-                     <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
-                      <Calendar className="h-6 w-6 text-primary" /> Batch Management Data
-                    </h2>
-                    <p className="text-sm text-muted-foreground">Manage cohorts, timelines, and student batches.</p>
-                   </div>
-                   <button 
-                     onClick={handleOpenAddBatch}
-                     className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 px-4 rounded-lg flex items-center gap-2 shadow-sm transition-all text-sm"
-                   >
-                     <PlusCircle className="h-4 w-4" /> Add New Batch
-                   </button>
-                 </div>
-
-                 {/* Filters Row */}
-                 <div className="flex flex-wrap items-center gap-3 mb-6 bg-muted/30 p-3 rounded-lg border border-border/50">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground mr-2">
-                       <Filter className="h-4 w-4" /> Filters:
+            {/* TAB 2: BATCH MANAGEMENT DATA */}
+            {activeTab === "batches" && (
+              <motion.div
+                key="batches"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+              >
+                <div className="w-full bg-card border border-border rounded-2xl p-6 shadow-sm">
+                  {/* Header */}
+                  <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
+                    <button
+                      onClick={() => handleTabChange("menu")}
+                      className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title="Back to Master Data"
+                    >
+                      <ChevronRight className="h-5 w-5 rotate-180" />
+                    </button>
+                    <div className="flex-1">
+                      <h2 className="text-lg font-bold text-foreground">
+                        Batch Management Data
+                      </h2>
+                      <p className="text-sm text-muted-foreground">Manage cohorts, timelines, and student batches.</p>
                     </div>
-                    <select 
-                      value={filterExam} onChange={e => setFilterExam(e.target.value)}
-                      className="bg-background border border-border rounded-md px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary min-w-[140px]"
-                    >
-                       <option value="all">All Examinations</option>
-                       {tree.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-                    </select>
-                    <select 
-                      value={filterYear} onChange={e => setFilterYear(e.target.value)}
-                      className="bg-background border border-border rounded-md px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary min-w-[120px]"
-                    >
-                       <option value="all">All Years</option>
-                       <option value="2024">2024</option>
-                       <option value="2025">2025</option>
-                       <option value="2026">2026</option>
-                       <option value="2027">2027</option>
-                    </select>
-                    <select 
-                      value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-                      className="bg-background border border-border rounded-md px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary min-w-[120px]"
-                    >
-                       <option value="all">All Statuses</option>
-                       <option value="active">Active</option>
-                       <option value="upcoming">Upcoming</option>
-                       <option value="completed">Completed</option>
-                    </select>
-                 </div>
-                
-                 {/* Batches Table */}
-                 <div className="space-y-4">
-                  {filteredBatches.length > 0 ? (
-                    <div className="rounded-lg border border-border overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/50 hover:bg-muted/50">
-                            <TableHead className="w-[120px]">Status</TableHead>
-                            <TableHead>Batch Name</TableHead>
-                            <TableHead>Examination</TableHead>
-                            <TableHead>Target Year</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredBatches.map(batch => {
-                            const exam = tree.find(e => e.id === batch.exam_id)
-                            return (
-                              <TableRow key={batch.id}>
-                                <TableCell>
-                                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold ${
-                                      batch.status === 'active' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
-                                      : batch.status === 'upcoming' ? 'bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
-                                      : 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400'
-                                    }`}>
-                                      {batch.status === 'active' ? <CheckCircle className="h-3 w-3"/> :
-                                      batch.status === 'upcoming' ? <Clock className="h-3 w-3"/> : <XCircle className="h-3 w-3"/>}
-                                      <span className="uppercase tracking-wider">{batch.status}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-muted-foreground bg-muted border border-border px-3 py-1.5 rounded-full">
+                        {batches.length} {batches.length === 1 ? "Batch" : "Batches"}
+                      </span>
+                      <button
+                        onClick={handleOpenAddBatch}
+                        className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm transition-all text-xs uppercase cursor-pointer active:scale-95"
+                      >
+                        Add New Batch
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Filters Row */}
+                  <div className="flex flex-wrap items-center gap-2.5 mb-6">
+                    {/* Examination Filter */}
+                    <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
+                      <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground font-medium">Exam:</span>
+                      <select
+                        value={filterExam}
+                        onChange={e => setFilterExam(e.target.value)}
+                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                      >
+                        <option value="all">All</option>
+                        {tree.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Target Year Filter */}
+                    <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
+                      <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground font-medium">Year:</span>
+                      <select
+                        value={filterYear}
+                        onChange={e => setFilterYear(e.target.value)}
+                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                      >
+                        <option value="all">All</option>
+                        {yearsList.map(y => <option key={y} value={y}>{y}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Status Filter */}
+                    <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
+                      <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground font-medium">Status:</span>
+                      <select
+                        value={filterStatus}
+                        onChange={e => setFilterStatus(e.target.value)}
+                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                      >
+                        <option value="all">All</option>
+                        <option value="active">Active</option>
+                        <option value="upcoming">Upcoming</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                    </div>
+
+                    {(filterExam !== "all" || filterYear !== "all" || filterStatus !== "all") && (
+                      <button
+                        onClick={() => {
+                          setFilterExam("all")
+                          setFilterYear("all")
+                          setFilterStatus("all")
+                        }}
+                        className="text-xs text-[#E9C46A] font-semibold hover:underline self-center px-1 cursor-pointer"
+                      >
+                        Reset filters
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Batches Table */}
+                  <div className="border border-border rounded-2xl overflow-hidden bg-card shadow-sm min-h-[300px] flex flex-col">
+                    {filteredBatches.length > 0 ? (
+                      <div className="overflow-x-auto flex-1">
+                        <table className="w-full text-left border-collapse">
+                          <thead className="bg-muted">
+                            <tr className="border-b border-border text-[13px] font-semibold text-foreground">
+                              <th className="py-3.5 px-5 w-[22%]" scope="col">
+                                <SortButton label="Status" field="status" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                              </th>
+                              <th className="py-3.5 px-5 w-[22%]" scope="col">
+                                <SortButton label="Batch" field="name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                              </th>
+                              <th className="py-3.5 px-5 w-[26%]" scope="col">
+                                <SortButton label="Target Examination" field="exam" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                              </th>
+                              <th className="py-3.5 px-5 w-[20%]" scope="col">
+                                <SortButton label="Target Year" field="target_year" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                              </th>
+                              <th className="py-3.5 px-5 w-[10%] text-right font-medium text-foreground" scope="col">
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-sm">
+                            {filteredBatches.map(batch => {
+                              const exam = tree.find(e => e.id === batch.exam_id)
+                              return (
+                                <tr key={batch.id} className="h-11 border-b border-border/50 last:border-b-0">
+                                  <td className="py-3 px-5 text-foreground whitespace-nowrap">
+                                    <span className={getStatusStyle(batch.status)}>
+                                      {batch.status ? batch.status.charAt(0).toUpperCase() + batch.status.slice(1) : "Unknown"}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-5 text-foreground whitespace-nowrap font-medium">
+                                    {batch.name}
+                                  </td>
+                                  <td className="py-3 px-5 text-foreground whitespace-nowrap">
+                                    {exam ? exam.name : "Unknown"}
+                                  </td>
+                                  <td className="py-3 px-5 text-foreground whitespace-nowrap">
+                                    {batch.target_year}
+                                  </td>
+                                  <td className="py-3 px-5 text-right whitespace-nowrap">
+                                    <div className="inline-flex items-center justify-end gap-1.5">
+                                      <SettingsBtn onClick={() => handleOpenEditBatch(batch)} />
+                                      <DeleteBtn onClick={() => handleDeleteBatch(batch.id, batch.name)} />
                                     </div>
-                                </TableCell>
-                                <TableCell className="font-bold text-foreground">
-                                  {batch.name}
-                                </TableCell>
-                                <TableCell>
-                                  <span className="text-[10px] uppercase tracking-wider bg-muted text-muted-foreground py-1 px-2.5 rounded-full border border-border font-semibold">
-                                     {exam ? exam.name : "Unknown"}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="font-medium text-muted-foreground">
-                                  <div className="flex items-center gap-1.5"><Calendar className="h-4 w-4"/> {batch.target_year}</div>
-                                </TableCell>
-                                <TableCell className="text-right flex justify-end gap-2">
-                                  <SettingsBtn onClick={() => handleOpenEditBatch(batch)} />
-                                  <DeleteBtn onClick={() => handleDeleteBatch(batch.id)} />
-                                </TableCell>
-                              </TableRow>
-                            )
-                          })}
-                        </TableBody>
-                      </Table>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-card">
+                        <h2 className="text-lg font-bold text-foreground mb-1 tracking-tight">
+                          {batches.length === 0 ? "No Batches Yet" : "No Matching Batches"}
+                        </h2>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {batches.length === 0
+                            ? "Click on the add new batch button to create your first batch."
+                            : "Try adjusting your filter criteria to view other batches."}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* TAB 4: EDUCATION MANAGEMENT DATA */}
+            {activeTab === "education" && (
+              <motion.div
+                key="education"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-card border border-border rounded-2xl p-6 shadow-sm relative min-h-[400px] flex flex-col gap-10"
+              >
+                {/* Header */}
+                <div className="flex items-center gap-4 border-b border-border pb-4">
+                  <button
+                    onClick={() => handleTabChange("menu")}
+                    className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    title="Back to Master Data"
+                  >
+                    <ChevronRight className="h-5 w-5 rotate-180" />
+                  </button>
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground">
+                      Academic Institutions & Courses
+                    </h2>
+                    <p className="text-sm text-muted-foreground">Configure registered universities, schools, and academic course offerings.</p>
+                  </div>
+                </div>
+
+                {/* Schools Section */}
+                <div>
+                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
+                    <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                      School Management Data
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-muted-foreground bg-muted border border-border px-2.5 py-1 rounded-full">
+                        {schools.length} {schools.length === 1 ? "School" : "Schools"}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setSchoolForm({ id: "", name: "", address: "" })
+                          setIsSchoolEdit(false)
+                          setIsSchoolDialogOpen(true)
+                        }}
+                        className="flex items-center gap-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold py-1.5 px-3.5 rounded-lg shadow-sm transition-all text-xs uppercase cursor-pointer active:scale-95"
+                      >
+                        Add School
+                      </button>
                     </div>
-                  ) : (
-                    <div className="text-center py-16 text-muted-foreground bg-muted/20 rounded-xl border border-dashed border-border">
-                      <FolderTree className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-                      <p className="font-medium text-foreground">No batches found matching the filters.</p>
-                      <p className="text-sm mt-1">Try adjusting your filters or click &quot;Add New Batch&quot; above.</p>
+                  </div>
+
+                  <div className={`rounded-lg border border-border ${isSchoolsExpanded ? 'max-h-[350px] overflow-y-auto' : 'overflow-hidden'}`}>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableHead>School Name</TableHead>
+                          <TableHead>Address</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {schools.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">No schools active.</TableCell>
+                          </TableRow>
+                        )}
+                        {(isSchoolsExpanded ? schools : schools.slice(0, 5)).map(school => (
+                          <TableRow key={school.id}>
+                            <TableCell className="font-bold text-foreground">{school.name}</TableCell>
+                            <TableCell className="text-muted-foreground">{school.address || <span className="opacity-50 italic">No Address Configured</span>}</TableCell>
+                            <TableCell className="text-right flex justify-end gap-2">
+                              <SettingsBtn onClick={() => handleOpenEditSchool(school)} />
+                              <DeleteBtn onClick={() => triggerDelete("Delete School", `Are you sure you want to delete "${school.name}"?`, async () => { await apiCall("DELETE", "SCHOOL", { id: school.id }); await fetchData(); })} />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {schools.length > 5 && (
+                    <div className="flex justify-center mt-3">
+                      <button
+                        onClick={() => setIsSchoolsExpanded(!isSchoolsExpanded)}
+                        className="text-sm font-semibold text-primary hover:text-primary/70 transition-colors"
+                      >
+                        {isSchoolsExpanded ? "Show Less" : `Show All (${schools.length})`}
+                      </button>
                     </div>
                   )}
                 </div>
-              </div>
-            </motion.div>
-          )}
 
-          {/* TAB 4: EDUCATION MANAGEMENT DATA */}
-          {activeTab === "education" && (
-            <motion.div 
-              key="education"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="bg-card border border-border rounded-2xl p-6 shadow-sm relative min-h-[400px] flex flex-col gap-10"
-            >
-              {/* Header */}
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setActiveTab("menu")}
-                  className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
-                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <Layers className="h-5 w-5 text-purple-500" />
-                  Academic Institutions & Courses
-                </h2>
-              </div>
-
-              {/* Schools Section */}
-              <div>
-                <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
-                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                    School Management Data
-                  </h3>
-                  <button 
-                    onClick={() => {
-                        setSchoolForm({ id: "", name: "", address: "" })
-                        setIsSchoolEdit(false)
-                        setIsSchoolDialogOpen(true)
-                    }}
-                    className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-1.5 px-3 rounded-lg shadow-sm transition-all text-sm"
-                  >
-                    <PlusCircle className="h-4 w-4" /> Add School
-                  </button>
-                </div>
-
-                <div className={`rounded-lg border border-border ${isSchoolsExpanded ? 'max-h-[350px] overflow-y-auto' : 'overflow-hidden'}`}>
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50 hover:bg-muted/50">
-                        <TableHead>School Name</TableHead>
-                        <TableHead>Address</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {schools.length === 0 && (
-                         <TableRow>
-                            <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">No schools active.</TableCell>
-                         </TableRow>
-                      )}
-                      {(isSchoolsExpanded ? schools : schools.slice(0, 5)).map(school => (
-                        <TableRow key={school.id}>
-                          <TableCell className="font-bold text-foreground">{school.name}</TableCell>
-                          <TableCell className="text-muted-foreground">{school.address || <span className="opacity-50 italic">No Address Configured</span>}</TableCell>
-                          <TableCell className="text-right flex justify-end gap-2">
-                            <SettingsBtn onClick={() => handleOpenEditSchool(school)} />
-                            <DeleteBtn onClick={async () => { await apiCall("DELETE", "SCHOOL", { id: school.id }); await fetchData(); }} />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                {schools.length > 5 && (
-                  <div className="flex justify-center mt-3">
-                    <button 
-                      onClick={() => setIsSchoolsExpanded(!isSchoolsExpanded)}
-                      className="text-sm font-semibold text-primary hover:text-primary/70 transition-colors"
-                    >
-                      {isSchoolsExpanded ? "Show Less" : `Show All (${schools.length})`}
-                    </button>
+                {/* Courses Section */}
+                <div>
+                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
+                    <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                      Course Management Data
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-muted-foreground bg-muted border border-border px-2.5 py-1 rounded-full">
+                        {academicCourses.length} {academicCourses.length === 1 ? "Course" : "Courses"}
+                      </span>
+                      <button
+                        onClick={() => openPrompt("Add Course", "ADD_COURSE", null, "e.g. BS Computer Science")}
+                        className="flex items-center gap-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold py-1.5 px-3.5 rounded-lg shadow-sm transition-all text-xs uppercase cursor-pointer active:scale-95"
+                      >
+                        Add Course
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Courses Section */}
-              <div>
-                <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
-                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                    Course Management Data
-                  </h3>
-                  <button 
-                    onClick={() => openPrompt("Add Course", "ADD_COURSE", null, "e.g. BS Computer Science")}
-                    className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-1.5 px-3 rounded-lg shadow-sm transition-all text-sm"
-                  >
-                    <PlusCircle className="h-4 w-4" /> Add Course
-                  </button>
-                </div>
-
-                <div className={`rounded-lg border border-border ${isCoursesExpanded ? 'max-h-[350px] overflow-y-auto' : 'overflow-hidden'}`}>
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50 hover:bg-muted/50">
-                        <TableHead>Course Name</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {academicCourses.length === 0 && (
-                         <TableRow>
+                  <div className={`rounded-lg border border-border ${isCoursesExpanded ? 'max-h-[350px] overflow-y-auto' : 'overflow-hidden'}`}>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableHead>Course Name</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {academicCourses.length === 0 && (
+                          <TableRow>
                             <TableCell colSpan={2} className="text-center py-6 text-muted-foreground">No courses active.</TableCell>
-                         </TableRow>
-                      )}
-                      {(isCoursesExpanded ? academicCourses : academicCourses.slice(0, 5)).map(course => (
-                        <TableRow key={course.id}>
-                          <TableCell className="font-bold text-foreground">{course.name}</TableCell>
-                          <TableCell className="text-right flex justify-end gap-2">
-                            <SettingsBtn onClick={() => openPrompt("Rename Course", "RENAME_COURSE", { id: course.id }, "Course Name", course.name)} />
-                            <DeleteBtn onClick={async () => { await apiCall("DELETE", "COURSE", { id: course.id }); await fetchData(); }} />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                {academicCourses.length > 5 && (
-                  <div className="flex justify-center mt-3">
-                    <button 
-                      onClick={() => setIsCoursesExpanded(!isCoursesExpanded)}
-                      className="text-sm font-semibold text-primary hover:text-primary/70 transition-colors"
-                    >
-                      {isCoursesExpanded ? "Show Less" : `Show All (${academicCourses.length})`}
-                    </button>
+                          </TableRow>
+                        )}
+                        {(isCoursesExpanded ? academicCourses : academicCourses.slice(0, 5)).map(course => (
+                          <TableRow key={course.id}>
+                            <TableCell className="font-bold text-foreground">{course.name}</TableCell>
+                            <TableCell className="text-right flex justify-end gap-2">
+                              <SettingsBtn onClick={() => openPrompt("Rename Course", "RENAME_COURSE", { id: course.id }, "Course Name", course.name)} />
+                              <DeleteBtn onClick={() => triggerDelete("Delete Academic Course", `Are you sure you want to delete "${course.name}"?`, async () => { await apiCall("DELETE", "COURSE", { id: course.id }); await fetchData(); })} />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
-                )}
-              </div>
-            </motion.div>
-          )}
+                  {academicCourses.length > 5 && (
+                    <div className="flex justify-center mt-3">
+                      <button
+                        onClick={() => setIsCoursesExpanded(!isCoursesExpanded)}
+                        className="text-sm font-semibold text-primary hover:text-primary/70 transition-colors"
+                      >
+                        {isCoursesExpanded ? "Show Less" : `Show All (${academicCourses.length})`}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
 
-          {activeTab === "gradebook" && (
-            <GradebookView 
-              onBack={() => setActiveTab("menu")}
-              batches={batches}
-              tree={tree}
-              schools={schools}
-              gradebooks={gradebooks}
-              fetchData={fetchData}
-              apiCall={apiCall}
-            />
-          )}
+            {activeTab === "gradebook" && (
+              <GradebookView
+                onBack={() => handleTabChange("menu")}
+                batches={batches}
+                tree={tree}
+                schools={schools}
+                gradebooks={gradebooks}
+                fetchData={fetchData}
+                apiCall={apiCall}
+                programs={tree.flatMap(exam => (exam.programs || []).map(p => ({ ...p, exam_id: exam.id })))}
+                majors={tree.flatMap(exam => (exam.programs || []).flatMap(p => (p.majors || []).map(m => ({ ...m, program_id: p.id }))))}
+              />
+            )}
 
-        </AnimatePresence>
+          </AnimatePresence>
         )}
       </div>
+
+      {/* Reusable Confirm Delete Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        title={deleteModal.title}
+        description={deleteModal.description}
+        isDeleting={deleteModal.isDeleting}
+        onConfirm={deleteModal.onConfirm}
+        onCancel={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

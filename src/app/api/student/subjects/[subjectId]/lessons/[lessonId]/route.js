@@ -5,7 +5,7 @@ import { getSession } from "@/lib/auth-session"
 export async function GET(request, props) {
     try {
         const session = await getSession()
-        if (!session?.userId || session.role !== "student") {
+        if (!session?.userId || (session.role !== "student" && session.role !== "teacher" && session.role !== "admin")) {
             return NextResponse.json({ error: "Forbidden." }, { status: 403 })
         }
 

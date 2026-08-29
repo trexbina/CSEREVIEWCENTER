@@ -24,6 +24,12 @@ export async function GET() {
   }
 }
 
+async function ensureTable() {
+  await pool.query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS targets JSONB DEFAULT '[]'::jsonb;
+  `).catch(console.error)
+}
+
 /** POST /api/admin/users — create a student or teacher (admin only). */
 export async function POST(request) {
   try {
@@ -31,6 +37,8 @@ export async function POST(request) {
     if (session?.role !== "admin") {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
+
+    await ensureTable()
 
     const body = await request.json()
     const { name, email, password, role } = body
@@ -58,9 +66,9 @@ export async function POST(request) {
         birthday, gender, phone, address, city, province, zip_code,
         school, course, year_graduated, highest_education,
         exam_id, batch_id, program_id, major_id, job_role_description,
-        school_id, academic_course_id, avatar_url
+        school_id, academic_course_id, avatar_url, targets
       )
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28)
        ON CONFLICT (email) DO NOTHING
        RETURNING id, name, email, role, created_at, avatar_url`,
       [
@@ -91,6 +99,7 @@ export async function POST(request) {
         body.school_id || null,
         body.academic_course_id || null,
         body.avatar_url || null,
+        JSON.stringify(body.targets || []),
       ]
     )
 
@@ -226,8 +235,8 @@ export async function PUT(request) {
           birthday = $9, gender = $10, phone = $11, address = $12, city = $13, province = $14, zip_code = $15,
           school = $16, course = $17, year_graduated = $18, highest_education = $19,
           exam_id = $20, batch_id = $21, program_id = $22, major_id = $23, job_role_description = $24,
-          school_id = $25, academic_course_id = $26, avatar_url = $27
-         WHERE id = $28
+          school_id = $25, academic_course_id = $26, avatar_url = $27, targets = $28
+         WHERE id = $29
          RETURNING id, name, email, role, created_at, avatar_url`,
         [
           name.trim(),
@@ -257,6 +266,7 @@ export async function PUT(request) {
           body.school_id || null,
           body.academic_course_id || null,
           body.avatar_url || null,
+          body.targets !== undefined ? JSON.stringify(body.targets) : null,
           userId,
         ]
       )
@@ -268,8 +278,8 @@ export async function PUT(request) {
           birthday = $8, gender = $9, phone = $10, address = $11, city = $12, province = $13, zip_code = $14,
           school = $15, course = $16, year_graduated = $17, highest_education = $18,
           exam_id = $19, batch_id = $20, program_id = $21, major_id = $22, job_role_description = $23,
-          school_id = $24, academic_course_id = $25, avatar_url = $26
-         WHERE id = $27
+          school_id = $24, academic_course_id = $25, avatar_url = $26, targets = $27
+         WHERE id = $28
          RETURNING id, name, email, role, created_at, avatar_url`,
         [
           name.trim(),
@@ -298,6 +308,7 @@ export async function PUT(request) {
           body.school_id || null,
           body.academic_course_id || null,
           body.avatar_url || null,
+          body.targets !== undefined ? JSON.stringify(body.targets) : null,
           userId,
         ]
       )

@@ -73,13 +73,29 @@ export async function GET(request, props) {
             contents = contentsResult.rows
         }
 
+        // Fetch subject details for breadcrumbs and back navigation
+        const subjectResult = await pool.query(
+            `SELECT s.id, s.title, s.code, s.subcategory_id,
+                    COALESCE(sub.category_id, cat.id) as category_id
+             FROM subjects s
+             LEFT JOIN subcategories sub ON s.subcategory_id = sub.id
+             LEFT JOIN categories cat ON (
+                 s.category IS NOT NULL AND (
+                     s.category = cat.id::text OR LOWER(s.category) = LOWER(cat.name)
+                 )
+             )
+             WHERE s.id = $1`,
+            [subjectId]
+        )
+        const subject = subjectResult.rows[0] || null
+
         // Structure it into a nested array for the frontend
         const structuredModules = modules.map(mod => ({
             ...mod,
             lessons: contents.filter(c => c.module_id === mod.id)
         }))
 
-        return NextResponse.json({ modules: structuredModules })
+        return NextResponse.json({ modules: structuredModules, subject })
     } catch (err) {
         console.error("[admin/subjects/modules GET]", err)
         return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -114,7 +130,27 @@ export async function POST(request, props) {
                 "INSERT INTO subject_contents (module_id, subject_code, title, lesson_type) VALUES ($1, $2, $3, $4) RETURNING *",
                 [module_id, subject_code || null, title.trim(), lesson_type || 'module']
             )
-            return NextResponse.json({ lesson: rows[0] }, { status: 201 })
+            const createdLesson = rows[0]
+
+            // Dispatch notification to students ONLY if this is a new Quiz
+            try {
+              const isQuiz = (lesson_type || '').toLowerCase() === 'quiz' || title.trim().toLowerCase().includes('quiz')
+              if (isQuiz) {
+                const notifTitle = 'New Practice Quiz Published'
+                const notifMsg = `New Practice Quiz added: "${title.trim()}"`
+                const notifLink = `/student/subjects/${subjectId}?lessonId=${createdLesson.id}&type=quiz`
+
+                await pool.query(
+                  `INSERT INTO notifications (student_id, type, title, message, link, is_read, created_at)
+                   VALUES (NULL, 'quiz', $1, $2, $3, FALSE, NOW())`,
+                  [notifTitle, notifMsg, notifLink]
+                )
+              }
+            } catch (notifErr) {
+              console.error("Failed to insert content notification:", notifErr)
+            }
+
+            return NextResponse.json({ lesson: createdLesson }, { status: 201 })
         } else {
             return NextResponse.json({ error: "Invalid type" }, { status: 400 })
         }

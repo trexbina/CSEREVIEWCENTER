@@ -1,9 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Bell, Maximize, Minimize } from "lucide-react"
+import { Search, Bell, Maximize, Minimize, Trash, ChevronDown, User, Settings, ShieldCheck, CheckCheck } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
+
+import Link from "next/link"
 
 function getInitials(name) {
   if (!name) return "?"
@@ -24,19 +26,37 @@ const ROLE_LABELS = {
 export function DashboardHeader({ role }) {
   const [user, setUser] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false)
 
   useEffect(() => {
     fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => d.user && setUser(d.user))
+      .then((r) => {
+        if (!r.ok) return null
+        return r.json()
+      })
+      .then((d) => d && d.user && setUser(d.user))
       .catch(() => { })
+
+    if (role === "student") {
+      fetch("/api/student/notifications")
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d && d.notifications) {
+            setNotifications(d.notifications)
+            setUnreadCount(d.unreadCount || 0)
+          }
+        })
+        .catch(() => {})
+    }
 
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement)
     }
     document.addEventListener("fullscreenchange", handleFullscreenChange)
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
-  }, [])
+  }, [role])
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -50,63 +70,174 @@ export function DashboardHeader({ role }) {
     }
   }
 
+  const markNotificationAsRead = async (id, e) => {
+    if (e) e.stopPropagation()
+    try {
+      await fetch("/api/student/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+      })
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
+      setUnreadCount(prev => Math.max(0, prev - 1))
+    } catch (err) {
+      console.error("Error marking notification read:", err)
+    }
+  }
+
+  const deleteAllNotifications = async (e) => {
+    if (e) e.stopPropagation()
+    try {
+      await fetch("/api/student/notifications", { method: "DELETE" })
+      setNotifications([])
+      setUnreadCount(0)
+    } catch (err) {
+      console.error("Error deleting notifications:", err)
+    }
+  }
+
+  const profileUrl = role === "student" ? "/student/profile" : role === "teacher" ? "/teacher/profile" : "/admin/settings"
+
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center gap-4 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-8">
-      {/* Left spacer — keeps search centred; on mobile leaves room for hamburger */}
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-border/80 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 px-4 lg:px-8 transition-all">
+      {/* Left spacer — keeps search aligned on mobile for hamburger button */}
       <div className="w-10 shrink-0 lg:hidden" />
 
-      {/* Left-aligned search bar */}
+      {/* Search Bar */}
       <div className="flex-1 flex justify-start">
-        <div className="relative w-full max-w-lg">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
+        <div className="relative w-full max-w-md">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
           <Input
             type="search"
-            placeholder="Type to search something..."
-            className="h-10 pl-10 rounded-full border border-border/60 bg-background shadow-sm focus-visible:ring-1"
+            placeholder="Search lessons, quizzes, resources..."
+            className="h-9.5 pl-10 pr-4 rounded-full border border-border/80 bg-muted/30 shadow-2xs hover:bg-muted/50 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary text-xs transition-all placeholder:text-muted-foreground/60"
           />
         </div>
       </div>
 
-      {/* Right — notification + fullscreen + avatar + name + logout */}
-      <div className="flex items-center gap-2.5 shrink-0">
-        {/* Fullscreen mode button */}
+      {/* Right side controls & user profile */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Fullscreen Toggle Button */}
         <button
           onClick={toggleFullscreen}
-          className="relative inline-flex items-center justify-center size-9 rounded-full border border-border bg-muted/50 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+          className="relative inline-flex items-center justify-center size-9 rounded-xl border border-border/70 bg-card hover:bg-muted/70 transition-all text-muted-foreground hover:text-foreground cursor-pointer shadow-2xs active:scale-95"
           aria-label="Toggle Fullscreen"
           title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
         >
           {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
         </button>
 
-        {/* Notification bell */}
-        <button
-          className="relative inline-flex items-center justify-center size-9 rounded-full border border-border bg-muted/50 hover:bg-muted transition-colors"
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4 text-muted-foreground" />
-          <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-background" />
-        </button>
+        {/* Notifications Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+            className="relative inline-flex items-center justify-center size-9 rounded-xl border border-border/70 bg-card hover:bg-muted/70 transition-all cursor-pointer shadow-2xs active:scale-95"
+            aria-label="Notifications"
+          >
+            <Bell className="h-4 w-4 text-muted-foreground" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-background animate-pulse">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
 
-        <div className="hidden sm:flex flex-col items-end">
-          <span className="text-sm font-medium text-foreground truncate max-w-[140px]">
-            {user?.name ?? ""}
-          </span>
-          {role && (
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {ROLE_LABELS[role] || role}
-            </span>
+          {/* Notifications Dropdown Popover */}
+          {showNotifDropdown && (
+            <div className="absolute right-0 mt-2.5 w-80 sm:w-96 rounded-2xl border border-border bg-card shadow-xl p-4 space-y-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex justify-between items-center border-b border-border pb-2.5">
+                <div className="flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-bold text-foreground">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary">
+                      {unreadCount} new
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={deleteAllNotifications}
+                    type="button"
+                    title="Clear All"
+                    className="p-1 text-muted-foreground hover:text-destructive transition-colors cursor-pointer rounded-lg hover:bg-muted"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </button>
+                  <Link
+                    href={role === "admin" ? "/admin/notifications" : "/student/notifications"}
+                    onClick={() => setShowNotifDropdown(false)}
+                    className="text-xs font-semibold text-[#4382DF] hover:underline ml-1"
+                  >
+                    View All
+                  </Link>
+                </div>
+              </div>
+
+              {notifications.length === 0 ? (
+                <div className="py-8 text-center space-y-1">
+                  <CheckCheck className="h-6 w-6 text-muted-foreground/50 mx-auto" />
+                  <p className="text-xs text-muted-foreground font-medium">You're all caught up!</p>
+                </div>
+              ) : (
+                <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+                  {notifications.slice(0, 5).map((n) => (
+                    <Link
+                      key={n.id}
+                      href={n.link || (role === "admin" ? "/admin/notifications" : "/student/notifications")}
+                      onClick={() => {
+                        if (!n.is_read) markNotificationAsRead(n.id)
+                        setShowNotifDropdown(false)
+                      }}
+                      className="block p-3 rounded-xl border border-border/50 bg-background hover:bg-muted/50 transition-all cursor-pointer"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="font-semibold text-foreground text-xs leading-snug">
+                          {n.title}
+                        </span>
+                        {!n.is_read && (
+                          <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0 mt-1" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground font-medium line-clamp-2 mt-1">
+                        {n.message}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
-        <Avatar className="size-9 border border-border">
-          <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-            {getInitials(user?.name)}
-          </AvatarFallback>
-        </Avatar>
+        {/* Divider */}
+        <div className="h-6 w-px bg-border/80 mx-0.5 hidden sm:block" />
+
+        {/* User Profile Button */}
+        <Link 
+          href={profileUrl}
+          className="flex items-center gap-2.5 pl-1 pr-1.5 py-1 rounded-xl hover:bg-muted/60 transition-all cursor-pointer group"
+          title="View Profile"
+        >
+          <Avatar className="size-9 border border-border group-hover:border-primary/50 transition-colors shadow-2xs">
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+              {getInitials(user?.name)}
+            </AvatarFallback>
+          </Avatar>
+
+          <div className="hidden sm:flex flex-col items-start leading-tight">
+            <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate max-w-[130px]">
+              {user?.name || (role === "admin" ? "Admin User" : "User")}
+            </span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
+              {ROLE_LABELS[role] || role}
+            </span>
+          </div>
+        </Link>
       </div>
     </header>
   )
 }
+
 
 

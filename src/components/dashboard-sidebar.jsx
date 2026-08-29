@@ -79,24 +79,20 @@ const studentNav = [
 ]
 
 const teacherNav = [
-    { label: "Analytics Hub", href: "/teacher", icon: "BarChart3", description: "Batch performance, readiness score & competency heatmap" },
-    { label: "Content Vault", href: "/teacher/content", icon: "FolderOpen", description: "Categories" },
-    { label: "Exam Creator", href: "/teacher/exams", icon: "ClipboardList", description: "Create tests" },
-    { label: "Student Directory", href: "/teacher/students", icon: "GraduationCap", description: "List of enrolled reviewees" },
-    { label: "Notifications", href: "/teacher/notifications", icon: "Bell" },
-    { label: "Account Settings", href: "/teacher/settings", icon: "Settings" },
+    { section: "GENERAL" },
+    { label: "Modules", href: "/teacher/modules", icon: "Layers", description: "Curriculum modules & categories" },
 ]
 
 const adminNav = [
-    { label: "Admin Dashboard", href: "/admin", icon: "Home", description: "System overview, active users, & enrollment stats" },
-    { label: "User Management", href: "/admin/users", icon: "User", description: "Manage students and staff roles" },
-    { label: "Curriculum Manager", href: "/admin/curriculum", icon: "FileText", description: "Manage LEPT competencies & subjects" },
-    { label: "Mock Exams", href: "/admin/mock-exams", icon: "PencilLine", description: "Mock exam score encoding" },
-    { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "Manage core data entities" },
-    { label: "Analytical Overview", href: "/admin/analytical-overview", icon: "BarChart3", description: "Analytics & insights dashboard" },
-    { section: "Other" },
-    { label: "Notifications", href: "/admin/notifications", icon: "Bell" },
-    { label: "System Settings", href: "/admin/settings", icon: "Settings" },
+    { section: "GENERAL" },
+    { label: "Admin Dashboard", href: "/admin", icon: "Home", description: "System overview, active users, and others" },
+    { label: "User Management", href: "/admin/users", icon: "User", description: "Manage students, teachers, and accounts" },
+    { label: "Curriculum Manager", href: "/admin/curriculum", icon: "FileText", description: "Manage exam programs, subjects, and topics" },
+    { label: "Mock Exams", href: "/admin/mock-exams", icon: "PencilLine", description: "Create and configure mock exams" },
+    { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "Manage courses, batches, and gradebooks" },
+    { label: "Analytical Overview", href: "/admin/analytical-overview", icon: "BarChart3", description: "Performance reports and learning insights" },
+    { section: "OTHER" },
+    { label: "Settings", href: "/admin/settings", icon: "Settings" },
 ]
 
 const navByRole = {
@@ -142,38 +138,24 @@ export function DashboardSidebar({ role }) {
                 {/* Logo */}
                 <div className={`flex items-center gap-3 px-4 pt-6 pb-4 ${collapsed ? "justify-center px-2" : ""}`}>
                     <img
-                        src="/peak_loading_screen-removebg-preview.png"
+                        src="/landingpageassets/logo.png"
                         alt="Peak Excellence Review Center"
-                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-8 w-8" : "h-10 w-10"}`}
+                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-8 w-8" : "h-9 w-9"}`}
                     />
                     {!collapsed && (
                         <div className="flex flex-col min-w-0">
                             <span className="text-[9px] font-bold text-sidebar-foreground/60 uppercase tracking-wider leading-tight truncate">
                                 Training Academy & Review Center
                             </span>
-                            <span className="text-[16px] font-black tracking-tight text-sidebar-foreground leading-tight truncate">
+                            <span className="text-[15px] font-black tracking-tight text-sidebar-foreground leading-tight truncate">
                                 PEAK EXCELLENCE
                             </span>
                         </div>
                     )}
                 </div>
 
-                {/* Role badge */}
-                {badge && !collapsed && (
-                    <div className="px-4 pt-2">
-                        <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${badge.color}`}>
-                            {badge.label}
-                        </span>
-                    </div>
-                )}
-                {badge && collapsed && (
-                    <div className="flex justify-center pt-2">
-                        <span className={`inline-block h-2 w-2 rounded-full ${badge.color}`} />
-                    </div>
-                )}
-
                 {/* Nav links */}
-                <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-6 pb-4">
+                <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-2 pb-4">
                     {navItems.map((item, idx) => {
                         // Section header support
                         if (item.section) {
@@ -198,15 +180,12 @@ export function DashboardSidebar({ role }) {
                                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                                     } ${collapsed ? "justify-center" : ""}`}
                             >
-                                {active && (
-                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full bg-sidebar-primary" />
-                                )}
-                                <Icon className={`h-5 w-5 shrink-0 ${active ? "text-sidebar-primary" : ""}`} />
+                                <Icon className={`h-5 w-5 shrink-0 ${active ? "text-[#E9C46A]" : ""}`} />
                                 {!collapsed && (
                                     <div className="flex flex-col">
                                         <span>{item.label}</span>
                                         {item.description && (
-                                            <span className="text-[11px] font-normal text-sidebar-foreground/50 leading-tight">
+                                            <span className="text-xs font-normal text-sidebar-foreground/50 leading-tight">
                                                 {item.description}
                                             </span>
                                         )}
@@ -216,42 +195,6 @@ export function DashboardSidebar({ role }) {
                         )
                     })}
                 </nav>
-
-                {/* Mood Swing Widget */}
-                {role === "student" && !collapsed && (
-                    <div className="mx-3 mb-4 rounded-xl bg-card border border-border/50 p-4 shadow-sm">
-                        <p className="text-[13px] font-medium text-sidebar-foreground/80 mb-3">How do you feel today?</p>
-                        <div className="flex justify-between items-center px-1">
-                            <button className="text-xl hover:scale-110 transition-transform" title="Happy">😀</button>
-                            <button className="text-xl hover:scale-110 transition-transform" title="Relieved">😅</button>
-                            <button className="text-xl hover:scale-110 transition-transform" title="Neutral">😐</button>
-                            <button className="text-xl hover:scale-110 transition-transform" title="Stressed">😖</button>
-                            <button className="text-xl hover:scale-110 transition-transform" title="Sleepy">😴</button>
-                            <button className="text-xl hover:scale-110 transition-transform" title="Angry">😡</button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Upcoming Events Widget */}
-                {role === "student" && !collapsed && (
-                    <div className="mx-3 mb-3 rounded-xl bg-card border border-border/50 p-4 shadow-sm">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Calendar className="h-5 w-5 text-sidebar-foreground/70" />
-                            <h3 className="font-bold text-sidebar-foreground/80 text-[15px]">Upcoming Events</h3>
-                        </div>
-                        <div className="flex items-start gap-4">
-                            <div className="flex flex-col items-center justify-center min-w-[40px]">
-                                <span className="text-xl font-bold text-sidebar-foreground/60 leading-none">26</span>
-                                <span className="text-[11px] font-medium text-sidebar-foreground/50 mt-1">March</span>
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-[10px] font-semibold text-sidebar-foreground/50 uppercase leading-[1.3]">
-                                    QUIZ ON STUDY AND THINKING SKILLS<br/>EXAMINATION DRILLS
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* Bottom section */}
                 <div className="border-t border-sidebar-border p-3 space-y-2">

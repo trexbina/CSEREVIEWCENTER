@@ -118,12 +118,13 @@ export async function POST(req) {
     // ── GRADEBOOK ──
     if (entity === "GRADEBOOK") {
       if (action === "ADD") {
-        const { name, code, batch_id } = payload
+        const { name, code, batch_id, targets } = payload
+        const targetsJson = JSON.stringify(Array.isArray(targets) ? targets : [])
         const res = await pool.query(
-          `INSERT INTO gradebooks (name, code, batch_id, exam_id)
-           SELECT $1, $2, $3, exam_id FROM batches WHERE id = $3
+          `INSERT INTO gradebooks (name, code, batch_id, exam_id, targets)
+           SELECT $1, $2, $3, exam_id, $4::jsonb FROM batches WHERE id = $3
            RETURNING *`,
-          [name, code, parseInt(batch_id)]
+          [name, code, parseInt(batch_id), targetsJson]
         )
         if (res.rows.length === 0) {
           return NextResponse.json({ error: "Failed to create gradebook. Batch not found." }, { status: 400 })
@@ -131,15 +132,16 @@ export async function POST(req) {
         return NextResponse.json(res.rows[0])
       }
       if (action === "UPDATE") {
-        const { id, name, code, batch_id, status } = payload
+        const { id, name, code, batch_id, status, targets } = payload
+        const targetsJson = JSON.stringify(Array.isArray(targets) ? targets : [])
         const res = await pool.query(
           `UPDATE gradebooks 
            SET name = $1, code = $2, batch_id = $3, 
                exam_id = COALESCE((SELECT exam_id FROM batches WHERE id = $3), exam_id), 
-               status = $4, updated_at = NOW() 
-           WHERE id = $5
+               status = $4, targets = $5::jsonb, updated_at = NOW() 
+           WHERE id = $6
            RETURNING id`,
-          [name, code, parseInt(batch_id), status || 'ACTIVE', parseInt(id)]
+          [name, code, parseInt(batch_id), status || 'ACTIVE', targetsJson, parseInt(id)]
         )
         if (res.rows.length === 0) {
           return NextResponse.json({ error: "Gradebook not found." }, { status: 404 })

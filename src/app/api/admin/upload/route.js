@@ -4,7 +4,7 @@ import pool from "@/lib/db"
 import { put } from "@vercel/blob"
 
 export const runtime = "nodejs"
-const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES || 4 * 1024 * 1024)
+const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES || 50 * 1024 * 1024)
 
 async function adminGuard() {
     const session = await getSession()

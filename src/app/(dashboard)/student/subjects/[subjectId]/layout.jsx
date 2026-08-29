@@ -7,6 +7,7 @@ import { Loader2, ChevronLeft, Menu, X } from "lucide-react"
 function normalizeLessonType(rawType, hasPdf = false) {
     if (hasPdf) return "pdf"
     const value = String(rawType || "").trim().toLowerCase()
+    if (value === "quiz" || value === "exam") return "quiz"
     if (value === "pdf" || value === "file" || value === "files") return "pdf"
     return "module"
 }
@@ -14,7 +15,7 @@ function normalizeLessonType(rawType, hasPdf = false) {
 function shouldShowLessonInTab(lesson, tab = "modules") {
     const lessonType = normalizeLessonType(lesson.lesson_type, lesson.has_pdf)
     if (tab === "files") return lessonType === "pdf"
-    // Modules tab should show everything created by admin (module + pdf).
+    // Modules tab should show everything created by admin (module + pdf + quiz).
     return true
 }
 
@@ -38,52 +39,56 @@ export default function StudentSubjectLayout({ children }) {
     const searchParams = useSearchParams()
     const subjectId = params.subjectId
 
+    const initialTab = searchParams.get("tab") === "files" ? "files" : "modules"
     const [modules, setModules] = useState([])
+    const [subjectInfo, setSubjectInfo] = useState(null)
     const [loading, setLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState("modules") // modules or files
+    const [activeTab, setActiveTab] = useState(initialTab) // modules or files
     const [isSidebarOpen, setIsSidebarOpen] = useState(false) // responsive sidebar state
 
     useEffect(() => {
         fetchModules()
     }, [subjectId])
 
+    // Synchronize activeTab if searchParams tab changes
+    useEffect(() => {
+        const urlTab = searchParams.get("tab")
+        if (urlTab === "files" && activeTab !== "files") {
+            setActiveTab("files")
+        } else if (urlTab === "modules" && activeTab !== "modules") {
+            setActiveTab("modules")
+        }
+    }, [searchParams])
+
+    // Auto-select first lesson only if no lessonId is currently in searchParams
     useEffect(() => {
         if (loading) return
         if (!modules.length) return
 
         const currentLessonId = searchParams.get("lessonId")
-        if (currentLessonId) return
+        if (currentLessonId) {
+            // Find lesson to ensure correct tab is active if needed
+            let found = null
+            for (const mod of modules) {
+                found = (mod.lessons || []).find((l) => String(l.id) === String(currentLessonId))
+                if (found) break
+            }
+            if (found) {
+                const norm = normalizeLessonType(found.lesson_type, found.has_pdf)
+                if (norm === "pdf" && searchParams.get("tab") === "files" && activeTab !== "files") {
+                    setActiveTab("files")
+                }
+            }
+            return
+        }
 
         const firstLesson = pickFirstLesson(modules, activeTab)
         if (!firstLesson) return
 
         const normalizedType = normalizeLessonType(firstLesson.lesson_type, firstLesson.has_pdf)
         router.replace(
-            `/student/subjects/${subjectId}?lessonId=${firstLesson.id}&type=${normalizedType}`
+            `/student/subjects/${subjectId}?lessonId=${firstLesson.id}&type=${normalizedType}${activeTab === 'files' ? '&tab=files' : ''}`
         )
-    }, [loading, modules, searchParams, activeTab, router, subjectId])
-
-    useEffect(() => {
-        if (loading) return
-        if (!modules.length) return
-
-        const lessonId = searchParams.get("lessonId")
-        if (!lessonId) return
-
-        let selectedLesson = null
-        for (const mod of modules) {
-            selectedLesson = (mod.lessons || []).find((lesson) => String(lesson.id) === String(lessonId))
-            if (selectedLesson) break
-        }
-
-        if (!selectedLesson) return
-
-        if (!shouldShowLessonInTab(selectedLesson, activeTab)) {
-            const nextLesson = pickFirstLesson(modules, activeTab)
-            if (!nextLesson) return
-            const nextType = normalizeLessonType(nextLesson.lesson_type, nextLesson.has_pdf)
-            router.replace(`/student/subjects/${subjectId}?lessonId=${nextLesson.id}&type=${nextType}`)
-        }
     }, [loading, modules, searchParams, activeTab, router, subjectId])
 
     async function fetchModules() {
@@ -93,6 +98,9 @@ export default function StudentSubjectLayout({ children }) {
                 const data = await res.json()
                 const fetchedModules = data.modules || []
                 setModules(fetchedModules)
+                if (data.subject) {
+                    setSubjectInfo(data.subject)
+                }
             } else if (res.status === 403) {
                 router.push("/student/subjects")
             }
@@ -112,7 +120,7 @@ export default function StudentSubjectLayout({ children }) {
     }
 
     return (
-        <div className="flex relative h-[calc(100vh-64px)] w-full overflow-hidden bg-white">
+        <div className="flex relative h-screen w-full overflow-hidden bg-white">
 
             {/* Mobile Sidebar Toggle Button */}
             <button
@@ -132,18 +140,18 @@ export default function StudentSubjectLayout({ children }) {
 
             {/* Subject Sidebar */}
             <div className={`
-                absolute md:static inset-y-0 left-0 z-50 
-                w-80 shrink-0 border-r border-gray-100 bg-white flex flex-col h-full overflow-hidden transition-transform duration-300 ease-in-out
-                ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 md:shadow-none'}
+                absolute md:static inset-y-0 left-0 z-40 
+                w-80 shrink-0 border-r border-gray-200 bg-white flex flex-col h-full overflow-hidden transition-transform duration-300 ease-in-out
+                ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 md:shadow-[2px_0_8px_rgba(0,0,0,0.015)]'}
             `}>
 
                 {/* School Branding / Header */}
-                <div className="p-6 pb-4 flex flex-row items-center justify-between border-b border-gray-50">
+                <div className="p-6 pb-4 flex flex-row items-center justify-between border-b border-gray-200">
                     <div className="flex flex-col items-start">
                         <img
                             src="/landingpageassets/logo.png"
                             alt="Peak Excellence"
-                            className="h-10 md:h-12 w-auto object-contain mb-2 md:mb-3"
+                            className="h-10 md:h-12 w-auto object-contain mb-1"
                             onError={(e) => { e.target.style.display = 'none' }}
                         />
                         <h2 className="text-[13px] md:text-[15px] font-extrabold tracking-widest text-[#4d4d4d] uppercase font-sans">
@@ -159,26 +167,54 @@ export default function StudentSubjectLayout({ children }) {
                     </button>
                 </div>
 
-                {/* Back button & Toggle Tabs */}
-                <div className="p-4 flex items-center gap-3">
+                {/* Back Button + Minimal Toggle Tabs */}
+                <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
                     <button
-                        onClick={() => router.push('/student/subjects')}
-                        className="h-7 w-7 flex items-center justify-center rounded-full bg-gray-200 text-white hover:bg-gray-300 transition-colors shrink-0"
+                        onClick={() => {
+                            if (subjectInfo) {
+                                if (subjectInfo.category_id && subjectInfo.subcategory_id) {
+                                    if (typeof window !== "undefined") {
+                                        sessionStorage.setItem("student_selected_cat_id", String(subjectInfo.category_id))
+                                        sessionStorage.setItem("student_selected_sub_id", String(subjectInfo.subcategory_id))
+                                    }
+                                    router.push(`/student/subjects?cat=${subjectInfo.category_id}&sub=${subjectInfo.subcategory_id}`)
+                                    return
+                                }
+                                if (subjectInfo.category_id) {
+                                    if (typeof window !== "undefined") {
+                                        sessionStorage.setItem("student_selected_cat_id", String(subjectInfo.category_id))
+                                        sessionStorage.removeItem("student_selected_sub_id")
+                                    }
+                                    router.push(`/student/subjects?cat=${subjectInfo.category_id}`)
+                                    return
+                                }
+                            }
+                            router.push('/student/subjects')
+                        }}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200/50 bg-gray-100 text-gray-600 transition-all hover:bg-gray-200 hover:text-gray-900 shadow-sm shrink-0 cursor-pointer"
                         title="Back to Subjects"
                     >
                         <ChevronLeft className="h-4 w-4" />
                     </button>
 
-                    <div className="flex bg-gray-100/80 rounded-xl p-1 flex-1">
+                    <div className="flex bg-gray-100/70 rounded-xl p-0.5 flex-1">
                         <button
                             onClick={() => setActiveTab("modules")}
-                            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === "modules" ? "bg-gray-200/60 text-gray-600 shadow-sm" : "text-gray-400 hover:text-gray-500"}`}
+                            className={`flex-1 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                                activeTab === "modules"
+                                    ? "bg-white text-gray-700 font-semibold shadow-2xs"
+                                    : "text-gray-400 hover:text-gray-600 font-medium"
+                            }`}
                         >
                             Modules
                         </button>
                         <button
                             onClick={() => setActiveTab("files")}
-                            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === "files" ? "bg-white text-gray-800 shadow-sm" : "text-gray-400 hover:text-gray-500"}`}
+                            className={`flex-1 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${
+                                activeTab === "files"
+                                    ? "bg-white text-gray-700 font-semibold shadow-2xs"
+                                    : "text-gray-400 hover:text-gray-600 font-medium"
+                            }`}
                         >
                             Files
                         </button>
@@ -186,90 +222,96 @@ export default function StudentSubjectLayout({ children }) {
                 </div>
 
                 {/* Modules List Scrolling Area */}
-                <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 custom-scrollbar">
                     {modules.map((module) => {
                         // Split module title to bold the prefix (e.g. "Module 1:")
                         const modParts = module.title.split(":")
                         const hasModPrefix = modParts.length > 1
 
                         return (
-                            <div key={module.id} className="space-y-3 pb-4 border-b border-gray-50/50 last:border-0">
-                                {/* Module Title */}
-                                <h3 className="text-[13px] text-[#8c8c8c]">
-                                    {hasModPrefix ? (
-                                        <>
-                                            <span className="font-semibold">{modParts[0]}:</span>
-                                            {modParts.slice(1).join(":")}
-                                        </>
-                                    ) : (
-                                        <span className="font-semibold">{module.title}</span>
-                                    )}
-                                </h3>
+                            <div key={module.id} className="space-y-2 pb-4 border-b border-gray-100/80 last:border-0">
+                                {/* Module Header */}
+                                <div className="px-1.5 pt-0.5 pb-0.5">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                        Module
+                                    </p>
+                                    <h3 className="text-[14px] text-gray-800 tracking-tight leading-normal" title={module.title}>
+                                        {hasModPrefix ? (
+                                            <>
+                                                <span className="font-bold text-gray-800 mr-1">{modParts[0]}:</span>
+                                                <span className="text-gray-600 font-medium">{modParts.slice(1).join(":")}</span>
+                                            </>
+                                        ) : (
+                                            <span className="font-bold text-gray-800">{module.title}</span>
+                                        )}
+                                    </h3>
+                                </div>
 
-                                {/* Lessons Inner List */}
-                                <div className="space-y-4 pl-2 pt-2">
+                                {/* Lessons Label & Inner List */}
+                                <div className="space-y-1 pl-1">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider pl-2 pt-1">
+                                        Lessons
+                                    </p>
+                                    <div className="space-y-1 pl-1">
                                     {(module.lessons || [])
                                         .filter((lesson) => shouldShowLessonInTab(lesson, activeTab))
                                         .map((lesson) => {
                                             const isActive = searchParams.get("lessonId") === lesson.id.toString()
-
-                                            const isQuiz = lesson.title.toLowerCase().includes("quiz") || lesson.title.toLowerCase().includes("exam")
                                             const lessonParts = lesson.title.split(":")
                                             const hasLessonPrefix = lessonParts.length > 1
 
-                                            // Render Quiz differently
-                                            if (isQuiz) {
-                                                return (
-                                                    <div
-                                                        key={lesson.id}
-                                                        onClick={() => {
-                                                            const lessonType = normalizeLessonType(lesson.lesson_type, lesson.has_pdf)
-                                                            router.push(`/student/subjects/${subjectId}?lessonId=${lesson.id}&type=${lessonType}`);
-                                                            setIsSidebarOpen(false);
-                                                        }}
-                                                        className={`cursor-pointer px-4 py-2.5 rounded-xl ml-4 mr-2 transition-all duration-200 ${isActive
-                                                            ? 'bg-gray-300/50 text-gray-700 shadow-sm transform scale-[1.02]'
-                                                            : 'bg-gray-100 hover:bg-gray-200 text-gray-500'
-                                                            }`}
-                                                    >
-                                                        <p className="text-[13px]">
-                                                            {hasLessonPrefix ? (
-                                                                <>
-                                                                    <span className="font-bold">{lessonParts[0]}:</span>
-                                                                    {lessonParts.slice(1).join(":")}
-                                                                </>
-                                                            ) : (
-                                                                <span className="font-bold">{lesson.title}</span>
-                                                            )}
-                                                        </p>
-                                                    </div>
-                                                )
-                                            }
-
-                                            // Standard Lesson formatting
                                             return (
                                                 <div
                                                     key={lesson.id}
                                                     onClick={() => {
                                                         const lessonType = normalizeLessonType(lesson.lesson_type, lesson.has_pdf)
-                                                        router.push(`/student/subjects/${subjectId}?lessonId=${lesson.id}&type=${lessonType}`);
-                                                        setIsSidebarOpen(false);
+                                                        router.replace(`/student/subjects/${subjectId}?lessonId=${lesson.id}&type=${lessonType}`)
+                                                        setIsSidebarOpen(false)
                                                     }}
-                                                    className={`cursor-pointer transition-colors px-2 py-1 -mx-2 rounded-lg ${isActive ? 'bg-[#fef5f6] text-[#ba5a62]' : 'hover:bg-gray-50'}`}
+                                                    className={`group cursor-pointer transition-colors px-2 py-1.5 rounded-lg flex items-center justify-between select-none ${
+                                                        isActive
+                                                            ? 'text-[#E9C46A]'
+                                                            : 'text-gray-500 hover:text-[#E9C46A]'
+                                                    }`}
+                                                    title={lesson.title}
                                                 >
-                                                    <p className={`text-[13px] ${isActive ? 'text-[#ba5a62]' : 'text-[#a0a0a0]'}`}>
-                                                        {hasLessonPrefix ? (
-                                                            <>
-                                                                <span className={`font-bold ${isActive ? 'text-[#ba5a62]' : 'text-[#7a7a7a]'}`}>{lessonParts[0]}:</span>
-                                                                {lessonParts.slice(1).join(":")}
-                                                            </>
-                                                        ) : (
-                                                            <span className={`font-bold ${isActive ? 'text-[#ba5a62]' : 'text-[#7a7a7a]'}`}>{lesson.title}</span>
+                                                    <div className="flex items-start gap-2.5 min-w-0">
+                                                        {isActive && (
+                                                            <span className="h-1.5 w-1.5 rounded-full bg-[#E9C46A] mt-2 shrink-0 animate-in zoom-in-50 duration-150" />
                                                         )}
-                                                    </p>
+                                                        <p className="text-[14px] leading-snug line-clamp-2 transition-colors">
+                                                            {hasLessonPrefix ? (
+                                                                <>
+                                                                    <span className={`font-semibold mr-1 transition-colors ${
+                                                                        isActive
+                                                                            ? 'text-[#E9C46A]'
+                                                                            : 'text-gray-600 group-hover:text-[#E9C46A]'
+                                                                    }`}>
+                                                                        {lessonParts[0]}:
+                                                                    </span>
+                                                                    <span className={`transition-colors ${
+                                                                        isActive
+                                                                            ? 'text-[#E9C46A] font-medium'
+                                                                            : 'text-gray-500 group-hover:text-[#E9C46A]'
+                                                                    }`}>
+                                                                        {lessonParts.slice(1).join(":")}
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                <span className={`transition-colors ${
+                                                                    isActive
+                                                                        ? 'text-[#E9C46A] font-semibold'
+                                                                        : 'text-gray-500 group-hover:text-[#E9C46A]'
+                                                                }`}>
+                                                                    {lesson.title}
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             )
                                         })}
+                                    </div>
                                 </div>
                             </div>
                         )
@@ -278,7 +320,7 @@ export default function StudentSubjectLayout({ children }) {
                     {modules.length > 0 && !modules.some((m) =>
                         (m.lessons || []).some((lesson) => shouldShowLessonInTab(lesson, activeTab))
                     ) && (
-                            <div className="rounded-lg border border-dashed border-gray-200 p-4 text-xs text-gray-500">
+                            <div className="rounded-xl border border-solid border-gray-200 p-4 text-xs text-gray-500 bg-gray-50/50">
                                 {activeTab === "files"
                                     ? "No PDF lessons available yet."
                                     : "No lessons available yet."}
@@ -293,15 +335,31 @@ export default function StudentSubjectLayout({ children }) {
             </div>
 
             <style jsx global>{`
+                .custom-scrollbar {
+                    scrollbar-width: thin;
+                    scrollbar-color: transparent transparent;
+                    transition: scrollbar-color 0.2s ease;
+                }
+                .custom-scrollbar:hover {
+                    scrollbar-color: #cbd5e1 transparent;
+                }
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 4px;
+                    height: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-track {
                     background: transparent;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background-color: #e5e7eb;
+                    background-color: transparent;
                     border-radius: 20px;
+                    transition: background-color 0.2s ease;
+                }
+                .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+                    background-color: #cbd5e1;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background-color: #94a3b8;
                 }
             `}</style>
         </div>

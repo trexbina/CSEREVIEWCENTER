@@ -15,7 +15,7 @@ const AUTH_ROUTES = ["/login"]
 
 const ROLE_HOME = {
   student: "/student",
-  teacher: "/teacher",
+  teacher: "/teacher/modules",
   admin:   "/admin",
 }
 

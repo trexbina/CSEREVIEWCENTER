@@ -1,12 +1,21 @@
+// this tells nextjs to run this create user form in the browser
 "use client"
 
-import { useState, useEffect } from "react"
+// helper tools from react to hold form input state and load dropdown options
+import { useState, useEffect, useRef, useMemo } from "react"
+
+// router helper to redirect after creating a user
 import { useRouter } from "next/navigation"
+
+// helper to create links
 import Link from "next/link"
+
+// icons used on form section headers and buttons
 import {
-    ArrowLeft, UserPlus, User, GraduationCap, Shield,
+    ArrowLeft, UserPlus, User, GraduationCap, Shield, ChevronRight, ChevronDown, Check,
 } from "lucide-react"
 
+// form component helpers
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,19 +27,264 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
+// ─── Nested Category Tree Helpers (Direct Curriculum Categories) ──────────────
+function buildCourseTreeFromMasterData(masterData) {
+    const { examinations = [], categories = [] } = masterData
+
+    if (examinations.length === 0) return []
+
+    return examinations.map(exam => {
+        const examNameLower = exam.name.trim().toLowerCase()
+
+        // Categories targeted to this examination
+        const examCategories = categories.filter(c => {
+            const cTarget = (c.target_course || "all").trim().toLowerCase()
+            if (cTarget === "all") {
+                // If set to 'all' or default, attach to first/primary exam (e.g. LEPT)
+                return examNameLower === "lept" || exam.id === examinations[0]?.id
+            }
+            return cTarget === examNameLower || examNameLower.includes(cTarget) || cTarget.includes(examNameLower)
+        })
+
+        return {
+            id: `exam_${exam.id}`,
+            entityType: 'exam',
+            rawId: exam.id,
+            label: exam.name,
+            children: examCategories.map(cat => ({
+                id: `exam_${exam.id}_cat_${cat.id}`,
+                entityType: 'category',
+                rawId: cat.id,
+                label: cat.name,
+                children: []
+            }))
+        }
+    })
+}
+
+function allLeafIds(node) {
+    if (!node.children || node.children.length === 0) return [node.id]
+    return node.children.flatMap(allLeafIds)
+}
+
+function allIds(node) {
+    const ids = [node.id]
+    if (node.children) ids.push(...node.children.flatMap(allIds))
+    return ids
+}
+
+function toggleNode(selected, node, tree) {
+    const leaves = allLeafIds(node)
+    const selfIds = allIds(node)
+    const allLeafSelected = leaves.every(id => selected.has(id))
+
+    const next = new Set(selected)
+    if (allLeafSelected) {
+        selfIds.forEach(id => next.delete(id))
+    } else {
+        selfIds.forEach(id => next.add(id))
+    }
+    return reconcile(next, tree)
+}
+
+function reconcile(selected, nodes) {
+    for (const node of nodes) {
+        if (!node.children) continue
+        reconcile(selected, node.children)
+        const leaves = allLeafIds(node)
+        if (leaves.every(id => selected.has(id))) {
+            selected.add(node.id)
+        } else {
+            selected.delete(node.id)
+        }
+    }
+    return selected
+}
+
+function checkState(selected, node) {
+    const leaves = allLeafIds(node)
+    const count = leaves.filter(id => selected.has(id)).length
+    if (count === 0) return "none"
+    if (count === leaves.length) return "all"
+    return "some"
+}
+
+function buildSummary(selected, tree) {
+    if (selected.size === 0) return "Select courses…"
+
+    const parts = []
+    for (const exam of tree) {
+        const state = checkState(selected, exam)
+        if (state === "all") {
+            parts.push(exam.label)
+        } else if (state === "some" && exam.children) {
+            for (const prog of exam.children) {
+                const ps = checkState(selected, prog)
+                if (ps === "all") {
+                    parts.push(`${exam.label} › ${prog.label}`)
+                } else if (ps === "some" && prog.children) {
+                    const subs = prog.children
+                        .filter(m => selected.has(m.id))
+                        .map(m => m.label)
+                    parts.push(...subs)
+                }
+            }
+        }
+    }
+    if (parts.length === 0) return "Select courses…"
+    if (parts.length > 2) return `${parts.slice(0, 2).join(", ")} +${parts.length - 2} more`
+    return parts.join(", ")
+}
+
+function TreeCheckbox({ state }) {
+    const base = "w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border transition-colors"
+    if (state === "all")
+        return (
+            <span className={`${base} bg-primary border-primary`}>
+                <Check className="h-2.5 w-2.5 text-primary-foreground" strokeWidth={3} />
+            </span>
+        )
+    if (state === "some")
+        return (
+            <span className={`${base} bg-primary/20 border-primary`}>
+                <span className="w-2 h-0.5 rounded-full bg-primary" />
+            </span>
+        )
+    return <span className={`${base} border-muted-foreground/30 bg-background`} />
+}
+
+function TreeRow({ node, selected, onToggle, depth = 0 }) {
+    const [open, setOpen] = useState(depth === 0)
+    const hasChildren = node.children && node.children.length > 0
+    const state = checkState(selected, node)
+
+    return (
+        <div>
+            <div
+                className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-muted/60 transition-colors select-none"
+                style={{ paddingLeft: `${12 + depth * 16}px` }}
+                onClick={() => {
+                    if (hasChildren) setOpen(o => !o)
+                    onToggle(node)
+                }}
+            >
+                {hasChildren ? (
+                    <ChevronRight
+                        className={`h-3.5 w-3.5 text-muted-foreground flex-shrink-0 transition-transform ${open ? "rotate-90" : ""}`}
+                        onClick={e => { e.stopPropagation(); setOpen(o => !o) }}
+                    />
+                ) : (
+                    <span className="w-3.5 flex-shrink-0" />
+                )}
+
+                <TreeCheckbox state={state} />
+
+                <span
+                    className={`text-[13px] leading-tight font-medium ${
+                        depth === 0
+                            ? "text-foreground font-bold"
+                            : depth === 1
+                            ? "text-foreground font-semibold"
+                            : "text-muted-foreground"
+                    }`}
+                >
+                    {node.label}
+                </span>
+            </div>
+
+            {hasChildren && open && (
+                <div>
+                    {node.children.map(child => (
+                        <TreeRow
+                            key={child.id}
+                            node={child}
+                            selected={selected}
+                            onToggle={onToggle}
+                            depth={depth + 1}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
+
+function CourseMultiSelect({ selected, onChange, tree }) {
+    const [open, setOpen] = useState(false)
+    const ref = useRef(null)
+
+    useEffect(() => {
+        function handler(e) {
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+        }
+        document.addEventListener("mousedown", handler)
+        return () => document.removeEventListener("mousedown", handler)
+    }, [])
+
+    function handleToggle(node) {
+        const nextSet = toggleNode(new Set(selected), node, tree)
+        onChange(Array.from(nextSet))
+    }
+
+    const summary = buildSummary(new Set(selected), tree)
+    const hasSelection = selected.length > 0
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm text-left flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer"
+            >
+                <span className={`truncate ${hasSelection ? "text-foreground font-medium" : "text-muted-foreground font-normal"}`}>
+                    {summary}
+                </span>
+                <ChevronDown className={`h-4 w-4 text-muted-foreground flex-shrink-0 ml-2 transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
+
+            {open && (
+                <div className="absolute z-50 mt-1.5 w-full bg-popover rounded-xl border border-border shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                    <div className="px-3 py-2 border-b border-border bg-muted/40">
+                        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Select Target Courses</span>
+                    </div>
+
+                    <div className="max-h-64 overflow-y-auto py-1.5 px-1">
+                        {tree.length === 0 ? (
+                            <div className="text-center py-6 text-xs text-muted-foreground">
+                                No examinations or courses configured yet.
+                            </div>
+                        ) : (
+                            tree.map(exam => (
+                                <TreeRow
+                                    key={exam.id}
+                                    node={exam}
+                                    selected={new Set(selected)}
+                                    onToggle={handleToggle}
+                                    depth={0}
+                                />
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
+// create new user account page component
 export default function AddUserPage() {
     const router = useRouter()
     const [error, setError] = useState("")
     const [saving, setSaving] = useState(false)
 
-    // ── Account ──
+    // account details state
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [role, setRole] = useState("student")
     const [jobRoleDescription, setJobRoleDescription] = useState("")
 
-    // ── Personal Information ──
+    // personal profile information state
     const [firstName, setFirstName] = useState("")
     const [middleName, setMiddleName] = useState("")
     const [lastName, setLastName] = useState("")
@@ -54,7 +308,13 @@ export default function AddUserPage() {
     const [batchId, setBatchId] = useState("")
     const [programId, setProgramId] = useState("")
     const [majorId, setMajorId] = useState("")
+    const [teacherTargets, setTeacherTargets] = useState([])
     const [dropdownData, setDropdownData] = useState({ examinations: [], batches: [], programs: [], majors: [], schools: [], academic_courses: [] })
+
+    // Course tree for multi-select
+    const courseTree = useMemo(() => {
+        return buildCourseTreeFromMasterData(dropdownData)
+    }, [dropdownData])
 
     // ── Avatar Upload ──
     const [avatarUrl, setAvatarUrl] = useState("")
@@ -101,8 +361,12 @@ export default function AddUserPage() {
             setError("Passwords do not match.")
             return
         }
-        if (role !== "admin" && (!examId || !batchId)) {
-            setError("Target Examination and Batch are required.")
+        if (role === "student" && (!examId || !batchId)) {
+            setError("Target Examination and Batch are required for students.")
+            return
+        }
+        if (role === "teacher" && !examId && teacherTargets.length === 0) {
+            setError("Assigned Examination or Course targets are required for teachers.")
             return
         }
         if (role === "admin" && !jobRoleDescription) {
@@ -116,6 +380,17 @@ export default function AddUserPage() {
             .filter(Boolean)
             .join(" ")
             .trim()
+
+        // Extract primary exam_id from teacherTargets if examId is empty
+        let resolvedExamId = examId
+        if (role === "teacher" && (!resolvedExamId || resolvedExamId === "")) {
+            const firstExamTarget = teacherTargets.find(t => String(t).startsWith("exam_"))
+            if (firstExamTarget) {
+                resolvedExamId = firstExamTarget.replace("exam_", "")
+            } else if (dropdownData.examinations.length > 0) {
+                resolvedExamId = dropdownData.examinations[0].id.toString()
+            }
+        }
 
         try {
             const res = await fetch("/api/admin/users", {
@@ -141,12 +416,13 @@ export default function AddUserPage() {
                     academic_course_id: academicCourseId ? parseInt(academicCourseId) : null,
                     year_graduated: yearGraduated || null,
                     highest_education: highestEducation || null,
-                    exam_id: examId ? parseInt(examId) : null,
+                    exam_id: resolvedExamId ? parseInt(resolvedExamId) : null,
                     batch_id: role !== "admin" && batchId ? parseInt(batchId) : null,
                     program_id: role !== "admin" && programId ? parseInt(programId) : null,
                     major_id: role !== "admin" && majorId ? parseInt(majorId) : null,
                     job_role_description: role === "admin" ? jobRoleDescription : null,
                     avatar_url: avatarUrl || null,
+                    targets: role === "teacher" ? teacherTargets : [],
                 }),
             })
 
@@ -167,25 +443,18 @@ export default function AddUserPage() {
     }
 
     return (
-        <div className="space-y-6 max-w-3xl mx-auto">
+        <div className="space-y-6 w-full max-w-4xl mx-auto px-4 py-4 pb-16">
             {/* Header */}
-            <div className="flex items-center gap-3">
-                <Link
-                    href="/admin/users"
-                    className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back
-                </Link>
-                <div>
-                    <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                        <UserPlus className="h-6 w-6 text-primary" />
-                        Add New User
+            <div className="border-b border-border pb-5">
+                <div className="flex items-center gap-2 mb-1">
+                    <UserPlus className="h-6 w-6 text-[#E9C46A]" />
+                    <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase">
+                        ADD NEW USER
                     </h1>
-                    <p className="text-sm text-muted-foreground">
-                        Fill in the details below to create a new account.
-                    </p>
                 </div>
+                <p className="text-muted-foreground text-sm font-medium">
+                    Fill in the details below to create a new account.
+                </p>
             </div>
 
             {error && (
@@ -196,15 +465,14 @@ export default function AddUserPage() {
 
             <form onSubmit={handleSubmit} className="space-y-8">
                 {/* ═══ Personal Information ═══ */}
-                <section className="rounded-lg border border-border bg-card p-6 shadow-sm space-y-5">
-                    <div className="flex items-center gap-2 border-b border-border pb-3">
-                        <User className="h-5 w-5 text-primary" />
+                <section className="rounded-lg border border-border/80 bg-card/70 p-6 shadow-2xs space-y-5">
+                    <div className="border-b border-border pb-3">
                         <h2 className="text-lg font-semibold text-foreground">Personal Information</h2>
                     </div>
 
                     {/* Avatar Upload */}
                     <div className="flex flex-col sm:flex-row items-center gap-5 pb-4 border-b border-border/50">
-                        <div className="relative h-20 w-20 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-border flex items-center justify-center overflow-hidden">
+                        <div className="relative h-20 w-20 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-solid border-border flex items-center justify-center overflow-hidden">
                             {avatarUrl ? (
                                 <img src={avatarUrl} alt="Avatar Preview" className="h-full w-full object-cover" />
                             ) : (
@@ -257,9 +525,10 @@ export default function AddUserPage() {
                         </div>
                         <div className="space-y-1.5">
                             <Label>Gender</Label>
-                            <Select value={gender} onValueChange={setGender}>
+                            <Select value={gender || "none"} onValueChange={(val) => setGender(val === "none" ? "" : val)}>
                                 <SelectTrigger className="w-full"><SelectValue placeholder="Select gender" /></SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
                                     <SelectItem value="male">Male</SelectItem>
                                     <SelectItem value="female">Female</SelectItem>
                                     <SelectItem value="other">Other</SelectItem>
@@ -296,18 +565,18 @@ export default function AddUserPage() {
                 </section>
 
                 {/* ═══ Education Background ═══ */}
-                <section className="rounded-lg border border-border bg-card p-6 shadow-sm space-y-5">
-                    <div className="flex items-center gap-2 border-b border-border pb-3">
-                        <GraduationCap className="h-5 w-5 text-primary" />
+                <section className="rounded-lg border border-border/80 bg-card/70 p-6 shadow-2xs space-y-5">
+                    <div className="border-b border-border pb-3">
                         <h2 className="text-lg font-semibold text-foreground">Education Background</h2>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
                             <Label>Highest Education</Label>
-                            <Select value={highestEducation} onValueChange={setHighestEducation}>
+                            <Select value={highestEducation || "none"} onValueChange={(val) => setHighestEducation(val === "none" ? "" : val)}>
                                 <SelectTrigger className="w-full"><SelectValue placeholder="Select level" /></SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
                                     <SelectItem value="high_school">High School</SelectItem>
                                     <SelectItem value="vocational">Vocational / Technical</SelectItem>
                                     <SelectItem value="bachelor">Bachelor&apos;s Degree</SelectItem>
@@ -318,27 +587,29 @@ export default function AddUserPage() {
                         </div>
                         <div className="space-y-1.5">
                             <Label>School / University</Label>
-                            <Select value={schoolId} onValueChange={setSchoolId}>
+                            <Select value={schoolId || "none"} onValueChange={(val) => setSchoolId(val === "none" ? "" : val)}>
                                 <SelectTrigger className="w-full"><SelectValue placeholder="Select School" /></SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
                                     {dropdownData.schools.map(s => (
                                         <SelectItem key={s.id} value={s.id.toString()}>
                                           {s.name} {s.address ? `— ${s.address}` : ""}
                                         </SelectItem>
                                     ))}
-                                    {dropdownData.schools.length === 0 && <SelectItem value="none" disabled>No schools available</SelectItem>}
+                                    {dropdownData.schools.length === 0 && <SelectItem value="no_schools" disabled>No schools available</SelectItem>}
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-1.5">
                             <Label>Course / Program</Label>
-                            <Select value={academicCourseId} onValueChange={setAcademicCourseId}>
+                            <Select value={academicCourseId || "none"} onValueChange={(val) => setAcademicCourseId(val === "none" ? "" : val)}>
                                 <SelectTrigger className="w-full"><SelectValue placeholder="Select Course" /></SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
                                     {dropdownData.academic_courses.map(c => (
                                         <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
                                     ))}
-                                    {dropdownData.academic_courses.length === 0 && <SelectItem value="none" disabled>No courses available</SelectItem>}
+                                    {dropdownData.academic_courses.length === 0 && <SelectItem value="no_courses" disabled>No courses available</SelectItem>}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -350,9 +621,8 @@ export default function AddUserPage() {
                 </section>
 
                 {/* ═══ Account Details ═══ */}
-                <section className="rounded-lg border border-border bg-card p-6 shadow-sm space-y-5">
-                    <div className="flex items-center gap-2 border-b border-border pb-3">
-                        <Shield className="h-5 w-5 text-primary" />
+                <section className="rounded-lg border border-border/80 bg-card/70 p-6 shadow-2xs space-y-5">
+                    <div className="border-b border-border pb-3">
                         <h2 className="text-lg font-semibold text-foreground">Account Details</h2>
                     </div>
 
@@ -378,6 +648,9 @@ export default function AddUserPage() {
                                     setProgramId("");
                                     setMajorId("");
                                     setBatchId("");
+                                } else if (val === "teacher") {
+                                    setBatchId("");
+                                    setJobRoleDescription("");
                                 } else {
                                     setJobRoleDescription("");
                                 }
@@ -398,26 +671,50 @@ export default function AddUserPage() {
                             </div>
                         )}
 
-                        {role !== "admin" && (
+                        {role === "teacher" && (
+                            <div className="space-y-3 sm:col-span-2">
+                                <div className="space-y-1.5">
+                                    <Label>Target Examination / Courses / Specializations *</Label>
+                                    <CourseMultiSelect
+                                        selected={teacherTargets}
+                                        onChange={(newTargets) => {
+                                            setTeacherTargets(newTargets)
+                                            const firstExam = newTargets.find(t => String(t).startsWith("exam_"))
+                                            if (firstExam) {
+                                                setExamId(firstExam.replace("exam_", ""))
+                                            }
+                                        }}
+                                        tree={courseTree}
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Select the examination, programs, or specific major specializations this teacher can teach or access (e.g. Gen Ed, Prof Ed, English, Mathematics).
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {role === "student" && (
                             <>
                                 <div className="space-y-1.5">
                                     <Label>Target Examination *</Label>
-                                    <Select value={examId} onValueChange={(val) => { setExamId(val); setProgramId(""); setMajorId(""); }}>
+                                    <Select value={examId || "none"} onValueChange={(val) => { setExamId(val === "none" ? "" : val); setProgramId(""); setMajorId(""); }}>
                                         <SelectTrigger className="w-full"><SelectValue placeholder="Select Exam" /></SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="none">None</SelectItem>
                                             {dropdownData.examinations.map(e => (
                                                 <SelectItem key={e.id} value={e.id.toString()}>{e.name}</SelectItem>
                                             ))}
-                                            {dropdownData.examinations.length === 0 && <SelectItem value="none" disabled>No exams available</SelectItem>}
+                                            {dropdownData.examinations.length === 0 && <SelectItem value="no_exams" disabled>No exams available</SelectItem>}
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 {examId && dropdownData.programs?.some(p => p.exam_id.toString() === examId) && (
                                     <div className="space-y-1.5">
                                         <Label>Course / Program</Label>
-                                        <Select value={programId} onValueChange={(val) => { setProgramId(val); setMajorId(""); }}>
+                                        <Select value={programId || "none"} onValueChange={(val) => { setProgramId(val === "none" ? "" : val); setMajorId(""); }}>
                                             <SelectTrigger className="w-full"><SelectValue placeholder="Select Program" /></SelectTrigger>
                                             <SelectContent>
+                                                <SelectItem value="none">None</SelectItem>
                                                 {dropdownData.programs
                                                     .filter(p => p.exam_id.toString() === examId)
                                                     .map(p => (
@@ -430,9 +727,10 @@ export default function AddUserPage() {
                                 {programId && dropdownData.majors?.some(m => m.program_id.toString() === programId) && (
                                     <div className="space-y-1.5">
                                         <Label>Specialization / Major</Label>
-                                        <Select value={majorId} onValueChange={setMajorId}>
+                                        <Select value={majorId || "none"} onValueChange={(val) => setMajorId(val === "none" ? "" : val)}>
                                             <SelectTrigger className="w-full"><SelectValue placeholder="Select Major" /></SelectTrigger>
                                             <SelectContent>
+                                                <SelectItem value="none">None</SelectItem>
                                                 {dropdownData.majors
                                                     .filter(m => m.program_id.toString() === programId)
                                                     .map(m => (
@@ -444,15 +742,16 @@ export default function AddUserPage() {
                                 )}
                                 <div className="space-y-1.5">
                                     <Label>Batch *</Label>
-                                    <Select value={batchId} onValueChange={setBatchId}>
+                                    <Select value={batchId || "none"} onValueChange={(val) => setBatchId(val === "none" ? "" : val)}>
                                         <SelectTrigger className="w-full"><SelectValue placeholder="Select Batch" /></SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="none">None</SelectItem>
                                             {dropdownData.batches
                                                 .filter(b => !examId || b.exam_id.toString() === examId)
                                                 .map(b => (
                                                 <SelectItem key={b.id} value={b.id.toString()}>{b.name} ({b.target_year})</SelectItem>
                                             ))}
-                                            {dropdownData.batches.length === 0 && <SelectItem value="none" disabled>No batches available</SelectItem>}
+                                            {dropdownData.batches.length === 0 && <SelectItem value="no_batches" disabled>No batches available</SelectItem>}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -466,17 +765,14 @@ export default function AddUserPage() {
                     <Link href="/admin/users">
                         <Button type="button" variant="outline">Cancel</Button>
                     </Link>
-                    <Button type="submit" disabled={saving} className="gap-2">
+                    <Button type="submit" disabled={saving}>
                         {saving ? (
                             <>
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                                 Creating…
                             </>
                         ) : (
-                            <>
-                                <UserPlus className="h-4 w-4" />
-                                Create User
-                            </>
+                            "Create User"
                         )}
                     </Button>
                 </div>

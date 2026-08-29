@@ -10,14 +10,13 @@ export default function StudentSettingsPage() {
     return (
         <div className="space-y-8">
             <div>
-                <div className="flex items-center gap-3">
-                    <Settings className="h-8 w-8 text-primary" animateOnHover />
-                    <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-                </div>
-                <p className="mt-2 text-muted-foreground">
-                    Manage your appearance, typography, and account preferences.
-                </p>
-            </div>
+            <h1 className="text-2xl font-bold tracking-wider text-[#4d4d4d] dark:text-slate-200 uppercase mb-1">
+                SETTINGS
+            </h1>
+            <p className="text-[#8c8c8c] dark:text-slate-400 text-sm font-medium">
+                Manage your appearance, typography, and account preferences.
+            </p>
+        </div>
 
             {/* Typography / Font Preference */}
             <div className="rounded-lg border border-border bg-card p-6 shadow-sm">

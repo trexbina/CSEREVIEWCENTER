@@ -26,8 +26,9 @@ export default function RootLayout({ children }) {
       >
         <ThemeProvider
           attribute="data-theme"
-          defaultTheme="modern"
-          themes={["modern", "classic", "focus", "minimal-dark"]}
+          defaultTheme="light"
+          themes={["light", "dark"]}
+          enableSystem={false}
           disableTransitionOnChange
         >
           <FontProvider>

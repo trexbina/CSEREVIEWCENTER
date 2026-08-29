@@ -1,7 +1,8 @@
+// placeholder loading layout shown while subject data is being downloaded
 export default function ContentEditorLoading() {
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Back button + title skeleton */}
+            {/* back button and title placeholder */}
             <div className="flex items-center gap-3">
                 <div className="h-8 w-8 rounded-md bg-muted animate-pulse" />
                 <div className="space-y-1">
@@ -10,13 +11,13 @@ export default function ContentEditorLoading() {
                 </div>
             </div>
 
-            {/* Toolbar skeleton */}
+            {/* toolbar buttons placeholder */}
             <div className="flex items-center gap-3">
                 <div className="h-9 w-32 rounded-md bg-muted animate-pulse" />
                 <div className="h-9 w-32 rounded-md bg-muted animate-pulse" />
             </div>
 
-            {/* Content blocks skeleton */}
+            {/* content blocks placeholder */}
             {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="rounded-lg border border-border bg-card p-6 shadow-sm space-y-3">
                     <div className="flex items-center justify-between">

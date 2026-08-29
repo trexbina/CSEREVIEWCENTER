@@ -54,7 +54,7 @@ export function FontSwitcher() {
       {/* Live Sample Preview Text */}
       <div className="rounded-lg border border-border/80 bg-muted/40 p-3.5 flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Preview: {currentFont.label}
           </p>
           <p className="text-sm font-medium text-foreground truncate mt-0.5" style={{ fontFamily: currentFont.family }}>

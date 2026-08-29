@@ -46,7 +46,7 @@ function LoginFormInner() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || "Login failed.")
+        setError(data.error || "Invalid username or password.")
         setLoading(false)
         return
       }
@@ -64,59 +64,91 @@ function LoginFormInner() {
   }
 
   return (
-    <div className="px-2 py-6 md:px-6">
-      <DialogHeader className="mb-10 space-y-3">
-        <DialogTitle className="text-3xl md:text-4xl font-extrabold text-center tracking-tight text-[#0f172a]">
-          Welcome Back
+    <div className="p-1 sm:p-2">
+      {/* Header with Logo */}
+      <div className="flex flex-col items-center text-center space-y-2 mb-6">
+        <div className="size-11 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-800 flex items-center justify-center p-2 shadow-2xs">
+          <img
+            src="/landingpageassets/logo.png"
+            alt="Peak Excellence"
+            className="h-full w-full object-contain"
+          />
+        </div>
+        <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          Sign In
         </DialogTitle>
-        <DialogDescription className="text-center text-[#64748b] font-medium text-[15px]">
-          Sign in to your account
-        </DialogDescription>
-      </DialogHeader>
+      </div>
 
       {error && (
-        <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive text-center mb-6 border border-destructive/20 font-medium">
+        <div className="rounded-xl bg-destructive/10 p-3 text-xs text-destructive text-center mb-5 border border-destructive/20 font-medium animate-in fade-in duration-200">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2.5">
-          <Label htmlFor="email" className="text-sm font-bold text-[#1e293b]">Username</Label>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-xs font-semibold text-foreground">
+            Email
+          </Label>
           <Input
             id="email"
             type="email"
             required
+            autoComplete="username"
+            placeholder="name@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-12 border-[#cbd5e1] bg-white text-slate-900 focus-visible:ring-[#3b82f6]/40 focus-visible:border-[#3b82f6] transition-all rounded-lg shadow-sm text-base px-4"
+            className="h-10 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-background/50 focus-visible:ring-1 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-600 focus-visible:border-slate-400 dark:focus-visible:border-slate-500 transition-all px-3.5"
           />
         </div>
 
-        <div className="space-y-2.5">
-          <Label htmlFor="password" className="text-sm font-bold text-[#1e293b]">Password</Label>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password" className="text-xs font-semibold text-foreground">
+              Password
+            </Label>
+          </div>
           <Input
             id="password"
             type="password"
             required
+            autoComplete="current-password"
+            placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="h-12 border-[#cbd5e1] bg-white text-slate-900 focus-visible:ring-[#3b82f6]/40 focus-visible:border-[#3b82f6] transition-all rounded-lg shadow-sm text-base px-4"
+            className="h-10 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-background/50 focus-visible:ring-1 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-600 focus-visible:border-slate-400 dark:focus-visible:border-slate-500 transition-all px-3.5"
           />
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full h-[52px] bg-[#eed48f] hover:bg-[#e4c46c] text-white font-bold text-[16px] rounded-lg transition-all shadow-md hover:shadow-lg mt-2" 
+        <Button
+          type="submit"
+          className="w-full h-10 bg-[#E9C46A] text-white font-bold text-xs rounded-xl shadow-xs mt-2 transition-opacity duration-200 hover:opacity-85 hover:bg-[#E9C46A] active:opacity-75 cursor-pointer"
           disabled={loading}
         >
-          {loading ? "Logging in…" : "Log In"}
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="animate-spin h-3.5 w-3.5" />
+              Logging in...
+            </span>
+          ) : (
+            "Log In"
+          )}
         </Button>
       </form>
-      
-      <div className="mt-10 px-4 text-center">
-        <p className="text-[12px] text-[#94a3b8] font-medium leading-relaxed">
-          Contact your administrator if you need an account or if you forgot your password.
+
+      <div className="mt-6 pt-4 border-t border-border/50 text-center space-y-2">
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Need an account or forgot your password? <br className="hidden sm:block" />
+          <span className="text-foreground font-medium">Contact your administrator</span>
+        </p>
+        <p className="text-[11px] text-muted-foreground">
+          New Student?{" "}
+          <a
+            href="/pre-register"
+            className="text-[#E9C46A] hover:underline font-bold"
+          >
+            Pre-register here
+          </a>
         </p>
       </div>
     </div>
@@ -134,8 +166,8 @@ export function LoginDialog({ children, defaultOpen = false }) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md md:max-w-[480px] p-6 md:p-8 bg-white border-none shadow-2xl rounded-2xl">
-        <Suspense fallback={<div className="flex justify-center p-12"><Loader2 className="animate-spin h-10 w-10 text-[#eed48f]" /></div>}>
+      <DialogContent className="sm:max-w-[400px] p-6 bg-card border border-border/80 shadow-2xl rounded-2xl">
+        <Suspense fallback={<div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-[#E9C46A]" /></div>}>
           <LoginFormInner />
         </Suspense>
       </DialogContent>

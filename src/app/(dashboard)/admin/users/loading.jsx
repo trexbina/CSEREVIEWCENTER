@@ -1,7 +1,8 @@
+// placeholder skeleton layout displayed while user records are loading
 export default function UserManagementLoading() {
     return (
         <div className="space-y-8 animate-in fade-in duration-300">
-            {/* Header skeleton */}
+            {/* header placeholder */}
             <div>
                 <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-md bg-muted animate-pulse" />
@@ -10,7 +11,7 @@ export default function UserManagementLoading() {
                 <div className="mt-2 h-4 w-80 rounded bg-muted animate-pulse" />
             </div>
 
-            {/* Add User form skeleton */}
+            {/* form placeholder */}
             <div className="rounded-lg border border-border bg-card p-6 shadow-sm space-y-4">
                 <div className="h-5 w-32 rounded bg-muted animate-pulse" />
                 <div className="h-4 w-64 rounded bg-muted animate-pulse" />
@@ -25,7 +26,7 @@ export default function UserManagementLoading() {
                 <div className="h-10 w-28 rounded-md bg-muted animate-pulse" />
             </div>
 
-            {/* User table skeleton */}
+            {/* table placeholder */}
             <div className="rounded-lg border border-border bg-card shadow-sm">
                 <div className="border-b border-border px-6 py-4">
                     <div className="h-5 w-32 rounded bg-muted animate-pulse" />

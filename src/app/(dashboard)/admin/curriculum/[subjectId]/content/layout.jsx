@@ -1,47 +1,52 @@
+// this tells nextjs to run this layout in the browser
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { Loader2, ChevronLeft, Plus, FileText, LayoutDashboard, Pencil, Trash, PenTool, GripVertical, Menu, X, HelpCircle } from "lucide-react"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+// helper functions from react to store data and run actions
+import { useState, useEffect } from "react"
 
+// helper functions from nextjs to read the url parameters and navigate between pages
+import { useParams, useRouter, useSearchParams } from "next/navigation"
+
+// icons used on the buttons and lesson items
+import { Loader2, ChevronLeft, Plus, FileText, Pencil, Trash, PenTool, GripVertical, Menu, X, HelpCircle } from "lucide-react"
+
+// confirmation modal popup before deleting a module or lesson
+import ConfirmDeleteModal from "@/components/confirm-delete-modal"
+
+// main sidebar and workspace layout for editing modules and lessons inside a subject
 export default function SubjectContentLayout({ children }) {
     const params = useParams()
     const router = useRouter()
     const searchParams = useSearchParams()
     const subjectId = params.subjectId
 
+    // lists and details fetched from server
     const [modules, setModules] = useState([])
+    const [subjectInfo, setSubjectInfo] = useState(null)
     const [loading, setLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState("modules") // modules or files
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false) // responsive sidebar state
+    const [activeTab, setActiveTab] = useState("modules")
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
+    // module creation state
     const [newModuleName, setNewModuleName] = useState("")
     const [addingModule, setAddingModule] = useState(false)
 
-    // Lesson addition states
+    // lesson creation states
     const [addingLessonToModule, setAddingLessonToModule] = useState(null)
     const [newLessonType, setNewLessonType] = useState(null)
     const [newLessonTitle, setNewLessonTitle] = useState("")
 
-    // Drag state
-    const [dragItem, setDragItem] = useState(null) // { type: 'module'|'lesson', id, moduleId?, index }
-    const [dragOverItem, setDragOverItem] = useState(null) // same shape
-    const [deleteTarget, setDeleteTarget] = useState(null) // { type, id }
+    // drag and drop states for moving modules and lessons
+    const [dragItem, setDragItem] = useState(null)
+    const [dragOverItem, setDragOverItem] = useState(null)
+    const [deleteTarget, setDeleteTarget] = useState(null)
 
+    // download modules and lessons when subject id is ready
     useEffect(() => {
         fetchModules()
     }, [subjectId])
 
+    // fetch all modules and lessons for this subject
     async function fetchModules() {
         try {
             const res = await fetch(`/api/admin/subjects/${subjectId}/modules`)
@@ -49,8 +54,11 @@ export default function SubjectContentLayout({ children }) {
                 const data = await res.json()
                 const fetchedModules = data.modules || []
                 setModules(fetchedModules)
+                if (data.subject) {
+                    setSubjectInfo(data.subject)
+                }
 
-                // If no lesson is selected, automatically select the first available one
+                // if no lesson is currently selected in url automatically open the first lesson
                 if (!searchParams.get("lessonId")) {
                     for (const mod of fetchedModules) {
                         if (mod.lessons && mod.lessons.length > 0) {
@@ -68,6 +76,7 @@ export default function SubjectContentLayout({ children }) {
         }
     }
 
+    // add a new module to this subject
     async function handleAddModule() {
         if (!newModuleName.trim()) return
         try {
@@ -87,9 +96,13 @@ export default function SubjectContentLayout({ children }) {
         }
     }
 
-    async function handleAddLesson(moduleId) {
-        if (!newLessonTitle.trim() || !newLessonType) return
+    const [isSubmittingLesson, setIsSubmittingLesson] = useState(false)
 
+    // add a new lesson inside a module
+    async function handleAddLesson(moduleId) {
+        if (!newLessonTitle.trim() || !newLessonType || isSubmittingLesson) return
+
+        setIsSubmittingLesson(true)
         try {
             const res = await fetch(`/api/admin/subjects/${subjectId}/modules`, {
                 method: "POST",
@@ -110,6 +123,8 @@ export default function SubjectContentLayout({ children }) {
             }
         } catch (error) {
             console.error(error)
+        } finally {
+            setIsSubmittingLesson(false)
         }
     }
 
@@ -117,9 +132,10 @@ export default function SubjectContentLayout({ children }) {
     const [editingLessonId, setEditingLessonId] = useState(null)
     const [editTitle, setEditTitle] = useState("")
 
+    // rename a module or a lesson
     async function handleEdit(type, id, originalTitle) {
         if (editingModuleId === id || editingLessonId === id) {
-            // Save mode
+            // save the new title
             if (!editTitle.trim() || editTitle.trim() === originalTitle) {
                 setEditingModuleId(null)
                 setEditingLessonId(null)
@@ -147,7 +163,7 @@ export default function SubjectContentLayout({ children }) {
             setEditingModuleId(null)
             setEditingLessonId(null)
         } else {
-            // Enter edit mode
+            // open the edit text box
             setEditTitle(originalTitle)
             if (type === "module") {
                 setEditingModuleId(id)
@@ -159,19 +175,43 @@ export default function SubjectContentLayout({ children }) {
         }
     }
 
+    // delete a module or lesson from the database
     async function deleteItem(type, id) {
         try {
             const res = await fetch(`/api/admin/subjects/${subjectId}/modules?type=${type}&id=${id}`, {
                 method: "DELETE"
             })
             if (res.ok) {
+                let updatedModules = []
                 if (type === "module") {
-                    setModules(modules.filter(m => m.id !== id))
+                    updatedModules = modules.filter(m => m.id !== id)
+                    setModules(updatedModules)
                 } else {
-                    setModules(modules.map(m => ({
+                    updatedModules = modules.map(m => ({
                         ...m,
                         lessons: m.lessons.filter(l => l.id !== id)
-                    })))
+                    }))
+                    setModules(updatedModules)
+                }
+
+                // if the deleted lesson was open on the screen switch to the next available lesson
+                const currentLessonId = searchParams.get("lessonId")
+                const isCurrentLessonDeleted = (type === "lesson" && currentLessonId === id.toString()) ||
+                    (type === "module" && modules.find(m => m.id === id)?.lessons?.some(l => l.id.toString() === currentLessonId))
+
+                if (isCurrentLessonDeleted) {
+                    let nextLesson = null
+                    for (const mod of updatedModules) {
+                        if (mod.lessons && mod.lessons.length > 0) {
+                            nextLesson = mod.lessons[0]
+                            break
+                        }
+                    }
+                    if (nextLesson) {
+                        router.replace(`/admin/curriculum/${subjectId}/content?lessonId=${nextLesson.id}&type=${nextLesson.lesson_type || 'module'}`)
+                    } else {
+                        router.replace(`/admin/curriculum/${subjectId}/content`)
+                    }
                 }
             }
         } catch (error) {
@@ -179,12 +219,12 @@ export default function SubjectContentLayout({ children }) {
         }
     }
 
+    // show the delete confirmation popup
     function handleDelete(type, id) {
         setDeleteTarget({ type, id })
     }
 
-    // ── DRAG & DROP HANDLERS ──
-
+    // drag and drop handlers to reorder modules and lessons
     function handleModuleDragStart(e, moduleId, index) {
         setDragItem({ type: 'module', id: moduleId, index })
         e.dataTransfer.effectAllowed = "move"
@@ -208,7 +248,6 @@ export default function SubjectContentLayout({ children }) {
         setModules(newModules)
         setDragItem(null)
         setDragOverItem(null)
-        // TODO: persist new order to backend
     }
 
     function handleLessonDragStart(e, lessonId, moduleId, index) {
@@ -252,6 +291,7 @@ export default function SubjectContentLayout({ children }) {
         setDragOverItem(null)
     }
 
+    // loading spinner while subject and modules are loading
     if (loading) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-white">
@@ -261,9 +301,9 @@ export default function SubjectContentLayout({ children }) {
     }
 
     return (
-        <div className="flex relative h-[calc(100vh-64px)] w-full overflow-hidden bg-white">
+        <div className="flex relative h-screen w-full overflow-hidden bg-white">
 
-            {/* Mobile Sidebar Toggle Button */}
+            {/* mobile sidebar open button */}
             <button
                 onClick={() => setIsSidebarOpen(true)}
                 className="md:hidden absolute bottom-6 right-6 z-40 h-14 w-14 bg-[#ba5a62] text-white rounded-full shadow-2xl shadow-black/30 flex items-center justify-center hover:bg-[#a64e56] transition-transform active:scale-95"
@@ -271,7 +311,7 @@ export default function SubjectContentLayout({ children }) {
                 <Menu className="h-6 w-6" />
             </button>
 
-            {/* Mobile Backdrop */}
+            {/* mobile backdrop overlay */}
             {isSidebarOpen && (
                 <div
                     className="md:hidden fixed inset-0 bg-black/50 z-40 transition-opacity"
@@ -279,27 +319,56 @@ export default function SubjectContentLayout({ children }) {
                 />
             )}
 
-            {/* Subject Sidebar */}
+            {/* left sidebar with module and lesson navigation */}
             <div className={`
                 absolute md:static inset-y-0 left-0 z-50 
                 w-80 shrink-0 border-r border-gray-200 bg-white flex flex-col h-full overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-transform duration-300 ease-in-out
                 ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 md:shadow-none'}
             `}>
 
-                {/* School Branding / Header */}
-                <div className="p-6 pb-4 flex items-center justify-between border-b border-gray-100">
-                    <div className="flex flex-col items-start gap-1">
-                        <img
-                            src="/landingpageassets/logo.png"
-                            alt="Peak Excellence"
-                            className="h-10 md:h-12 w-auto object-contain"
-                            onError={(e) => { e.target.style.display = 'none' }}
-                        />
-                        <h2 className="text-xs md:text-sm font-extrabold tracking-widest text-[#4d4d4d] uppercase font-sans mt-2">
-                            PEAK EXCELLENCE
-                        </h2>
+                {/* sidebar header with back button and school logo */}
+                <div className="p-6 pb-4 flex items-center justify-between border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => {
+                                if (subjectInfo) {
+                                    if (subjectInfo.category_id && subjectInfo.subcategory_id) {
+                                        if (typeof window !== "undefined") {
+                                            sessionStorage.setItem("admin_curriculum_cat_id", String(subjectInfo.category_id))
+                                            sessionStorage.setItem("admin_curriculum_sub_id", String(subjectInfo.subcategory_id))
+                                        }
+                                        router.push(`/admin/curriculum?cat=${subjectInfo.category_id}&sub=${subjectInfo.subcategory_id}`)
+                                        return
+                                    }
+                                    if (subjectInfo.category_id) {
+                                        if (typeof window !== "undefined") {
+                                            sessionStorage.setItem("admin_curriculum_cat_id", String(subjectInfo.category_id))
+                                            sessionStorage.removeItem("admin_curriculum_sub_id")
+                                        }
+                                        router.push(`/admin/curriculum?cat=${subjectInfo.category_id}`)
+                                        return
+                                    }
+                                }
+                                router.push('/admin/curriculum')
+                            }}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200/50 bg-gray-100 text-gray-600 transition-all hover:bg-gray-200 hover:text-gray-900 shadow-sm shrink-0 cursor-pointer"
+                            title="Back to Subjects"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <div className="flex flex-col items-start gap-1">
+                            <img
+                                src="/landingpageassets/logo.png"
+                                alt="Peak Excellence"
+                                className="h-10 md:h-12 w-auto object-contain"
+                                onError={(e) => { e.target.style.display = 'none' }}
+                            />
+                            <h2 className="text-xs md:text-sm font-extrabold tracking-widest text-[#4d4d4d] uppercase font-sans mt-2">
+                                PEAK EXCELLENCE
+                            </h2>
+                        </div>
                     </div>
-                    {/* Close button for mobile */}
+                    {/* close sidebar button for mobile screens */}
                     <button
                         className="md:hidden p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
                         onClick={() => setIsSidebarOpen(false)}
@@ -308,33 +377,25 @@ export default function SubjectContentLayout({ children }) {
                     </button>
                 </div>
 
-                {/* Back button & Toggle Tabs */}
-                <div className="p-4 border-b border-gray-100 flex items-center gap-3">
-                    <button
-                        onClick={() => router.push('/admin/curriculum')}
-                        className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors"
-                        title="Back to Subjects"
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                    </button>
-
-                    <div className="flex bg-gray-100 rounded-lg p-1 flex-1">
+                {/* tabs for switching between modules and files */}
+                <div className="p-4 border-b border-gray-200 flex items-center">
+                    <div className="flex bg-gray-100/80 rounded-xl p-1 flex-1 border border-gray-200/40">
                         <button
                             onClick={() => setActiveTab("modules")}
-                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === "modules" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                            className={`flex-1 py-1.5 text-xs rounded-lg transition-all ${activeTab === "modules" ? "bg-white text-gray-600 font-semibold shadow-2xs" : "text-gray-400 hover:text-gray-600 font-medium"}`}
                         >
                             Modules
                         </button>
                         <button
                             onClick={() => setActiveTab("files")}
-                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${activeTab === "files" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                            className={`flex-1 py-1.5 text-xs rounded-lg transition-all ${activeTab === "files" ? "bg-white text-gray-600 font-semibold shadow-2xs" : "text-gray-400 hover:text-gray-600 font-medium"}`}
                         >
                             Files
                         </button>
                     </div>
                 </div>
 
-                {/* Modules List Scrolling Area */}
+                {/* list of modules and their lessons */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
                     {modules.map((module, idx) => (
                         <div
@@ -344,124 +405,143 @@ export default function SubjectContentLayout({ children }) {
                             onDrop={(e) => handleModuleDrop(e, idx)}
                             onDragEnd={handleDragEnd}
                         >
-                            {/* Module Header */}
-                            <div className="border-b border-gray-100 pb-2 flex justify-between items-center group">
-                                <div
-                                    className="flex items-center gap-1.5 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors shrink-0"
-                                    draggable
-                                    onDragStart={(e) => handleModuleDragStart(e, module.id, idx)}
-                                >
-                                    <GripVertical className="h-4 w-4" />
-                                </div>
-                                {editingModuleId === module.id ? (
-                                    <div className="flex-1 flex items-center gap-2 mr-2">
-                                        <input
-                                            type="text"
-                                            value={editTitle}
-                                            onChange={e => setEditTitle(e.target.value)}
-                                            onKeyDown={e => e.key === "Enter" && handleEdit("module", module.id, module.title)}
-                                            autoFocus
-                                            className="w-full text-[13px] font-bold text-gray-700 bg-white border border-gray-300 rounded px-2 py-1 outline-none focus:border-[#f5cdd0]"
-                                        />
+                            {/* module title bar */}
+                            <div className="border-b border-gray-200 pb-2 flex justify-between items-start gap-2 group">
+                                <div className="flex items-start gap-1.5 min-w-0 flex-1">
+                                    <div
+                                        className="flex items-center gap-1.5 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors shrink-0 pt-0.5"
+                                        draggable
+                                        onDragStart={(e) => handleModuleDragStart(e, module.id, idx)}
+                                    >
+                                        <GripVertical className="h-4 w-4" />
                                     </div>
-                                ) : (
-                                    <h3 className="text-[13px] font-bold text-gray-600 flex-1 ml-1">
-                                        {module.title}
-                                    </h3>
-                                )}
+                                    {editingModuleId === module.id ? (
+                                        <div className="flex-1 flex items-center gap-2 mr-2">
+                                            <input
+                                                type="text"
+                                                value={editTitle}
+                                                onChange={e => setEditTitle(e.target.value)}
+                                                onKeyDown={e => e.key === "Enter" && handleEdit("module", module.id, module.title)}
+                                                autoFocus
+                                                className="w-full text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-lg px-2.5 py-1 outline-none focus:border-gray-400"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <h3 className="text-[13px] font-medium text-gray-600 flex-1 ml-1 leading-snug break-words pr-2" title={module.title}>
+                                            {module.title}
+                                        </h3>
+                                    )}
+                                </div>
 
-                                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 pt-0.5">
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleEdit("module", module.id, module.title) }}
-                                        className={`p-1 rounded hover:bg-gray-100 transition-colors ${editingModuleId === module.id ? "text-green-600 font-bold text-[10px] w-auto px-2" : "text-gray-400 hover:text-blue-500"}`}
+                                        className={`p-1.5 rounded-lg transition-colors ${editingModuleId === module.id ? "bg-[#E9C46A] text-slate-900 font-bold text-[10px] w-auto px-2" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
                                         title="Edit Module"
                                     >
-                                        {editingModuleId === module.id ? "SAVE" : <Pencil className="h-3 w-3" />}
+                                        {editingModuleId === module.id ? "SAVE" : <Pencil className="h-3.5 w-3.5" />}
                                     </button>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleDelete("module", module.id) }}
-                                        className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-gray-100 transition-colors"
+                                        className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                                         title="Delete Module"
                                     >
-                                        <Trash className="h-3 w-3" />
+                                        <Trash className="h-3.5 w-3.5" />
                                     </button>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider pl-1">
+                                <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider pl-1">
                                     LESSONS
                                 </p>
 
-                                {/* Lessons */}
-                                {module.lessons?.map((lesson, lIdx) => (
-                                    <div
-                                        key={lesson.id}
-                                        onDragOver={(e) => handleLessonDragOver(e, lesson.id, module.id, lIdx)}
-                                        onDrop={(e) => handleLessonDrop(e, module.id, lIdx)}
-                                        onDragEnd={handleDragEnd}
-                                        onClick={() => {
-                                            if (editingLessonId !== lesson.id) {
-                                                router.push(`/admin/curriculum/${subjectId}/content?lessonId=${lesson.id}&type=${lesson.lesson_type || 'module'}`);
-                                                setIsSidebarOpen(false);
-                                            }
-                                        }}
-                                        className={`p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:border-blue-400 hover:shadow-md transition-all group flex items-center justify-between ${dragOverItem?.type === 'lesson' && dragOverItem?.id === lesson.id && dragItem?.id !== lesson.id
-                                                ? 'border-blue-400 border-t-2'
-                                                : 'border-gray-200'
+                                {module.lessons?.map((lesson, lIdx) => {
+                                    const isSelected = searchParams.get("lessonId") === lesson.id.toString();
+
+                                    return (
+                                        <div
+                                            key={lesson.id}
+                                            onDragOver={(e) => handleLessonDragOver(e, lesson.id, module.id, lIdx)}
+                                            onDrop={(e) => handleLessonDrop(e, module.id, lIdx)}
+                                            onDragEnd={handleDragEnd}
+                                            onClick={() => {
+                                                if (editingLessonId !== lesson.id) {
+                                                    router.replace(`/admin/curriculum/${subjectId}/content?lessonId=${lesson.id}&type=${lesson.lesson_type || 'module'}`);
+                                                    setIsSidebarOpen(false);
+                                                }
+                                            }}
+                                            className={`p-2.5 rounded-lg transition-all group flex items-center justify-between cursor-pointer border ${
+                                                isSelected
+                                                    ? 'bg-gray-50/90 border-gray-200/90 shadow-2xs'
+                                                    : 'bg-white border-gray-200/60 hover:bg-gray-50/60 hover:border-gray-300/70 hover:shadow-2xs'
+                                            } ${
+                                                dragOverItem?.type === 'lesson' && dragOverItem?.id === lesson.id && dragItem?.id !== lesson.id
+                                                    ? 'border-[#E9C46A] border-t-2'
+                                                    : ''
                                             }`}
-                                    >
-                                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                                            <div
-                                                className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors shrink-0"
-                                                draggable
-                                                onDragStart={(e) => handleLessonDragStart(e, lesson.id, module.id, lIdx)}
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <GripVertical className="h-3.5 w-3.5" />
-                                            </div>
-                                            {editingLessonId === lesson.id ? (
-                                                <div className="flex-1 flex items-center gap-2 mr-2">
-                                                    <input
-                                                        type="text"
-                                                        value={editTitle}
-                                                        onChange={e => setEditTitle(e.target.value)}
-                                                        onKeyDown={e => e.key === "Enter" && handleEdit("lesson", lesson.id, lesson.title)}
-                                                        autoFocus
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="w-full text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded px-2 py-1 outline-none focus:border-[#f5cdd0]"
-                                                    />
+                                        >
+                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                <div
+                                                    className={`cursor-grab active:cursor-grabbing transition-colors shrink-0 ${
+                                                        isSelected ? 'text-gray-400' : 'text-gray-300 hover:text-gray-500'
+                                                    }`}
+                                                    draggable
+                                                    onDragStart={(e) => handleLessonDragStart(e, lesson.id, module.id, lIdx)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <GripVertical className="h-3.5 w-3.5" />
                                                 </div>
-                                            ) : (
-                                                <p className="text-sm font-semibold text-gray-700 group-hover:text-blue-600 transition-colors flex-1 line-clamp-2 pr-2">
-                                                    {lesson.title}
-                                                </p>
-                                            )}
-                                        </div>
+                                                {editingLessonId === lesson.id ? (
+                                                    <div className="flex-1 flex items-center gap-2 mr-2">
+                                                        <input
+                                                            type="text"
+                                                            value={editTitle}
+                                                            onChange={e => setEditTitle(e.target.value)}
+                                                            onKeyDown={e => e.key === "Enter" && handleEdit("lesson", lesson.id, lesson.title)}
+                                                            autoFocus
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="w-full text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md px-2 py-1 outline-none focus:border-gray-400"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <p
+                                                        className={`text-xs transition-colors flex-1 line-clamp-2 pr-2 ${
+                                                            isSelected ? 'text-gray-600 font-medium' : 'text-gray-400 font-normal group-hover:text-gray-600'
+                                                        }`}
+                                                        title={lesson.title}
+                                                    >
+                                                        {lesson.title}
+                                                    </p>
+                                                )}
+                                            </div>
 
-                                        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleEdit("lesson", lesson.id, lesson.title) }}
-                                                className={`p-1.5 rounded bg-gray-50 hover:bg-blue-50 transition-colors ${editingLessonId === lesson.id ? "text-green-600 font-bold text-[10px] w-auto px-2" : "text-gray-400 hover:text-blue-500"}`}
-                                                title="Edit Lesson"
-                                            >
-                                                {editingLessonId === lesson.id ? "SAVE" : <Pencil className="h-3.5 w-3.5" />}
-                                            </button>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleDelete("lesson", lesson.id) }}
-                                                className="p-1.5 text-gray-400 hover:text-red-500 rounded bg-gray-50 hover:bg-red-50 transition-colors"
-                                                title="Delete Lesson"
-                                            >
-                                                <Trash className="h-3.5 w-3.5" />
-                                            </button>
+                                            <div className={`flex items-center gap-0.5 transition-opacity shrink-0 ${
+                                                isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                                            }`}>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleEdit("lesson", lesson.id, lesson.title) }}
+                                                    className={`p-1 rounded-md transition-colors ${editingLessonId === lesson.id ? "bg-[#E9C46A] text-slate-900 font-bold text-[10px] w-auto px-2" : "text-gray-400 hover:text-gray-700 hover:bg-gray-200/70"}`}
+                                                    title="Edit Lesson"
+                                                >
+                                                    {editingLessonId === lesson.id ? "SAVE" : <Pencil className="h-3 w-3" />}
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete("lesson", lesson.id) }}
+                                                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-gray-200/70 rounded-md transition-colors"
+                                                    title="Delete Lesson"
+                                                >
+                                                    <Trash className="h-3 w-3" />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
 
-                                {/* Lesson drop zone at the end of a module's lesson list */}
+                                {/* lesson drop zone at the end of a module list */}
                                 {dragItem?.type === 'lesson' && (
                                     <div
-                                        className="h-8 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50/50 flex items-center justify-center text-blue-400 text-xs font-bold"
+                                        className="h-8 border-2 border-solid border-blue-300 rounded-xl bg-blue-50/50 flex items-center justify-center text-blue-500 text-xs font-bold"
                                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverItem({ type: 'lesson', id: 'end', moduleId: module.id, index: (module.lessons?.length || 0) }) }}
                                         onDrop={(e) => handleLessonDrop(e, module.id, module.lessons?.length || 0)}
                                     >
@@ -469,10 +549,34 @@ export default function SubjectContentLayout({ children }) {
                                     </div>
                                 )}
 
-                                {/* Add Lesson Button & Dropdown */}
+                                {/* button and dropdown to add a new lesson or quiz */}
                                 <div className="relative">
-                                    {addingLessonToModule === module.id ? (
-                                        <div className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2">
+                                    <button
+                                        onClick={() => {
+                                            if (addingLessonToModule === module.id) {
+                                                setAddingLessonToModule(null);
+                                                setNewLessonType(null);
+                                                setNewLessonTitle("");
+                                            } else {
+                                                setAddingLessonToModule(module.id);
+                                            }
+                                        }}
+                                        className={`w-full flex items-center justify-center py-2 rounded-lg transition-all cursor-pointer shadow-2xs border ${
+                                            addingLessonToModule === module.id
+                                                ? "bg-gray-200 text-gray-700 border-transparent hover:bg-gray-300/80"
+                                                : "bg-gray-50/80 hover:bg-gray-100 border-gray-200/80 text-gray-400 hover:text-gray-600 hover:border-gray-300"
+                                        }`}
+                                        title={addingLessonToModule === module.id ? "Close Menu" : "Add Lesson"}
+                                    >
+                                        {addingLessonToModule === module.id ? (
+                                            <X className="h-3.5 w-3.5 transition-transform duration-200" />
+                                        ) : (
+                                            <Plus className="h-3.5 w-3.5" />
+                                        )}
+                                    </button>
+
+                                    {addingLessonToModule === module.id && (
+                                        <div className="mt-2 bg-white border border-gray-200/80 rounded-xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-2">
                                             {!newLessonType ? (
                                                 <div className="flex flex-col">
                                                     <button onClick={() => setNewLessonType('module')} className="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 border-b border-gray-100 transition-colors">
@@ -486,14 +590,21 @@ export default function SubjectContentLayout({ children }) {
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <div className="p-3 bg-gray-50 flex flex-col gap-2">
-                                                    <div className="flex items-center gap-2 mb-1 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                                                        {newLessonType === 'module' ? <PenTool className="h-3 w-3" /> : (newLessonType === 'pdf' ? <FileText className="h-3 w-3" /> : <HelpCircle className="h-3 w-3" />)}
-                                                        New {newLessonType} Lesson
+                                                <div className="p-3 bg-white flex flex-col gap-2.5 rounded-xl border border-gray-200/80 shadow-2xs">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                                                            {newLessonType === 'quiz' ? 'Quiz Name' : 'Lesson Title'}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => { setAddingLessonToModule(null); setNewLessonType(null); setNewLessonTitle(""); }}
+                                                            className="text-gray-400 hover:text-gray-600 p-0.5 rounded transition-colors"
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </button>
                                                     </div>
                                                     <input
                                                         type="text"
-                                                        placeholder="Name lesson here..."
+                                                        placeholder={newLessonType === 'quiz' ? "Name quiz here..." : "Name lesson here..."}
                                                         value={newLessonTitle}
                                                         onChange={(e) => setNewLessonTitle(e.target.value)}
                                                         onKeyDown={(e) => {
@@ -501,51 +612,78 @@ export default function SubjectContentLayout({ children }) {
                                                             if (e.key === 'Escape') { setAddingLessonToModule(null); setNewLessonType(null); setNewLessonTitle(""); }
                                                         }}
                                                         autoFocus
-                                                        className="w-full text-sm rounded border border-gray-300 px-2 py-1.5 focus:outline-none focus:border-[#f5cdd0]"
+                                                        className="w-full text-xs font-medium text-gray-800 bg-gray-50/80 rounded-lg border border-gray-200/80 px-2.5 py-1.5 focus:outline-none focus:bg-white focus:border-gray-300 transition-all placeholder:text-gray-400"
                                                     />
-                                                    <div className="flex gap-2 mt-1">
-                                                        <button onClick={() => handleAddLesson(module.id)} className="flex-1 bg-[#f5cdd0] text-[#ba5a62] hover:bg-[#eeb8bc] font-bold text-xs py-1.5 rounded transition-colors">Save</button>
-                                                        <button onClick={() => { setAddingLessonToModule(null); setNewLessonType(null); setNewLessonTitle(""); }} className="flex-1 bg-white border border-gray-200 text-gray-500 font-bold text-xs py-1.5 rounded hover:bg-gray-50 transition-colors">Cancel</button>
+                                                    <div className="flex items-center justify-end gap-1.5 pt-0.5">
+                                                        <button
+                                                            onClick={() => { setAddingLessonToModule(null); setNewLessonType(null); setNewLessonTitle(""); }}
+                                                            className="px-2 py-0.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleAddLesson(module.id)}
+                                                            disabled={!newLessonTitle.trim() || isSubmittingLesson}
+                                                            className="px-2.5 py-0.5 bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 disabled:pointer-events-none text-white text-xs font-medium rounded-md shadow-2xs transition-colors flex items-center gap-1"
+                                                        >
+                                                            {isSubmittingLesson ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                                                            <span>Save</span>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
-                                    ) : (
-                                        <button
-                                            onClick={() => setAddingLessonToModule(module.id)}
-                                            className="w-full flex items-center justify-center py-2.5 bg-gray-50 hover:bg-gray-100 border border-transparent hover:border-gray-200 text-gray-400 hover:text-gray-600 rounded-lg transition-all"
-                                        >
-                                            <Plus className="h-4 w-4" />
-                                        </button>
                                     )}
                                 </div>
                             </div>
                         </div>
                     ))}
 
-                    {/* Add Module Area */}
+                    {/* add new module section */}
                     <div className="pt-4 border-t border-gray-100">
                         {!addingModule ? (
                             <button
                                 onClick={() => setAddingModule(true)}
-                                className="w-full py-2.5 bg-[#fef5f6] hover:bg-[#fce9ea] text-[#ba5a62] text-sm font-bold rounded-lg border border-[#f5cdd0] border-dashed transition-colors"
+                                className="w-full py-2.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-bold tracking-wide rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 cursor-pointer uppercase"
                             >
-                                + ADD NEW MODULE
+                                ADD NEW MODULE
                             </button>
                         ) : (
-                            <div className="space-y-2 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                            <div className="space-y-2.5 bg-white p-3 rounded-xl border border-gray-200/80 shadow-2xs">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                                        New Module
+                                    </span>
+                                    <button
+                                        onClick={() => setAddingModule(false)}
+                                        className="text-gray-400 hover:text-gray-600 p-0.5 rounded transition-colors"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </div>
                                 <input
                                     type="text"
-                                    placeholder="Module Name..."
-                                    className="w-full p-2 text-sm rounded border border-gray-300 focus:outline-none focus:ring-1 focus:ring-[#f5cdd0]"
+                                    placeholder="Module name..."
+                                    className="w-full px-2.5 py-1.5 text-xs font-medium text-gray-800 rounded-lg border border-gray-200/80 bg-gray-50/80 focus:outline-none focus:bg-white focus:border-gray-300 transition-all placeholder:text-gray-400"
                                     value={newModuleName}
                                     onChange={e => setNewModuleName(e.target.value)}
                                     onKeyDown={e => { if (e.key === 'Enter') handleAddModule(); if (e.key === 'Escape') setAddingModule(false); }}
                                     autoFocus
                                 />
-                                <div className="flex gap-2">
-                                    <button onClick={handleAddModule} className="flex-1 bg-[#f5cdd0] text-[#ba5a62] hover:bg-[#eeb8bc] font-bold text-xs py-1.5 rounded transition-colors">Save</button>
-                                    <button onClick={() => setAddingModule(false)} className="flex-1 bg-white border border-gray-200 text-gray-500 font-bold text-xs py-1.5 rounded hover:bg-gray-50 transition-colors">Cancel</button>
+                                <div className="flex items-center justify-end gap-1.5 pt-0.5">
+                                    <button
+                                        onClick={() => setAddingModule(false)}
+                                        className="px-2 py-0.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleAddModule}
+                                        disabled={!newModuleName.trim()}
+                                        className="px-2.5 py-0.5 bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 disabled:pointer-events-none text-white text-xs font-medium rounded-md shadow-2xs transition-colors"
+                                    >
+                                        Save
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -553,46 +691,52 @@ export default function SubjectContentLayout({ children }) {
                 </div>
             </div>
 
-            {/* Main Content Area (Builder) */}
+            {/* main content area showing lesson editor */}
             <div className="flex-1 overflow-y-auto bg-[#f5f5f5]">
                 {children}
             </div>
 
-            <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete {deleteTarget?.type || "item"}?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. The selected {deleteTarget?.type || "item"} will be permanently removed.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setDeleteTarget(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            className="bg-red-600 text-white hover:bg-red-700"
-                            onClick={async () => {
-                                if (!deleteTarget) return
-                                const { type, id } = deleteTarget
-                                setDeleteTarget(null)
-                                await deleteItem(type, id)
-                            }}
-                        >
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            {/* popup modal to confirm delete */}
+            <ConfirmDeleteModal
+                isOpen={!!deleteTarget}
+                title={`Delete ${deleteTarget?.type || "Item"}`}
+                description={`Are you sure you want to delete this ${deleteTarget?.type || "item"}? This action cannot be undone.`}
+                confirmText="Delete"
+                onConfirm={async () => {
+                    if (!deleteTarget) return
+                    const { type, id } = deleteTarget
+                    setDeleteTarget(null)
+                    await deleteItem(type, id)
+                }}
+                onCancel={() => setDeleteTarget(null)}
+            />
 
             <style jsx global>{`
+                .custom-scrollbar {
+                    scrollbar-width: thin;
+                    scrollbar-color: transparent transparent;
+                    transition: scrollbar-color 0.2s ease;
+                }
+                .custom-scrollbar:hover {
+                    scrollbar-color: #cbd5e1 transparent;
+                }
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 4px;
+                    height: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-track {
                     background: transparent;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background-color: #e5e7eb;
+                    background-color: transparent;
                     border-radius: 20px;
+                    transition: background-color 0.2s ease;
+                }
+                .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+                    background-color: #cbd5e1;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background-color: #94a3b8;
                 }
             `}</style>
         </div>

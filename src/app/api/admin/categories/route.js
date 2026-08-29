@@ -8,6 +8,26 @@ async function adminGuard() {
     return session
 }
 
+async function ensureTable() {
+    await pool.query(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) UNIQUE NOT NULL,
+      description TEXT,
+      has_subcategories BOOLEAN DEFAULT TRUE,
+      target_course VARCHAR(50) DEFAULT 'all',
+      target_program VARCHAR(50) DEFAULT 'all',
+      target_major VARCHAR(50) DEFAULT 'all',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    ALTER TABLE categories ADD COLUMN IF NOT EXISTS has_subcategories BOOLEAN DEFAULT TRUE;
+    ALTER TABLE categories ADD COLUMN IF NOT EXISTS target_course VARCHAR(50) DEFAULT 'all';
+    ALTER TABLE categories ADD COLUMN IF NOT EXISTS target_program VARCHAR(50) DEFAULT 'all';
+    ALTER TABLE categories ADD COLUMN IF NOT EXISTS target_major VARCHAR(50) DEFAULT 'all';
+  `)
+}
+
 // ── GET /api/admin/categories ─────────────────────────────
 export async function GET() {
     try {
@@ -15,6 +35,8 @@ export async function GET() {
         if (!session) {
             return NextResponse.json({ error: "Forbidden." }, { status: 403 })
         }
+
+        await ensureTable()
 
         const { rows } = await pool.query(
             "SELECT * FROM categories ORDER BY created_at ASC"
@@ -34,7 +56,9 @@ export async function POST(request) {
             return NextResponse.json({ error: "Forbidden." }, { status: 403 })
         }
 
-        const { name, description } = await request.json()
+        await ensureTable()
+
+        const { name, description, has_subcategories, target_course, target_program, target_major } = await request.json()
 
         if (!name?.trim()) {
             return NextResponse.json(
@@ -56,10 +80,17 @@ export async function POST(request) {
         }
 
         const { rows } = await pool.query(
-            `INSERT INTO categories (name, description)
-             VALUES ($1, $2)
+            `INSERT INTO categories (name, description, has_subcategories, target_course, target_program, target_major)
+             VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING *`,
-            [name.trim(), description?.trim() || null]
+            [
+                name.trim(), 
+                description?.trim() || null, 
+                has_subcategories !== undefined ? has_subcategories : true,
+                target_course || "all",
+                target_program || "all",
+                target_major || "all"
+            ]
         )
 
         return NextResponse.json({ category: rows[0] }, { status: 201 })
@@ -113,7 +144,7 @@ export async function PUT(request) {
             return NextResponse.json({ error: "Category id is required." }, { status: 400 })
         }
 
-        const { name } = await request.json()
+        const { name, has_subcategories, target_course, target_program, target_major } = await request.json()
 
         if (!name?.trim()) {
             return NextResponse.json(
@@ -135,8 +166,23 @@ export async function PUT(request) {
         }
 
         const { rows } = await pool.query(
-            `UPDATE categories SET name = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
-            [name.trim(), id]
+            `UPDATE categories 
+             SET name = $1, 
+                 has_subcategories = COALESCE($2, has_subcategories),
+                 target_course = COALESCE($3, target_course),
+                 target_program = COALESCE($4, target_program),
+                 target_major = COALESCE($5, target_major),
+                 updated_at = NOW() 
+             WHERE id = $6 
+             RETURNING *`,
+            [
+                name.trim(), 
+                has_subcategories !== undefined ? has_subcategories : null,
+                target_course || "all",
+                target_program || "all",
+                target_major || "all",
+                id
+            ]
         )
 
         if (rows.length === 0) {

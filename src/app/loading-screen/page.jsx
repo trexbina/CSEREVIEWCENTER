@@ -7,7 +7,10 @@ import { Suspense } from "react"
 const ROLE_ROUTES = {
   student: [
     "/student",
-    "/student/groups",
+    "/student/subjects",
+    "/student/assignments",
+    "/student/calendar",
+    "/student/mock-exams",
     "/student/progress",
     "/student/notifications",
     "/student/profile",
@@ -15,16 +18,13 @@ const ROLE_ROUTES = {
   ],
   teacher: [
     "/teacher",
-    "/teacher/students",
-    "/teacher/notifications",
-    "/teacher/settings",
+    "/teacher/modules",
   ],
   admin: [
     "/admin",
     "/admin/users",
     "/admin/master-data",
     "/admin/analytical-overview",
-    "/admin/security",
     "/admin/financials",
     "/admin/reports",
     "/admin/notifications",
@@ -139,11 +139,11 @@ function LoadingScreenInner() {
       <div className="flex flex-col items-center w-full max-w-sm px-4 animate-in fade-in duration-500">
         
         {/* Logo (Static / Non-blinking) */}
-        <div className="relative w-48 md:w-56 flex justify-center mb-8">
+        <div className="relative w-28 md:w-32 flex justify-center mb-6">
           <img 
-            src="/peak_loading_screen-removebg-preview.png" 
+            src="/landingpageassets/logo.png" 
             alt="Peak Excellence" 
-            className="w-full h-auto object-contain"
+            className="w-full h-auto object-contain drop-shadow-md"
           />
         </div>
 

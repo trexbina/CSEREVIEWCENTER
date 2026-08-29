@@ -1,4 +1,5 @@
 import dynamic from "next/dynamic"
+import Link from "next/link"
 import { getSession } from "@/lib/auth-session"
 import pool from "@/lib/db"
 import { CalendarDays, Play } from "lucide-react"
@@ -123,10 +124,13 @@ export default async function StudentDashboard() {
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <LETCountdownInline targetDate={LET_EXAM_DATE} />
-          <button className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors">
+          <Link
+            href="/student/calendar"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors cursor-pointer"
+          >
             <CalendarDays className="h-4 w-4" />
             Schedule
-          </button>
+          </Link>
           <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
             <Play className="h-4 w-4" />
             Start Mock Exam

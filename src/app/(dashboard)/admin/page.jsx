@@ -82,7 +82,7 @@ export default async function AdminDashboard() {
       <div>
         <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
         <p className="mt-1 text-muted-foreground">
-          System overview — manage users, view assignments and submissions.
+          System overview — monitor overall platform analytics, user metrics, and activity.
         </p>
       </div>
 

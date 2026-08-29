@@ -1,6 +1,13 @@
+// helper to check if admin is logged in
 import { getSession } from "@/lib/auth-session"
+
+// database connection helper
 import pool from "@/lib/db"
+
+// helpers for page routing and error page
 import { notFound, redirect } from "next/navigation"
+
+// the user profile overview component
 import { UserProfileDetail } from "@/components/user-profile-detail"
 
 export const metadata = {
@@ -8,6 +15,7 @@ export const metadata = {
   description: "View and manage detailed reviewee and staff member profiles.",
 }
 
+// queries database for complete user profile information
 async function getUserDetail(userId) {
   try {
     const { rows } = await pool.query(
@@ -37,12 +45,15 @@ async function getUserDetail(userId) {
   }
 }
 
+// user profile page loader
 export default async function UserProfilePage({ params }) {
+  // ensure user is logged in as admin
   const session = await getSession()
   if (session?.role !== "admin") {
     redirect("/login")
   }
 
+  // get user id from url params
   const resolvedParams = await params
   const { id } = resolvedParams
   const userId = parseInt(id)
@@ -51,11 +62,13 @@ export default async function UserProfilePage({ params }) {
     notFound()
   }
 
+  // fetch user from database
   const user = await getUserDetail(userId)
   if (!user) {
     notFound()
   }
 
+  // display user profile detail screen
   return (
     <div className="w-full">
       <UserProfileDetail initialUser={user} />

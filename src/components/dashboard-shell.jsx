@@ -36,6 +36,7 @@ export function DashboardShell({ role, children }) {
     const isCourseViewer = 
         (/^\/admin\/curriculum\/[^/]+\/content/.test(pathname)) ||
         (/^\/student\/subjects\/[^/]+/.test(pathname)) ||
+        (/^\/teacher\/modules\/[^/]+/.test(pathname)) ||
         (/^\/admin\/mock-exams\/[^/]+/.test(pathname))
 
     return (

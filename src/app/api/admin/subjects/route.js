@@ -220,6 +220,7 @@ export async function PUT(request) {
 
 // ── DELETE /api/admin/subjects?id=… ─────────────────────
 export async function DELETE(request) {
+    const client = await pool.connect()
     try {
         const session = await adminGuard()
         if (!session) {
@@ -234,18 +235,67 @@ export async function DELETE(request) {
             return NextResponse.json({ error: "Subject id is required." }, { status: 400 })
         }
 
-        const { rowCount } = await pool.query(
+        await client.query("BEGIN")
+
+        // 1. Find all modules for this subject
+        const modulesRes = await client.query(
+            "SELECT id FROM subject_modules WHERE subject_id = $1",
+            [id]
+        )
+        const moduleIds = modulesRes.rows.map((m) => m.id)
+
+        if (moduleIds.length > 0) {
+            // Find all contents for these modules
+            const contentsRes = await client.query(
+                "SELECT id FROM subject_contents WHERE module_id = ANY($1)",
+                [moduleIds]
+            )
+            const contentIds = contentsRes.rows.map((c) => c.id)
+
+            if (contentIds.length > 0) {
+                // Delete any quiz submissions attached to these contents
+                await client.query(
+                    "DELETE FROM student_quiz_submissions WHERE content_id = ANY($1)",
+                    [contentIds]
+                )
+                // Delete contents
+                await client.query(
+                    "DELETE FROM subject_contents WHERE id = ANY($1)",
+                    [contentIds]
+                )
+            }
+
+            // Delete modules
+            await client.query(
+                "DELETE FROM subject_modules WHERE id = ANY($1)",
+                [moduleIds]
+            )
+        }
+
+        // 2. Delete student enrollment links
+        await client.query(
+            "DELETE FROM student_subjects WHERE subject_id = $1",
+            [id]
+        )
+
+        // 4. Delete the subject itself
+        const { rowCount } = await client.query(
             "DELETE FROM subjects WHERE id = $1",
             [id]
         )
 
         if (rowCount === 0) {
+            await client.query("ROLLBACK")
             return NextResponse.json({ error: "Subject not found." }, { status: 404 })
         }
 
-        return NextResponse.json({ message: "Subject deleted." })
+        await client.query("COMMIT")
+        return NextResponse.json({ message: "Subject deleted successfully." })
     } catch (err) {
+        await client.query("ROLLBACK").catch(() => {})
         console.error("[admin/subjects DELETE]", err)
-        return NextResponse.json({ error: "Internal server error." }, { status: 500 })
+        return NextResponse.json({ error: err.message || "Failed to delete subject." }, { status: 500 })
+    } finally {
+        client.release()
     }
 }

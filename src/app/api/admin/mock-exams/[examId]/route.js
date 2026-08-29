@@ -44,10 +44,12 @@ export async function PUT(request, { params }) {
         if (body.questions !== undefined) {
             const { rows } = await pool.query(
                 `UPDATE mock_exams 
-                 SET questions = $1, updated_at = NOW() 
-                 WHERE id = $2 
+                 SET questions = $1, 
+                     title = COALESCE($2, title),
+                     updated_at = NOW() 
+                 WHERE id = $3 
                  RETURNING *`,
-                [JSON.stringify(body.questions), examId]
+                [JSON.stringify(body.questions), body.title || null, examId]
             )
             if (rows.length === 0) {
                 return NextResponse.json({ error: "Mock exam not found." }, { status: 404 })
@@ -55,8 +57,8 @@ export async function PUT(request, { params }) {
             return NextResponse.json({ exam: rows[0] })
         }
 
-        // Otherwise, it's updating metadata (title, description, status, targets, unlockDate)
-        const { title, description, examCode, targetCourses, unlockDate, status } = body
+        // Otherwise, it's updating metadata (title, description, status, targets, unlockDate, settings)
+        const { title, description, examCode, targetCourses, unlockDate, startDate, startTime, timeLimitMinutes, maxRetries, status } = body
 
         if (!title?.trim() || !examCode?.trim()) {
             return NextResponse.json({ error: "Title and Exam Code are required." }, { status: 400 })
@@ -71,6 +73,42 @@ export async function PUT(request, { params }) {
             return NextResponse.json({ error: "Another exam with this code already exists." }, { status: 409 })
         }
 
+        let computedUnlockDate = null
+        if (startDate) {
+            computedUnlockDate = startTime 
+                ? new Date(`${startDate}T${startTime}:00`).toISOString()
+                : new Date(`${startDate}T00:00:00`).toISOString()
+        } else if (unlockDate) {
+            computedUnlockDate = new Date(unlockDate).toISOString()
+        }
+
+        // Retrieve existing questions to preserve questions array while updating settings
+        const existingRes = await pool.query("SELECT questions FROM mock_exams WHERE id = $1", [examId])
+        let currentQuestionsData = existingRes.rows[0]?.questions
+        let questionsList = []
+        let existingSettings = {}
+
+        if (typeof currentQuestionsData === 'string') {
+            try { currentQuestionsData = JSON.parse(currentQuestionsData) } catch (e) {}
+        }
+        if (Array.isArray(currentQuestionsData)) {
+            questionsList = currentQuestionsData
+        } else if (currentQuestionsData?.questions && Array.isArray(currentQuestionsData.questions)) {
+            questionsList = currentQuestionsData.questions
+            existingSettings = currentQuestionsData.settings || {}
+        }
+
+        const updatedQuestionsJson = {
+            settings: {
+                ...existingSettings,
+                startDate: startDate !== undefined ? (startDate || null) : (existingSettings.startDate || null),
+                startTime: startTime !== undefined ? (startTime || null) : (existingSettings.startTime || null),
+                timeLimitMinutes: timeLimitMinutes !== undefined ? Math.max(0, Number(timeLimitMinutes) || 0) : (existingSettings.timeLimitMinutes || 0),
+                maxRetries: maxRetries !== undefined ? Math.max(0, Number(maxRetries) || 0) : (existingSettings.maxRetries || 0)
+            },
+            questions: questionsList
+        }
+
         const { rows } = await pool.query(
             `UPDATE mock_exams
              SET title = $1, 
@@ -79,16 +117,18 @@ export async function PUT(request, { params }) {
                  targets = $4, 
                  unlock_date = $5, 
                  status = $6, 
+                 questions = $7,
                  updated_at = NOW()
-             WHERE id = $7
+             WHERE id = $8
              RETURNING *`,
             [
                 title.trim(),
                 description?.trim() || null,
                 examCode.trim().toUpperCase(),
                 JSON.stringify(targetCourses || []),
-                unlockDate ? new Date(unlockDate).toISOString() : null,
+                computedUnlockDate,
                 status === "Active" ? "active" : "locked",
+                JSON.stringify(updatedQuestionsJson),
                 examId
             ]
         )

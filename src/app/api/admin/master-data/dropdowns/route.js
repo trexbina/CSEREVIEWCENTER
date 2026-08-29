@@ -9,15 +9,16 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 
-    const [examsResult, batchesResult, programsResult, majorsResult, schoolsResult, academicCoursesResult, gradebooksResult] = await Promise.all([
+    const [examsResult, batchesResult, programsResult, majorsResult, schoolsResult, academicCoursesResult, categoriesResult, gradebooksResult] = await Promise.all([
       pool.query("SELECT id, name FROM examinations ORDER BY name ASC"),
       pool.query("SELECT id, name, exam_id, target_year, status FROM batches ORDER BY name ASC"),
       pool.query("SELECT id, name, exam_id FROM programs ORDER BY name ASC"),
       pool.query("SELECT id, name, program_id FROM majors ORDER BY name ASC"),
       pool.query("SELECT id, name, address FROM schools ORDER BY name ASC"),
       pool.query("SELECT id, name FROM academic_courses ORDER BY name ASC"),
+      pool.query("SELECT id, name, target_course, target_program, target_major FROM categories ORDER BY created_at ASC"),
       pool.query(`
-        SELECT g.id, g.name, g.code, g.batch_id, g.exam_id, g.status, g.created_at,
+        SELECT g.id, g.name, g.code, g.batch_id, g.exam_id, g.status, g.targets, g.created_at,
                b.name as batch_name, b.target_year,
                e.name as exam_name,
                (SELECT COUNT(*) FROM users u WHERE u.batch_id = g.batch_id AND u.role = 'student') as student_count,
@@ -38,6 +39,7 @@ export async function GET() {
       majors: majorsResult.rows,
       schools: schoolsResult.rows,
       academic_courses: academicCoursesResult.rows,
+      categories: categoriesResult.rows,
       gradebooks: gradebooksResult.rows
     })
   } catch (err) {

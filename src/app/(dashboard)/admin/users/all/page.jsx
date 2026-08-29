@@ -1,85 +1,101 @@
+// auth session helper
 import { getSession } from "@/lib/auth-session"
+// database connection
 import pool from "@/lib/db"
+// next link for navigation
 import Link from "next/link"
+// icons from lucide
 import { Users, ArrowLeft } from "lucide-react"
-import { UserTable } from "../../user-management"
+// user table component
+import { UserTable } from "../user-management"
 
+// force dynamic rendering for all users page
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
+// fetch all users from database
 async function getAllUsers() {
     const result = await pool.query(
         `SELECT 
-            id, name, email, role, created_at, avatar_url,
-            first_name, middle_name, last_name, suffix,
-            birthday, gender, phone, address, city, province, zip_code,
-            school, course, year_graduated, highest_education,
-            exam_id, batch_id, program_id, major_id, job_role_description,
-            school_id, academic_course_id
-         FROM users ORDER BY created_at DESC`
+            u.id, u.name, u.email, u.role, u.created_at, u.avatar_url,
+            u.first_name, u.middle_name, u.last_name, u.suffix,
+            u.birthday, u.gender, u.phone, u.address, u.city, u.province, u.zip_code,
+            u.school, u.course, u.year_graduated, u.highest_education,
+            u.exam_id, u.batch_id, u.program_id, u.major_id, u.job_role_description,
+            u.school_id, u.academic_course_id,
+            COALESCE(c.name, u.course, '—') AS academic_course_name,
+            COALESCE(p.name, '—') AS program_name,
+            COALESCE(m.name, '—') AS major_name,
+            COALESCE(s.name, u.school, '—') AS school_name
+         FROM users u
+         LEFT JOIN academic_courses c ON u.academic_course_id = c.id
+         LEFT JOIN programs p ON u.program_id = p.id
+         LEFT JOIN majors m ON u.major_id = m.id
+         LEFT JOIN schools s ON u.school_id = s.id
+         ORDER BY u.created_at DESC`
     )
     return result.rows
 }
 
+// render the all users page
 export default async function AllUsersPage() {
+    // get current user session
     const session = await getSession()
+    // get users if logged in
     const users = session?.userId ? await getAllUsers() : []
 
+    // aggregate user counts by role
     const counts = users.reduce(
         (acc, u) => { acc[u.role] = (acc[u.role] || 0) + 1; return acc },
         {}
     )
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <div className="flex items-center gap-3">
-                        <Users className="h-8 w-8 text-primary" />
-                        <h1 className="text-3xl font-bold text-foreground">All Users</h1>
+        <div className="space-y-6 w-full max-w-6xl mx-auto px-4 py-4 pb-16">
+            {/* header section */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2.5">
+                        <Link
+                            href="/admin/users"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground shadow-2xs"
+                            title="Back to User Management"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                        <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase">
+                            ALL USERS
+                        </h1>
                     </div>
-                    <p className="mt-2 text-muted-foreground">
+                    <p className="text-muted-foreground text-sm font-medium">
                         Complete user directory — sort by any column, edit, delete, or assign subjects.
                     </p>
                 </div>
-                <Link
-                    href="/admin/users"
-                    className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors shrink-0"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back
-                </Link>
             </div>
 
-            {/* Summary badges */}
-            <div className="flex flex-wrap gap-3">
-                {[
-                    { label: "Total", value: users.length, color: "bg-primary/10 text-primary" },
-                    { label: "Students", value: counts.student || 0, color: "bg-secondary text-secondary-foreground" },
-                    { label: "Teachers", value: counts.teacher || 0, color: "bg-primary/15 text-primary" },
-                    { label: "Admins", value: counts.admin || 0, color: "bg-destructive/15 text-destructive" },
-                ].map(({ label, value, color }) => (
-                    <span
-                        key={label}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${color}`}
-                    >
-                        {label}: <strong>{value}</strong>
-                    </span>
-                ))}
+            {/* user role summary cards */}
+            <div className="flex flex-wrap items-center gap-2.5">
+                <div className="inline-flex items-center gap-2 bg-card border border-border rounded-xl px-3.5 py-1.5 shadow-2xs">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total:</span>
+                    <span className="text-xs font-bold text-foreground">{users.length}</span>
+                </div>
+                <div className="inline-flex items-center gap-2 bg-card border border-border rounded-xl px-3.5 py-1.5 shadow-2xs">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Students:</span>
+                    <span className="text-xs font-bold text-[#E9C46A]">{counts.student || 0}</span>
+                </div>
+                <div className="inline-flex items-center gap-2 bg-card border border-border rounded-xl px-3.5 py-1.5 shadow-2xs">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Teachers:</span>
+                    <span className="text-xs font-bold text-[#4382DF]">{counts.teacher || 0}</span>
+                </div>
+                <div className="inline-flex items-center gap-2 bg-card border border-border rounded-xl px-3.5 py-1.5 shadow-2xs">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Admins:</span>
+                    <span className="text-xs font-bold text-rose-600 dark:text-rose-400">{counts.admin || 0}</span>
+                </div>
             </div>
 
             {/* Full sortable table */}
-            <div className="rounded-lg border border-border bg-card shadow-sm">
-                <div className="border-b border-border px-6 py-4 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-foreground">
-                        All Users ({users.length})
-                    </h2>
-                    <p className="text-xs text-muted-foreground">Click column headers to sort</p>
-                </div>
-                <div className="p-4">
-                    <UserTable users={users} currentUserId={session?.userId} />
-                </div>
+            <div className="pt-2">
+                <UserTable users={users} currentUserId={session?.userId} />
             </div>
         </div>
     )

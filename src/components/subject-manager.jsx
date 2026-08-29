@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import {
-    Plus, Pencil, Trash2, GripVertical, X, Save,
+    Plus, Pencil, Trash, GripVertical, X, Save,
     BookOpen, Layers, Search, ChevronDown, ChevronUp,
     Eye, FileText,
 } from "lucide-react"
+import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -131,7 +132,7 @@ function TopicBuilder({ topics, onChange }) {
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTopic())}
                 />
                 <Button type="button" size="sm" onClick={addTopic} disabled={!newTopic.trim()}>
-                    <Plus className="mr-1 h-4 w-4" /> Add
+                    Add
                 </Button>
             </div>
 
@@ -181,7 +182,7 @@ function TopicBuilder({ topics, onChange }) {
                                 className="h-7 w-7 text-destructive hover:bg-destructive/10"
                                 onClick={() => removeTopic(tIdx)}
                             >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash className="h-3.5 w-3.5" />
                             </Button>
                         </div>
 
@@ -224,7 +225,7 @@ function TopicBuilder({ topics, onChange }) {
                                         onClick={() => addSubtopic(tIdx)}
                                         disabled={!newSubtopic[tIdx]?.trim()}
                                     >
-                                        <Plus className="mr-1 h-3 w-3" /> Add
+                                        Add
                                     </Button>
                                 </div>
                             </div>
@@ -590,7 +591,7 @@ export default function SubjectManager() {
                                 setDialogOpen(true)
                             }}
                         >
-                            <Plus className="mr-2 h-4 w-4" /> New Subject
+                            New Subject
                         </Button>
                     </div>
                 </CardHeader>
@@ -627,7 +628,7 @@ export default function SubjectManager() {
                             <span className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                         </div>
                     ) : filtered.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
+                        <div className="flex flex-col items-center justify-center rounded-lg border border-solid border-gray-200 bg-gray-50/50 py-12 text-center">
                             <BookOpen className="mb-3 h-10 w-10 text-muted-foreground/50" />
                             <p className="font-medium text-muted-foreground">
                                 {subjects.length === 0 ? "No subjects yet" : "No matching subjects"}
@@ -646,7 +647,7 @@ export default function SubjectManager() {
                                         setDialogOpen(true)
                                     }}
                                 >
-                                    <Plus className="mr-2 h-4 w-4" /> Create Subject
+                                    Create Subject
                                 </Button>
                             )}
                         </div>
@@ -738,7 +739,7 @@ export default function SubjectManager() {
                                                         title="Delete subject"
                                                         onClick={() => setDeleting(subject)}
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
+                                                        <Trash className="h-4 w-4" />
                                                     </Button>
                                                 </div>
                                             </TableCell>
@@ -770,28 +771,15 @@ export default function SubjectManager() {
                 subject={viewing}
             />
 
-            {/* delete confirmation */}
-            <AlertDialog open={!!deleting} onOpenChange={(v) => !v && setDeleting(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Subject</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Are you sure you want to delete{" "}
-                            <strong>{deleting?.title}</strong> ({deleting?.code})? This action
-                            cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleDelete}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            {/* Reusable Confirm Delete Modal */}
+            <ConfirmDeleteModal
+                isOpen={!!deleting}
+                title="Delete Subject"
+                description={`Are you sure you want to delete "${deleting?.title}" (${deleting?.code})? This action cannot be undone.`}
+                confirmText="Delete"
+                onConfirm={handleDelete}
+                onCancel={() => setDeleting(null)}
+            />
         </>
     )
 }

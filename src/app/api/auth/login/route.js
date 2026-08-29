@@ -28,13 +28,25 @@ export async function POST(request) {
       )
     }
 
+    // Update login count and last login timestamp
+    const updateRes = await pool.query(
+      `UPDATE users SET last_login_at = NOW(), login_count = COALESCE(login_count, 0) + 1 WHERE id = $1 RETURNING last_login_at, login_count`,
+      [user.id]
+    )
+
+    const updatedUser = {
+      ...user,
+      last_login_at: updateRes.rows[0]?.last_login_at,
+      login_count: updateRes.rows[0]?.login_count
+    }
+
     const token = await signToken({
       userId: user.id,
       email: user.email,
       role: user.role,
     })
 
-    const { password: _, ...safeUser } = user
+    const { password: _, ...safeUser } = updatedUser
     const response = NextResponse.json({ user: safeUser })
     response.cookies.set("session", token, SESSION_COOKIE_OPTIONS)
     return response

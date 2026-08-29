@@ -2,11 +2,12 @@ import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 
-// Ensure student_answers column exists in mock_exam_scores
+// Ensure student_answers & attempts_count columns exist in mock_exam_scores
 async function ensureStudentAnswersColumn() {
   try {
     await pool.query(`
       ALTER TABLE mock_exam_scores ADD COLUMN IF NOT EXISTS student_answers JSONB DEFAULT '{}'::jsonb;
+      ALTER TABLE mock_exam_scores ADD COLUMN IF NOT EXISTS attempts_count INTEGER DEFAULT 1;
     `)
   } catch (e) {
     // column already exists or table issue
@@ -45,7 +46,8 @@ export async function GET() {
                     THEN me.questions::jsonb->'questions' 
                     ELSE '[]'::jsonb END
              )) as question_count,
-             mes.score, mes.max_score, mes.completed_at, mes.student_answers
+             mes.score, mes.max_score, mes.completed_at, mes.student_answers,
+             COALESCE(mes.attempts_count, CASE WHEN mes.score IS NOT NULL THEN 1 ELSE 0 END) as attempts_count
       FROM mock_exams me
       LEFT JOIN mock_exam_scores mes ON mes.mock_exam_id = me.id AND mes.student_id = $1
       WHERE (
@@ -71,7 +73,8 @@ export async function GET() {
                       THEN me.questions::jsonb->'questions' 
                       ELSE '[]'::jsonb END
                )) as question_count,
-               mes.score, mes.max_score, mes.completed_at, mes.student_answers
+               mes.score, mes.max_score, mes.completed_at, mes.student_answers,
+               COALESCE(mes.attempts_count, CASE WHEN mes.score IS NOT NULL THEN 1 ELSE 0 END) as attempts_count
         FROM mock_exams me
         LEFT JOIN mock_exam_scores mes ON mes.mock_exam_id = me.id AND mes.student_id = $1
         WHERE me.status = 'active'
@@ -149,13 +152,18 @@ export async function POST(req) {
       if (isCorrect) earnedPoints += pts
     })
 
-    // Save score and student answers to mock_exam_scores
+    // Save score, student answers, and increment attempts_count in mock_exam_scores
     await ensureStudentAnswersColumn()
     await pool.query(`
-      INSERT INTO mock_exam_scores (student_id, mock_exam_id, score, max_score, student_answers, completed_at)
-      VALUES ($1, $2, $3, $4, $5, NOW())
+      INSERT INTO mock_exam_scores (student_id, mock_exam_id, score, max_score, student_answers, attempts_count, completed_at)
+      VALUES ($1, $2, $3, $4, $5, 1, NOW())
       ON CONFLICT (student_id, mock_exam_id)
-      DO UPDATE SET score = $3, max_score = $4, student_answers = $5, completed_at = NOW()
+      DO UPDATE SET 
+        score = $3, 
+        max_score = $4, 
+        student_answers = $5, 
+        attempts_count = COALESCE(mock_exam_scores.attempts_count, 0) + 1,
+        completed_at = NOW()
     `, [session.userId, parseInt(examId), earnedPoints, totalPoints, JSON.stringify(answers || {})])
 
     return NextResponse.json({

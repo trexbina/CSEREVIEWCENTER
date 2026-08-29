@@ -1,6 +1,6 @@
 import pg from 'pg';
 
-const pool = new pg.Pool({ connectionString: 'postgresql://postgres:123@localhost:5432/reviewapp' });
+const pool = new pg.Pool({ connectionString: 'postgresql://postgres:yosra@localhost:5432/reviewapp' });
 
 async function run() {
   try {

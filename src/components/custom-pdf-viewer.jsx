@@ -13,20 +13,54 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
     const containerRef = useRef(null)
     const viewerRef = useRef(null)
     const [isFullscreen, setIsFullscreen] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(false)
     const [scale, setScale] = useState(100)
     const [loading, setLoading] = useState(true)
     const [numPages, setNumPages] = useState(0)
     const [loadError, setLoadError] = useState("")
     const [viewerWidth, setViewerWidth] = useState(0)
-    const [qualityTier, setQualityTier] = useState(1)
-    const [enhanceImage, setEnhanceImage] = useState(true)
+    const [watermarkConfig, setWatermarkConfig] = useState({
+        enabled: true,
+        template: "{name} - {email}",
+        opacity: 0.15,
+        userEmail: ""
+    })
+    const qualityTier = 1 // Default High Quality Tier
+    const enhanceImage = true // Default High Quality Image Enhancement
+
+    // Load active watermark rules from settings
+    useEffect(() => {
+        let isMounted = true
+        fetch("/api/security/settings")
+            .then(res => res.json())
+            .then(data => {
+                if (isMounted && data?.watermark) {
+                    setWatermarkConfig({
+                        enabled: data.watermark.enabled ?? true,
+                        template: data.watermark.template || "{name} - {email}",
+                        opacity: data.watermark.opacity ?? 0.15,
+                        userEmail: data.user?.email || ""
+                    })
+                }
+            })
+            .catch(() => {})
+        return () => { isMounted = false }
+    }, [])
+
     const watermarkText = useMemo(() => {
-        const companyName = "Peak-Execellence-Review-Center-Inc"
-        const safeUserName = String(userName || "").trim().replace(/\s+/g, "")
-        return safeUserName
-            ? `Property of ${companyName}-${safeUserName}`
-            : `Property of ${companyName}`
-    }, [userName])
+        if (!watermarkConfig.enabled) return ""
+        const displayName = userName || "Student"
+        const email = watermarkConfig.userEmail || ""
+        const dateStr = new Date().toISOString().split("T")[0]
+
+        return watermarkConfig.template
+            .replace(/{name}/gi, displayName)
+            .replace(/{email}/gi, email)
+            .replace(/{date}/gi, dateStr)
+            || displayName
+    }, [userName, watermarkConfig])
+
+    const watermarkOpacity = watermarkConfig.opacity ?? 0.15
 
     useEffect(() => {
         setLoading(true)
@@ -66,62 +100,36 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
         }
     }, [])
 
-    useEffect(() => {
-        if (typeof window === "undefined") return
-
-        const ua = window.navigator.userAgent || ""
-        const isMobileUa = /Android|iPhone|iPad|iPod|Mobile/i.test(ua)
-        const isCoarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches ?? false
-        const cores = window.navigator.hardwareConcurrency || 8
-        const memory = window.navigator.deviceMemory || 8
-
-        const shouldUseVeryLowQuality = memory <= 2 || cores <= 4
-        const shouldUseMediumQuality = isMobileUa || isCoarsePointer || cores <= 6 || memory <= 4
-
-        if (shouldUseVeryLowQuality) {
-            setQualityTier(3)
-            setEnhanceImage(false)
-            return
-        }
-
-        setQualityTier(shouldUseMediumQuality ? 2 : 1)
-    }, [])
-
-    const pageWidth = useMemo(() => {
+    const computedWidth = useMemo(() => {
         if (!viewerWidth) return undefined
-        const sidePadding = qualityTier === 1 ? 32 : qualityTier === 2 ? 48 : 64
-        return Math.max(320, viewerWidth - sidePadding)
-    }, [viewerWidth, qualityTier])
+        const baseWidth = Math.max(320, viewerWidth - 48)
+        return Math.round(baseWidth * (scale / 100))
+    }, [viewerWidth, scale])
 
     const pageDevicePixelRatio = useMemo(() => {
-        if (typeof window === "undefined") {
-            if (qualityTier === 1) return 2.4
-            if (qualityTier === 2) return 1.7
-            return 1.15
-        }
+        if (typeof window === "undefined") return 2
+        return Math.min(3, Math.max(2, window.devicePixelRatio || 2))
+    }, [])
 
-        const deviceDpr = window.devicePixelRatio || 1
-        const baseTarget = qualityTier === 1 ? 2.4 : qualityTier === 2 ? 1.7 : 1.1
-        const dprCap = qualityTier === 1 ? 3 : qualityTier === 2 ? 2.25 : 1.45
-        const enhancementBoost = enhanceImage && qualityTier !== 3 ? 0.35 : 0
-        const enhancementCapBoost = enhanceImage && qualityTier !== 3 ? 0.4 : 0
-        const zoomPenalty = scale >= 150 ? 0.2 : 0
-
-        const target = Math.max(deviceDpr, baseTarget + enhancementBoost) - zoomPenalty
-        const minDpr = qualityTier === 3 ? 1 : 1.25
-        return Math.min(dprCap + enhancementCapBoost, Math.max(minDpr, target))
-    }, [enhanceImage, qualityTier, scale])
-
-    const maxZoom = qualityTier === 3 ? 150 : 200
-    const watermarkOpacity = isStudent
-        ? (qualityTier === 3 ? 0.13 : 0.1)
-        : (qualityTier === 3 ? 0.1 : 0.08)
+    const maxZoom = 200
 
     useEffect(() => {
         if (scale > maxZoom) {
             setScale(maxZoom)
         }
     }, [maxZoom, scale])
+
+    useEffect(() => {
+        const handleFsChange = () => {
+            if (document.fullscreenElement === containerRef.current) {
+                setIsFullscreen(true)
+            } else {
+                setIsFullscreen(false)
+            }
+        }
+        document.addEventListener("fullscreenchange", handleFsChange)
+        return () => document.removeEventListener("fullscreenchange", handleFsChange)
+    }, [])
 
     function onDocumentLoadSuccess({ numPages: loadedPages }) {
         setNumPages(loadedPages)
@@ -135,14 +143,20 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
     }
 
     function toggleFullscreen() {
-        if (!document.fullscreenElement) {
-            containerRef.current?.requestFullscreen().catch(err => {
-                console.error(`Fullscreen error: ${err.message}`)
-            })
-            setIsFullscreen(true)
-        } else {
-            document.exitFullscreen()
+        if (document.fullscreenElement === containerRef.current) {
+            document.exitFullscreen().catch(() => {})
             setIsFullscreen(false)
+            setIsExpanded(false)
+        } else {
+            if (containerRef.current?.requestFullscreen) {
+                containerRef.current.requestFullscreen().then(() => {
+                    setIsFullscreen(true)
+                }).catch(() => {
+                    setIsExpanded(prev => !prev)
+                })
+            } else {
+                setIsExpanded(prev => !prev)
+            }
         }
     }
 
@@ -157,7 +171,9 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
     return (
         <div
             ref={containerRef}
-            className="flex flex-col h-full w-full bg-white relative select-none"
+            className={`flex flex-col h-full w-full bg-white relative select-none ${
+                isExpanded ? 'fixed inset-0 z-[100] h-screen w-screen' : ''
+            }`}
             onContextMenu={(e) => isStudent && e.preventDefault()}
             onCopy={(e) => isStudent && e.preventDefault()}
             onCut={(e) => isStudent && e.preventDefault()}
@@ -170,18 +186,12 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
             }}
         >
             <div className="flex items-center justify-between px-5 py-3 bg-[#2b2b2b] border-b border-[#1a1a1a] text-white shrink-0 shadow-lg z-20">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                    <span className="text-sm font-semibold text-white/80 tracking-wide">
-                        PDF Document
-                    </span>
-                </div>
-
+                {/* Zoom Controls on Left Side */}
                 <div className="flex items-center gap-1 bg-black/30 rounded-lg p-1 border border-white/10">
                     <button
                         onClick={handleZoomOut}
                         disabled={scale <= 50}
-                        className="p-1.5 hover:bg-white/10 rounded transition-colors disabled:opacity-30"
+                        className="p-1.5 hover:bg-white/10 rounded transition-colors disabled:opacity-30 cursor-pointer"
                         title="Zoom Out"
                     >
                         <ZoomOut className="w-4 h-4 text-white/90" />
@@ -192,35 +202,20 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
                     <button
                         onClick={handleZoomIn}
                         disabled={scale >= maxZoom}
-                        className="p-1.5 hover:bg-white/10 rounded transition-colors disabled:opacity-30"
+                        className="p-1.5 hover:bg-white/10 rounded transition-colors disabled:opacity-30 cursor-pointer"
                         title="Zoom In"
                     >
                         <ZoomIn className="w-4 h-4 text-white/90" />
                     </button>
                 </div>
 
-                {!isStudent && (
-                    <div className="hidden sm:flex items-center gap-2">
-                        <span className="inline-flex rounded-md border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-white/80">
-                            {qualityTier === 1 ? "Adaptive Q1" : qualityTier === 2 ? "Adaptive Q2" : "Adaptive Q3"}
-                        </span>
-                        <button
-                            onClick={() => setEnhanceImage(prev => !prev)}
-                            disabled={qualityTier === 3}
-                            className="rounded-md border border-white/20 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-white/85 hover:bg-white/10 transition-colors"
-                            title="Toggle enhanced image clarity"
-                        >
-                            {qualityTier === 3 ? "Image+ AUTO" : enhanceImage ? "Image+ ON" : "Image+ OFF"}
-                        </button>
-                    </div>
-                )}
-
+                {/* PDF Fullscreen Button on Right Side */}
                 <button
                     onClick={toggleFullscreen}
-                    className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors border border-white/10"
+                    className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors border border-white/10 cursor-pointer"
                     title="Toggle Fullscreen"
                 >
-                    {isFullscreen
+                    {isFullscreen || isExpanded
                         ? <Minimize className="w-4 h-4 text-white" />
                         : <Maximize className="w-4 h-4 text-white" />
                     }
@@ -253,14 +248,14 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
                         >
                             {Array.from({ length: numPages }, (_, index) => (
                                 <div
-                                    key={`page-${index + 1}`}
-                                    className="relative shadow-[0_4px_24px_rgba(0,0,0,0.1)] rounded overflow-hidden"
+                                    key={`page-${index + 1}-${computedWidth}`}
+                                    className="relative shadow-[0_4px_24px_rgba(0,0,0,0.1)] rounded overflow-hidden transition-all duration-150"
+                                    style={{ width: computedWidth ? `${computedWidth}px` : 'auto' }}
                                     onContextMenu={(e) => isStudent && e.preventDefault()}
                                 >
                                     <Page
                                         pageNumber={index + 1}
-                                        width={pageWidth}
-                                        scale={scale / 100}
+                                        width={computedWidth}
                                         devicePixelRatio={pageDevicePixelRatio}
                                         canvasBackground="#ffffff"
                                         renderMode="canvas"
@@ -268,8 +263,6 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
                                         renderAnnotationLayer={false}
                                         className={[
                                             "pdf-page",
-                                            enhanceImage ? "pdf-page-enhanced" : "pdf-page-standard",
-                                            `pdf-page-tier-${qualityTier}`,
                                             isStudent ? "pointer-events-none select-none" : "select-none"
                                         ].join(" ")}
                                     />

@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Loader2, Lock, ArrowLeft, ChevronRight, BookOpen } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, useRef } from "react"
+import { Loader2, Lock, ArrowLeft, BookOpen, ChevronDown, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function StudentSubjectsPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [categories, setCategories] = useState([])
     const [subjects, setSubjects] = useState([])
     const [loading, setLoading] = useState(true)
@@ -14,9 +15,67 @@ export default function StudentSubjectsPage() {
     const [selectedCategory, setSelectedCategory] = useState(null)
     const [selectedSubcategory, setSelectedSubcategory] = useState(null)
 
+    // UI, Sorting & Pagination States
+    const [showMoreDropdown, setShowMoreDropdown] = useState(false)
+    const [subSortBy, setSubSortBy] = useState("date_desc")
+    const [subjectSortBy, setSubjectSortBy] = useState("date_desc")
+    const [subCurrentPage, setSubCurrentPage] = useState(1)
+    const [subjectCurrentPage, setSubjectCurrentPage] = useState(1)
+
+    // ── Navigation History Synchronization ──
+    const handleSelectCategory = (cat, pushHistory = true) => {
+        if (selectedCategory?.id === cat?.id) {
+            setSelectedCategory(null)
+            setSelectedSubcategory(null)
+            setSubCurrentPage(1)
+            if (typeof window !== "undefined") {
+                sessionStorage.removeItem("student_selected_cat_id")
+                sessionStorage.removeItem("student_selected_sub_id")
+                if (pushHistory) {
+                    window.history.replaceState({ catId: null, subId: null }, "", window.location.pathname)
+                }
+            }
+            return
+        }
+
+        setSelectedCategory(cat)
+        setSelectedSubcategory(null)
+        setSubCurrentPage(1)
+        if (typeof window !== "undefined") {
+            if (cat) {
+                sessionStorage.setItem("student_selected_cat_id", String(cat.id))
+                sessionStorage.removeItem("student_selected_sub_id")
+                if (pushHistory) {
+                    window.history.replaceState({ catId: cat.id, subId: null }, "", `?cat=${cat.id}`)
+                }
+            } else {
+                sessionStorage.removeItem("student_selected_cat_id")
+                sessionStorage.removeItem("student_selected_sub_id")
+                if (pushHistory) {
+                    window.history.replaceState({ catId: null, subId: null }, "", window.location.pathname)
+                }
+            }
+        }
+    }
+
+    const handleSelectSubcategory = (sub, pushHistory = true) => {
+        setSelectedSubcategory(sub)
+        setSubjectCurrentPage(1)
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("student_selected_sub_id", String(sub.id))
+            if (pushHistory && selectedCategory) {
+                window.history.replaceState({ catId: selectedCategory.id, subId: sub.id }, "", `?cat=${selectedCategory.id}&sub=${sub.id}`)
+            }
+        }
+    }
+
     useEffect(() => {
         async function fetchData() {
             try {
+                const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null
+                const targetCatId = urlParams?.get("cat") || (typeof window !== "undefined" ? sessionStorage.getItem("student_selected_cat_id") : null)
+                const targetSubId = urlParams?.get("sub") || (typeof window !== "undefined" ? sessionStorage.getItem("student_selected_sub_id") : null)
+
                 const [catRes, subRes] = await Promise.all([
                     fetch("/api/student/categories"),
                     fetch("/api/student/subjects"),
@@ -24,16 +83,30 @@ export default function StudentSubjectsPage() {
                 if (!catRes.ok) throw new Error("Failed to load categories")
                 if (!subRes.ok) throw new Error("Failed to load subjects")
 
-                const catData = await catRes.json()
-                const subData = await subRes.json()
-
-                setCategories(catData.categories || [])
-                setSubjects(subData.subjects || [])
-
-                // Auto-select first category
-                if (catData.categories?.length > 0) {
-                    setSelectedCategory(catData.categories[0])
+                let loadedCats = []
+                let matchedCat = null
+                let matchedSub = null
+                if (catRes.ok) {
+                    const catData = await catRes.json()
+                    loadedCats = catData.categories || []
+                    if (targetCatId) {
+                        matchedCat = loadedCats.find(c => String(c.id) === String(targetCatId)) || null
+                        if (matchedCat && targetSubId && matchedCat.subcategories) {
+                            matchedSub = matchedCat.subcategories.find(s => String(s.id) === String(targetSubId)) || null
+                        }
+                    }
                 }
+
+                let loadedSubjects = []
+                if (subRes.ok) {
+                    const subData = await subRes.json()
+                    loadedSubjects = subData.subjects || []
+                }
+
+                setCategories(loadedCats)
+                setSubjects(loadedSubjects)
+                setSelectedCategory(matchedCat)
+                setSelectedSubcategory(matchedSub)
             } catch (err) {
                 setError(err.message)
             } finally {
@@ -61,190 +134,466 @@ export default function StudentSubjectsPage() {
 
     if (categories.length === 0) {
         return (
-            <div className="space-y-8 w-full max-w-6xl mx-auto px-4 py-8">
+            <div className="space-y-6 w-full max-w-6xl mx-auto px-4 py-4">
                 <div>
-                    <h1 className="text-4xl font-extrabold tracking-tight text-[#4d4d4d] uppercase">CATEGORIES</h1>
-                    <p className="mt-2 text-[#8c8c8c] text-[15px]">
-                        Category, sub-category, subjects?
-                    </p>
+                    <h1 className="text-2xl font-bold tracking-wider text-[#4d4d4d] uppercase mb-1">
+                        CATEGORY
+                    </h1>
+                    <p className="text-[#8c8c8c] text-sm font-medium">Select category to review</p>
                 </div>
                 <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-12 text-center shadow-sm">
                     <Lock className="mb-4 h-12 w-12 text-muted-foreground/50" />
                     <h2 className="text-lg font-semibold text-foreground">No Categories Available</h2>
                     <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                        Your administrator has not created any categories yet. Please contact your admin to get started.
+                        Your administrator has not assigned any categories to your curriculum yet. Please check back later.
                     </p>
                 </div>
             </div>
         )
     }
 
-    // Get subcategories for the selected category
-    const currentSubcategories = selectedCategory?.subcategories || []
+    // Current category subcategories & subjects (filtering out locked/inactive for students)
+    const subcategories = (selectedCategory?.subcategories || []).filter(sub => sub.status !== "inactive")
 
-    // Only show subjects belonging to the explicitly selected subcategory
-    const filteredSubjects = subjects.filter(s => s.subcategory_id === selectedSubcategory?.id)
+    const currentSubjects = subjects.filter((s) => {
+        // Exclude inactive or future-unlocked subjects
+        if (s.status === "inactive") return false
+        if (s.unlock_date && new Date(s.unlock_date) > new Date()) return false
+
+        if (selectedSubcategory) {
+            return s.subcategory_id === selectedSubcategory.id
+        }
+        if (selectedCategory && selectedCategory.has_subcategories === false) {
+            return s.category_id === selectedCategory.id || s.category?.toLowerCase() === selectedCategory.name?.toLowerCase()
+        }
+        return false
+    })
 
     return (
-        <div className="space-y-10 w-full max-w-6xl mx-auto px-4 py-8">
-            {/* Header section */}
-            <div>
-                <h1 className="text-4xl font-extrabold tracking-tight text-[#4d4d4d] uppercase mb-1">CATEGORIES</h1>
-                <p className="text-[#8c8c8c] text-[15px]">
-                    Category, sub-category, subjects?
-                </p>
-            </div>
+        <div className="flex flex-col min-h-[calc(100vh-10rem)] space-y-6 w-full max-w-6xl mx-auto px-4 py-4 relative">
 
-            {!selectedSubcategory ? (
-                // CATEGORY AND SUBCATEGORY VIEW
-                <div className="space-y-10">
-                    {/* Category Tabs */}
-                    <div className="flex flex-wrap items-center gap-4">
-                        {categories.map((cat) => {
-                            const isSelected = selectedCategory?.id === cat.id
-                            return (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => setSelectedCategory(cat)}
-                                    className={`rounded-lg px-6 py-2.5 text-sm font-semibold uppercase tracking-wide transition-all ${
-                                        isSelected
-                                            ? "bg-[#f5cdd0] text-[#ba5a62] shadow-sm transform scale-105"
-                                            : "bg-gray-50 text-[#4d4d4d] border border-gray-200 shadow-sm hover:border-gray-300 hover:bg-gray-100"
-                                    }`}
-                                >
-                                    {cat.name}
-                                </button>
-                            )
-                        })}
+            {/* ════════════════════ CATEGORIES SECTION ════════════════════ */}
+            {!selectedSubcategory && !(selectedCategory && selectedCategory.has_subcategories === false) && (
+                <div className="space-y-4 border-b border-gray-200/60 pb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-wider text-[#4d4d4d] uppercase">
+                            CATEGORY
+                        </h1>
                     </div>
 
-                    {/* Subcategories Grid */}
-                    {currentSubcategories.filter(s => s.status !== "inactive").length === 0 ? (
-                        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-12 text-center shadow-sm">
-                            <p className="text-sm text-muted-foreground">
-                                No subcategories in this category yet.
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                            {currentSubcategories.filter(s => s.status !== "inactive").map((subcat) => (
-                                <button
-                                    key={subcat.id}
-                                    onClick={() => setSelectedSubcategory(subcat)}
-                                    className="group relative flex aspect-[1/1] w-full flex-col overflow-hidden rounded-[1.25rem] bg-gray-50 border border-gray-200 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-gray-300 active:translate-y-0 text-left"
-                                >
-                                    {/* Background Image */}
-                                    <div className="absolute inset-0">
-                                        {subcat.image_url ? (
-                                            <img src={subcat.image_url} alt={subcat.name} className="absolute inset-0 h-full w-full object-cover" />
-                                        ) : (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                                                <BookOpen className="h-12 w-12 text-gray-400 opacity-40" />
-                                            </div>
-                                        )}
-                                    </div>
+                    {/* Category pills with More dropdown */}
+                    {(() => {
+                        const MAX_VISIBLE_CATS = 5
+                        const isSelectedInOverflow = categories.findIndex(c => c.id === selectedCategory?.id) >= MAX_VISIBLE_CATS
 
-                                    {/* Translucent White Text Banner at Bottom */}
-                                    <div className="relative z-20 flex h-full flex-col justify-end">
-                                        <div className="bg-white/85 p-5 pt-6 backdrop-blur-md">
-                                            <span className="block text-xl font-extrabold tracking-[0.1em] text-[#4d4d4d] uppercase line-clamp-2">
-                                                {subcat.name}
+                        let visibleCategories = categories
+                        let overflowCategories = []
+
+                        if (categories.length > MAX_VISIBLE_CATS) {
+                            if (isSelectedInOverflow && selectedCategory) {
+                                visibleCategories = [
+                                    ...categories.slice(0, MAX_VISIBLE_CATS - 1),
+                                    selectedCategory
+                                ]
+                                overflowCategories = categories.filter(c => !visibleCategories.some(vc => vc.id === c.id))
+                            } else {
+                                visibleCategories = categories.slice(0, MAX_VISIBLE_CATS)
+                                overflowCategories = categories.slice(MAX_VISIBLE_CATS)
+                            }
+                        }
+
+                        return (
+                            <div className="flex flex-wrap items-center gap-2.5">
+                                {visibleCategories.map((cat) => {
+                                    const isSelected = selectedCategory?.id === cat.id
+
+                                    return (
+                                        <div
+                                            key={cat.id}
+                                            onClick={() => handleSelectCategory(cat)}
+                                            className={`group cursor-pointer flex items-center rounded-lg px-3.5 py-1.5 transition-all duration-200 ${isSelected
+                                                ? "bg-[#E9C46A] text-white shadow-sm"
+                                                : "bg-gray-50 text-[#4d4d4d] border border-gray-200/50 shadow-sm hover:border-gray-300 hover:bg-gray-100"
+                                                }`}
+                                        >
+                                            <span className="text-xs font-bold uppercase tracking-wider whitespace-nowrap">
+                                                {cat.name}
                                             </span>
-                                            {subcat.description && (
-                                                <p className="mt-1.5 text-sm leading-relaxed text-[#8c8c8c] line-clamp-3">
-                                                    {subcat.description}
-                                                </p>
-                                            )}
+                                        </div>
+                                    )
+                                })}
+
+                                {/* More Categories Dropdown */}
+                                {overflowCategories.length > 0 && (
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setShowMoreDropdown(!showMoreDropdown)}
+                                            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-wider border border-gray-200/50 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:border-gray-300 shadow-sm transition-all"
+                                        >
+                                            <span>More ({overflowCategories.length})</span>
+                                            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${showMoreDropdown ? "rotate-180" : ""}`} />
+                                        </button>
+
+                                        {showMoreDropdown && (
+                                            <>
+                                                <div className="fixed inset-0 z-30" onClick={() => setShowMoreDropdown(false)} />
+                                                <div className="absolute left-0 mt-2 z-40 w-56 rounded-xl bg-white border border-gray-200/80 shadow-xl py-1.5 animate-in fade-in zoom-in-95 duration-150">
+                                                    <div className="px-3 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-1">
+                                                        More Categories
+                                                    </div>
+                                                    <div className="max-h-56 overflow-y-auto space-y-0.5 px-1">
+                                                        {overflowCategories.map(cat => (
+                                                            <div
+                                                                key={cat.id}
+                                                                onClick={() => {
+                                                                    handleSelectCategory(cat)
+                                                                    setShowMoreDropdown(false)
+                                                                }}
+                                                                className="group flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                                            >
+                                                                <span className="truncate pr-2">{cat.name}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    })()}
+                </div>
+            )}
+
+            {/* ════════════════════ NO CATEGORY SELECTED EMPTY STATE ════════════════════ */}
+            {!selectedCategory && (
+                <div className="flex-1 flex flex-col items-center justify-center min-h-[48vh] px-4 text-center animate-in fade-in duration-300">
+                    <h3 className="text-base font-bold text-[#4d4d4d] uppercase tracking-wider mb-1">
+                        Select a Category
+                    </h3>
+                    <p className="text-xs text-gray-400 max-w-sm leading-relaxed">
+                        Please select a category above to browse available subjects and lesson modules.
+                    </p>
+                </div>
+            )}
+
+            {/* ════════════════════ SUB-CATEGORY SECTION ════════════════════ */}
+            {!selectedSubcategory && selectedCategory && selectedCategory.has_subcategories !== false && (
+                <div className="space-y-6 flex-1 animate-in fade-in duration-300">
+                    {(() => {
+                        const SUB_ITEMS_PER_PAGE = 8
+                        const activeSubcategories = subcategories.filter(sub => sub.status !== "inactive")
+                        const sortedSubcategories = [...activeSubcategories].sort((a, b) => {
+                            if (subSortBy === "name_asc") return (a.name || "").localeCompare(b.name || "")
+                            if (subSortBy === "name_desc") return (b.name || "").localeCompare(a.name || "")
+                            if (subSortBy === "date_asc") {
+                                const tDiff = new Date(a.created_at || 0) - new Date(b.created_at || 0)
+                                return tDiff !== 0 ? tDiff : (a.id || 0) - (b.id || 0)
+                            }
+                            const tDiff = new Date(b.created_at || 0) - new Date(a.created_at || 0)
+                            return tDiff !== 0 ? tDiff : (b.id || 0) - (a.id || 0)
+                        })
+                        const totalSubPages = Math.max(1, Math.ceil(sortedSubcategories.length / SUB_ITEMS_PER_PAGE))
+                        const currentSubPage = Math.min(subCurrentPage, totalSubPages)
+                        const paginatedSubcategories = sortedSubcategories.slice((currentSubPage - 1) * SUB_ITEMS_PER_PAGE, currentSubPage * SUB_ITEMS_PER_PAGE)
+
+                        return (
+                            <>
+                                {/* Header bar: Title above line divider */}
+                                <div className="border-b border-gray-200/50 pb-4">
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="text-lg font-bold tracking-wider text-[#4d4d4d] uppercase">
+                                            SUB-CATEGORY
+                                        </h2>
+                                        <span className="ml-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-500 uppercase tracking-wider">
+                                            {activeSubcategories.length} AVAILABLE
+                                        </span>
+                                    </div>
+                                    <p className="text-[#8c8c8c] text-sm font-medium mt-0.5">Select a sub-category to view subjects.</p>
+                                </div>
+
+                                {/* Second Row Below Line Divider: Sorting (Left) & Pagination (Right) */}
+                                <div className="flex items-center justify-between gap-4 pt-1">
+                                        {/* Minimal Sort Dropdown (Left) */}
+                                        <div className="flex items-center gap-1.5 bg-white border border-gray-200/60 rounded-lg px-2.5 py-1 text-xs font-semibold text-gray-500 shadow-2xs">
+                                            <ArrowUpDown className="h-3 w-3 text-gray-400 shrink-0" />
+                                            <select
+                                                value={subSortBy}
+                                                onChange={(e) => setSubSortBy(e.target.value)}
+                                                className="bg-transparent font-medium text-gray-700 cursor-pointer focus:outline-none text-xs"
+                                            >
+                                                <option value="date_desc">Newest First</option>
+                                                <option value="name_asc">A - Z</option>
+                                                <option value="name_desc">Z - A</option>
+                                                <option value="date_asc">Oldest First</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Sub-category Pagination (Right) */}
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setSubCurrentPage(p => Math.max(1, p - 1))}
+                                                disabled={currentSubPage === 1}
+                                                className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200/60 bg-white text-gray-600 transition-all hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                                                title="Previous Page"
+                                            >
+                                                <ChevronLeft className="h-3.5 w-3.5" />
+                                            </button>
+                                            <div className="flex items-center gap-1 px-2.5 py-1 bg-gray-50 rounded-lg border border-gray-200/50 text-xs font-semibold text-gray-500">
+                                                <span>Page</span>
+                                                <span className="font-bold text-[#4d4d4d]">{currentSubPage}</span>
+                                                <span>of</span>
+                                                <span className="font-bold text-[#4d4d4d]">{totalSubPages}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => setSubCurrentPage(p => Math.min(totalSubPages, p + 1))}
+                                                disabled={currentSubPage === totalSubPages}
+                                                className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200/60 bg-white text-gray-600 transition-all hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                                                title="Next Page"
+                                            >
+                                                <ChevronRight className="h-3.5 w-3.5" />
+                                            </button>
                                         </div>
                                     </div>
-                                </button>
-                            ))}
-                        </div>
-                    )}
+
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {paginatedSubcategories.map((sub) => {
+                                        const isInactive = sub.status === 'inactive'
+                                        const subjectCount = sub.subject_count ?? subjects.filter(s => s.subcategory_id === sub.id).length
+                                        return (
+                                            <div
+                                                key={sub.id}
+                                                onClick={() => handleSelectSubcategory(sub)}
+                                                className={`group cursor-pointer relative flex aspect-square w-full flex-col overflow-hidden rounded-xl bg-white border shadow-2xs transition-all hover:shadow-sm ${isInactive ? 'border-gray-200/40' : 'border-gray-100 hover:border-gray-200/80'}`}
+                                            >
+                                                {/* Image Background */}
+                                                <div className="absolute inset-0">
+                                                    <img
+                                                        src={sub.image_url || "/images/default-subcategory.png"}
+                                                        alt={sub.name}
+                                                        className="absolute inset-0 h-full w-full object-cover"
+                                                    />
+                                                    {isInactive && <div className="absolute inset-0 bg-black/10" />}
+                                                </div>
+
+                                                {/* Sliding White Info Overlay */}
+                                                <div className={sub.description?.trim() ? "subcard-overlay" : "subcard-overlay-compact"}>
+                                                    <div className="overflow-hidden flex-1 flex flex-col justify-start">
+                                                        <div className="flex items-start justify-between gap-2 mb-1.5 shrink-0">
+                                                            <span className="block text-xs sm:text-[13px] font-bold tracking-wider text-[#4d4d4d] uppercase flex-1 leading-snug break-words line-clamp-2 group-hover:line-clamp-none">
+                                                                {sub.name}
+                                                            </span>
+                                                            <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200/60 shadow-2xs">
+                                                                    {subjectCount}
+                                                                </span>
+                                                                {isInactive && (
+                                                                    <Lock className="h-3.5 w-3.5 text-gray-400 shrink-0" title="Locked for students" />
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        {sub.description?.trim() && (
+                                                            <p className="text-xs leading-relaxed text-[#8c8c8c] line-clamp-3 group-hover:line-clamp-none overflow-y-auto custom-scrollbar">
+                                                                {sub.description}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </>
+                        )
+                    })()}
                 </div>
-            ) : (
-                // SUBJECTS VIEW (After clicking a Subcategory)
-                <div className="space-y-6">
-                    <div className="flex items-center gap-4 border-b pb-4">
-                        <button
-                            onClick={() => setSelectedSubcategory(null)}
-                            className="flex items-center gap-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-black bg-white border shadow-sm px-4 py-2 rounded-lg"
-                        >
-                            <ArrowLeft className="h-4 w-4" />
-                            Back
-                        </button>
-                        <h2 className="text-2xl font-bold uppercase tracking-widest text-[#4d4d4d]">
-                            {selectedSubcategory.name} Subjects
-                        </h2>
-                    </div>
+            )}
 
-                    {filteredSubjects.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-12 text-center shadow-sm">
-                            <Lock className="mb-4 h-12 w-12 text-muted-foreground/50" />
-                            <h2 className="text-lg font-semibold text-foreground">No Subjects</h2>
-                            <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                                No subjects have been assigned to you yet in this subcategory.
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-5 pt-4">
-                            {filteredSubjects.map((subject) => {
-                                const isLocked = subject.unlock_date && new Date(subject.unlock_date) > new Date();
+            {/* ════════════════════ SUBJECTS SECTION (Shows when Subcategory clicked OR Direct Category) ════════════════════ */}
+            {(selectedSubcategory || (selectedCategory && selectedCategory.has_subcategories === false)) && (
+                <div className="flex-1 flex flex-col space-y-4 animate-in slide-in-from-right-8 duration-300">
+                    {(() => {
+                        const SUBJECT_ITEMS_PER_PAGE = 5
+                        const sortedSubjects = [...currentSubjects].sort((a, b) => {
+                            if (subjectSortBy === "name_asc") return (a.title || "").localeCompare(b.title || "")
+                            if (subjectSortBy === "name_desc") return (b.title || "").localeCompare(a.title || "")
+                            if (subjectSortBy === "date_asc") {
+                                const tDiff = new Date(a.created_at || 0) - new Date(b.created_at || 0)
+                                return tDiff !== 0 ? tDiff : (a.id || 0) - (b.id || 0)
+                            }
+                            const tDiff = new Date(b.created_at || 0) - new Date(a.created_at || 0)
+                            return tDiff !== 0 ? tDiff : (b.id || 0) - (a.id || 0)
+                        })
+                        const totalSubjectPages = Math.max(1, Math.ceil(sortedSubjects.length / SUBJECT_ITEMS_PER_PAGE))
+                        const currentSubjPage = Math.min(subjectCurrentPage, totalSubjectPages)
+                        const paginatedSubjects = sortedSubjects.slice((currentSubjPage - 1) * SUBJECT_ITEMS_PER_PAGE, currentSubjPage * SUBJECT_ITEMS_PER_PAGE)
 
-                                return (
-                                    <div 
-                                        key={subject.id} 
-                                        onClick={() => !isLocked && router.push(`/student/subjects/${subject.id}`)}
-                                        className={`group flex items-stretch gap-6 bg-white rounded-md p-5 shadow-sm border border-gray-100 ${isLocked ? 'opacity-60 grayscale-[50%] cursor-not-allowed' : 'hover:shadow-md hover:border-gray-300 cursor-pointer'} transition-all duration-300 relative overflow-hidden`}
-                                    >
-                                        {isLocked && (
-                                            <div className="absolute top-0 right-0 m-4 px-3 py-1.5 bg-blue-50/90 backdrop-blur border border-blue-200 rounded-full text-xs font-bold text-blue-700 uppercase tracking-wider shadow-sm z-10 flex items-center gap-2">
-                                                <Lock className="w-3.5 h-3.5" />
-                                                Unlocks on {new Date(subject.unlock_date).toLocaleDateString([], { month: 'short', day: 'numeric'})}
+                        const rawTitle = selectedSubcategory ? selectedSubcategory.name : (selectedCategory?.name || "")
+                        const cleanTitle = rawTitle.replace(/\s*\/\s*SUBJECTS$/i, "")
+
+                        return (
+                            <>
+                                <div className="flex items-center justify-between gap-3 border-b border-gray-200/50 pb-3">
+                                    <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
+                                        <button
+                                            onClick={() => {
+                                                if (selectedSubcategory) {
+                                                    setSelectedSubcategory(null)
+                                                    if (typeof window !== "undefined") {
+                                                        sessionStorage.removeItem("student_selected_sub_id")
+                                                        if (selectedCategory) {
+                                                            window.history.pushState({ catId: selectedCategory.id, subId: null }, "", `?cat=${selectedCategory.id}`)
+                                                        }
+                                                    }
+                                                } else {
+                                                    setSelectedCategory(null)
+                                                    setSelectedSubcategory(null)
+                                                    if (typeof window !== "undefined") {
+                                                        sessionStorage.removeItem("student_selected_cat_id")
+                                                        sessionStorage.removeItem("student_selected_sub_id")
+                                                        window.history.pushState({ catId: null, subId: null }, "", window.location.pathname)
+                                                    }
+                                                }
+                                            }}
+                                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200/50 bg-gray-100 text-gray-600 transition-all hover:bg-gray-200 hover:text-gray-900 shadow-sm shrink-0 cursor-pointer"
+                                            title={selectedSubcategory ? "Back to subcategories" : "Back to categories"}
+                                        >
+                                            <ChevronLeft className="h-4 w-4" />
+                                        </button>
+                                        <div className="flex items-center gap-2 min-w-0 overflow-hidden flex-1">
+                                            <h2 className="text-base sm:text-lg font-bold uppercase tracking-wider text-[#4d4d4d] flex items-center min-w-0 overflow-hidden" title={`${cleanTitle} / SUBJECTS`}>
+                                                <span className="truncate max-w-[240px] sm:max-w-[400px] md:max-w-[600px]">
+                                                    {cleanTitle}
+                                                </span>
+                                                <span className="text-gray-300 mx-1.5 shrink-0">/</span>
+                                                <span className="shrink-0 text-[#7a7a7a]">SUBJECTS</span>
+                                            </h2>
+                                            <span className="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-500 uppercase tracking-wider">
+                                                {currentSubjects.length} AVAILABLE
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {currentSubjects.length === 0 ? (
+                                    <div className="flex-1 flex flex-col items-center justify-center min-h-[48vh] px-4 text-center animate-in fade-in duration-300">
+                                        <h3 className="text-base font-bold text-[#4d4d4d] uppercase tracking-wider mb-1">
+                                            No Subjects Available Yet
+                                        </h3>
+                                        <p className="text-xs text-gray-400 max-w-sm leading-relaxed">
+                                            Please check back later or select another category/sub-category.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Controls Row Below the Line: Sort & Pagination */}
+                                        <div className="flex items-center justify-between gap-3 pt-1">
+                                            {/* Minimal Sort Dropdown */}
+                                            <div className="flex items-center gap-1.5 bg-white border border-gray-200/60 rounded-lg px-2.5 py-1 text-xs font-semibold text-gray-500 shadow-2xs">
+                                                <ArrowUpDown className="h-3 w-3 text-gray-400 shrink-0" />
+                                                <select
+                                                    value={subjectSortBy}
+                                                    onChange={(e) => setSubjectSortBy(e.target.value)}
+                                                    className="bg-transparent font-medium text-gray-700 cursor-pointer focus:outline-none text-xs"
+                                                >
+                                                    <option value="date_desc">Newest First</option>
+                                                    <option value="name_asc">A - Z</option>
+                                                    <option value="name_desc">Z - A</option>
+                                                    <option value="date_asc">Oldest First</option>
+                                                </select>
                                             </div>
-                                        )}
 
-                                        <div className="w-36 h-36 shrink-0 bg-gray-100 rounded-md flex items-center justify-center border border-gray-200 overflow-hidden relative">
-                                            {subject.image_url ? (
-                                                <img src={subject.image_url} alt={subject.title} className="absolute inset-0 w-full h-full object-cover" />
-                                            ) : (
-                                                <BookOpen className="w-10 h-10 text-gray-400" />
-                                            )}
+                                            {/* Subjects Pagination Controls */}
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => setSubjectCurrentPage(p => Math.max(1, p - 1))}
+                                                    disabled={currentSubjPage === 1}
+                                                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200/60 bg-white text-gray-600 transition-all hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                                                    title="Previous Page"
+                                                >
+                                                    <ChevronLeft className="h-3.5 w-3.5" />
+                                                </button>
+                                                <div className="flex items-center gap-1 px-2.5 py-1 bg-gray-50 rounded-lg border border-gray-200/50 text-xs font-semibold text-gray-500">
+                                                    <span>Page</span>
+                                                    <span className="font-bold text-[#4d4d4d]">{currentSubjPage}</span>
+                                                    <span>of</span>
+                                                    <span className="font-bold text-[#4d4d4d]">{totalSubjectPages}</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => setSubjectCurrentPage(p => Math.min(totalSubjectPages, p + 1))}
+                                                    disabled={currentSubjPage === totalSubjectPages}
+                                                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200/60 bg-white text-gray-600 transition-all hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                                                    title="Next Page"
+                                                >
+                                                    <ChevronRight className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
                                         </div>
 
-                                        <div className="flex-1 flex flex-col justify-between py-1">
-                                            <div>
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <h4 className="text-[17px] font-extrabold text-[#4a4a4a] uppercase tracking-wide">{subject.title}</h4>
-                                                </div>
-                                                <p className="text-[13px] text-[#8c8c8c] line-clamp-2 pr-24">{subject.description || "No description provided."}</p>
-                                            </div>
-                                            
-                                            <div className="flex items-center justify-between mt-4">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-[11px] font-semibold text-[#8c8c8c] border border-gray-200 bg-gray-50 px-3 py-1.5 rounded-full">
-                                                        Date added: {new Date(subject.created_at || Date.now()).toLocaleDateString()}
-                                                    </span>
-                                                    <span className="text-[11px] font-semibold text-[#8c8c8c] border border-gray-200 bg-gray-50 px-3 py-1.5 rounded-full">
-                                                        Code: {subject.code}
-                                                    </span>
-                                                </div>
+                                        <div className="space-y-3 pt-2">
+                                            {paginatedSubjects.map((subject) => {
+                                                const isLocked = subject.unlock_date && new Date(subject.unlock_date) > new Date();
 
-                                                {isLocked ? (
-                                                    <button disabled className="shrink-0 bg-gray-100 text-gray-500 px-4 py-2 rounded-md font-semibold text-xs transition-colors border border-gray-200 flex items-center gap-2">
-                                                        <Lock className="w-3.5 h-3.5" /> Locked
-                                                    </button>
-                                                ) : (
-                                                    <button className="shrink-0 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 py-2 text-xs rounded-md transition-colors border border-gray-200">
-                                                        View content
-                                                    </button>
-                                                )}
-                                            </div>
+                                                return (
+                                                    <div
+                                                        key={subject.id}
+                                                        onClick={() => !isLocked && router.push(`/student/subjects/${subject.id}`)}
+                                                        className={`group relative flex bg-white border border-gray-100 rounded-xl overflow-hidden shadow-2xs hover:border-gray-200/80 transition-all p-3.5 items-stretch ${isLocked ? 'opacity-60 grayscale-[40%] cursor-not-allowed' : 'cursor-pointer'}`}
+                                                    >
+                                                        {/* Image Area */}
+                                                        <div className="h-28 w-28 shrink-0 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-2xs flex items-center justify-center self-center mr-5 relative">
+                                                            <img
+                                                                src={subject.image_url || "/images/default-subject.png"}
+                                                                alt={subject.title}
+                                                                className="absolute inset-0 h-full w-full object-cover rounded-xl"
+                                                            />
+                                                        </div>
+
+                                                        {/* Content Area */}
+                                                        <div className="flex-1 flex flex-col justify-between py-0.5">
+                                                            <div>
+                                                                <h3 className="text-base font-bold text-[#4d4d4d] uppercase mb-1 flex items-center gap-2">
+                                                                    <span>{subject.title}</span>
+                                                                    {isLocked && (
+                                                                        <span className="text-[9px] text-blue-600 font-bold bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                                            (Unlocks {new Date(subject.unlock_date).toLocaleDateString([], { month: 'short', day: 'numeric'})})
+                                                                        </span>
+                                                                    )}
+                                                                </h3>
+                                                                <p className="text-[#8c8c8c] text-xs leading-relaxed mb-2 line-clamp-2">
+                                                                    {subject.description || "No description provided."}
+                                                                </p>
+                                                            </div>
+
+                                                            {/* Metadata and View Content */}
+                                                            <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-2">
+                                                                <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
+                                                                    <span className="bg-gray-100 text-gray-600 border border-gray-200/60 px-2.5 py-0.5 rounded-md font-semibold">
+                                                                        {subject.code || "SUBJ"}
+                                                                    </span>
+                                                                </div>
+
+                                                                {isLocked ? (
+                                                                    <button disabled className="shrink-0 bg-gray-100 text-gray-400 px-3.5 py-1.5 rounded-lg font-bold text-xs border border-gray-200 flex items-center gap-1.5">
+                                                                        <Lock className="w-3 h-3" /> Locked
+                                                                    </button>
+                                                                ) : (
+                                                                    <button className="shrink-0 bg-gray-800 hover:bg-gray-900 text-white font-bold px-4 py-1.5 text-xs rounded-lg transition-colors shadow-2xs uppercase tracking-wider">
+                                                                        View Content
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
                                         </div>
-                                    </div>)
-                            })}
-                        </div>
-                    )}
+                                    </>
+                                )}
+                            </>
+                        )
+                    })()}
                 </div>
             )}
         </div>

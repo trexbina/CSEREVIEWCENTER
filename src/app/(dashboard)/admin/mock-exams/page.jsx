@@ -1,50 +1,132 @@
+// this tells nextjs to run this mock exams screen in the browser
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+// helper tools from react to handle state, memory, and effects
+import { useState, useRef, useEffect, useMemo } from "react"
+
+// helpers from nextjs to navigate and create links
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Plus, ArrowUpDown, ChevronDown, Save, Calendar as CalendarIcon, Check, ChevronRight, Pencil, Trash } from "lucide-react"
 
-// ─── Static course / specialization tree ────────────────────────────────────
-// Shape: batch → exam → programs → majors
-const COURSE_TREE = [
-    {
-        id: "batch1",
-        label: "Batch 1 / 2026",
-        children: [
-            {
-                id: "batch1-lept",
-                label: "LEPT",
-                children: [
-                    { id: "batch1-lept-bsed-english",    label: "BSED – English" },
-                    { id: "batch1-lept-bsed-math",       label: "BSED – Mathematics" },
-                    { id: "batch1-lept-bsed-science",    label: "BSED – Science" },
-                    { id: "batch1-lept-bsed-filipino",   label: "BSED – Filipino" },
-                    { id: "batch1-lept-bsed-socstudies", label: "BSED – Social Studies" },
-                    { id: "batch1-lept-beed",            label: "BEED" },
-                ],
-            },
-        ],
-    },
-    {
-        id: "batch2",
-        label: "Batch 2 / 2026",
-        children: [
-            {
-                id: "batch2-lept",
-                label: "LEPT",
-                children: [
-                    { id: "batch2-lept-bsed-english",    label: "BSED – English" },
-                    { id: "batch2-lept-bsed-math",       label: "BSED – Mathematics" },
-                    { id: "batch2-lept-bsed-science",    label: "BSED – Science" },
-                    { id: "batch2-lept-bsed-filipino",   label: "BSED – Filipino" },
-                    { id: "batch2-lept-bsed-socstudies", label: "BSED – Social Studies" },
-                    { id: "batch2-lept-beed",            label: "BEED" },
-                ],
-            },
-        ],
-    },
-]
+// small icons used on tables, buttons, and cards
+import { 
+    Plus, 
+    ArrowUpDown, 
+    ArrowUp,
+    ArrowDown,
+    ChevronDown, 
+    Save, 
+    Check, 
+    ChevronRight, 
+    Pencil, 
+    Trash, 
+    PencilLine, 
+    X, 
+    Loader2 
+} from "lucide-react"
+
+// date and time picker components
+import MinimalDatePicker from "@/components/ui/MinimalDatePicker"
+import MinimalTimePicker from "@/components/ui/MinimalTimePicker"
+
+// confirmation modal popup for delete actions
+import ConfirmDeleteModal from "@/components/confirm-delete-modal"
+
+// sorting button component for table headers
+function SortButton({ label, field, sortField, sortDir, onSort }) {
+  const active = sortField === field
+  return (
+    <button
+      onClick={() => onSort(field)}
+      className="flex items-center gap-1 hover:text-foreground transition-colors font-medium cursor-pointer text-foreground select-none"
+    >
+      <span>{label}</span>
+      {active ? (
+        sortDir === "asc" ? <ArrowUp className="h-3 w-3 text-[#E9C46A]" /> : <ArrowDown className="h-3 w-3 text-[#E9C46A]" />
+      ) : (
+        <ArrowUpDown className="h-3 w-3 opacity-40" />
+      )}
+    </button>
+  )
+}
+
+// helper function to turn master data into a nested course tree for filters
+function buildCourseTreeFromMasterData(masterData) {
+    const { batches = [], examinations = [], programs = [], majors = [] } = masterData
+
+    if (batches.length === 0 && examinations.length === 0) {
+        return []
+    }
+
+    const buildExamSubtree = (batchId, examIdFilter = null) => {
+        const filteredExams = examIdFilter 
+            ? examinations.filter(e => e.id === examIdFilter)
+            : examinations
+
+        return filteredExams.map(exam => {
+            const examPrograms = programs.filter(p => p.exam_id === exam.id || !p.exam_id)
+            return {
+                id: `batch_${batchId}_exam_${exam.id}`,
+                entityType: 'exam',
+                rawId: exam.id,
+                label: exam.name,
+                children: examPrograms.map(prog => {
+                    const progMajors = majors.filter(m => m.program_id === prog.id)
+                    return {
+                        id: `batch_${batchId}_prog_${prog.id}`,
+                        entityType: 'program',
+                        rawId: prog.id,
+                        label: prog.name,
+                        children: progMajors.map(maj => ({
+                            id: `batch_${batchId}_maj_${maj.id}`,
+                            entityType: 'major',
+                            rawId: maj.id,
+                            label: maj.name,
+                            children: []
+                        }))
+                    }
+                })
+            }
+        })
+    }
+
+    if (batches.length > 0) {
+        return batches.map(batch => ({
+            id: `batch_${batch.id}`,
+            entityType: 'batch',
+            rawId: batch.id,
+            label: batch.target_year ? `${batch.name} / ${batch.target_year}` : batch.name,
+            year: batch.target_year,
+            children: buildExamSubtree(batch.id, batch.exam_id)
+        }))
+    } else {
+        return examinations.map(exam => {
+            const examPrograms = programs.filter(p => p.exam_id === exam.id || !p.exam_id)
+            return {
+                id: `exam_${exam.id}`,
+                entityType: 'exam',
+                rawId: exam.id,
+                label: exam.name,
+                children: examPrograms.map(prog => {
+                    const progMajors = majors.filter(m => m.program_id === prog.id)
+                    return {
+                        id: `prog_${prog.id}`,
+                        entityType: 'program',
+                        rawId: prog.id,
+                        label: prog.name,
+                        children: progMajors.map(maj => ({
+                            id: `maj_${maj.id}`,
+                            entityType: 'major',
+                            rawId: maj.id,
+                            label: maj.name,
+                            children: []
+                        }))
+                    }
+                })
+            }
+        })
+    }
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 /** Collect all leaf IDs under a node */
@@ -61,7 +143,7 @@ function allIds(node) {
 }
 
 /** Given the current selected set, compute the new set after toggling a node */
-function toggleNode(selected, node) {
+function toggleNode(selected, node, tree) {
     const leaves = allLeafIds(node)
     const selfIds = allIds(node)
     const allLeafSelected = leaves.every(id => selected.has(id))
@@ -74,7 +156,7 @@ function toggleNode(selected, node) {
         // select self + all descendants
         selfIds.forEach(id => next.add(id))
     }
-    return reconcile(next, COURSE_TREE)
+    return reconcile(next, tree)
 }
 
 /** After mutating the selected set, bubble up: mark a parent as selected only if all its leaves are selected */
@@ -102,21 +184,20 @@ function checkState(selected, node) {
 }
 
 /** Build a human-readable summary string of selections */
-function buildSummary(selected) {
+function buildSummary(selected, tree) {
     if (selected.size === 0) return "Select courses…"
 
-    // Check if entire batches are selected
     const parts = []
-    for (const batch of COURSE_TREE) {
+    for (const batch of tree) {
         const state = checkState(selected, batch)
         if (state === "all") {
             parts.push(batch.label)
-        } else if (state === "some") {
+        } else if (state === "some" && batch.children) {
             for (const course of batch.children) {
                 const cs = checkState(selected, course)
                 if (cs === "all") {
                     parts.push(`${batch.label} › ${course.label}`)
-                } else if (cs === "some") {
+                } else if (cs === "some" && course.children) {
                     const subs = course.children
                         .filter(m => selected.has(m.id))
                         .map(m => m.label)
@@ -135,14 +216,14 @@ function Checkbox({ state }) {
     const base = "w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border transition-colors"
     if (state === "all")
         return (
-            <span className={`${base} bg-[#eedc82] border-[#eedc82]`}>
+            <span className={`${base} bg-[#E9C46A] border-[#E9C46A]`}>
                 <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
             </span>
         )
     if (state === "some")
         return (
-            <span className={`${base} bg-[#eedc82]/40 border-[#eedc82]`}>
-                <span className="w-2 h-0.5 rounded-full bg-[#b8a730]" />
+            <span className={`${base} bg-[#E9C46A]/20 border-[#E9C46A]`}>
+                <span className="w-2 h-0.5 rounded-full bg-[#E9C46A]" />
             </span>
         )
     return <span className={`${base} border-gray-300 bg-white`} />
@@ -153,7 +234,6 @@ function TreeRow({ node, selected, onToggle, depth = 0 }) {
     const [open, setOpen] = useState(depth === 0) // batches open by default
     const hasChildren = node.children && node.children.length > 0
     const state = checkState(selected, node)
-    const isLeaf = !hasChildren
 
     return (
         <div>
@@ -208,11 +288,10 @@ function TreeRow({ node, selected, onToggle, depth = 0 }) {
 }
 
 // ─── Multi-select dropdown ────────────────────────────────────────────────────
-function CourseMultiSelect({ selected, onChange }) {
+function CourseMultiSelect({ selected, onChange, tree }) {
     const [open, setOpen] = useState(false)
     const ref = useRef(null)
 
-    // close on outside click
     useEffect(() => {
         function handler(e) {
             if (ref.current && !ref.current.contains(e.target)) setOpen(false)
@@ -222,10 +301,10 @@ function CourseMultiSelect({ selected, onChange }) {
     }, [])
 
     function handleToggle(node) {
-        onChange(toggleNode(new Set(selected), node))
+        onChange(toggleNode(new Set(selected), node, tree))
     }
 
-    const summary = buildSummary(new Set(selected))
+    const summary = buildSummary(new Set(selected), tree)
     const hasSelection = selected.length > 0
 
     return (
@@ -234,49 +313,39 @@ function CourseMultiSelect({ selected, onChange }) {
             <button
                 type="button"
                 onClick={() => setOpen(o => !o)}
-                className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm text-left flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-gray-300 transition-shadow"
+                className="w-full h-10 rounded-xl border border-gray-200 bg-white px-3 text-sm text-left flex items-center justify-between focus:outline-none focus:border-gray-400 transition-colors cursor-pointer"
             >
-                <span className={`truncate ${hasSelection ? "text-[#5a5a5a] font-medium" : "text-gray-400"}`}>
+                <span className={`truncate ${hasSelection ? "text-gray-800 font-medium" : "text-gray-400 font-normal"}`}>
                     {summary}
                 </span>
                 <ChevronDown className={`h-4 w-4 text-gray-400 flex-shrink-0 ml-2 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
 
-            {/* Badge count */}
-            {selected.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-[#eedc82] text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm pointer-events-none">
-                    {selected.length}
-                </span>
-            )}
-
             {/* Dropdown panel */}
             {open && (
                 <div className="absolute z-50 mt-1.5 w-full bg-white rounded-xl border border-gray-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
-                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Select Target Courses</span>
-                        {selected.length > 0 && (
-                            <button
-                                type="button"
-                                onClick={() => onChange([])}
-                                className="text-[11px] text-[#ba5a62] font-bold hover:underline"
-                            >
-                                Clear all
-                            </button>
-                        )}
+                    <div className="px-3 py-2 border-b border-gray-100 bg-gray-50">
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Select Target Courses</span>
                     </div>
 
                     {/* Tree */}
                     <div className="max-h-64 overflow-y-auto py-1.5 px-1">
-                        {COURSE_TREE.map(batch => (
-                            <TreeRow
-                                key={batch.id}
-                                node={batch}
-                                selected={new Set(selected)}
-                                onToggle={handleToggle}
-                                depth={0}
-                            />
-                        ))}
+                        {tree.length === 0 ? (
+                            <div className="text-center py-6 text-xs text-gray-400">
+                                No master data courses or batches configured yet.
+                            </div>
+                        ) : (
+                            tree.map(batch => (
+                                <TreeRow
+                                    key={batch.id}
+                                    node={batch}
+                                    selected={new Set(selected)}
+                                    onToggle={handleToggle}
+                                    depth={0}
+                                />
+                            ))
+                        )}
                     </div>
                 </div>
             )}
@@ -284,92 +353,212 @@ function CourseMultiSelect({ selected, onChange }) {
     )
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function parseTargets(targets) {
-    if (!targets || targets.length === 0) return { batch: "—", type: "—", course: "—" }
+// ─── Target Label Parser ─────────────────────────────────────────────────────
+function parseTargets(targets, tree = [], masterData = null) {
+    if (!targets || targets.length === 0) return { batch: "All", type: "All", course: "All" }
     
     const batches = []
     const types = []
     const courses = []
-    
-    for (const tId of targets) {
-        // If it's a batch:
-        const batchNode = COURSE_TREE.find(b => b.id === tId)
-        if (batchNode) {
-            batches.push(batchNode.label)
-            continue
+
+    const traverse = (node) => {
+        if (targets.includes(node.id)) {
+            if (node.entityType === 'batch') batches.push(node.label)
+            else if (node.entityType === 'exam') types.push(node.label)
+            else if (node.entityType === 'program' || node.entityType === 'major') courses.push(node.label)
         }
-        
-        // If it's an exam/type:
-        for (const b of COURSE_TREE) {
-            const examNode = b.children?.find(e => e.id === tId)
-            if (examNode) {
-                types.push(examNode.label)
-                break
-            }
-            
-            // If it's a course/major:
-            if (b.children) {
-                for (const e of b.children) {
-                    const courseNode = e.children?.find(c => c.id === tId)
-                    if (courseNode) {
-                        courses.push(courseNode.label)
-                        break
-                    }
-                }
-            }
+        if (node.children) {
+            node.children.forEach(traverse)
         }
     }
-    
+
+    tree.forEach(traverse)
+
+    // Legacy fallback check if targets contains legacy strings like "batch1" or raw names
+    if (batches.length === 0 && targets.some(t => typeof t === 'string' && t.includes('batch1'))) {
+        batches.push("Batch 1")
+    }
+    if (batches.length === 0 && targets.some(t => typeof t === 'string' && t.includes('batch2'))) {
+        batches.push("Batch 2")
+    }
+    if (types.length === 0 && targets.some(t => typeof t === 'string' && t.toLowerCase().includes('lept'))) {
+        types.push("LEPT")
+    }
+
     return {
-        batch: batches.length > 0 ? batches.join(", ") : (targets.some(id => id.startsWith("batch1")) ? "Batch 1" : (targets.some(id => id.startsWith("batch2")) ? "Batch 2" : "—")),
-        type: types.length > 0 ? types.join(", ") : (targets.some(id => id.includes("lept")) ? "LEPT" : "—"),
-        course: courses.length > 0 ? (courses.length > 2 ? `${courses.length} Spec.` : courses.join(", ")) : "All"
+        batch: batches.length > 0 ? Array.from(new Set(batches)).join(", ") : "All",
+        type: types.length > 0 ? Array.from(new Set(types)).join(", ") : "All",
+        course: courses.length > 0 
+            ? (courses.length > 2 ? `${courses.length} Spec.` : Array.from(new Set(courses)).join(", ")) 
+            : "All"
     }
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// main mock exams dashboard component
 export default function MockExamsPage() {
     const router = useRouter()
+
+    // list of mock exams and school master data
     const [exams, setExams] = useState([])
+    const [masterData, setMasterData] = useState({
+        batches: [],
+        examinations: [],
+        programs: [],
+        majors: [],
+        academic_courses: []
+    })
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
     
+    // dropdown filter states
+    const [selectedBatch, setSelectedBatch] = useState("All")
+    const [selectedType, setSelectedType] = useState("All")
+    const [selectedCourse, setSelectedCourse] = useState("All")
+    const [selectedYear, setSelectedYear] = useState("All")
+
+    // table sorting state
+    const [sortField, setSortField] = useState("created_at")
+    const [sortDir, setSortDir] = useState("desc")
+
+    // handles sorting when column headers are clicked
+    function handleSort(field) {
+      if (sortField === field) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+      } else {
+        setSortField(field)
+        setSortDir("asc")
+      }
+    }
+
+    // create and edit modal states
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingExam, setEditingExam] = useState(null)
+    const [saving, setSaving] = useState(false)
     const [formData, setFormData] = useState({
         title: "",
         description: "",
         examCode: "",
-        targetCourses: [],   // array of selected IDs
+        targetCourses: [],
         unlockDate: "",
         status: "Locked"
     })
 
+    // load mock exams and master data when page opens
     useEffect(() => {
-        fetchExams()
+        fetchInitialData()
     }, [])
 
-    async function fetchExams() {
+    // fetch all mock exams and master data dropdowns
+    async function fetchInitialData() {
         try {
             setLoading(true)
-            const res = await fetch("/api/admin/mock-exams")
-            if (res.ok) {
-                const data = await res.json()
-                setExams(data.exams || [])
+            const [examsRes, masterRes] = await Promise.all([
+                fetch("/api/admin/mock-exams"),
+                fetch("/api/admin/master-data/dropdowns")
+            ])
+
+            if (examsRes.ok) {
+                const examsData = await examsRes.json()
+                setExams(examsData.exams || [])
             } else {
                 setError("Failed to fetch mock exams.")
             }
+
+            if (masterRes.ok) {
+                const md = await masterRes.json()
+                setMasterData(md)
+            }
         } catch (err) {
             console.error(err)
-            setError("Error loading exams.")
+            setError("Error loading exams and master data.")
         } finally {
             setLoading(false)
         }
     }
 
+    async function fetchExams() {
+        try {
+            const res = await fetch("/api/admin/mock-exams")
+            if (res.ok) {
+                const data = await res.json()
+                setExams(data.exams || [])
+            }
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    const courseTree = useMemo(() => {
+        return buildCourseTreeFromMasterData(masterData)
+    }, [masterData])
+
+    // Derive years from masterData.batches
+    const availableYears = useMemo(() => {
+        const years = masterData.batches.map(b => b.target_year).filter(Boolean)
+        return Array.from(new Set(years))
+    }, [masterData.batches])
+
+    // Filter and sort exams based on active filters & sorting
+    const filteredExams = useMemo(() => {
+        let list = exams.filter(exam => {
+            const { batch, type, course } = parseTargets(exam.targets, courseTree, masterData)
+
+            if (selectedBatch !== "All" && !batch.toLowerCase().includes(selectedBatch.toLowerCase())) {
+                return false
+            }
+            if (selectedType !== "All" && !type.toLowerCase().includes(selectedType.toLowerCase())) {
+                return false
+            }
+            if (selectedCourse !== "All" && !course.toLowerCase().includes(selectedCourse.toLowerCase())) {
+                return false
+            }
+            if (selectedYear !== "All" && !batch.includes(String(selectedYear))) {
+                return false
+            }
+            return true
+        })
+
+        return list.sort((a, b) => {
+            const targetsA = parseTargets(a.targets, courseTree, masterData)
+            const targetsB = parseTargets(b.targets, courseTree, masterData)
+
+            let av = ""
+            let bv = ""
+
+            if (sortField === "title") {
+                av = (a.title || "").toLowerCase()
+                bv = (b.title || "").toLowerCase()
+            } else if (sortField === "batch") {
+                av = targetsA.batch.toLowerCase()
+                bv = targetsB.batch.toLowerCase()
+            } else if (sortField === "type") {
+                av = targetsA.type.toLowerCase()
+                bv = targetsB.type.toLowerCase()
+            } else if (sortField === "course") {
+                av = targetsA.course.toLowerCase()
+                bv = targetsB.course.toLowerCase()
+            } else if (sortField === "created_at" || sortField === "date") {
+                const timeA = new Date(a.created_at || 0).getTime()
+                const timeB = new Date(b.created_at || 0).getTime()
+                return sortDir === "asc" ? timeA - timeB : timeB - timeA
+            } else if (sortField === "status") {
+                const isLockedA = a.unlock_date && new Date(a.unlock_date).getTime() > Date.now() ? 1 : 0
+                const isLockedB = b.unlock_date && new Date(b.unlock_date).getTime() > Date.now() ? 1 : 0
+                return sortDir === "asc" ? isLockedA - isLockedB : isLockedB - isLockedA
+            } else if (sortField === "exam_code") {
+                av = (a.exam_code || "").toLowerCase()
+                bv = (b.exam_code || "").toLowerCase()
+            }
+
+            if (av < bv) return sortDir === "asc" ? -1 : 1
+            if (av > bv) return sortDir === "asc" ? 1 : -1
+            return 0
+        })
+    }, [exams, selectedBatch, selectedType, selectedCourse, selectedYear, courseTree, masterData, sortField, sortDir])
+
     const handleSaveMockExam = async (e) => {
         e.preventDefault()
+        setSaving(true)
         try {
             const url = editingExam 
                 ? `/api/admin/mock-exams/${editingExam.id}`
@@ -400,282 +589,490 @@ export default function MockExamsPage() {
         } catch (err) {
             console.error(err)
             alert("An error occurred while saving the exam.")
+        } finally {
+            setSaving(false)
         }
     }
 
-    const handleDeleteExam = async (examId) => {
-        if (!confirm("Are you sure you want to delete this mock exam?")) return
-        try {
-            const res = await fetch(`/api/admin/mock-exams/${examId}`, {
-                method: "DELETE"
-            })
-            if (res.ok) {
-                setExams(exams.filter(exam => exam.id !== examId))
-            } else {
-                alert("Failed to delete exam.")
-            }
-        } catch (err) {
-            console.error(err)
-            alert("An error occurred.")
-        }
+    // Confirm Delete Modal State
+    const [deleteModal, setDeleteModal] = useState({
+        isOpen: false,
+        title: "Confirm Deletion",
+        description: "Are you sure you want to delete this item? This action cannot be undone.",
+        onConfirm: null,
+        isDeleting: false
+    })
+
+    const handleDeleteExam = (exam) => {
+        setDeleteModal({
+            isOpen: true,
+            title: "Delete Mock Exam",
+            description: `Are you sure you want to delete "${exam.title}"? All associated questions and student exam attempts will be removed. This cannot be undone.`,
+            onConfirm: async () => {
+                setDeleteModal(prev => ({ ...prev, isDeleting: true }))
+                try {
+                    const res = await fetch(`/api/admin/mock-exams/${exam.id}`, {
+                        method: "DELETE"
+                    })
+                    if (res.ok) {
+                        setExams(prev => prev.filter(e => e.id !== exam.id))
+                    } else {
+                        alert("Failed to delete exam.")
+                    }
+                } catch (err) {
+                    console.error(err)
+                    alert("An error occurred.")
+                } finally {
+                    setDeleteModal({ isOpen: false, title: "", description: "", onConfirm: null, isDeleting: false })
+                }
+            },
+            isDeleting: false
+        })
     }
 
     function openModal(exam = null) {
         if (exam) {
             setEditingExam(exam)
+            let settings = {}
+            if (exam.questions) {
+                let parsed = exam.questions
+                if (typeof parsed === "string") {
+                    try { parsed = JSON.parse(parsed) } catch (e) {}
+                }
+                if (parsed && !Array.isArray(parsed) && parsed.settings) {
+                    settings = parsed.settings
+                }
+            }
+
+            let sDate = settings.startDate || ""
+            let sTime = settings.startTime || ""
+            if (!sDate && exam.unlock_date) {
+                const d = new Date(exam.unlock_date)
+                if (!isNaN(d.getTime())) {
+                    sDate = d.toISOString().slice(0, 10)
+                    sTime = d.toTimeString().slice(0, 5)
+                }
+            }
+
             setFormData({
                 title: exam.title,
                 description: exam.description || "",
                 examCode: exam.exam_code,
-                targetCourses: exam.targets || [],
-                unlockDate: exam.unlock_date ? new Date(exam.unlock_date).toISOString().slice(0, 16) : "",
-                status: exam.status === "active" ? "Active" : "Locked"
+                targetCourses: Array.isArray(exam.targets) ? exam.targets : (typeof exam.targets === 'string' ? JSON.parse(exam.targets || '[]') : []),
+                startDate: sDate,
+                startTime: sTime,
+                timeLimitMinutes: settings.timeLimitMinutes ?? 0,
+                maxRetries: settings.maxRetries ?? 0,
+                status: "Active"
             })
         } else {
             setEditingExam(null)
-            setFormData({ title: "", description: "", examCode: "", targetCourses: [], unlockDate: "", status: "Locked" })
+            setFormData({
+                title: "",
+                description: "",
+                examCode: "",
+                targetCourses: [],
+                startDate: "",
+                startTime: "",
+                timeLimitMinutes: 0,
+                maxRetries: 0,
+                status: "Active"
+            })
         }
         setIsModalOpen(true)
     }
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 py-8 space-y-6 animate-in fade-in duration-300">
+        <div className="space-y-6 w-full max-w-6xl mx-auto px-4 py-4 pb-16 animate-in fade-in duration-300">
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-                <h1 className="text-[28px] font-black text-[#4d4d4d] tracking-wide uppercase">
-                    MOCK EXAM
-                </h1>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
+                <div>
+                    <div className="flex items-center gap-2.5 mb-1">
+                        <PencilLine className="h-6 w-6 text-[#E9C46A]" />
+                        <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase">
+                            MOCK EXAMS
+                        </h1>
+                    </div>
+                    <p className="text-muted-foreground text-sm font-medium">
+                        Create, schedule, and manage board examination mock exams and target courses.
+                    </p>
+                </div>
                 <button
                     onClick={() => openModal()}
-                    className="flex items-center gap-1.5 bg-[#f5cdd0] text-[#ba5a62] font-bold text-[11px] tracking-wide uppercase px-5 py-2.5 rounded-lg shadow-sm hover:bg-[#f1b8bd] hover:-translate-y-0.5 transition-all"
+                    className="flex items-center justify-center bg-[#E9C46A] text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 rounded-lg shadow-sm hover:bg-[#dfb550] hover:-translate-y-0.5 transition-all shrink-0 self-start sm:self-auto cursor-pointer"
                 >
-                    <Plus className="h-3.5 w-3.5" strokeWidth={3} /> ADD MOCK EXAM
+                    ADD MOCK EXAM
                 </button>
             </div>
 
-            {/* Filters */}
-            <div className="flex flex-wrap gap-3 mb-6">
-                {[
-                    { label: "Batch", value: "All" },
-                    { label: "Type", value: "BLEPT" },
-                    { label: "Course", value: "All" },
-                    { label: "Year", value: "2026" }
-                ].map((filter, i) => (
-                    <button key={i} className="flex items-center bg-[#f2f4f7] hover:bg-[#e2e5e9] rounded-md border border-gray-200 px-3 py-1.5 transition-colors">
-                        <ArrowUpDown className="h-3 w-3 text-gray-400 mr-2" />
-                        <span className="text-[11px] text-gray-500 font-bold uppercase tracking-wider">{filter.label}: {filter.value}</span>
-                        <ChevronDown className="h-3.5 w-3.5 text-gray-400 ml-2" />
+            {/* Dynamic Master Data Filters */}
+            <div className="flex flex-wrap gap-2.5">
+                {/* Batch Filter */}
+                <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
+                    <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground font-medium">Batch:</span>
+                    <select
+                        value={selectedBatch}
+                        onChange={(e) => setSelectedBatch(e.target.value)}
+                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                    >
+                        <option value="All">All</option>
+                        {masterData.batches.map(b => (
+                            <option key={b.id} value={b.name}>{b.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Exam Type Filter */}
+                <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
+                    <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground font-medium">Type:</span>
+                    <select
+                        value={selectedType}
+                        onChange={(e) => setSelectedType(e.target.value)}
+                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                    >
+                        <option value="All">All</option>
+                        {masterData.examinations.map(ex => (
+                            <option key={ex.id} value={ex.name}>{ex.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Course / Program Filter */}
+                <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
+                    <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground font-medium">Course:</span>
+                    <select
+                        value={selectedCourse}
+                        onChange={(e) => setSelectedCourse(e.target.value)}
+                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                    >
+                        <option value="All">All</option>
+                        {masterData.programs.map(pr => (
+                            <option key={pr.id} value={pr.name}>{pr.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Year Filter */}
+                <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
+                    <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground font-medium">Year:</span>
+                    <select
+                        value={selectedYear}
+                        onChange={(e) => setSelectedYear(e.target.value)}
+                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                    >
+                        <option value="All">All</option>
+                        {availableYears.map(yr => (
+                            <option key={yr} value={yr}>{yr}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {(selectedBatch !== "All" || selectedType !== "All" || selectedCourse !== "All" || selectedYear !== "All") && (
+                    <button
+                        onClick={() => {
+                            setSelectedBatch("All")
+                            setSelectedType("All")
+                            setSelectedCourse("All")
+                            setSelectedYear("All")
+                        }}
+                        className="text-xs text-[#E9C46A] font-semibold hover:underline self-center px-1"
+                    >
+                        Reset filters
                     </button>
-                ))}
+                )}
             </div>
 
             {/* Table */}
-            <div className="border border-gray-200 rounded-[1.25rem] overflow-hidden bg-white shadow-sm min-h-[500px] flex flex-col">
-                <div className="bg-[#f2f4f7] grid grid-cols-9 py-3.5 px-6 text-[10px] font-bold text-[#8c8c8c] uppercase tracking-widest border-b border-gray-200">
-                    <div className="col-span-2 flex items-center gap-1.5 cursor-pointer hover:text-gray-600 transition-colors">Mock Exam Title <ChevronDown className="h-3.5 w-3.5 text-gray-400" /></div>
-                    <div className="flex items-center gap-1.5 cursor-pointer hover:text-gray-600 transition-colors">Exam Code <ChevronDown className="h-3.5 w-3.5 text-gray-400" /></div>
-                    <div className="flex items-center gap-1.5 cursor-pointer hover:text-gray-600 transition-colors">Batch <ChevronDown className="h-3.5 w-3.5 text-gray-400" /></div>
-                    <div className="col-span-1 flex items-center gap-1.5 cursor-pointer hover:text-gray-600 transition-colors">Type <ChevronDown className="h-3.5 w-3.5 text-gray-400" /></div>
-                    <div className="col-span-1 flex items-center gap-1.5 cursor-pointer hover:text-gray-600 transition-colors">Course <ChevronDown className="h-3.5 w-3.5 text-gray-400" /></div>
-                    <div className="col-span-1 flex items-center gap-1.5 cursor-pointer hover:text-gray-600 transition-colors">Date Created <ChevronDown className="h-3.5 w-3.5 text-gray-400" /></div>
-                    <div className="flex items-center gap-1.5 cursor-pointer hover:text-gray-600 transition-colors">Status <ChevronDown className="h-3.5 w-3.5 text-gray-400" /></div>
-                    <div className="text-right">Actions</div>
-                </div>
-
+            <div className="border border-border rounded-2xl overflow-hidden bg-card shadow-sm min-h-[450px] flex flex-col">
                 {loading ? (
-                    <div className="flex-1 flex items-center justify-center p-8 bg-[#fdfdfd]">
-                        <span className="text-sm font-semibold text-gray-400 uppercase tracking-widest animate-pulse">Loading Mock Exams...</span>
+                    <div className="flex-1 flex items-center justify-center p-8 bg-card">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest animate-pulse">Loading Mock Exams & Master Data...</span>
                     </div>
                 ) : error ? (
-                    <div className="flex-1 flex items-center justify-center p-8 bg-[#fdfdfd] text-red-500 font-semibold uppercase text-xs">
+                    <div className="flex-1 flex items-center justify-center p-8 bg-card text-destructive font-semibold uppercase text-xs">
                         {error}
                     </div>
-                ) : exams.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-[#fdfdfd]">
-                        <h2 className="text-[22px] font-black text-[#5a5a5a] mb-2 tracking-tight">No Exams Yet</h2>
-                        <p className="text-[13px] font-medium text-[#8c8c8c]">
-                            Click on the create new exam button to begin creating a new exam.
+                ) : filteredExams.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-card">
+                        <h2 className="text-lg font-bold text-foreground mb-1 tracking-tight">
+                            {exams.length === 0 ? "No Exams Yet" : "No Matching Exams"}
+                        </h2>
+                        <p className="text-xs font-medium text-muted-foreground">
+                            {exams.length === 0 
+                                ? "Click on the create new exam button to begin creating a new exam."
+                                : "Try adjusting your filter criteria to view other mock exams."}
                         </p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-gray-100 flex-1 bg-white">
-                        {exams.map((exam) => {
-                            const { batch, type, course } = parseTargets(exam.targets)
-                            return (
-                                <div key={exam.id} className="grid grid-cols-9 py-4 px-6 items-center text-[13px] text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100">
-                                    <div 
-                                        className="col-span-2 font-bold text-[#4d4d4d] cursor-pointer hover:underline"
-                                        onClick={() => router.push(`/admin/mock-exams/${exam.id}`)}
-                                    >
-                                        {exam.title}
-                                    </div>
-                                    <div className="font-mono text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded w-fit tracking-wider">{exam.exam_code}</div>
-                                    <div className="font-medium">{batch}</div>
-                                    <div className="font-medium">{type}</div>
-                                    <div className="font-medium text-gray-500">{course}</div>
-                                    <div className="col-span-1 text-[11px] text-gray-400 font-semibold">{new Date(exam.created_at).toLocaleDateString()}</div>
-                                    <div>
-                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border shadow-sm ${
-                                            exam.status === "active" 
-                                                ? "bg-green-50 text-green-700 border-green-200" 
-                                                : "bg-red-50 text-red-700 border-red-200"
-                                        }`}>
-                                            {exam.status === "active" ? "Active" : "Locked"}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-end gap-2">
-                                        <button
-                                            onClick={() => router.push(`/admin/mock-exams/${exam.id}`)}
-                                            className="bg-[#eedc82] text-white hover:bg-[#e0d075] px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
-                                        >
-                                            Build
-                                        </button>
-                                        <button
-                                            onClick={() => openModal(exam)}
-                                            className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-gray-100 rounded-md transition-colors"
-                                            title="Edit Exam"
-                                        >
-                                            <Pencil className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteExam(exam.id)}
-                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-gray-100 rounded-md transition-colors"
-                                            title="Delete Exam"
-                                        >
-                                            <Trash className="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                </div>
-                            )
-                        })}
+                    <div className="overflow-x-auto flex-1">
+                        <table className="w-full text-left border-collapse">
+                            <thead className="bg-muted">
+                                <tr className="border-b border-border text-[13px] font-semibold text-foreground">
+                                    <th className="py-3.5 px-5 w-[26%]" scope="col">
+                                        <SortButton label="Mock Exam Title" field="title" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                    </th>
+                                    <th className="py-3.5 px-4 w-[13%]" scope="col">
+                                        <SortButton label="Exam Code" field="exam_code" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                    </th>
+                                    <th className="py-3.5 px-4 w-[12%]" scope="col">
+                                        <SortButton label="Batch" field="batch" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                    </th>
+                                    <th className="py-3.5 px-4 w-[10%]" scope="col">
+                                        <SortButton label="Type" field="type" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                    </th>
+                                    <th className="py-3.5 px-4 w-[11%]" scope="col">
+                                        <SortButton label="Course" field="course" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                    </th>
+                                    <th className="py-3.5 px-4 w-[12%]" scope="col">
+                                        <SortButton label="Date" field="date" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                    </th>
+                                    <th className="py-3.5 px-4 w-[8%]" scope="col">
+                                        <SortButton label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                    </th>
+                                    <th className="py-3.5 px-5 w-[8%] text-right font-medium text-foreground" scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-sm">
+                                {filteredExams.map((exam) => {
+                                    const { batch, type, course } = parseTargets(exam.targets, courseTree, masterData)
+                                    return (
+                                        <tr key={exam.id} className="h-11 border-b border-border/50 last:border-b-0">
+                                            <td className="py-3 px-5 font-medium text-[#4382DF] cursor-pointer hover:underline" onClick={() => router.push(`/admin/mock-exams/${exam.id}`)}>
+                                                {exam.title}
+                                            </td>
+                                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{exam.exam_code}</td>
+                                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{batch}</td>
+                                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{type}</td>
+                                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{course}</td>
+                                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{new Date(exam.created_at).toLocaleDateString()}</td>
+                                            <td className="py-3 px-4 text-foreground whitespace-nowrap">
+                                                {(() => {
+                                                    const isLocked = exam.unlock_date && new Date(exam.unlock_date).getTime() > Date.now()
+                                                    return (
+                                                        <span className={isLocked ? "text-amber-600 font-medium" : "text-emerald-600 font-medium"}>
+                                                            {isLocked ? "Locked" : "Active"}
+                                                        </span>
+                                                    )
+                                                })()}
+                                            </td>
+                                            <td className="py-3 px-5 text-right whitespace-nowrap">
+                                                <div className="inline-flex items-center justify-end gap-1.5">
+                                                    <button
+                                                        onClick={() => openModal(exam)}
+                                                        className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors cursor-pointer"
+                                                        title="Edit Exam"
+                                                    >
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteExam(exam)}
+                                                        className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                                                        title="Delete Exam"
+                                                    >
+                                                        <Trash className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </div>
 
             {/* ── Add/Edit Mock Exam Modal ── */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-250">
-                    <div className="w-full max-w-[620px] bg-white rounded-[1.25rem] shadow-2xl p-8 animate-in zoom-in-95 duration-200">
-                        <div className="mb-6">
-                            <h2 className="text-[22px] font-black text-[#7a7a7a] tracking-wide uppercase">
-                                {editingExam ? "EDIT MOCK EXAM" : "ADD MOCK EXAM"}
-                            </h2>
-                            <p className="text-[13px] font-medium text-[#8c8c8c] mt-1">
-                                Configure mock exam name, code, description, status, and target courses
-                            </p>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="w-full max-w-[580px] max-h-[90vh] overflow-y-auto custom-scrollbar bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 animate-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
+                            <div>
+                                <h2 className="text-base font-semibold uppercase tracking-wider text-[#4d4d4d]">
+                                    {editingExam ? "Edit Mock Exam" : "Add Mock Exam"}
+                                </h2>
+                                <p className="text-xs text-gray-400 font-normal mt-0.5">
+                                    Configure mock exam title, code, description, schedule, time limits, and target courses
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
                         </div>
 
-                        <div className="w-full h-px bg-gray-100 mb-6" />
-
-                        <form onSubmit={handleSaveMockExam} className="space-y-5">
-                            {/* Title */}
-                            <div>
-                                <label className="block text-[#7a7a7a] text-[13px] font-bold mb-2">Title:</label>
-                                <input
-                                    type="text"
-                                    placeholder="Enter title here..."
-                                    value={formData.title}
-                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-300 transition-shadow"
-                                    required
-                                />
+                        <form onSubmit={handleSaveMockExam} className="space-y-4">
+                            {/* Title & Exam Code in Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1">
+                                        Title:
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Mock Exam Title..."
+                                        value={formData.title}
+                                        onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                        className="w-full h-10 rounded-xl border border-gray-200 px-3 text-sm focus:outline-none focus:border-gray-400 font-medium text-gray-800"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1">
+                                        Exam Code:
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. LEPT-2026-B1-001"
+                                        value={formData.examCode}
+                                        onChange={e => setFormData({ ...formData, examCode: e.target.value.toUpperCase() })}
+                                        className="w-full h-10 rounded-xl border border-gray-200 px-3 text-sm uppercase font-mono tracking-wide focus:outline-none focus:border-gray-400 font-medium text-gray-800"
+                                        maxLength={30}
+                                        required
+                                    />
+                                </div>
                             </div>
 
                             {/* Description */}
                             <div>
-                                <label className="block text-[#7a7a7a] text-[13px] font-bold mb-2">Description</label>
-                                <input
-                                    type="text"
-                                    placeholder="Enter description here..."
+                                <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1">
+                                    Description:
+                                </label>
+                                <textarea
+                                    placeholder="Mock exam description and instructions..."
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-300 transition-shadow"
+                                    rows={3}
+                                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:border-gray-400 font-medium text-gray-800"
                                 />
                             </div>
 
-                            {/* Exam Code */}
+                            {/* Target Courses multi-select */}
                             <div>
-                                <label className="block text-[#7a7a7a] text-[13px] font-bold mb-2">
-                                    Exam Code
-                                    <span className="ml-1.5 text-[11px] font-normal text-gray-400">(unique identifier for this exam)</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. LEPT-2026-B1-001"
-                                    value={formData.examCode}
-                                    onChange={e => setFormData({ ...formData, examCode: e.target.value.toUpperCase() })}
-                                    className="w-full h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm font-mono text-gray-700 tracking-widest placeholder:font-sans placeholder:tracking-normal focus:outline-none focus:ring-1 focus:ring-[#eedc82] transition-shadow"
-                                    maxLength={30}
-                                    required
-                                />
-                            </div>
-
-                            {/* Target Courses multi-select (full width) */}
-                            <div>
-                                <label className="block text-[#7a7a7a] text-[13px] font-bold mb-2">
-                                    Target Courses / Batch
-                                    <span className="ml-1.5 text-[11px] font-normal text-gray-400">(select batch, course, or specialization)</span>
+                                <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1">
+                                    Target Courses / Batch:
                                 </label>
                                 <CourseMultiSelect
                                     selected={formData.targetCourses}
                                     onChange={ids => setFormData({ ...formData, targetCourses: Array.from(ids) })}
+                                    tree={courseTree}
                                 />
                             </div>
 
-                            {/* Unlock Date */}
+                            {/* ACCESS & SCHEDULE */}
                             <div>
-                                <label className="block text-[#7a7a7a] text-[13px] font-bold mb-2">Unlock Date &amp; Time:</label>
-                                <div className="relative">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1">
+                                            Start Date:
+                                        </label>
+                                        <MinimalDatePicker
+                                            value={formData.startDate}
+                                            onChange={(dateStr) => setFormData({ ...formData, startDate: dateStr })}
+                                            placeholder="Select start date..."
+                                            popoverPosition="top"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1">
+                                            Start Time:
+                                        </label>
+                                        <MinimalTimePicker
+                                            value={formData.startTime || ""}
+                                            onChange={(timeStr) => setFormData({ ...formData, startTime: timeStr })}
+                                        />
+                                    </div>
+                                </div>
+                                <span className="text-xs font-normal text-gray-400 block mt-1">
+                                    Leave blank to make the exam immediately available to students.
+                                </span>
+                            </div>
+
+                            {/* TIME LIMIT & ATTEMPTS */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="flex flex-col gap-1">
+                                    <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-0.5">
+                                        Exam Duration (Minutes):
+                                    </label>
                                     <input
-                                        type="datetime-local"
-                                        value={formData.unlockDate}
-                                        onChange={e => setFormData({ ...formData, unlockDate: e.target.value })}
-                                        className="w-full h-11 rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-[#8c8c8c] focus:outline-none focus:ring-1 focus:ring-gray-300"
+                                        type="number"
+                                        min={0}
+                                        max={360}
+                                        placeholder="0 (Unlimited)"
+                                        value={formData.timeLimitMinutes === 0 ? "" : (formData.timeLimitMinutes || "")}
+                                        onChange={(e) => setFormData({ ...formData, timeLimitMinutes: Math.max(0, Number(e.target.value)) })}
+                                        className="w-full h-10 rounded-xl border border-gray-200 px-3 text-sm focus:outline-none focus:border-gray-400 font-medium text-gray-800"
                                     />
-                                    <CalendarIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 pointer-events-none" />
+                                    <span className="text-xs font-normal text-gray-400">
+                                        Set to 0 for unlimited duration.
+                                    </span>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-0.5">
+                                        Allowed Retries:
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={10}
+                                        placeholder="0"
+                                        value={formData.maxRetries ?? 0}
+                                        onChange={(e) => setFormData({ ...formData, maxRetries: Math.max(0, Number(e.target.value)) })}
+                                        className="w-full h-10 rounded-xl border border-gray-200 px-3 text-sm focus:outline-none focus:border-gray-400 font-medium text-gray-800"
+                                    />
+                                    <span className="text-xs font-normal text-gray-400">
+                                        0 = single attempt only.
+                                    </span>
                                 </div>
                             </div>
 
-                            {/* Footer */}
-                            <div className="flex items-center justify-between pt-6 border-t border-gray-100 mt-6">
-                                {/* Status toggle */}
-                                <div className="flex items-center gap-3">
-                                    <span className="text-[#7a7a7a] text-[13px] font-bold">Status:</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, status: formData.status === "Locked" ? "Active" : "Locked" })}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <div className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${formData.status === "Active" ? "bg-[#e0d68f]" : "bg-gray-300"}`}>
-                                            <div className={`w-5 h-5 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${formData.status === "Active" ? "translate-x-[20px]" : "translate-x-0"}`} />
-                                        </div>
-                                        <span className={`text-[13px] font-bold ${formData.status === "Active" ? "text-[#e0d68f]" : "text-[#f06e6e]"}`}>
-                                            {formData.status}
-                                        </span>
-                                    </button>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsModalOpen(false)}
-                                        className="px-6 py-2.5 rounded-2xl border border-gray-200 text-[#7a7a7a] text-[13px] font-bold hover:bg-gray-50 transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="flex items-center gap-2 px-8 py-2.5 rounded-2xl bg-[#eedc82] text-white text-[13px] font-bold hover:bg-[#e0d075] transition-colors shadow-sm"
-                                    >
-                                        <Save className="h-4 w-4" /> Save
-                                    </button>
-                                </div>
+                            {/* Action Buttons Footer */}
+                            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 mt-5">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="rounded-lg px-4 py-2 text-xs font-semibold text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={saving || !formData.title.trim() || !formData.examCode.trim()}
+                                    className="rounded-lg px-5 py-2 text-xs font-bold text-white bg-[#E9C46A] hover:bg-[#dfb550] transition-colors disabled:opacity-50 shadow-sm uppercase tracking-wide cursor-pointer flex items-center gap-1.5"
+                                >
+                                    {saving ? (
+                                         <>
+                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                            <span>Saving...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save className="h-3.5 w-3.5" />
+                                            <span>{editingExam ? "Save Changes" : "Save Exam"}</span>
+                                        </>
+                                    )}
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
+            {/* Reusable Confirm Delete Modal */}
+            <ConfirmDeleteModal 
+                isOpen={deleteModal.isOpen}
+                title={deleteModal.title}
+                description={deleteModal.description}
+                isDeleting={deleteModal.isDeleting}
+                onConfirm={deleteModal.onConfirm}
+                onCancel={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     )
 }

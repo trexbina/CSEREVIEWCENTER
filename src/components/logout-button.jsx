@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { LogOut } from "lucide-react"
+import { LogOut, Loader2 } from "lucide-react"
 
 export function LogoutButton({ iconOnly = false, className = "" }) {
   const [loggingOut, setLoggingOut] = useState(false)
@@ -20,12 +20,22 @@ export function LogoutButton({ iconOnly = false, className = "" }) {
       disabled={loggingOut}
       title="Logout"
       aria-label="Logout"
-      className={`inline-flex items-center justify-center gap-1.5 rounded-md border border-border bg-background font-medium text-foreground transition-colors hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 shrink-0 ${
-        iconOnly ? "h-8 w-8 p-0" : "h-8 px-2.5 text-xs"
+      className={`group/logout inline-flex items-center gap-2.5 rounded-xl border border-transparent font-semibold text-xs transition-all cursor-pointer disabled:opacity-50 ${
+        iconOnly
+          ? "size-9 justify-center p-0 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 shadow-2xs"
+          : "w-full h-9.5 px-3 justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
       } ${className}`}
     >
-      <LogOut className="h-3.5 w-3.5" />
-      {!iconOnly && <span>{loggingOut ? "Logging out..." : "Logout"}</span>}
+      {loggingOut ? (
+        <Loader2 className="h-4 w-4 animate-spin shrink-0 text-muted-foreground" />
+      ) : (
+        <LogOut className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover/logout:-translate-x-0.5" />
+      )}
+      {!iconOnly && (
+        <span className="truncate">
+          {loggingOut ? "Logging out..." : "Log Out"}
+        </span>
+      )}
     </button>
   )
 }

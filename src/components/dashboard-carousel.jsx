@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ChevronLeft, ChevronRight, Settings, X, Plus, Pencil, Trash2, Upload, Loader2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Settings, X, Plus, Pencil, Trash, Upload, Loader2, ImageIcon } from "lucide-react"
+import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 
 export function DashboardCarousel() {
     const [slides, setSlides] = useState([])
@@ -163,25 +164,43 @@ export function DashboardCarousel() {
         }
     }
 
-    // Delete Slide
-    const handleDeleteSlide = async (id) => {
-        if (!confirm("Are you sure you want to delete this slide?")) return
+    // Confirm Delete Modal State
+    const [deleteModal, setDeleteModal] = useState({
+        isOpen: false,
+        title: "Confirm Deletion",
+        description: "Are you sure you want to delete this item? This action cannot be undone.",
+        onConfirm: null,
+        isDeleting: false
+    })
 
-        try {
-            const res = await fetch(`/api/admin/carousel?id=${id}`, {
-                method: "DELETE",
-            })
-            if (res.ok) {
-                await fetchSlides()
-                setIsModalOpen(false)
-            } else {
-                const error = await res.json()
-                alert(error.error || "Failed to delete slide")
-            }
-        } catch (err) {
-            console.error("Delete error:", err)
-            alert("Error deleting slide")
-        }
+    // Delete Slide
+    const handleDeleteSlide = (id, slideTitle = "this slide") => {
+        setDeleteModal({
+            isOpen: true,
+            title: "Delete Carousel Slide",
+            description: `Are you sure you want to delete "${slideTitle}" from the dashboard carousel? This action cannot be undone.`,
+            onConfirm: async () => {
+                setDeleteModal(prev => ({ ...prev, isDeleting: true }))
+                try {
+                    const res = await fetch(`/api/admin/carousel?id=${id}`, {
+                        method: "DELETE",
+                    })
+                    if (res.ok) {
+                        await fetchSlides()
+                        setIsModalOpen(false)
+                    } else {
+                        const error = await res.json()
+                        alert(error.error || "Failed to delete slide")
+                    }
+                } catch (err) {
+                    console.error("Delete error:", err)
+                    alert("Error deleting slide")
+                } finally {
+                    setDeleteModal({ isOpen: false, title: "", description: "", onConfirm: null, isDeleting: false })
+                }
+            },
+            isDeleting: false
+        })
     }
 
     if (loading) {
@@ -197,7 +216,7 @@ export function DashboardCarousel() {
                         onClick={openAddModal}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/95 transition-colors shadow-sm"
                     >
-                        <Plus className="h-4 w-4" /> Add Slide
+                        Add Slide
                     </button>
                 )}
             </div>
@@ -302,225 +321,234 @@ export function DashboardCarousel() {
 
             {/* Admin Settings Modal Dialog */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="w-full max-w-2xl bg-background rounded-xl border border-border shadow-2xl p-6 md:p-8 animate-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="w-full max-w-xl bg-card rounded-2xl border border-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between border-b border-border pb-4 mb-6">
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-border">
                             <div>
-                                <h3 className="text-lg font-bold text-foreground">Carousel Banner Manager</h3>
+                                <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight">Carousel Banner Manager</h3>
                                 <p className="text-xs text-muted-foreground mt-0.5">Manage slides, badges, images and announcements</p>
                             </div>
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 hover:bg-accent transition-colors"
+                                className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
                             >
-                                <X className="h-5 w-5" />
+                                <X className="h-4 w-4" />
                             </button>
                         </div>
 
-                        {/* List view / Add view / Edit view */}
-                        {modalView === "list" ? (
-                            // LIST SLIDES VIEW
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <h4 className="text-sm font-semibold text-muted-foreground">Active Slides ({slides.length})</h4>
-                                    <button
-                                        onClick={openAddModal}
-                                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/95 transition-colors shadow-sm"
-                                    >
-                                        <Plus className="h-3.5 w-3.5" /> Add New Slide
-                                    </button>
-                                </div>
-
-                                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-                                    {slides.map((slide) => (
-                                        <div
-                                            key={slide.id}
-                                            className="flex items-center gap-4 bg-muted/40 border border-border p-3 rounded-lg hover:bg-muted/60 transition-colors"
+                        {/* Modal Body */}
+                        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                            {/* List view / Add view / Edit view */}
+                            {modalView === "list" ? (
+                                // LIST SLIDES VIEW (Table/List Style)
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center pb-2 border-b border-border/60">
+                                        <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                            Active Slides ({slides.length})
+                                        </h4>
+                                        <button
+                                            onClick={openAddModal}
+                                            className="rounded-lg bg-[#E9C46A] hover:bg-[#dfb550] px-3.5 py-1.5 text-xs font-bold text-white uppercase tracking-wider transition-all shadow-xs cursor-pointer"
                                         >
-                                            <img
-                                                src={slide.src}
-                                                alt={slide.title || "Slide"}
-                                                className="w-16 h-10 object-cover rounded border border-border shrink-0"
-                                            />
-                                            <div className="flex-1 min-w-0">
-                                                <span className="inline-block text-[9px] font-bold text-primary uppercase bg-primary/10 px-2 py-0.5 rounded-full mb-1">
-                                                    {slide.badge || "No Badge"}
-                                                </span>
-                                                <h5 className="text-sm font-bold text-foreground truncate">{slide.title || "No Title"}</h5>
-                                                <p className="text-xs text-muted-foreground truncate">{slide.description || "No description"}</p>
-                                            </div>
-                                            <div className="flex items-center gap-1 shrink-0">
-                                                <button
-                                                    onClick={() => openEditModal(slide)}
-                                                    className="p-1.5 hover:bg-accent text-foreground hover:text-blue-500 rounded transition-colors"
-                                                    title="Edit Slide"
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteSlide(slide.id)}
-                                                    className="p-1.5 hover:bg-accent text-destructive hover:text-destructive rounded transition-colors"
-                                                    title="Delete Slide"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ) : (
-                            // ADD / EDIT FORM VIEW
-                            <form onSubmit={handleSaveSlide} className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Left: Fields */}
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                                                Badge Text
-                                            </label>
-                                            <input
-                                                type="text"
-                                                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                                                placeholder="e.g. New Course Available"
-                                                value={formData.badge}
-                                                onChange={(e) => setFormData((prev) => ({ ...prev, badge: e.target.value }))}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                                                Slide Title
-                                            </label>
-                                            <input
-                                                type="text"
-                                                required
-                                                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                                                placeholder="e.g. Advancing Through Neural Networks"
-                                                value={formData.title}
-                                                onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                                                Description
-                                            </label>
-                                            <textarea
-                                                className="w-full p-3 rounded-md border border-input bg-background text-sm h-24 resize-none"
-                                                placeholder="Describe the announcement or course details..."
-                                                value={formData.description}
-                                                onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                                            />
-                                        </div>
+                                            Add New Slide
+                                        </button>
                                     </div>
 
-                                    {/* Right: Media & Details */}
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                                                Banner Image URL / Upload
+                                    <div className="divide-y divide-border/60">
+                                        {slides.map((slide) => (
+                                            <div
+                                                key={slide.id}
+                                                className="flex items-center gap-3.5 py-3 first:pt-1 last:pb-1 hover:bg-muted/30 px-2 rounded-lg transition-colors group/row"
+                                            >
+                                                {/* Slide Image Preview */}
+                                                <div className="w-16 h-10 rounded-lg overflow-hidden border border-border/70 bg-muted shrink-0 shadow-2xs">
+                                                    <img
+                                                        src={slide.src}
+                                                        alt={slide.title || "Slide"}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+
+                                                {/* Slide Details */}
+                                                <div className="flex-1 min-w-0">
+                                                    <h5 className="text-xs font-bold text-foreground truncate mb-0.5">
+                                                        {slide.title || "Untitled Slide"}
+                                                    </h5>
+                                                    <p className="text-[11px] text-muted-foreground truncate font-normal">
+                                                        {slide.description || "No description provided."}
+                                                    </p>
+                                                </div>
+
+                                                {/* Action Buttons */}
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <button
+                                                        onClick={() => openEditModal(slide)}
+                                                        className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-colors cursor-pointer"
+                                                        title="Edit Slide"
+                                                    >
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteSlide(slide.id, slide.title || "Slide")}
+                                                        className="p-1.5 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer"
+                                                        title="Delete Slide"
+                                                    >
+                                                        <Trash className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                // ADD / EDIT FORM VIEW (Matching Categories & Subjects Modal Design)
+                                <form id="carousel-slide-form" onSubmit={handleSaveSlide} className="space-y-4">
+                                    <div className="flex items-start gap-4">
+                                        {/* Image Picker */}
+                                        <div className="space-y-1 shrink-0">
+                                            <label className="block text-xs font-semibold text-[#7a7a7a] dark:text-muted-foreground uppercase mb-1">
+                                                Image:
                                             </label>
-                                            <div className="flex gap-2">
+                                            <div className="relative h-24 w-32 rounded-xl border border-border bg-muted/40 flex flex-col items-center justify-center overflow-hidden hover:border-[#E9C46A]/70 hover:bg-muted transition-all cursor-pointer group shadow-2xs">
+                                                {uploading ? (
+                                                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                                ) : formData.src ? (
+                                                    <img src={formData.src} alt="Banner Preview" className="absolute inset-0 h-full w-full object-cover z-10" />
+                                                ) : (
+                                                    <div className="text-center flex flex-col items-center gap-1">
+                                                        <ImageIcon className="h-5 w-5 text-muted-foreground group-hover:text-[#E9C46A] transition-colors" />
+                                                        <span className="text-[10px] font-medium text-muted-foreground group-hover:text-[#E9C46A] transition-colors">Upload</span>
+                                                    </div>
+                                                )}
+                                                {!uploading && (
+                                                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                                        <Pencil className="h-4 w-4 text-white" />
+                                                    </div>
+                                                )}
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    disabled={uploading}
+                                                    onChange={handleImageUpload}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
+                                                    title="Choose an image"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Badge and Title Input Fields */}
+                                        <div className="flex-1 space-y-3">
+                                            <div>
+                                                <label className="block text-xs font-semibold text-[#7a7a7a] dark:text-muted-foreground uppercase mb-1">
+                                                    Badge Text:
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full h-10 rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:border-slate-400 font-medium text-foreground transition-all"
+                                                    placeholder="e.g. New Course Available"
+                                                    value={formData.badge}
+                                                    onChange={(e) => setFormData((prev) => ({ ...prev, badge: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-[#7a7a7a] dark:text-muted-foreground uppercase mb-1">
+                                                    Slide Title:
+                                                </label>
                                                 <input
                                                     type="text"
                                                     required
-                                                    className="flex-1 h-10 px-3 rounded-md border border-input bg-background text-sm"
-                                                    placeholder="Image path or external URL"
-                                                    value={formData.src}
-                                                    onChange={(e) => setFormData((prev) => ({ ...prev, src: e.target.value }))}
-                                                />
-                                                <label className="flex items-center justify-center size-10 rounded-md border border-input bg-muted hover:bg-accent transition-colors cursor-pointer shrink-0">
-                                                    {uploading ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                                                    ) : (
-                                                        <Upload className="h-4 w-4 text-muted-foreground" />
-                                                    )}
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        className="hidden"
-                                                        disabled={uploading}
-                                                        onChange={handleImageUpload}
-                                                    />
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                                                    Order
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                                                    value={formData.slide_order}
-                                                    onChange={(e) => setFormData((prev) => ({ ...prev, slide_order: parseInt(e.target.value, 10) || 0 }))}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                                                    Alt Text
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                                                    placeholder="e.g. Banner promo image"
-                                                    value={formData.alt}
-                                                    onChange={(e) => setFormData((prev) => ({ ...prev, alt: e.target.value }))}
+                                                    className="w-full h-10 rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:border-slate-400 font-medium text-foreground transition-all"
+                                                    placeholder="e.g. Advancing Through Neural Networks"
+                                                    value={formData.title}
+                                                    onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                                                 />
                                             </div>
                                         </div>
-
-                                        {formData.src && (
-                                            <div className="relative aspect-[21/7] rounded border border-border overflow-hidden bg-muted">
-                                                <img src={formData.src} alt="Preview" className="w-full h-full object-cover" />
-                                            </div>
-                                        )}
                                     </div>
-                                </div>
 
-                                <div className="flex justify-between border-t border-border pt-4 mt-6">
-                                    {selectedSlide ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDeleteSlide(selectedSlide.id)}
-                                            className="inline-flex items-center gap-1 rounded-md border border-destructive bg-destructive/10 px-4 h-9 text-xs font-semibold text-destructive hover:bg-destructive hover:text-white transition-colors"
-                                        >
-                                            <Trash2 className="h-3.5 w-3.5" /> Delete
-                                        </button>
-                                    ) : (
-                                        <div />
-                                    )}
-
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                // Reset state back to Slide List
-                                                setFormData({ id: "", src: "", alt: "", badge: "New Course Available", title: "", description: "", slide_order: 0 })
-                                                setSelectedSlide(null)
-                                                setModalView("list")
-                                            }}
-                                            className="px-4 h-9 rounded-md border border-input text-xs font-medium text-foreground hover:bg-accent transition-colors"
-                                        >
-                                            Back to List
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={saving}
-                                            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 h-9 text-xs font-semibold text-primary-foreground hover:bg-primary/95 transition-colors"
-                                        >
-                                            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                                            Save Slide
-                                        </button>
+                                    {/* Description */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#7a7a7a] dark:text-muted-foreground uppercase mb-1">
+                                            Description:
+                                        </label>
+                                        <textarea
+                                            rows={3}
+                                            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:border-slate-400 font-medium text-foreground transition-all"
+                                            placeholder="Describe the announcement or course details..."
+                                            value={formData.description}
+                                            onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                                        />
                                     </div>
+
+                                    {/* Order number input */}
+                                    <div className="w-32">
+                                        <label className="block text-xs font-semibold text-[#7a7a7a] dark:text-muted-foreground uppercase mb-1">
+                                            Order:
+                                        </label>
+                                        <input
+                                            type="number"
+                                            className="w-full h-10 rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:border-slate-400 font-medium text-foreground transition-all"
+                                            value={formData.slide_order}
+                                            onChange={(e) => setFormData((prev) => ({ ...prev, slide_order: parseInt(e.target.value, 10) || 0 }))}
+                                        />
+                                    </div>
+                                </form>
+                            )}
+                        </div>
+
+                        {/* Modal Footer (Form View) */}
+                        {modalView !== "list" && (
+                            <div className="flex justify-between items-center px-6 py-4 border-t border-border bg-muted/20">
+                                {selectedSlide ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDeleteSlide(selectedSlide.id, selectedSlide.title || "Slide")}
+                                        className="inline-flex items-center gap-1.5 px-3 h-8.5 rounded-lg border border-border/80 text-xs font-semibold text-muted-foreground hover:text-rose-600 hover:border-rose-300 dark:hover:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
+                                    >
+                                        Delete
+                                    </button>
+                                ) : (
+                                    <div />
+                                )}
+
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setFormData({ id: "", src: "", alt: "", badge: "New Course Available", title: "", description: "", slide_order: 0 })
+                                            setSelectedSlide(null)
+                                            setModalView("list")
+                                        }}
+                                        className="px-4 py-2 rounded-lg text-xs font-semibold text-muted-foreground border border-border hover:bg-muted transition-colors cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        form="carousel-slide-form"
+                                        disabled={saving}
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#E9C46A] hover:bg-[#dfb550] px-5 py-2 text-xs font-bold text-white uppercase tracking-wider transition-all disabled:opacity-50 shadow-xs cursor-pointer"
+                                    >
+                                        {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                        Save Slide
+                                    </button>
                                 </div>
-                            </form>
+                            </div>
                         )}
                     </div>
                 </div>
             )}
+            {/* Reusable Confirm Delete Modal */}
+            <ConfirmDeleteModal 
+                isOpen={deleteModal.isOpen}
+                title={deleteModal.title}
+                description={deleteModal.description}
+                isDeleting={deleteModal.isDeleting}
+                onConfirm={deleteModal.onConfirm}
+                onCancel={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     )
 }

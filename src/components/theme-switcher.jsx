@@ -2,61 +2,54 @@
 
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
-
-// Diri ka mag set ug Theme
 const themes = [
-  { name: "modern", label: "Modern", description: "Clean blue tones, smooth rounded edges" },
-  { name: "classic", label: "Classic", description: "Warm earth tones, sharp square edges" },
-  { name: "focus", label: "Focus", description: "High contrast dark mode, pill-shaped elements" },
-  { name: "minimal-dark", label: "Minimal Dark", description: "Sleek dark mode with warm amber accents" },
+  { name: "light", label: "Light" },
+  { name: "dark", label: "Dark" },
 ]
 
 export function ThemeSwitcher() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Skeleton placeholder during SSR — prevents layout shift
   if (!mounted) {
     return (
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-muted-foreground">Theme:</span>
-        <div className="flex gap-1">
-          {themes.map((t) => (
-            <span
-              key={t.name}
-              className="rounded-md px-3 py-1.5 text-sm font-medium bg-secondary text-transparent animate-pulse"
-            >
-              {t.label}
-            </span>
-          ))}
-        </div>
-      </div>
+      <div className="h-10 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-muted/30 animate-pulse" />
     )
   }
 
+  // Normalize active value to 'light' or 'dark'
+  const currentTheme = theme === "dark" || theme === "minimal-dark" || theme === "focus" ? "dark" : "light"
+
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm font-medium text-muted-foreground">Theme:</span>
-      <div className="flex gap-1">
-        {themes.map((t) => (
-          <button
-            key={t.name}
-            onClick={() => setTheme(t.name)}
-            title={t.description}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${theme === t.name
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-secondary-foreground hover:bg-accent"
-              }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="w-full max-w-sm">
+      <Select value={currentTheme} onValueChange={setTheme}>
+        <SelectTrigger className="h-10 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-background/50 text-sm font-medium px-4 shadow-2xs hover:bg-muted/40 focus:ring-1 focus:ring-slate-300 dark:focus:ring-slate-600 focus:border-slate-400 dark:focus:border-slate-500 transition-all cursor-pointer">
+          <SelectValue placeholder="Select Theme" />
+        </SelectTrigger>
+        <SelectContent className="rounded-xl border border-slate-200 dark:border-slate-700 bg-card shadow-xl p-1.5 z-50">
+          {themes.map((t) => (
+            <SelectItem 
+              key={t.name} 
+              value={t.name}
+              className="text-sm font-medium rounded-lg cursor-pointer py-2.5 px-3 focus:bg-muted focus:text-foreground"
+            >
+              {t.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   )
 }

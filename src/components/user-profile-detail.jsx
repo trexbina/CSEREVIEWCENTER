@@ -6,7 +6,7 @@ import Link from "next/link"
 import {
   Calendar, MapPin, GraduationCap, Phone, Mail, User,
   Edit, BarChart3, Clock, ArrowLeft, Loader2, Save, X, BookOpen, AlertCircle,
-  Key, Lock, Eye, EyeOff
+  Key, Lock, Eye, EyeOff, ChevronDown, ChevronUp
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-export function UserProfileDetail({ initialUser }) {
+export function UserProfileDetail({ initialUser, showBackBtn = true }) {
   const router = useRouter()
   const [user, setUser] = useState(initialUser)
   const [activeTab, setActiveTab] = useState("info")
@@ -62,6 +62,9 @@ export function UserProfileDetail({ initialUser }) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   const [dropdownData, setDropdownData] = useState({ examinations: [], batches: [], programs: [], majors: [], schools: [], academic_courses: [] })
+  const [activities, setActivities] = useState([])
+  const [loadingActivities, setLoadingActivities] = useState(false)
+  const [isActivitiesExpanded, setIsActivitiesExpanded] = useState(false)
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -90,12 +93,46 @@ export function UserProfileDetail({ initialUser }) {
   useEffect(() => {
     // Fetch dropdown data for the edit modal
     fetch("/api/admin/master-data/dropdowns")
-      .then(res => res.json())
-      .then(data => {
-        if (data.examinations) setDropdownData(data)
+      .then(res => {
+        if (!res.ok) return null
+        return res.json()
       })
-      .catch(console.error)
+      .then(data => {
+        if (data && data.examinations) setDropdownData(data)
+      })
+      .catch(() => { })
   }, [])
+
+  useEffect(() => {
+    if (user.role === 'student' && user.id) {
+      setLoadingActivities(true)
+      fetch(`/api/student/activities?studentId=${user.id}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.activities) {
+            setActivities(data.activities)
+          }
+        })
+        .catch(() => { })
+        .finally(() => setLoadingActivities(false))
+    }
+  }, [user.id, user.role])
+
+  function formatActivityTime(dateStr) {
+    if (!dateStr) return ""
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / (1000 * 60))
+    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    if (diffMins < 1) return "Just now"
+    if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`
+    if (diffHrs < 24) return `Today, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    if (diffDays === 1) return `Yesterday, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  }
 
   // Scroll to section helper
   const handleTabClick = (tabId) => {
@@ -255,119 +292,88 @@ export function UserProfileDetail({ initialUser }) {
   const majorName = dropdownData.majors.find(m => m.id.toString() === majorId)?.name || user.major_name || "—"
   return (
     <div className="space-y-0">
-      {/* Back button */}
-      <div className="max-w-5xl mx-auto px-6 pt-6 pb-2">
-        <Link
-          href="/admin/users"
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted hover:text-foreground transition-all shadow-sm"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to User List
-        </Link>
-      </div>
-
       {/* Profile Header (Stretched) */}
       <div className="relative overflow-hidden w-full bg-card border-b border-border">
         {/* Banner with Illustrative Pattern from SVG */}
         <div
-          className="h-56 md:h-72 w-full bg-cover bg-center relative"
+          className="h-52 md:h-64 w-full bg-cover bg-center relative"
           style={{ backgroundImage: "url('/images/image0_1850_4352.jpg')" }}
         >
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-          <div className="absolute right-8 bottom-6 text-xs font-bold text-white bg-black/40 px-3.5 py-1.5 rounded-full backdrop-blur-md">
-            Enrolled: {formatDate(user.created_at)}
-          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
         </div>
 
         {/* Profile Info Row */}
-        <div className="px-8 pb-8 pt-0 relative flex flex-col items-center gap-4 -mt-16 md:-mt-20 z-10 text-center">
-          {/* Avatar (overlapping the banner) */}
-          <div className="h-32 w-32 md:h-36 md:w-36 rounded-full border-4 border-card bg-slate-200 dark:bg-slate-700 flex items-center justify-center shadow-xl overflow-hidden relative z-20 shrink-0">
+        <div className="px-6 md:px-10 pb-6 pt-0 relative flex flex-col items-center gap-3 -mt-16 md:-mt-20 z-10 text-center">
+
+          {/* Avatar (overlapping the banner, NO shadow) */}
+          <div className="h-32 w-32 md:h-36 md:w-36 rounded-full border-4 border-card bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden relative z-20 shrink-0">
             {user.avatar_url ? (
               <img src={user.avatar_url} alt={user.name} className="h-full w-full object-cover" />
             ) : (
-              <span className="text-5xl font-extrabold text-slate-600 dark:text-slate-200">
+              <span className="text-4xl font-bold text-slate-600 dark:text-slate-200">
                 {getAvatarInitial(user.name)}
               </span>
             )}
           </div>
 
           {/* Details */}
-          <div className="space-y-2">
-            <div className="flex flex-col items-center gap-2">
-              <h1 className="text-3xl font-extrabold text-foreground tracking-tight">
+          <div className="space-y-1">
+            <div className="flex flex-col items-center gap-1">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
                 {user.name}
               </h1>
-              <div className="flex justify-center gap-2">
-                <span className={`inline-flex items-center rounded-full px-3 py-0.5 text-xs font-bold uppercase tracking-wider ${
-                  user.role === 'admin' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' :
-                  user.role === 'teacher' ? 'bg-teal-500/10 text-teal-600 border border-teal-500/20' : 
-                  'bg-blue-500/10 text-blue-600 border border-blue-500/20'
-                }`}>
-                  {user.role}
-                </span>
-                {user.role === 'student' && batchName !== '—' && (
-                  <span className="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-semibold bg-muted text-muted-foreground border border-border">
-                    {batchName}
+              {user.role !== 'student' || showBackBtn ? (
+                <div className="flex justify-center items-center gap-2">
+                  <span className={`inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium uppercase tracking-wider ${user.role === 'admin' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                    user.role === 'teacher' ? 'bg-teal-50 text-teal-700 border border-teal-100' :
+                      'bg-blue-50 text-[#E9C46A] border border-blue-100/80'
+                    }`}>
+                    {user.role}
                   </span>
-                )}
-              </div>
+                </div>
+              ) : null}
             </div>
-            <p className="text-sm text-muted-foreground font-medium">
-              Logins: 18 · Last login: 2 hours ago
+            <p className="text-xs text-muted-foreground font-medium pt-0.5">
+              Logins: {user.login_count || 1} · Last login: {formatActivityTime(user.last_login_at || user.created_at)}
             </p>
-          </div>
-
-          {/* Edit User Button (Positioned on the right) */}
-          <div className="absolute right-8 top-20 md:top-24">
-            <Button
-              onClick={() => setIsEditing(true)}
-              className="bg-[#eed48f] hover:bg-[#e4c46c] text-slate-900 font-extrabold text-xs uppercase tracking-widest rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all px-6 py-3 flex items-center gap-2"
-            >
-              <Edit className="h-4 w-4" />
-              EDIT USER
-            </Button>
           </div>
         </div>
 
-        {/* Sticky Custom Nav Tabs */}
-        <div className="border-t border-border bg-slate-50/50 dark:bg-slate-900/50 px-6 py-4 flex justify-center gap-4 sticky top-0 z-30 backdrop-blur-md">
+        {/* Sticky Minimal Sub-nav Tabs (NO Blue Highlight) */}
+        <div className="border-t border-border bg-card backdrop-blur-md px-6 py-3 flex justify-center gap-8 sticky top-0 z-30">
           <button
             onClick={() => handleTabClick("info")}
             type="button"
-            className={`px-5 py-2 rounded-md text-xs font-bold tracking-wide uppercase transition-all border ${
-              activeTab === "info"
-                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-border shadow-sm"
-                : "bg-transparent text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50"
-            }`}
+            className={`text-sm font-medium tracking-wide transition-all pb-1.5 border-b-2 cursor-pointer ${activeTab === "info"
+              ? "border-slate-800 text-slate-900 font-semibold dark:border-slate-100 dark:text-white"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
           >
-            INFO
+            Overview
           </button>
-          
+
           {user.role === 'student' && (
             <>
               <button
                 onClick={() => handleTabClick("analytics")}
                 type="button"
-                className={`px-5 py-2 rounded-md text-xs font-bold tracking-wide uppercase transition-all border ${
-                  activeTab === "analytics"
-                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-border shadow-sm"
-                    : "bg-transparent text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50"
-                }`}
+                className={`text-sm font-medium tracking-wide transition-all pb-1.5 border-b-2 cursor-pointer ${activeTab === "analytics"
+                  ? "border-slate-800 text-slate-900 font-semibold dark:border-slate-100 dark:text-white"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
               >
-                ANALYTICAL OVERVIEW
+                Analytical Overview
               </button>
-              
+
               <button
                 onClick={() => handleTabClick("history")}
                 type="button"
-                className={`px-5 py-2 rounded-md text-xs font-bold tracking-wide uppercase transition-all border ${
-                  activeTab === "history"
-                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-border shadow-sm"
-                    : "bg-transparent text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50"
-                }`}
+                className={`text-sm font-medium tracking-wide transition-all pb-1.5 border-b-2 cursor-pointer ${activeTab === "history"
+                  ? "border-slate-800 text-slate-900 font-semibold dark:border-slate-100 dark:text-white"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
               >
-                HISTORY
+                Recent Activity
               </button>
             </>
           )}
@@ -380,13 +386,12 @@ export function UserProfileDetail({ initialUser }) {
         <div id="profile-info" className="scroll-mt-24 space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
             {/* Basics Card */}
-            <div className="md:col-span-2 rounded-[28px] border border-border bg-card p-8 shadow-sm space-y-6">
-              <div className="flex items-center gap-2 border-b border-border/80 pb-4">
-                <User className="h-5 w-5 text-primary" />
+            <div className="md:col-span-2 rounded-2xl border border-border bg-card p-6 sm:p-8 space-y-6">
+              <div className="border-b border-border pb-4">
                 <h3 className="text-lg font-bold text-foreground">Personal Details</h3>
               </div>
 
-              <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 text-sm">
+              <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
                 {[
                   { label: "Birthday", value: formatDate(user.birthday) },
                   { label: "Gender", value: user.gender || "—", capitalize: true },
@@ -400,15 +405,15 @@ export function UserProfileDetail({ initialUser }) {
                   { label: "Year Graduated", value: user.year_graduated || "—" },
                 ].map((field) => (
                   <div key={field.label} className="space-y-1">
-                    <p className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider">{field.label}</p>
-                    <p className={`text-sm font-semibold text-foreground ${field.capitalize ? "capitalize" : ""}`}>{field.value}</p>
+                    <p className="text-[13px] text-muted-foreground font-medium">{field.label}</p>
+                    <p className={`text-[15px] font-semibold text-foreground ${field.capitalize ? "capitalize" : ""}`}>{field.value}</p>
                   </div>
                 ))}
-                
+
                 {user.role === 'admin' && (
                   <div className="sm:col-span-2 space-y-1">
-                    <p className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider">Job Role Description</p>
-                    <p className="text-sm font-semibold text-foreground">{user.job_role_description || "—"}</p>
+                    <p className="text-[13px] text-muted-foreground font-medium">Job Role Description</p>
+                    <p className="text-[15px] font-semibold text-foreground">{user.job_role_description || "—"}</p>
                   </div>
                 )}
               </div>
@@ -417,55 +422,125 @@ export function UserProfileDetail({ initialUser }) {
             {/* Contact and Targets column */}
             <div className="space-y-6">
               {/* Contact Card */}
-              <div className="rounded-[28px] border border-border bg-card p-8 shadow-sm space-y-6">
-                <div className="flex items-center gap-2 border-b border-border/80 pb-4">
-                  <Phone className="h-5 w-5 text-primary" />
+              <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 space-y-6">
+                <div className="border-b border-border pb-4">
                   <h3 className="text-lg font-bold text-foreground">Contact Info</h3>
                 </div>
 
-                <div className="space-y-5 text-sm">
+                <div className="space-y-5">
                   <div className="space-y-1">
-                    <p className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider">Email Address</p>
-                    <a href={`mailto:${user.email}`} className="text-sm font-semibold text-primary hover:underline break-all block">
+                    <p className="text-[13px] text-muted-foreground font-medium">Email Address</p>
+                    <a href={`mailto:${user.email}`} className="text-[15px] font-semibold text-[#4382DF] hover:underline break-all block">
                       {user.email}
                     </a>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider">Phone Number</p>
-                    <p className="text-sm font-semibold text-foreground">{user.phone || "—"}</p>
+                    <p className="text-[13px] text-muted-foreground font-medium">Phone Number</p>
+                    <p className="text-[15px] font-semibold text-foreground">{user.phone || "—"}</p>
                   </div>
                 </div>
               </div>
 
               {/* Academic Target Card (For Students) */}
               {user.role === 'student' && (
-                <div className="rounded-[28px] border border-border bg-card p-8 shadow-sm space-y-6">
-                  <div className="flex items-center gap-2 border-b border-border/80 pb-4">
-                    <BookOpen className="h-5 w-5 text-primary" />
+                <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 space-y-6">
+                  <div className="border-b border-border pb-4">
                     <h3 className="text-lg font-bold text-foreground">Academic Profile</h3>
                   </div>
 
-                  <div className="space-y-5 text-sm">
+                  <div className="space-y-5">
                     <div className="space-y-1">
-                      <p className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider">Target Examination</p>
-                      <p className="text-sm font-semibold text-foreground">{examName}</p>
+                      <p className="text-[13px] text-muted-foreground font-medium">Target Examination</p>
+                      <p className="text-[15px] font-semibold text-foreground">{examName}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider">Batch / Year</p>
-                      <p className="text-sm font-semibold text-foreground">{batchName}</p>
+                      <p className="text-[13px] text-muted-foreground font-medium">Batch / Year</p>
+                      <p className="text-[15px] font-semibold text-foreground">{batchName}</p>
                     </div>
                     {programName && programName !== "—" && (
                       <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider">Program</p>
-                        <p className="text-sm font-semibold text-foreground">{programName}</p>
+                        <p className="text-[13px] text-muted-foreground font-medium">Program</p>
+                        <p className="text-[15px] font-semibold text-foreground">{programName}</p>
                       </div>
                     )}
                     {majorName && majorName !== "—" && (
                       <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider">Specialization / Major</p>
-                        <p className="text-sm font-semibold text-foreground">{majorName}</p>
+                        <p className="text-[13px] text-muted-foreground font-medium">Specialization / Major</p>
+                        <p className="text-[15px] font-semibold text-foreground">{majorName}</p>
                       </div>
                     )}
+                    <div className="space-y-1">
+                      <p className="text-[13px] text-muted-foreground font-medium">Enrolled</p>
+                      <p className="text-[15px] font-semibold text-foreground">{formatDate(user.created_at)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Teaching Assignment Card (For Teachers) */}
+              {user.role === 'teacher' && (
+                <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 space-y-6">
+                  <div className="border-b border-border pb-4">
+                    <h3 className="text-lg font-bold text-foreground">Teaching Assignment</h3>
+                  </div>
+
+                  <div className="space-y-5">
+                    <div className="space-y-1">
+                      <p className="text-[13px] text-muted-foreground font-medium">Target Examination</p>
+                      <p className="text-[15px] font-semibold text-foreground">{examName || "LEPT"}</p>
+                    </div>
+                    {programName && programName !== "—" && (
+                      <div className="space-y-1">
+                        <p className="text-[13px] text-muted-foreground font-medium">Course / Program</p>
+                        <p className="text-[15px] font-semibold text-foreground">{programName}</p>
+                      </div>
+                    )}
+                    {majorName && majorName !== "—" && (
+                      <div className="space-y-1">
+                        <p className="text-[13px] text-muted-foreground font-medium">Specialization / Major</p>
+                        <p className="text-[15px] font-semibold text-foreground">{majorName}</p>
+                      </div>
+                    )}
+                    {Array.isArray(user.targets) && user.targets.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-[13px] text-muted-foreground font-medium">Assigned Categories & Courses</p>
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {user.targets.map((t, idx) => {
+                            const str = String(t)
+                            let label = str
+                            if (str.includes("_cat_")) {
+                              const catId = parseInt(str.split("_cat_")[1])
+                              const cat = dropdownData.categories?.find(c => c.id === catId)
+                              if (cat) label = cat.name
+                            } else if (str.startsWith("cat_")) {
+                              const cat = dropdownData.categories?.find(c => c.id === parseInt(str.replace("cat_", "")))
+                              if (cat) label = cat.name
+                            } else if (str.startsWith("exam_")) {
+                              const ex = dropdownData.examinations?.find(e => e.id === parseInt(str.replace("exam_", "")))
+                              if (ex) label = ex.name
+                            } else if (str.startsWith("prog_")) {
+                              const pg = dropdownData.programs?.find(p => p.id === parseInt(str.replace("prog_", "")))
+                              if (pg) label = pg.name
+                            } else if (str.startsWith("maj_")) {
+                              const mj = dropdownData.majors?.find(m => m.id === parseInt(str.replace("maj_", "")))
+                              if (mj) label = mj.name
+                            }
+                            return (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center rounded-md bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-800 border border-teal-200/60 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800"
+                              >
+                                {label}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <p className="text-[13px] text-muted-foreground font-medium">Account Created</p>
+                      <p className="text-[15px] font-semibold text-foreground">{formatDate(user.created_at)}</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -476,130 +551,144 @@ export function UserProfileDetail({ initialUser }) {
         {/* PANEL: ANALYTICAL OVERVIEW */}
         {user.role === 'student' && (
           <div id="profile-analytics" className="scroll-mt-24 space-y-6 border-t border-border pt-8">
-            <div className="grid gap-6 md:grid-cols-5">
-              {/* Readiness Score Card */}
-              <div className="md:col-span-2 rounded-[28px] border border-border bg-card p-8 shadow-sm flex flex-col items-center justify-between text-center min-h-[340px]">
-                <h3 className="text-sm font-extrabold text-muted-foreground uppercase tracking-widest">
-                  Overall Readiness
-                </h3>
-                
-                {/* Circular Donut Chart */}
-                <div className="relative h-44 w-44 flex items-center justify-center my-4">
-                  <svg className="h-full w-full transform -rotate-90" viewBox="0 0 100 100">
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="40"
-                      className="stroke-slate-100 dark:stroke-slate-800"
-                      strokeWidth="8"
-                      fill="transparent"
-                    />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="40"
-                      className="stroke-[#eed48f]"
-                      strokeWidth="8"
-                      fill="transparent"
-                      strokeDasharray={`${2 * Math.PI * 40}`}
-                      strokeDashoffset={`${2 * Math.PI * 40 * (1 - 0.62)}`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute flex flex-col items-center">
-                    <span className="text-4xl font-black text-foreground">62%</span>
-                    <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider mt-0.5">Target: 80%</span>
-                  </div>
-                </div>
-
-                <span className="inline-flex items-center rounded-full bg-amber-500/10 border border-amber-500/25 px-5 py-1.5 text-xs font-extrabold text-amber-600 uppercase tracking-widest">
-                  FOR MONITORING
-                </span>
+            <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 space-y-6">
+              <div className="border-b border-border pb-4">
+                <h3 className="text-lg font-bold text-foreground">Analytical Overview</h3>
               </div>
 
-              {/* Competency Breakdown Bar Widget */}
-              <div className="md:col-span-3 rounded-[28px] border border-border bg-card p-8 shadow-sm space-y-6 flex flex-col justify-between">
-                <div>
-                  <h3 className="text-base font-bold text-foreground border-b border-border/80 pb-4 flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-primary" />
-                    Competency Breakdown
-                  </h3>
+              <div className="grid gap-8 md:grid-cols-5 items-center">
+                {/* Readiness Score Donut */}
+                <div className="md:col-span-2 flex flex-col items-center justify-center text-center md:border-r border-border md:pr-8 py-2 space-y-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Overall Readiness
+                  </h4>
+
+                  <div className="relative h-40 w-40 flex items-center justify-center my-1">
+                    <svg className="h-full w-full transform -rotate-90" viewBox="0 0 100 100">
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        className="stroke-slate-100 dark:stroke-slate-800"
+                        strokeWidth="8"
+                        fill="transparent"
+                      />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        className="stroke-[#eed48f]"
+                        strokeWidth="8"
+                        fill="transparent"
+                        strokeDasharray={`${2 * Math.PI * 40}`}
+                        strokeDashoffset={`${2 * Math.PI * 40 * (1 - 0.62)}`}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <div className="absolute flex flex-col items-center">
+                      <span className="text-3xl font-extrabold text-foreground">62%</span>
+                      <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Target: 80%</span>
+                    </div>
+                  </div>
+
+                  <span className="inline-flex items-center rounded-full bg-amber-500/10 border border-amber-500/25 px-4 py-1 text-xs font-semibold text-amber-600 uppercase tracking-wider">
+                    FOR MONITORING
+                  </span>
                 </div>
 
-                <div className="space-y-6 py-2">
-                  {[
-                    { name: "General Education", score: 65, color: "bg-[#eed48f]" },
-                    { name: "Professional Education", score: 58, color: "bg-orange-400" },
-                    { name: "Specialization (English)", score: 64, color: "bg-amber-400" }
-                  ].map((comp) => (
-                    <div key={comp.name} className="space-y-2">
-                      <div className="flex justify-between text-sm font-semibold">
-                        <span className="text-foreground">{comp.name}</span>
-                        <span className="text-muted-foreground">{comp.score}%</span>
+                {/* Competency Breakdown */}
+                <div className="md:col-span-3 space-y-4">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Competency Breakdown
+                  </h4>
+
+                  <div className="space-y-4 pt-1">
+                    {[
+                      { name: "General Education", score: 65, color: "bg-[#eed48f]" },
+                      { name: "Professional Education", score: 58, color: "bg-orange-400" },
+                      { name: "Specialization (English)", score: 64, color: "bg-amber-400" }
+                    ].map((comp) => (
+                      <div key={comp.name} className="space-y-1.5">
+                        <div className="flex justify-between text-sm font-medium">
+                          <span className="text-foreground">{comp.name}</span>
+                          <span className="text-muted-foreground">{comp.score}%</span>
+                        </div>
+                        <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${comp.color} rounded-full transition-all duration-500`}
+                            style={{ width: `${comp.score}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${comp.color} rounded-full transition-all duration-500`}
-                          style={{ width: `${comp.score}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* PANEL: HISTORY */}
+        {/* PANEL: HISTORY / RECENT ACTIVITY */}
         {user.role === 'student' && (
           <div id="profile-history" className="scroll-mt-24 space-y-6 border-t border-border pt-8">
-            <div className="rounded-[28px] border border-border bg-card p-8 shadow-sm space-y-6">
-              <h3 className="text-base font-bold text-foreground border-b border-border/80 pb-4 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                Recent Activity
-              </h3>
-
-              <div className="space-y-8 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100 dark:before:bg-slate-800">
-                {[
-                  {
-                    title: "Completed Quiz: Child and Adolescent Development (Quiz 4)",
-                    details: "Score: 52% (Failed) · Time taken: 14m 20s",
-                    time: "Today, 10:12 AM",
-                    success: false
-                  },
-                  {
-                    title: "Retook Comprehensive Mock Exam 1",
-                    details: "Overall Score: 80% · Target achieved!",
-                    time: "Oct 14, 2026, 2:00 PM",
-                    success: true
-                  },
-                  {
-                    title: "Completed Comprehensive Mock Exam 1",
-                    details: "Overall Score: 58% (Passed) · Score needs improvement.",
-                    time: "Oct 11, 2026, 2:00 PM",
-                    success: true
-                  }
-                ].map((act, index) => (
-                  <div key={index} className="flex gap-4 relative pl-8">
-                    <div className={`absolute left-[5px] top-1.5 h-4 w-4 rounded-full border-2 bg-card ${
-                      act.success ? "border-emerald-500" : "border-rose-500"
-                    }`} />
-
-                    <div className="space-y-1.5">
-                      <p className="font-semibold text-foreground text-sm leading-snug">
-                        {act.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground font-medium">
-                        {act.details}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground/60 font-semibold uppercase">
-                        {act.time}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+            <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 space-y-6">
+              <div className="border-b border-border pb-4">
+                <h3 className="text-lg font-bold text-foreground">
+                  Recent Activity
+                </h3>
               </div>
+
+              {loadingActivities ? (
+                <div className="flex items-center justify-center py-10 text-muted-foreground text-xs gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span>Loading recent activity…</span>
+                </div>
+              ) : activities.length === 0 ? (
+                <div className="py-12 text-center text-xs text-muted-foreground font-medium">
+                  No recent activities recorded yet. Completed quizzes and study progress will appear here.
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="space-y-6">
+                    {activities.slice(0, isActivitiesExpanded ? 10 : 5).map((act, index) => (
+                      <div key={act.id || index} className="flex gap-3.5 items-start">
+                        <div className="mt-1.5 h-2 w-2 rounded-full flex-shrink-0 bg-black dark:bg-white" />
+
+                        <div className="space-y-1">
+                          <p className="font-semibold text-foreground text-sm leading-snug">
+                            {act.title}
+                          </p>
+                          {act.details && (
+                            <p className="text-xs text-muted-foreground font-medium">
+                              {act.details}
+                            </p>
+                          )}
+                          <p className="text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider pt-0.5">
+                            {formatActivityTime(act.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {activities.length > 5 && (
+                    <div className="pt-2 flex justify-center border-t border-border/60">
+                      <button
+                        type="button"
+                        onClick={() => setIsActivitiesExpanded(!isActivitiesExpanded)}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 hover:bg-primary/5 px-4 py-2 rounded-xl transition-all cursor-pointer"
+                      >
+                        <span>{isActivitiesExpanded ? "Show Less" : "Show More"}</span>
+                        {isActivitiesExpanded ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -641,7 +730,7 @@ export function UserProfileDetail({ initialUser }) {
                       Account Password & Role
                     </h4>
                   </div>
-                  <span className="text-[11px] font-medium text-muted-foreground">
+                  <span className="text-xs font-medium text-muted-foreground">
                     Original password is encrypted & hidden
                   </span>
                 </div>
@@ -718,7 +807,7 @@ export function UserProfileDetail({ initialUser }) {
 
                 {/* Avatar Edit Upload */}
                 <div className="flex flex-col sm:flex-row items-center gap-5 pb-4 border-b border-border/50">
-                  <div className="relative h-20 w-20 rounded-full bg-slate-100 dark:bg-slate-900 border-2 border-dashed border-border flex items-center justify-center overflow-hidden">
+                  <div className="relative h-20 w-20 rounded-full bg-slate-100 dark:bg-slate-900 border-2 border-solid border-border flex items-center justify-center overflow-hidden">
                     {avatarUrl ? (
                       <img src={avatarUrl} alt="Avatar Preview" className="h-full w-full object-cover" />
                     ) : (
@@ -809,8 +898,8 @@ export function UserProfileDetail({ initialUser }) {
 
               {/* ═══ Education Background ═══ */}
               <div className="space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 border-b border-border pb-1">
-                  <GraduationCap className="h-4 w-4" /> Education Background
+                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-1">
+                  Education Background
                 </h4>
 
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -856,11 +945,36 @@ export function UserProfileDetail({ initialUser }) {
                 </div>
               </div>
 
-              {/* ═══ Academic Targets (Students only) ═══ */}
+              {/* ═══ Academic Targets (Teacher & Students) ═══ */}
+              {role === "teacher" && (
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-1">
+                    Teaching Assignment
+                  </h4>
+
+                  <div className="grid gap-4 sm:grid-cols-1">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Assigned Examination (e.g. LEPT)</Label>
+                      <Select value={examId} onValueChange={(val) => { setExamId(val); setProgramId(""); setMajorId(""); }}>
+                        <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"><SelectValue placeholder="Select Exam" /></SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-slate-950 border border-border">
+                          {dropdownData.examinations.map(e => (
+                            <SelectItem key={e.id} value={e.id.toString()}>{e.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Teachers will see curriculum modules, categories, and competencies associated with this examination.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {role === "student" && (
                 <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 border-b border-border pb-1">
-                    <BookOpen className="h-4 w-4" /> Academic Details
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-1">
+                    Academic Details
                   </h4>
 
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -939,7 +1053,6 @@ export function UserProfileDetail({ initialUser }) {
                   </>
                 ) : (
                   <>
-                    <Save className="h-4 w-4" />
                     Save Changes
                   </>
                 )}

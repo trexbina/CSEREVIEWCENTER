@@ -1,7 +1,10 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Loader2, Image as ImageIcon, Trash2, Plus, ArrowRight, GripVertical } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Loader2, Image as ImageIcon, Trash, Plus, ArrowRight, GripVertical, Save, HelpCircle, Clock, Calendar, AlertCircle, Settings, X, RotateCcw, Eye, PenTool, ArrowLeft, Maximize, Minimize, Play, CheckCircle2 } from "lucide-react"
+import MinimalDatePicker from "@/components/ui/MinimalDatePicker"
+import MinimalTimePicker from "@/components/ui/MinimalTimePicker"
 
 const GOOGLE_FONTS_URL = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto:wght@400;500;700&family=Poppins:wght@400;500;700&family=Lato:wght@400;700&family=Montserrat:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Nunito:wght@400;600;700&family=Raleway:wght@400;500;700&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&family=Source+Sans+3:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap"
 
@@ -24,8 +27,9 @@ const FONT_OPTIONS = [
     { label: "Courier New",    value: "'Courier New', monospace" },
 ]
 
-export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) {
-    const [lessonTitle, setLessonTitle] = useState("Quiz")
+export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = false, onToggleViewMode, backUrl }) {
+    const router = useRouter()
+    const [lessonTitle, setLessonTitle] = useState(examId ? "Mock Exam" : "Quiz")
     const [questions, setQuestions] = useState([])
     const [fetching, setFetching] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -33,11 +37,115 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
     const [dragOverBlockIndex, setDragOverBlockIndex] = useState(null)
     const [studentAnswers, setStudentAnswers] = useState({})
     const [isSubmitted, setIsSubmitted] = useState(false)
+    const [isQuizStarted, setIsQuizStarted] = useState(false)
+    const [internalPreview, setInternalPreview] = useState(false)
+    const effectiveIsStudent = isStudent || internalPreview
+
     const [quizSettings, setQuizSettings] = useState({
         fontFamily: "'Inter', sans-serif",
-        fontSize: 16
+        fontSize: 14,
+        startDate: "",
+        startTime: "",
+        isAssignment: false,
+        endDate: "",
+        endTime: "",
+        timeLimitMinutes: 0,
+        maxRetries: 0
     })
+    const [showSettings, setShowSettings] = useState(false)
+    const [timeRemaining, setTimeRemaining] = useState(null)
+    const [isTimeUp, setIsTimeUp] = useState(false)
+    const [timeTakenSeconds, setTimeTakenSeconds] = useState(null)
+    const [isFullscreen, setIsFullscreen] = useState(false)
+    const [attemptsCount, setAttemptsCount] = useState(1)
+    const startTimeRef = useRef(null)
     const fileInputRefs = useRef({})
+
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement)
+        }
+        document.addEventListener("fullscreenchange", handleFullscreenChange)
+        return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
+    }, [])
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch((err) => {
+                console.error("Error attempting fullscreen:", err)
+            })
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen()
+            }
+        }
+    }
+
+    useEffect(() => {
+        if (effectiveIsStudent && isQuizStarted && !startTimeRef.current) {
+            startTimeRef.current = Date.now()
+        }
+    }, [effectiveIsStudent, isQuizStarted])
+
+    // Helper to parse combined date and time
+    const getFullDateTime = (dateStr, timeStr, defaultTime) => {
+        if (!dateStr) return null
+        const time = timeStr && timeStr.trim() ? timeStr : defaultTime
+        return new Date(`${dateStr}T${time}`)
+    }
+
+    // Availability checks for student
+    const now = new Date()
+    const startDateTime = getFullDateTime(quizSettings.startDate, quizSettings.startTime, "00:00")
+    const endDateTime = (quizSettings.isAssignment && quizSettings.endDate) ? getFullDateTime(quizSettings.endDate, quizSettings.endTime, "23:59") : null
+    const isTooEarly = effectiveIsStudent && !internalPreview && startDateTime && startDateTime > now
+    const isPastDeadline = effectiveIsStudent && !internalPreview && endDateTime && endDateTime < now && !isSubmitted
+    const isQuizLocked = isTooEarly || isPastDeadline
+
+    // Start timer only after quiz is started
+    useEffect(() => {
+        if (!effectiveIsStudent || isSubmitted || fetching || isQuizLocked || !isQuizStarted) return
+        if (quizSettings.timeLimitMinutes && quizSettings.timeLimitMinutes > 0) {
+            if (timeRemaining === null) {
+                setTimeRemaining(quizSettings.timeLimitMinutes * 60)
+            }
+        }
+    }, [effectiveIsStudent, quizSettings.timeLimitMinutes, isSubmitted, fetching, isQuizLocked, isQuizStarted, timeRemaining])
+
+    // Decrement timer
+    useEffect(() => {
+        if (!effectiveIsStudent || isSubmitted || timeRemaining === null || timeRemaining <= 0 || isQuizLocked || !isQuizStarted) return
+
+        const interval = setInterval(() => {
+            setTimeRemaining(prev => {
+                if (prev <= 1) {
+                    clearInterval(interval)
+                    setIsTimeUp(true)
+                    setIsSubmitted(true)
+                    if (startTimeRef.current && timeTakenSeconds === null) {
+                        const duration = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000))
+                        setTimeTakenSeconds(duration)
+                    }
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                    return 0
+                }
+                return prev - 1
+            })
+        }, 1000)
+
+        return () => clearInterval(interval)
+    }, [effectiveIsStudent, isSubmitted, timeRemaining, isQuizLocked, isQuizStarted])
+
+    function formatTime(seconds) {
+        if (seconds === null || seconds < 0) return "00:00"
+        const hrs = Math.floor(seconds / 3600)
+        const mins = Math.floor((seconds % 3600) / 60)
+        const secs = seconds % 60
+        if (hrs > 0) {
+            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+        }
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    }
 
     // Load Google Fonts once
     useEffect(() => {
@@ -50,33 +158,117 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
     }, [])
 
     useEffect(() => {
-        if (!lessonId) return
-        fetchLessonData()
-    }, [lessonId])
+        if (examId) {
+            fetchExamData()
+        } else if (lessonId) {
+            fetchLessonData()
+        } else {
+            setFetching(false)
+        }
+    }, [lessonId, examId, isStudent, subjectId])
+
+    async function fetchExamData() {
+        setFetching(true)
+        setIsQuizStarted(false)
+        try {
+            const endpoint = isStudent 
+                ? `/api/student/mock-exams/${examId}`
+                : `/api/admin/mock-exams/${examId}`
+            const res = await fetch(endpoint, { cache: "no-store" })
+            if (res.ok) {
+                const data = await res.json()
+                const exam = data.exam
+                if (exam) {
+                    if (exam.title) setLessonTitle(exam.title)
+                    if (exam.questions) {
+                        let parsed = exam.questions
+                        if (typeof parsed === "string") {
+                            try { parsed = JSON.parse(parsed) } catch (e) { parsed = [] }
+                        }
+                        if (parsed && !Array.isArray(parsed) && parsed.questions) {
+                            setQuestions(parsed.questions)
+                            if (parsed.settings) {
+                                setQuizSettings(prev => ({
+                                    ...prev,
+                                    ...parsed.settings,
+                                    maxRetries: Number(parsed.settings.maxRetries ?? 0),
+                                    timeLimitMinutes: Number(parsed.settings.timeLimitMinutes ?? 0)
+                                }))
+                            }
+                        } else {
+                            setQuestions(Array.isArray(parsed) ? parsed : [])
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Fetch exam error:", err)
+        } finally {
+            setFetching(false)
+        }
+    }
 
     async function fetchLessonData() {
         setFetching(true)
+        setIsQuizStarted(false)
         try {
             const endpoint = isStudent
                 ? `/api/student/subjects/${subjectId}/lessons/${lessonId}`
                 : `/api/admin/subjects/${subjectId}/lessons/${lessonId}`
 
-            const res = await fetch(endpoint)
+            const res = await fetch(endpoint, { cache: "no-store" })
             if (res.ok) {
                 const { lesson } = await res.json()
                 if (lesson.title) setLessonTitle(lesson.title)
                 if (lesson.quiz_content) {
                     try {
-                        const parsed = JSON.parse(lesson.quiz_content)
+                        const parsed = typeof lesson.quiz_content === "string" 
+                            ? JSON.parse(lesson.quiz_content) 
+                            : lesson.quiz_content
+
                         if (parsed && !Array.isArray(parsed) && parsed.questions) {
                             setQuestions(parsed.questions)
-                            if (parsed.settings) setQuizSettings(parsed.settings)
+                            if (parsed.settings) {
+                                setQuizSettings(prev => ({
+                                    ...prev,
+                                    ...parsed.settings,
+                                    maxRetries: Number(parsed.settings.maxRetries ?? 0),
+                                    timeLimitMinutes: Number(parsed.settings.timeLimitMinutes ?? 0)
+                                }))
+                            }
                         } else {
                             setQuestions(Array.isArray(parsed) ? parsed : [])
                         }
                     } catch (e) {
                         console.error("Failed to parse quiz content")
                     }
+                }
+            }
+
+            // If student, check for existing saved submission
+            if (isStudent && lessonId) {
+                try {
+                    const subRes = await fetch(`/api/student/quiz-submissions?contentId=${lessonId}`)
+                    if (subRes.ok) {
+                        const subData = await subRes.json()
+                        if (subData.submission) {
+                            if (subData.submission.answers) {
+                                const parsedAns = typeof subData.submission.answers === 'string' 
+                                    ? JSON.parse(subData.submission.answers) 
+                                    : subData.submission.answers
+                                setStudentAnswers(parsedAns)
+                            }
+                            if (subData.submission.time_taken_seconds) {
+                                setTimeTakenSeconds(subData.submission.time_taken_seconds)
+                            }
+                            if (subData.submission.attempts_count) {
+                                setAttemptsCount(subData.submission.attempts_count)
+                            }
+                            setIsSubmitted(true)
+                        }
+                    }
+                } catch (subErr) {
+                    console.error("Failed to fetch previous quiz submission:", subErr)
                 }
             }
         } catch (err) {
@@ -87,18 +279,30 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
     }
 
     async function saveQuiz() {
-        if (!lessonId || isStudent) return
+        if (effectiveIsStudent) return
         setSaving(true)
         try {
-            const res = await fetch(`/api/admin/subjects/${subjectId}/lessons/${lessonId}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ quiz_content: JSON.stringify({ settings: quizSettings, questions }) })
-            })
-            if (!res.ok) throw new Error("Save failed")
+            if (examId) {
+                const res = await fetch(`/api/admin/mock-exams/${examId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: lessonTitle,
+                        questions: { settings: quizSettings, questions }
+                    })
+                })
+                if (!res.ok) throw new Error("Save failed")
+            } else if (lessonId) {
+                const res = await fetch(`/api/admin/subjects/${subjectId}/lessons/${lessonId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ quiz_content: JSON.stringify({ settings: quizSettings, questions }) })
+                })
+                if (!res.ok) throw new Error("Save failed")
+            }
         } catch (err) {
-            console.error("Failed to save quiz", err)
-            alert("Failed to save quiz content")
+            console.error("Failed to save content", err)
+            alert("Failed to save content")
         } finally {
             setSaving(false)
         }
@@ -119,6 +323,25 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
             ]
         }
         setQuestions([...questions, newQuestion])
+    }
+
+    const addQuestionAfter = (index) => {
+        const newQuestion = {
+            id: Date.now().toString(),
+            type: "question",
+            questionType: "Multiple Choice",
+            text: "",
+            image: null,
+            points: 1,
+            options: [
+                { id: Date.now() + "1", text: "Option 1" },
+                { id: Date.now() + "2", text: "Option 2" },
+                { id: Date.now() + "3", text: "Option 3" },
+            ]
+        }
+        const updated = [...questions]
+        updated.splice(index + 1, 0, newQuestion)
+        setQuestions(updated)
     }
 
     const addTitleDescription = () => {
@@ -205,7 +428,7 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
     }
 
     const toggleCorrectAnswer = (questionId, optionId) => {
-        if (isStudent) return
+        if (effectiveIsStudent) return
         setQuestions(questions.map(q => {
             if (q.id === questionId) {
                 return {
@@ -233,7 +456,7 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
     }
 
     const handleStudentOptionToggle = (questionId, optionId, questionType) => {
-        if (isSubmitted || !isStudent) return
+        if (isSubmitted || !effectiveIsStudent) return
         setStudentAnswers(prev => {
             const current = prev[questionId] || []
             if (questionType === "True or False") {
@@ -249,43 +472,112 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
     }
 
     const handleStudentShortAnswer = (questionId, text) => {
-        if (isSubmitted || !isStudent) return
+        if (isSubmitted || !effectiveIsStudent) return
         setStudentAnswers(prev => ({ ...prev, [questionId]: text }))
     }
 
-    const submitQuiz = () => {
+    const submitQuiz = async () => {
+        let duration = timeTakenSeconds
+        if (startTimeRef.current && (duration === null || duration === undefined)) {
+            duration = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000))
+            setTimeTakenSeconds(duration)
+        }
         setIsSubmitted(true)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+
+        if (!internalPreview && isStudent && lessonId) {
+            // Calculate total and earned points to save
+            let totalPts = 0
+            let earnedPts = 0
+            questions.filter(q => q.type === 'question').forEach(q => {
+                const pts = q.points !== undefined ? q.points : 1
+                totalPts += pts
+                let isQCorrect = false
+                if (q.questionType === "True or False" || q.questionType === "Multiple Choice") {
+                    const correctOptionIds = q.options?.filter(o => o.isCorrect).map(o => o.id) || []
+                    const studentSelectedIds = studentAnswers[q.id] || []
+                    if (correctOptionIds.length > 0 && 
+                        correctOptionIds.length === studentSelectedIds.length && 
+                        correctOptionIds.every(id => studentSelectedIds.includes(id))) {
+                        isQCorrect = true
+                    }
+                } else if (q.questionType === "Short Answer") {
+                    const correctAns = q.correctAnswer || ""
+                    if (correctAns.trim() !== "" && (studentAnswers[q.id] || "").trim().toLowerCase() === correctAns.trim().toLowerCase()) {
+                        isQCorrect = true
+                    }
+                }
+                if (isQCorrect) earnedPts += pts
+            })
+
+            try {
+                const res = await fetch('/api/student/quiz-submissions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contentId: parseInt(lessonId),
+                        earnedPoints: earnedPts,
+                        totalPoints: totalPts,
+                        timeTakenSeconds: duration || 0,
+                        answers: studentAnswers
+                    })
+                })
+                if (res.ok) {
+                    const data = await res.json()
+                    if (data.submission && data.submission.attempts_count) {
+                        setAttemptsCount(data.submission.attempts_count)
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to save student quiz submission:", err)
+            }
+        }
+    }
+
+    const handleRetryQuiz = () => {
+        setIsSubmitted(false)
+        setIsQuizStarted(true)
+        setStudentAnswers({})
+        setTimeTakenSeconds(null)
+        setIsTimeUp(false)
+        if (quizSettings.timeLimitMinutes && quizSettings.timeLimitMinutes > 0) {
+            setTimeRemaining(quizSettings.timeLimitMinutes * 60)
+        }
+        startTimeRef.current = Date.now()
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     async function handleImageUpload(e, blockId) {
-        const files = Array.from(e.target.files || [])
-        if (!files.length) return
+        const file = e.target.files?.[0]
+        if (!file) return
         try {
             const formData = new FormData()
-            formData.append("file", files[0])
-
-            const uploadRes = await fetch('/api/admin/upload', {
-                method: 'POST',
+            formData.append("file", file)
+            const res = await fetch("/api/admin/upload", {
+                method: "POST",
                 body: formData
             })
-            if (!uploadRes.ok) throw new Error("Upload failed")
-            const uploadData = await uploadRes.json()
-
-            // Update image URL for the block
-            setQuestions(questions.map(q => q.id === blockId ? { ...q, image: uploadData.url } : q))
+            if (res.ok) {
+                const data = await res.json()
+                if (data.url) {
+                    setQuestions(prev => prev.map(q => q.id === blockId ? { ...q, image: data.url } : q))
+                }
+            } else {
+                const errData = await res.json().catch(() => ({}))
+                alert(errData.error || "Image upload failed")
+            }
         } catch (err) {
-            console.error("Upload error", err)
-            alert("Failed to upload image")
+            console.error("Failed to upload image", err)
+            alert("Image upload failed")
         } finally {
-            if (fileInputRefs.current[blockId]) fileInputRefs.current[blockId].value = ""
+            if (e.target) e.target.value = ""
         }
     }
 
     function handleDragStart(e, index) {
         setDragBlockIndex(index)
+        e.dataTransfer.setData("text/plain", index)
         e.dataTransfer.effectAllowed = "move"
-        e.dataTransfer.setData("text/plain", index) // Required for Firefox
     }
 
     function handleDragOver(e, index) {
@@ -322,143 +614,537 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
         )
     }
 
+    // Calculate student score when submitted
+    let totalPoints = 0
+    let earnedPoints = 0
+    if (effectiveIsStudent && isSubmitted) {
+        questions.filter(q => q.type === 'question').forEach(q => {
+            const pts = q.points !== undefined ? q.points : 1
+            totalPoints += pts
+            let isQCorrect = false
+            if (q.questionType === "True or False" || q.questionType === "Multiple Choice") {
+                const correctOptionIds = q.options?.filter(o => o.isCorrect).map(o => o.id) || []
+                const studentSelectedIds = studentAnswers[q.id] || []
+                if (correctOptionIds.length > 0 && 
+                    correctOptionIds.length === studentSelectedIds.length && 
+                    correctOptionIds.every(id => studentSelectedIds.includes(id))) {
+                    isQCorrect = true
+                }
+            } else if (q.questionType === "Short Answer") {
+                const correctAns = q.correctAnswer || ""
+                if (correctAns.trim() !== "" && (studentAnswers[q.id] || "").trim().toLowerCase() === correctAns.trim().toLowerCase()) {
+                    isQCorrect = true
+                }
+            }
+            if (isQCorrect) earnedPoints += pts
+        })
+    }
+
     return (
         <div className="p-6 md:p-10 max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 w-full">
             {/* Main Content Area */}
             <div className="flex-1 w-full space-y-6">
-                
-                {/* Header Actions */}
-                {!isStudent && (
-                    <div className="flex flex-col gap-4 border-b border-gray-100 pb-6">
-                        {/* Row 1: Title + Save Button */}
-                        <div className="flex items-center justify-between">
-                            <h1 className="text-2xl font-black text-gray-800 tracking-tight">
-                                {lessonTitle}
-                            </h1>
-                            <button
-                                onClick={saveQuiz}
-                                disabled={saving}
-                                className="bg-[#71c58d] hover:bg-[#5db87a] disabled:opacity-50 text-white text-sm font-bold px-6 py-2.5 rounded shadow-sm transition-colors flex items-center gap-2"
-                            >
-                                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
-                            </button>
-                        </div>
 
-                        {/* Row 2: Add Buttons + Font Controls */}
+                {/* Internal Preview Banner */}
+                {internalPreview && (
+                    <div className="bg-[#E9C46A]/10 border border-[#E9C46A]/30 rounded-2xl p-3 px-4 flex items-center justify-between shadow-2xs">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-[#E9C46A]">
+                            <Eye className="h-4 w-4" />
+                            <span>Student Preview Mode — test your questions, time limit, and scoring.</span>
+                        </div>
+                        <button
+                            onClick={() => {
+                                setInternalPreview(false)
+                                setIsSubmitted(false)
+                                setStudentAnswers({})
+                            }}
+                            className="bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all cursor-pointer"
+                        >
+                            Exit Preview
+                        </button>
+                    </div>
+                )}
+                
+                {/* Student Header */}
+                {effectiveIsStudent && (
+                    <div className="border-b border-gray-200/80 pb-4 space-y-2">
                         <div className="flex items-center justify-between gap-4 flex-wrap">
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={addQuestion}
-                                    className="bg-[#fce9ea] hover:bg-[#f5cdd0] text-[#ba5a62] text-xs font-bold px-4 py-2 rounded shadow-sm uppercase tracking-wider transition-colors"
-                                >
-                                    + ADD QUESTION
-                                </button>
-                                <button
-                                    onClick={addTitleDescription}
-                                    className="bg-[#fce9ea] hover:bg-[#f5cdd0] text-[#ba5a62] text-xs font-bold px-4 py-2 rounded shadow-sm uppercase tracking-wider transition-colors"
-                                >
-                                    + ADD TITLE/DESCRIPTION
-                                </button>
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <h1 className="text-xl font-bold text-gray-800 tracking-tight">
+                                    {lessonTitle}
+                                </h1>
+                                {quizSettings.isAssignment && (
+                                    <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full border border-gray-200 text-xs font-medium">
+                                        Assignment
+                                    </span>
+                                )}
+                                {onToggleViewMode && (
+                                    <button
+                                        type="button"
+                                        onClick={onToggleViewMode}
+                                        className="px-3.5 py-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
+                                    >
+                                        <PenTool className="h-3.5 w-3.5 text-gray-500" />
+                                        <span>Admin View</span>
+                                    </button>
+                                )}
                             </div>
-                            <div className="flex items-center gap-2">
-                                <select 
-                                    value={quizSettings.fontFamily} 
-                                    onChange={(e) => setQuizSettings({ ...quizSettings, fontFamily: e.target.value })}
-                                    className="bg-white/50 border border-[#f5cdd0] text-[#ba5a62] text-xs font-bold px-3 py-2 rounded shadow-sm outline-none cursor-pointer hover:bg-white/80 transition-colors"
-                                    style={{ fontFamily: quizSettings.fontFamily }}
-                                >
-                                    {FONT_OPTIONS.map(f => (
-                                        <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
-                                            {f.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="flex items-center gap-1 border border-[#f5cdd0] rounded shadow-sm bg-white/50 px-2">
-                                    <input
-                                        type="number"
-                                        min={8}
-                                        max={72}
-                                        value={quizSettings.fontSize}
-                                        onChange={(e) => {
-                                            const val = Math.min(72, Math.max(8, Number(e.target.value)))
-                                            setQuizSettings({ ...quizSettings, fontSize: val || 16 })
-                                        }}
-                                        className="w-10 text-center text-[#ba5a62] text-xs font-bold outline-none bg-transparent py-2"
-                                    />
-                                    <span className="text-[#ba5a62] text-xs font-bold opacity-60">px</span>
-                                </div>
+
+                            {/* Right side: Timer (when active) OR Score / Attempts summary (when submitted) */}
+                            <div className="flex items-center gap-3">
+                                {quizSettings.timeLimitMinutes > 0 && isQuizStarted && !isSubmitted && !isQuizLocked && (
+                                    <div className="bg-white border border-gray-200/80 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-2xs">
+                                        <Clock className={`h-4 w-4 ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-500 animate-pulse' : 'text-[#E9C46A]'}`} />
+                                        <span className={`font-mono font-bold text-sm tracking-tight ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-600 animate-pulse' : 'text-gray-800'}`}>
+                                            {formatTime(timeRemaining)}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {isSubmitted && (() => {
+                                    const maxRetries = Number(quizSettings.maxRetries || 0)
+                                    const currentAttempts = attemptsCount || 1
+                                    const retriesLeft = Math.max(0, maxRetries - (currentAttempts - 1))
+                                    
+                                    return (
+                                        <div className="flex items-center gap-3 flex-wrap">
+                                            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200/80 rounded-xl px-3.5 py-1.5 text-xs text-gray-700 font-medium">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-gray-400">Score:</span>
+                                                    <span className="font-bold text-gray-900">{earnedPoints} / {totalPoints} pts</span>
+                                                </div>
+                                                <span className="text-gray-300">|</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-gray-400">Time Taken:</span>
+                                                    <span className="font-bold text-gray-900">{formatTime(timeTakenSeconds)}</span>
+                                                </div>
+                                                {maxRetries > 0 && (
+                                                    <>
+                                                        <span className="text-gray-300">|</span>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-gray-400">Retries:</span>
+                                                            <span className={`font-bold ${retriesLeft > 0 ? 'text-[#E9C46A]' : 'text-gray-500'}`}>
+                                                                {retriesLeft} / {maxRetries}
+                                                            </span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            {maxRetries > 0 && retriesLeft > 0 && (
+                                                <button
+                                                    onClick={handleRetryQuiz}
+                                                    className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-semibold px-3.5 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                                >
+                                                    <RotateCcw className="h-3.5 w-3.5 text-[#E9C46A]" />
+                                                    <span>Retry Quiz</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    )
+                                })()}
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Blocks Container */}
-                <div className={`space-y-8 ${isStudent ? 'bg-white pb-20' : 'bg-gray-50/30 p-4 rounded-3xl min-h-[500px]'}`}>
-                    {questions.length === 0 && !isStudent && (
-                        <div className="text-center text-gray-400 py-20 font-medium">
-                            No questions added yet. Click "+ ADD QUESTION" to get started.
+                {/* Header Actions */}
+                {!effectiveIsStudent && (
+                    <div className="border-b border-gray-200/80 pb-4 relative flex flex-col gap-3">
+                        {/* Row 1: Title + Save Button */}
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 min-w-0">
+                                {examId ? (
+                                    <input
+                                        type="text"
+                                        value={lessonTitle}
+                                        onChange={(e) => setLessonTitle(e.target.value)}
+                                        className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-[#E9C46A] outline-none pb-0.5"
+                                        placeholder="Mock Exam Title"
+                                    />
+                                ) : (
+                                    <h1 className="text-xl font-bold text-gray-800 tracking-tight truncate">
+                                        {lessonTitle}
+                                    </h1>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={toggleFullscreen}
+                                    className="p-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-800 transition-all shadow-2xs cursor-pointer flex items-center justify-center"
+                                    title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                                >
+                                    {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (onToggleViewMode) {
+                                            onToggleViewMode()
+                                        } else {
+                                            setInternalPreview(true)
+                                            setIsSubmitted(false)
+                                            setStudentAnswers({})
+                                            startTimeRef.current = Date.now()
+                                        }
+                                    }}
+                                    className="px-3 py-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
+                                >
+                                    <Eye className="h-3.5 w-3.5 text-gray-500" />
+                                    <span>Student View</span>
+                                </button>
+                                <button
+                                    onClick={saveQuiz}
+                                    disabled={saving}
+                                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                                    <span>Save Changes</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Row 2: Add buttons (Left) + Settings button (Right) */}
+                        <div className="flex items-center justify-between gap-4 flex-wrap">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={addQuestion}
+                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                                >
+                                    Add Question
+                                </button>
+                                <button
+                                    onClick={addTitleDescription}
+                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                                >
+                                    Add Title/Desc
+                                </button>
+                            </div>
+
+                            {!examId && (
+                                <button
+                                    onClick={() => setShowSettings(!showSettings)}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-700'}`}
+                                >
+                                    <Settings className="h-3.5 w-3.5" />
+                                    <span>Settings</span>
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Quiz Settings Modal Popup Overlay */}
+                        {showSettings && (
+                            <div 
+                                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
+                                onClick={(e) => {
+                                    if (e.target === e.currentTarget) setShowSettings(false)
+                                }}
+                            >
+                                <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xl w-full max-w-lg animate-in zoom-in-95 duration-200">
+                                    {/* Modal Header */}
+                                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-2xl">
+                                        <h3 className="font-bold text-gray-800 text-base">{examId ? "Exam Settings" : "Quiz Settings"}</h3>
+                                        <button 
+                                            onClick={() => setShowSettings(false)} 
+                                            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+
+                                    {/* Modal Body */}
+                                    <div className="p-6 space-y-6 text-sm">
+                                        {/* Section 1: Access & Schedule */}
+                                        <div>
+                                            <h4 className="font-bold text-gray-800 text-xs uppercase tracking-wider mb-3">Access & Schedule</h4>
+                                            
+                                            {/* Set as assignment tick checkbox */}
+                                            {!examId && (
+                                                <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-200/80 mb-4 transition-all">
+                                                    <label className="flex items-start gap-3 cursor-pointer select-none">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={!!quizSettings.isAssignment}
+                                                            onChange={(e) => setQuizSettings({ ...quizSettings, isAssignment: e.target.checked })}
+                                                            className="mt-0.5 rounded border-gray-300 text-[#E9C46A] focus:ring-0 h-4 w-4 cursor-pointer accent-[#E9C46A]"
+                                                        />
+                                                        <div>
+                                                            <span className="block text-xs font-bold text-gray-800">
+                                                                Set as assignment
+                                                            </span>
+                                                            <span className="block text-xs font-normal text-gray-500 mt-0.5">
+                                                                Marks this quiz as an assignment with a deadline
+                                                            </span>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            )}
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                                {/* Start Date */}
+                                                <div className="flex flex-col gap-1.5">
+                                                    <label className="font-semibold text-gray-600 text-xs">Start Date</label>
+                                                    <MinimalDatePicker
+                                                        value={quizSettings.startDate}
+                                                        onChange={(dateStr) => setQuizSettings({ ...quizSettings, startDate: dateStr })}
+                                                        placeholder="Select start date..."
+                                                        popoverPosition="bottom"
+                                                    />
+                                                </div>
+
+                                                {/* Start Time */}
+                                                <div className="flex flex-col gap-1.5">
+                                                    <label className="font-semibold text-gray-600 text-xs">Start Time</label>
+                                                    <MinimalTimePicker
+                                                        value={quizSettings.startTime || ""}
+                                                        onChange={(timeStr) => setQuizSettings({ ...quizSettings, startTime: timeStr })}
+                                                        size="compact"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* End Date and End Time (shown when isAssignment is true) */}
+                                            {quizSettings.isAssignment && (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-4 pt-4 border-t border-dashed border-gray-200 animate-in fade-in duration-150">
+                                                    {/* End Date */}
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <label className="font-semibold text-gray-600 text-xs">End Date (Deadline)</label>
+                                                        <MinimalDatePicker
+                                                            value={quizSettings.endDate}
+                                                            onChange={(dateStr) => setQuizSettings({ ...quizSettings, endDate: dateStr })}
+                                                            placeholder="Select due date..."
+                                                            popoverPosition="bottom"
+                                                        />
+                                                    </div>
+
+                                                    {/* End Time */}
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <label className="font-semibold text-gray-600 text-xs">End Time</label>
+                                                        <MinimalTimePicker
+                                                            value={quizSettings.endTime || ""}
+                                                            onChange={(timeStr) => setQuizSettings({ ...quizSettings, endTime: timeStr })}
+                                                            size="compact"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="border-t border-gray-100 pt-5">
+                                            {/* Section 2: Time Limit & Retries */}
+                                            <h4 className="font-bold text-gray-800 text-xs uppercase tracking-wider mb-3">Time Limit & Attempts</h4>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                                <div className="flex flex-col gap-1.5">
+                                                    <label className="font-semibold text-gray-600 text-xs">{examId ? "Exam Duration (Minutes)" : "Quiz Duration (Minutes)"}</label>
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        max={360}
+                                                        placeholder="0 (Unlimited)"
+                                                        value={quizSettings.timeLimitMinutes || ""}
+                                                        onChange={(e) => setQuizSettings({ ...quizSettings, timeLimitMinutes: Math.max(0, Number(e.target.value)) })}
+                                                        className="w-full bg-gray-50/60 border border-gray-200/80 rounded-xl px-3 py-2 text-gray-800 text-sm outline-none focus:bg-white focus:border-gray-400 transition-all"
+                                                    />
+                                                    <span className="text-xs text-gray-400">Set to 0 for unlimited duration.</span>
+                                                </div>
+
+                                                <div className="flex flex-col gap-1.5">
+                                                    <label className="font-semibold text-gray-600 text-xs">Allowed Retries</label>
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        max={10}
+                                                        placeholder="0 (No retries)"
+                                                        value={quizSettings.maxRetries ?? 0}
+                                                        onChange={(e) => setQuizSettings({ ...quizSettings, maxRetries: Math.max(0, Number(e.target.value)) })}
+                                                        className="w-full bg-gray-50/60 border border-gray-200/80 rounded-xl px-3 py-2 text-gray-800 text-sm outline-none focus:bg-white focus:border-gray-400 transition-all"
+                                                    />
+                                                    <span className="text-xs text-gray-400">0 = single attempt only.</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Modal Footer */}
+                                    <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end rounded-b-2xl">
+                                        <button
+                                            onClick={() => setShowSettings(false)}
+                                            className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold text-sm px-6 py-2 rounded-xl transition-all cursor-pointer shadow-2xs"
+                                        >
+                                            Done
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Student Floating Timer & Availability Banners */}
+                {effectiveIsStudent && (
+                    <div className="space-y-4">
+                        {isTooEarly && (
+                            <div className="inline-block max-w-xl bg-white border border-gray-200/80 rounded-xl px-4 py-3 text-xs text-gray-600 shadow-2xs">
+                                <span className="font-semibold text-gray-800">{examId ? "Exam Not Available Yet:" : "Quiz Not Available Yet:"}</span> Scheduled to open on <span className="font-medium text-gray-900">{startDateTime ? startDateTime.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : ''}</span>.
+                            </div>
+                        )}
+
+                        {isPastDeadline && (
+                            <div className="inline-block max-w-xl bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-xs text-rose-800 shadow-2xs">
+                                <span className="font-semibold">Assignment Deadline Passed:</span> This assignment closed on <span className="font-medium">{endDateTime ? endDateTime.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : ''}</span>.
+                            </div>
+                        )}
+
+                        {isTimeUp && (
+                            <div className="inline-block max-w-xl bg-white border border-gray-200/80 rounded-xl px-4 py-3 text-xs text-gray-600 shadow-2xs animate-in fade-in">
+                                <span className="font-semibold text-gray-800">Time is Up!</span> Your answers have been automatically submitted.
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Blocks Container or Start Quiz Card */}
+                {effectiveIsStudent && !isSubmitted && !isQuizStarted && !isQuizLocked ? (
+                    <div className="flex flex-col items-center justify-center min-h-[50vh] py-12 px-4 animate-in fade-in duration-200">
+                        <div className="w-full max-w-md mx-auto space-y-6">
+                            {/* Header Info */}
+                            <div className="text-center">
+                                <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-600 px-3 py-1 rounded-full border border-gray-200 text-xs font-medium">
+                                    <HelpCircle className="h-3.5 w-3.5 text-gray-400" />
+                                    <span>{examId ? "Examination Overview" : "Quiz Overview"}</span>
+                                </span>
+                            </div>
+
+                            {/* Minimal Meta List */}
+                            <div className="py-2 divide-y divide-gray-100 text-xs">
+                                <div className="flex items-center justify-between py-2.5">
+                                    <span className="text-gray-400 font-medium">Total Questions</span>
+                                    <span className="font-semibold text-gray-700">
+                                        {questions.filter(q => q.type === 'question').length} questions
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between py-2.5">
+                                    <span className="text-gray-400 font-medium">Time Limit</span>
+                                    <span className="font-semibold text-gray-700">
+                                        {quizSettings.timeLimitMinutes > 0 ? `${quizSettings.timeLimitMinutes} mins` : "Untimed"}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between py-2.5">
+                                    <span className="text-gray-400 font-medium">Attempts Allowed</span>
+                                    <span className="font-semibold text-gray-700">
+                                        {Number(quizSettings.maxRetries || 0) > 0 ? `${Number(quizSettings.maxRetries) + 1} attempts (${quizSettings.maxRetries} retries)` : "1 attempt"}
+                                    </span>
+                                </div>
+                                {quizSettings.isAssignment && endDateTime && (
+                                    <div className="flex items-center justify-between py-2.5">
+                                        <span className="text-gray-400 font-medium">Due Date</span>
+                                        <span className="font-semibold text-gray-700">
+                                            {endDateTime.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Action Button */}
+                            <div className="pt-2 text-center">
+                                <button
+                                    onClick={() => {
+                                        setIsQuizStarted(true)
+                                        startTimeRef.current = Date.now()
+                                        if (quizSettings.timeLimitMinutes > 0) {
+                                            setTimeRemaining(quizSettings.timeLimitMinutes * 60)
+                                        }
+                                    }}
+                                    disabled={isQuizLocked || questions.filter(q => q.type === 'question').length === 0}
+                                    className="w-full sm:w-auto min-w-[150px] bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-xs px-6 py-2.5 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
+                                >
+                                    <Play className="h-3.5 w-3.5 fill-white" />
+                                    <span>Start {examId ? "Exam" : "Quiz"}</span>
+                                </button>
+
+                                {isQuizLocked && (
+                                    <p className="text-xs text-rose-500 font-medium mt-2.5">
+                                        {isTooEarly ? "This quiz is not open yet." : "The deadline has passed."}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                ) : isQuizLocked ? null : (
+                <div className={`space-y-6 ${effectiveIsStudent ? 'bg-white pb-20' : 'min-h-[400px]'}`}>
+                    {questions.length === 0 && !effectiveIsStudent && (
+                        <div className="flex flex-col items-center justify-center text-center py-20 px-4">
+                            <div className="h-12 w-12 rounded-2xl bg-gray-100/80 flex items-center justify-center mb-3 text-gray-400">
+                                <HelpCircle className="h-6 w-6" />
+                            </div>
+                            <h3 className="text-sm font-bold text-gray-700 mb-1">No questions added yet</h3>
+                            <p className="text-xs text-gray-400 max-w-xs">
+                                Click "+ ADD QUESTION" above to start building your {examId ? "mock exam" : "quiz"}.
+                            </p>
                         </div>
                     )}
                     
-                    {questions.map((block, index) => {
+                    {!isQuizLocked && questions.map((block, index) => {
                         const questionNumber = block.type === "question" 
                             ? questions.slice(0, index + 1).filter(q => q.type === "question").length 
                             : null;
 
                         return (
-                        <div 
-                            id={`question-block-${block.id}`}
-                            key={block.id} 
-                            draggable={!isStudent}
-                            onDragStart={(e) => handleDragStart(e, index)}
-                            onDragOver={(e) => handleDragOver(e, index)}
-                            onDrop={(e) => handleDrop(e, index)}
-                            onDragEnd={handleDragEnd}
-                            className={`relative group transition-all ${isStudent ? 'py-4' : 'bg-white border text-sm border-gray-200 shadow-sm rounded-xl p-6'} ${dragOverBlockIndex === index && dragBlockIndex !== index ? 'border-blue-400 border-t-4 translate-y-1' : ''}`}
-                        >
+                        <div key={block.id} className="relative">
+                            <div 
+                                id={`question-block-${block.id}`}
+                                draggable={!effectiveIsStudent}
+                                onDragStart={(e) => handleDragStart(e, index)}
+                                onDragOver={(e) => handleDragOver(e, index)}
+                                onDrop={(e) => handleDrop(e, index)}
+                                onDragEnd={handleDragEnd}
+                                className={`relative group transition-all ${effectiveIsStudent ? 'py-3' : 'bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-xs'} ${dragOverBlockIndex === index && dragBlockIndex !== index ? 'border-gray-400 border-t-2' : ''}`}
+                            >
                             
-                            {!isStudent && (
+                            {!effectiveIsStudent && (
                                 <>
-                                    <div className="absolute top-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors">
-                                        <GripVertical className="h-4 w-4" />
+                                    <div className="absolute top-2.5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors">
+                                        <GripVertical className="h-3.5 w-3.5" />
                                     </div>
                                     <button 
                                         onClick={() => removeBlock(block.id)}
-                                        className="absolute -top-3 -right-3 h-8 w-8 bg-white border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-10"
+                                        className="absolute -top-3 -right-3 h-7 w-7 bg-white border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50 rounded-full shadow-2xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer"
+                                        title="Delete Question"
                                     >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash className="h-3.5 w-3.5" />
                                     </button>
                                 </>
                             )}
 
                             {block.type === "question" && (
-                                <div className="space-y-4">
-                                    {isStudent ? (
-                                        <div className="flex items-start gap-3 py-1 pl-3 group relative">
-                                            <span className="font-extrabold text-[#ba5a62]/60 whitespace-nowrap select-none pt-1" style={{ fontSize: `${quizSettings.fontSize}px` }}>{questionNumber}.</span>
+                                <div className="space-y-3">
+                                    {effectiveIsStudent ? (
+                                        <div className="flex items-start gap-2 py-0.5 group relative">
+                                            <span className="font-medium text-gray-400 whitespace-nowrap select-none text-sm pt-0.5" style={{ fontSize: `${quizSettings.fontSize}px` }}>{questionNumber}.</span>
                                             <span 
-                                                className="flex-1 whitespace-pre-wrap leading-relaxed text-gray-700 font-medium py-1 pr-12" 
+                                                className="flex-1 whitespace-pre-wrap leading-relaxed text-gray-800 font-normal text-sm py-0.5 pr-12" 
                                                 style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize}px` }}
                                             >{block.text}</span>
-                                            <span className="absolute right-0 top-1 text-gray-400 font-bold text-[10px] bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded uppercase tracking-widest pointer-events-none">
+                                            <span className="absolute right-0 top-1 text-gray-400 font-medium text-[10px] bg-gray-50 border border-gray-200/80 px-2 py-0.5 rounded-md pointer-events-none">
                                                 {block.points !== undefined ? block.points : 1} pt{(block.points !== undefined ? block.points : 1) !== 1 ? 's' : ''}
                                             </span>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-md p-1 pl-3 transition-colors focus-within:border-[#f5cdd0] focus-within:bg-white text-sm">
-                                            <span className="font-extrabold text-[#ba5a62]/60 whitespace-nowrap select-none" style={{ fontSize: `${quizSettings.fontSize}px` }}>
+                                        <div className="flex items-center gap-2 border-b border-gray-200/80 focus-within:border-gray-400 transition-colors pb-1">
+                                            <span className="font-medium text-gray-400 whitespace-nowrap select-none text-sm" style={{ fontSize: `${quizSettings.fontSize}px` }}>
                                                 {questionNumber}.
                                             </span>
                                             <input
                                                 type="text"
                                                 value={block.text}
                                                 onChange={(e) => updateQuestionText(block.id, e.target.value)}
-                                                placeholder="Type question here..."
+                                                placeholder="Type question prompt..."
                                                 style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize}px` }}
-                                                className="flex-1 bg-transparent py-2.5 outline-none text-gray-700 font-medium placeholder-gray-400"
+                                                className="flex-1 bg-transparent py-1 outline-none text-gray-800 font-medium placeholder-gray-400 text-sm"
                                             />
-                                            <label className="p-2 cursor-pointer hover:bg-gray-200 rounded text-gray-500 transition-colors">
-                                                <ImageIcon className="h-5 w-5" />
+                                            <label className="p-1 cursor-pointer hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-colors" title="Upload Image">
+                                                <ImageIcon className="h-4 w-4" />
                                                 <input 
                                                     type="file" 
                                                     accept="image/*" 
@@ -472,13 +1158,13 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
 
                                     {block.image && (
                                         <div className="relative inline-block mt-2">
-                                            <img src={block.image} alt="Question media" className="max-h-64 rounded-md border border-gray-200 object-contain" />
-                                            {!isStudent && (
+                                            <img src={block.image} alt="Question media" className="max-h-64 rounded-xl border border-gray-200/80 object-contain" />
+                                            {!effectiveIsStudent && (
                                                 <button 
                                                     onClick={() => setQuestions(questions.map(q => q.id === block.id ? { ...q, image: null } : q))}
-                                                    className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded hover:bg-red-500 transition-colors"
+                                                    className="absolute top-2 right-2 bg-black/50 text-white p-1 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
                                                 >
-                                                    <Trash2 className="h-3 w-3" />
+                                                    <Trash className="h-3.5 w-3.5" />
                                                 </button>
                                             )}
                                         </div>
@@ -486,55 +1172,79 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
 
                                     {/* Options Area (Visible for Multiple Choice) */}
                                     {block.questionType !== "Short Answer" && (
-                                        <div className="space-y-3 mt-4 ml-6">
+                                        <div className="space-y-1.5 mt-3 pl-4">
                                             {block.options?.map((option, oIdx) => {
                                                 const studentSelected = (studentAnswers[block.id] || []).includes(option.id)
+                                                const hasAnswered = (studentAnswers[block.id] || []).length > 0
+                                                const maxRetries = Number(quizSettings.maxRetries || 0)
+                                                const currentAttempts = attemptsCount || 1
+                                                const retriesLeft = Math.max(0, maxRetries - (currentAttempts - 1))
+                                                const hasRetriesRemaining = maxRetries > 0 && retriesLeft > 0
                                                 
-                                                let circleClass = "border-gray-300 bg-white"
+                                                let circleClass = "border-gray-300 bg-white text-blue-600"
                                                 let innerCircle = false
                                                 let optionBg = "transparent"
-                                                let optionText = "text-gray-600"
+                                                let optionText = "text-gray-700 font-normal"
 
-                                                if (isStudent && isSubmitted) {
-                                                    if (option.isCorrect) {
-                                                        circleClass = "border-green-500 bg-green-500/10"
+                                                if (effectiveIsStudent && isSubmitted) {
+                                                    if (!hasAnswered) {
+                                                        circleClass = "border-gray-300 bg-white text-gray-400"
+                                                        innerCircle = false
+                                                        optionBg = "transparent"
+                                                        optionText = "text-gray-600 font-normal"
+                                                    } else if (studentSelected && option.isCorrect) {
+                                                        circleClass = "border-green-500 bg-green-500 text-white"
                                                         innerCircle = true
-                                                        optionBg = "bg-green-50/50 rounded ring-1 ring-green-200"
-                                                        optionText = "text-green-800 font-bold"
+                                                        optionBg = "bg-green-50/50 rounded-md"
+                                                        optionText = "text-green-800 font-medium"
                                                     } else if (studentSelected && !option.isCorrect) {
-                                                        circleClass = "border-red-500 bg-red-500/10"
+                                                        circleClass = "border-red-500 bg-red-500 text-white"
                                                         innerCircle = true
-                                                        optionBg = "bg-red-50/50 rounded ring-1 ring-red-200"
-                                                        optionText = "text-red-800 line-through"
+                                                        optionBg = "bg-red-50/50 rounded-md"
+                                                        optionText = "text-red-700 line-through"
+                                                    } else if (option.isCorrect) {
+                                                        if (hasRetriesRemaining) {
+                                                            // Hide correct answer while student still has retries remaining
+                                                            circleClass = "border-gray-300 bg-white text-gray-400"
+                                                            innerCircle = false
+                                                            optionBg = "transparent"
+                                                            optionText = "text-gray-700 font-normal"
+                                                        } else {
+                                                            // Reveal correct answer when all retries are finished
+                                                            circleClass = "border-green-500 bg-green-500 text-white"
+                                                            innerCircle = true
+                                                            optionBg = "bg-green-50/50 rounded-md"
+                                                            optionText = "text-green-800 font-medium"
+                                                        }
                                                     }
-                                                } else if (isStudent && studentSelected) {
-                                                    circleClass = "border-blue-500 bg-blue-500"
+                                                } else if (effectiveIsStudent && studentSelected) {
+                                                    circleClass = "border-[#E9C46A] bg-[#E9C46A] text-slate-900"
                                                     innerCircle = true
-                                                    optionBg = "bg-blue-50/50 rounded ring-1 ring-blue-100"
-                                                    optionText = "text-blue-800 font-medium"
-                                                } else if (!isStudent && option.isCorrect) {
-                                                    circleClass = "border-green-500 bg-green-500"
+                                                    optionBg = "bg-blue-50/40 rounded-md"
+                                                    optionText = "text-blue-900 font-medium"
+                                                } else if (!effectiveIsStudent && option.isCorrect) {
+                                                    circleClass = "border-green-500 bg-green-500 text-white"
                                                     innerCircle = true
-                                                } else if (!isStudent) {
-                                                    circleClass = "border-gray-300 bg-white hover:border-green-300"
+                                                } else if (!effectiveIsStudent) {
+                                                    circleClass = "border-gray-300 bg-white hover:border-[#E9C46A]"
                                                 }
 
                                                 return (
-                                                <div key={option.id} className={`flex items-center gap-3 p-1 transition-colors ${isStudent ? `cursor-pointer ${optionBg}` : ''} ${!isSubmitted && isStudent ? 'hover:bg-gray-50' : ''}`} onClick={() => isStudent ? handleStudentOptionToggle(block.id, option.id, block.questionType) : null}>
+                                                <div key={option.id} className={`flex items-center gap-2 group/opt py-0.5 transition-colors ${effectiveIsStudent ? `cursor-pointer ${optionBg}` : ''}`} onClick={() => effectiveIsStudent ? handleStudentOptionToggle(block.id, option.id, block.questionType) : null}>
                                                     <button
                                                         type="button"
-                                                        disabled={isStudent && isSubmitted}
+                                                        disabled={effectiveIsStudent && isSubmitted}
                                                         onClick={(e) => {
-                                                            if (!isStudent) toggleCorrectAnswer(block.id, option.id)
+                                                            if (!effectiveIsStudent) toggleCorrectAnswer(block.id, option.id)
                                                         }}
-                                                        title={isStudent ? "Select answer" : "Choose correct answer"}
-                                                        className={`w-5 h-5 flex items-center justify-center rounded-full border shadow-inner flex-shrink-0 transition-colors ${circleClass} ${isStudent && isSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
+                                                        title={effectiveIsStudent ? "Select answer" : "Choose correct answer"}
+                                                        className={`w-4 h-4 flex items-center justify-center rounded-full border flex-shrink-0 transition-colors ${circleClass} ${effectiveIsStudent && isSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
                                                     >
-                                                        {innerCircle && <div className={`w-2 h-2 rounded-full ${(!isStudent || studentSelected) && !isSubmitted ? "bg-white" : (isStudent && isSubmitted ? (option.isCorrect ? "bg-green-500" : "bg-red-500") : "bg-white")}`}></div>}
+                                                        {innerCircle && <div className="w-1.5 h-1.5 rounded-full bg-current"></div>}
                                                     </button>
-                                                    {isStudent ? (
+                                                    {effectiveIsStudent ? (
                                                         <div 
-                                                            className={`flex-1 ${optionText} py-2 px-1 leading-relaxed`}
+                                                            className={`flex-1 ${optionText} py-1 px-1 leading-relaxed text-sm`}
                                                             style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize}px` }}
                                                         >
                                                             {option.text}
@@ -546,111 +1256,121 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
                                                             onChange={(e) => updateOptionText(block.id, option.id, e.target.value)}
                                                             readOnly={block.questionType === "True or False"}
                                                             style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize}px` }}
-                                                            className="flex-1 border border-gray-200 rounded-md py-2 px-3 text-gray-600 outline-none focus:border-blue-400 transition-colors"
+                                                            className="flex-1 bg-transparent py-1 px-1.5 text-gray-700 text-xs font-normal outline-none focus:bg-gray-50/80 rounded-md transition-colors placeholder-gray-400"
                                                         />
                                                     )}
-                                                    {!isStudent && block.questionType !== "True or False" && (
+                                                    {!effectiveIsStudent && block.questionType !== "True or False" && (
                                                         <button 
                                                             onClick={(e) => {
                                                                 e.stopPropagation()
                                                                 removeOption(block.id, option.id)
                                                             }}
-                                                            className="text-gray-400 hover:text-red-500 text-sm font-medium border border-gray-200 px-3 py-2 rounded-md hover:bg-red-50 transition-colors"
+                                                            className="text-gray-400 hover:text-gray-700 p-1 rounded-md transition-colors cursor-pointer"
+                                                            title="Remove option"
                                                         >
-                                                            Remove
+                                                            <Trash className="h-3.5 w-3.5" />
                                                         </button>
                                                     )}
                                                 </div>
                                             )})}
-                                            {!isStudent && (block.questionType === "Multiple Choice" || block.questionType === "True or False") && !block.options?.some(o => o.isCorrect) && (
-                                                <p className="text-xs font-bold text-red-400 mt-2 italic">
-                                                    * Please select a correct answer by clicking an empty circle above.
+                                            {!effectiveIsStudent && (block.questionType === "Multiple Choice" || block.questionType === "True or False") && !block.options?.some(o => o.isCorrect) && (
+                                                <p className="text-xs font-normal text-amber-500 mt-1 italic">
+                                                    * Select a correct answer by clicking an empty circle above.
                                                 </p>
                                             )}
                                         </div>
                                     )}
                                     
-                                    {block.questionType === "Short Answer" && (
-                                        <div className="mt-4 ml-8 w-full max-w-md space-y-1">
-                                            {isStudent ? (
-                                                <div className="flex flex-col gap-2">
+                                    {block.questionType === "Short Answer" && (() => {
+                                        const studentAnsText = studentAnswers[block.id] || ""
+                                        const hasAnsweredShort = studentAnsText.trim().length > 0
+                                        const isCorrectShort = hasAnsweredShort && studentAnsText.trim().toLowerCase() === (block.correctAnswer || "").trim().toLowerCase()
+                                        const maxRetries = Number(quizSettings.maxRetries || 0)
+                                        const currentAttempts = attemptsCount || 1
+                                        const retriesLeft = Math.max(0, maxRetries - (currentAttempts - 1))
+                                        const hasRetriesRemaining = maxRetries > 0 && retriesLeft > 0
+
+                                        return (
+                                        <div className="mt-3 pl-4 w-full max-w-md space-y-1">
+                                            {effectiveIsStudent ? (
+                                                <div className="flex flex-col gap-1.5">
                                                     <input 
                                                         type="text" 
-                                                        value={studentAnswers[block.id] || ""}
+                                                        value={studentAnsText}
                                                         onChange={(e) => handleStudentShortAnswer(block.id, e.target.value)}
                                                         readOnly={isSubmitted}
-                                                        placeholder="Type your answer here..."
+                                                        placeholder={isSubmitted ? "(Unanswered)" : "Type your answer here..."}
                                                         style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize}px` }}
-                                                        className={`w-full border-b-2 pb-2 outline-none bg-transparent transition-colors ${
+                                                        className={`w-full border-b pb-1.5 outline-none bg-transparent transition-colors text-sm ${
                                                             isSubmitted ? (
-                                                                (studentAnswers[block.id] || "").toLowerCase() === (block.correctAnswer || "").toLowerCase()
-                                                                    ? "border-green-500 text-green-700 font-bold"
-                                                                    : "border-red-500 text-red-600 font-semibold"
-                                                            ) : "border-dashed border-gray-300 focus:border-blue-400 text-gray-800"
+                                                                hasAnsweredShort ? (
+                                                                    isCorrectShort
+                                                                        ? "border-green-500 text-green-700 font-medium"
+                                                                        : "border-red-500 text-red-600 font-medium"
+                                                                ) : "border-gray-200 text-gray-400 font-normal italic"
+                                                            ) : "border-gray-200 focus:border-gray-400 text-gray-800"
                                                         }`}
                                                     />
-                                                    {isSubmitted && (studentAnswers[block.id] || "").toLowerCase() !== (block.correctAnswer || "").toLowerCase() && (
-                                                        <p className="text-sm font-bold text-green-600 bg-green-50 inline-block px-2 py-1 rounded">
+                                                    {isSubmitted && hasAnsweredShort && !isCorrectShort && !hasRetriesRemaining && (
+                                                        <p className="text-xs font-medium text-green-700 bg-green-50 inline-block px-2 py-0.5 rounded">
                                                             Correct Answer: {block.correctAnswer}
                                                         </p>
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div className="flex flex-col gap-2">
-                                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Correct Answer</label>
+                                                <div className="flex flex-col gap-1">
+                                                    <label className="text-xs font-medium text-gray-400">Correct Answer</label>
                                                     <input 
                                                         type="text" 
                                                         value={block.correctAnswer || ""}
                                                         onChange={(e) => updateShortAnswerText(block.id, e.target.value)}
                                                         placeholder="Enter the correct answer (case-insensitive)..."
                                                         style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize}px` }}
-                                                        className="w-full border-b-2 border-solid border-gray-200 pb-2 outline-none bg-transparent focus:border-green-400 text-gray-700 font-medium transition-colors"
+                                                        className="w-full border-b border-gray-200 pb-1 outline-none bg-transparent focus:border-gray-400 text-gray-700 text-xs font-normal transition-colors"
                                                     />
                                                     {(!block.correctAnswer || !block.correctAnswer.trim()) && (
-                                                        <p className="text-xs font-bold text-red-400 mt-1 italic">
+                                                        <p className="text-xs font-normal text-amber-500 mt-0.5 italic">
                                                             * Please provide the correct short answer text above.
                                                         </p>
                                                     )}
                                                 </div>
                                             )}
                                         </div>
-                                    )}
+                                    )})()}
 
-                                    {!isStudent && (
-                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-6 gap-4 border-t border-gray-100 pt-4">
-                                            <div className="flex items-center gap-4 flex-wrap">
+                                    {!effectiveIsStudent && (
+                                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-3 mt-3 text-xs">
+                                            <div className="flex items-center gap-4">
                                                 {block.questionType === "Multiple Choice" && (
                                                     <button 
                                                         onClick={() => addOption(block.id)}
-                                                        className="border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-bold px-4 py-2 rounded transition-colors"
+                                                        className="text-[#E9C46A] hover:text-[#dfb550] font-medium flex items-center gap-1 cursor-pointer transition-colors"
                                                     >
                                                         Add Option
                                                     </button>
                                                 )}
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">Points:</span>
+                                                <div className="flex items-center gap-1.5 text-gray-500 font-normal">
+                                                    <span>Points:</span>
                                                     <input 
                                                         type="number" 
                                                         min={1} 
                                                         max={100} 
                                                         value={block.points !== undefined ? block.points : 1}
                                                         onChange={(e) => updateQuestionPoints(block.id, Number(e.target.value))}
-                                                        className="w-16 border border-gray-200 rounded px-2 py-1.5 text-center text-gray-700 font-bold outline-none focus:border-blue-400 bg-white"
+                                                        className="w-10 border-b border-gray-200 text-center text-gray-700 font-medium outline-none focus:border-gray-400 bg-transparent py-0.5"
                                                     />
                                                 </div>
                                             </div>
                                             
-                                            <div className="flex items-center gap-3 ml-auto">
-                                                <select
-                                                    value={block.questionType || "Multiple Choice"}
-                                                    onChange={(e) => updateQuestionType(block.id, e.target.value)}
-                                                    className="border border-gray-200 rounded px-3 py-2 text-sm text-gray-600 outline-none focus:border-blue-400 bg-white"
-                                                >
-                                                    <option>Multiple Choice</option>
-                                                    <option>Short Answer</option>
-                                                    <option>True or False</option>
-                                                </select>
-                                            </div>
+                                            <select
+                                                value={block.questionType || "Multiple Choice"}
+                                                onChange={(e) => updateQuestionType(block.id, e.target.value)}
+                                                className="bg-transparent text-xs text-gray-500 font-medium outline-none cursor-pointer hover:text-gray-800 transition-colors"
+                                            >
+                                                <option>Multiple Choice</option>
+                                                <option>Short Answer</option>
+                                                <option>True or False</option>
+                                            </select>
                                         </div>
                                     )}
                                 </div>
@@ -658,24 +1378,33 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
 
                             {block.type === "title_description" && (
                                 <div className="space-y-4">
-                                    {isStudent ? (
+                                    {effectiveIsStudent ? (
                                         <div className="flex flex-col gap-4 py-2 border-b border-gray-100">
                                             {block.title && <h2 className="font-black text-gray-900 leading-tight" style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize * 1.5}px` }}>{block.title}</h2>}
                                             {block.description && <p className="text-gray-700 whitespace-pre-wrap leading-relaxed" style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize}px` }}>{block.description}</p>}
                                         </div>
                                     ) : (
                                         <div className="flex flex-col gap-3">
-                                            <div className="flex items-center border-b-2 border-gray-200 focus-within:border-blue-500 transition-colors pb-1">
+                                            <div className="flex items-center gap-2 border-b border-gray-200/80 focus-within:border-gray-400 transition-colors pb-1">
                                                 <input
                                                     type="text"
                                                     value={block.title}
                                                     onChange={(e) => updateTitleDescTitle(block.id, e.target.value)}
                                                     placeholder="Title"
-                                                    style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize * 1.5}px` }}
-                                                    className="w-full font-bold bg-transparent outline-none text-gray-800 placeholder-gray-400"
+                                                    style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize * 1.3}px` }}
+                                                    className="flex-1 font-bold bg-transparent outline-none text-gray-800 placeholder-gray-400"
                                                 />
+                                                {!effectiveIsStudent && (
+                                                    <button 
+                                                        onClick={() => removeBlock(block.id)}
+                                                        className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer shrink-0"
+                                                        title="Delete Block"
+                                                    >
+                                                        <Trash className="h-4 w-4" />
+                                                    </button>
+                                                )}
                                             </div>
-                                            <div className="flex flex-col bg-gray-50 border border-gray-200 rounded p-2 focus-within:border-[#f5cdd0] focus-within:bg-white transition-colors">
+                                            <div className="flex flex-col bg-gray-50 border border-gray-200 rounded p-2 focus-within:border-gray-300 focus-within:bg-white transition-colors">
                                                 <textarea
                                                     value={block.description}
                                                     onChange={(e) => updateTitleDescDesc(block.id, e.target.value)}
@@ -701,129 +1430,99 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false }) 
                                     )}
                                         
                                     {block.image && (
-                                            <div className="relative inline-block mt-2">
-                                                <img src={block.image} alt="Block media" className="max-h-64 rounded-md border border-gray-200 object-contain" />
-                                                {!isStudent && (
-                                                    <button 
-                                                        onClick={() => setQuestions(questions.map(q => q.id === block.id ? { ...q, image: null } : q))}
-                                                        className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded hover:bg-red-500 transition-colors"
-                                                    >
-                                                        <Trash2 className="h-3 w-3" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                            )}
-
-                        </div>
-                    )})}
-
-                    {isStudent && questions.length > 0 && (
-                        <div className="pt-10 flex justify-center border-t border-gray-100 mt-10">
-                            {isSubmitted ? (
-                                (() => {
-                                    let totalPoints = 0;
-                                    let earnedPoints = 0;
-
-                                    questions.filter(q => q.type === 'question').forEach(q => {
-                                        const pts = q.points !== undefined ? q.points : 1;
-                                        totalPoints += pts;
-                                        
-                                        let isQCorrect = false;
-                                        if (q.questionType === "True or False" || q.questionType === "Multiple Choice") {
-                                            const correctOptionIds = q.options?.filter(o => o.isCorrect).map(o => o.id) || [];
-                                            const studentSelectedIds = studentAnswers[q.id] || [];
-                                            
-                                            if (correctOptionIds.length > 0 && 
-                                                correctOptionIds.length === studentSelectedIds.length && 
-                                                correctOptionIds.every(id => studentSelectedIds.includes(id))) {
-                                                isQCorrect = true;
-                                            }
-                                        } else if (q.questionType === "Short Answer") {
-                                            const correctAns = q.correctAnswer || "";
-                                            if (correctAns.trim() !== "" && (studentAnswers[q.id] || "").trim().toLowerCase() === correctAns.trim().toLowerCase()) {
-                                                isQCorrect = true;
-                                            }
-                                        }
-                                        
-                                        if (isQCorrect) earnedPoints += pts;
-                                    });
-
-                                    return (
-                                        <div className="flex flex-col items-center gap-6 animate-in slide-in-from-bottom-4 fade-in duration-500">
-                                            <div className="bg-green-50 text-green-800 font-bold px-8 py-4 rounded-xl text-lg flex items-center gap-3 shadow-sm border border-green-200">
-                                                Quiz Submitted Successfully!
-                                            </div>
-                                            <div className="flex flex-col items-center justify-center p-8 bg-white border-2 border-gray-100 rounded-3xl shadow-sm text-center">
-                                                <p className="text-gray-500 font-extrabold uppercase tracking-widest text-sm mb-2">Final Score</p>
-                                                <div className="text-5xl font-black text-gray-800 tracking-tighter">
-                                                    <span className={`${earnedPoints === totalPoints ? 'text-green-500' : earnedPoints > totalPoints/2 ? 'text-blue-500' : 'text-[#ba5a62]'}`}>{earnedPoints}</span>
-                                                    <span className="text-gray-300 mx-2">/</span> 
-                                                    {totalPoints}
-                                                </div>
-                                                <p className="text-gray-400 font-medium mt-3 text-sm">points accumulated</p>
-                                            </div>
+                                        <div className="relative inline-block mt-2">
+                                            <img src={block.image} alt="Block media" className="max-h-64 rounded-md border border-gray-200 object-contain" />
+                                            {!effectiveIsStudent && (
+                                                <button 
+                                                    onClick={() => setQuestions(questions.map(q => q.id === block.id ? { ...q, image: null } : q))}
+                                                    className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded hover:bg-red-500 transition-colors"
+                                                >
+                                                    <Trash className="h-3 w-3" />
+                                                </button>
+                                            )}
                                         </div>
-                                    )
-                                })()
-                            ) : (
-                                <button
-                                    onClick={submitQuiz}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg px-12 py-4 rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95"
-                                >
-                                    Submit Quiz
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
+                                    )}
 
-            </div>
-
-            {/* Right Sidebar - Questions Tracker */}
-            <div className="w-full lg:w-[320px] shrink-0 sticky top-24 self-start">
-                <div className="bg-white border border-gray-100 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-[600px] flex flex-col overflow-hidden">
-                    <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white text-gray-700">
-                        <h3 className="font-extrabold text-sm tracking-widest uppercase">Questions</h3>
-                        <span className="text-gray-400 font-bold font-mono">
-                            {questions.filter(q => q.type === 'question').length}
-                        </span>
-                    </div>
-                    <div className="p-6 flex-1 overflow-y-auto space-y-3 bg-gray-50/30 text-sm">
-                        {questions.filter(q => q.type === 'question').map((q, i) => {
-                            const realIndex = questions.findIndex(item => item.id === q.id);
-                            return (
-                            <div 
-                                key={q.id} 
-                                draggable={!isStudent}
-                                onDragStart={(e) => handleDragStart(e, realIndex)}
-                                onDragOver={(e) => handleDragOver(e, realIndex)}
-                                onDrop={(e) => handleDrop(e, realIndex)}
-                                onDragEnd={handleDragEnd}
-                                onClick={() => {
-                                    const el = document.getElementById(`question-block-${q.id}`)
-                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                                }}
-                                className={`p-3 bg-white border border-gray-100 rounded-xl shadow-sm text-gray-600 hover:border-blue-300 transition-colors cursor-pointer active:scale-[0.98] ${dragOverBlockIndex === realIndex && dragBlockIndex !== realIndex ? 'border-blue-400 border-t-4 translate-y-1' : ''}`}
-                            >
-                                <div className="flex items-start gap-2">
-                                    {!isStudent && <GripVertical className="h-4 w-4 shrink-0 text-gray-300 hover:text-gray-500 mt-0.5" />}
-                                    <div className="flex-1 min-w-0 flex">
-                                        <span className="font-bold mr-2 text-gray-400 whitespace-nowrap">{i + 1}.</span> 
-                                        <span className="line-clamp-2 font-medium">{q.text || "Empty query..."}</span>
-                                    </div>
                                 </div>
-                            </div>
-                        )})}
-                        {questions.filter(q => q.type === 'question').length === 0 && (
-                            <div className="text-center text-gray-400 py-10 font-medium">
-                                No questions to display.
+                            )}
+
+                        </div>
+
+                        {!effectiveIsStudent && (
+                            <div className="flex justify-center -mt-3 mb-3 z-10 relative">
+                                <button
+                                    onClick={() => addQuestionAfter(index)}
+                                    className="h-7 w-7 bg-white border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50 rounded-full shadow-2xs flex items-center justify-center transition-all cursor-pointer"
+                                    title="Add Question Below"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </button>
                             </div>
                         )}
                     </div>
+                )})}
+
+                    {effectiveIsStudent && questions.length > 0 && !isTooEarly && !isSubmitted && (
+                        <div className="pt-10 flex justify-center border-t border-gray-100 mt-10">
+                            <button
+                                onClick={submitQuiz}
+                                disabled={isQuizLocked}
+                                className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm px-7 py-2.5 rounded-xl transition-colors cursor-pointer"
+                            >
+                                Submit {examId ? "Exam" : "Quiz"}
+                            </button>
+                        </div>
+                    )}
                 </div>
+                )}
+
             </div>
+
+            {/* Right Sidebar - Questions Tracker (Hidden when locked/not available yet or not started) */}
+            {!isTooEarly && !((effectiveIsStudent && isPastDeadline && !isSubmitted)) && (!effectiveIsStudent || isSubmitted || isQuizStarted) && (
+                <div className="w-full lg:w-[320px] shrink-0 sticky top-24 self-start">
+                    <div className="bg-white border border-gray-200/80 rounded-2xl shadow-2xs h-[600px] flex flex-col overflow-hidden">
+                        <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-white text-gray-700">
+                            <h3 className="font-extrabold text-xs tracking-wider uppercase text-gray-600">Questions</h3>
+                            <span className="bg-gray-100 border border-gray-200 text-gray-600 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono">
+                                {questions.filter(q => q.type === 'question').length}
+                            </span>
+                        </div>
+                        <div className="p-4 flex-1 overflow-y-auto space-y-2.5 bg-gray-50/30 text-sm">
+                            {questions.filter(q => q.type === 'question').map((q, i) => {
+                                const realIndex = questions.findIndex(item => item.id === q.id);
+                                return (
+                                <div 
+                                    key={q.id} 
+                                    draggable={!effectiveIsStudent}
+                                    onDragStart={(e) => handleDragStart(e, realIndex)}
+                                    onDragOver={(e) => handleDragOver(e, realIndex)}
+                                    onDrop={(e) => handleDrop(e, realIndex)}
+                                    onDragEnd={handleDragEnd}
+                                    onClick={() => {
+                                        const el = document.getElementById(`question-block-${q.id}`)
+                                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                                    }}
+                                    className={`p-3 bg-white border border-gray-200/80 rounded-xl shadow-2xs text-gray-600 hover:border-[#E9C46A]/40 hover:bg-blue-50/30 transition-all cursor-pointer active:scale-[0.98] ${dragOverBlockIndex === realIndex && dragBlockIndex !== realIndex ? 'border-[#E9C46A] border-t-2 translate-y-0.5' : ''}`}
+                                >
+                                    <div className="flex items-start gap-2">
+                                        {!effectiveIsStudent && <GripVertical className="h-4 w-4 shrink-0 text-gray-300 hover:text-gray-500 mt-0.5" />}
+                                        <div className="flex-1 min-w-0 flex">
+                                            <span className="font-bold mr-2 text-[#E9C46A] whitespace-nowrap">{i + 1}.</span> 
+                                            <span className="line-clamp-2 font-medium text-gray-700">{q.text || "Empty query..."}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )})}
+                            {questions.filter(q => q.type === 'question').length === 0 && (
+                                <div className="text-center text-gray-400 py-16 font-medium text-xs">
+                                    No questions to display.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     )

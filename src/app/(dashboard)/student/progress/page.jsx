@@ -5,14 +5,13 @@ export default function MyProgressPage() {
     return (
         <div className="space-y-8">
             <div>
-                <div className="flex items-center gap-3">
-                    <BarChart3 className="h-8 w-8 text-primary" />
-                    <h1 className="text-3xl font-bold text-foreground">My Progress</h1>
-                </div>
-                <p className="mt-2 text-muted-foreground">
-                    Track your review progress, competency scores, and readiness for the board exam.
-                </p>
-            </div>
+            <h1 className="text-2xl font-bold tracking-wider text-[#4d4d4d] dark:text-slate-200 uppercase mb-1">
+                MY PROGRESS
+            </h1>
+            <p className="text-[#8c8c8c] dark:text-slate-400 text-sm font-medium">
+                Track your review progress, competency scores, and readiness for the board exam.
+            </p>
+        </div>
 
             {/* Overview Stats */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -22,49 +22,124 @@ export async function GET(req, { params }) {
     }
     const gradebook = gbRes.rows[0]
 
-    // 2. Fetch all students enrolled in this batch
-    const studentsRes = await pool.query(`
-      SELECT u.id, u.name, u.email,
+    // 2. Fetch all students enrolled in this batch / target courses
+    let targets = []
+    if (gradebook.targets) {
+      try {
+        targets = typeof gradebook.targets === 'string' ? JSON.parse(gradebook.targets) : gradebook.targets
+      } catch (e) { targets = [] }
+    }
+    if (!Array.isArray(targets)) targets = []
+
+    let targetProgramIds = []
+    let targetMajorIds = []
+    let targetExamIds = []
+    let targetBatchIds = []
+
+    for (const t of targets) {
+      const tStr = String(t)
+      // e.g. batch_8_prog_11 -> prog 11
+      const progMatch = tStr.match(/_prog_(\d+)/)
+      if (progMatch) targetProgramIds.push(parseInt(progMatch[1]))
+
+      // e.g. batch_8_maj_11 -> maj 11
+      const majMatch = tStr.match(/_maj_(\d+)/)
+      if (majMatch) targetMajorIds.push(parseInt(majMatch[1]))
+
+      // e.g. batch_8_exam_8 -> exam 8
+      const examMatch = tStr.match(/_exam_(\d+)/)
+      if (examMatch) targetExamIds.push(parseInt(examMatch[1]))
+
+      // e.g. batch_8 -> batch 8
+      const batchMatch = tStr.match(/^batch_(\d+)$/)
+      if (batchMatch) targetBatchIds.push(parseInt(batchMatch[1]))
+    }
+
+    let studentsQuery = `
+      SELECT u.id, u.name, u.email, u.program_id, u.major_id, u.exam_id, u.batch_id,
              COALESCE(s.name, u.school, 'N/A') as school_name
       FROM users u
       LEFT JOIN schools s ON u.school_id = s.id
       WHERE u.role = 'student' AND u.batch_id = $1
-      ORDER BY u.name ASC
+    `
+    const queryParams = [gradebook.batch_id]
+
+    // If specific sub-targets (programs/majors) are selected, filter students matching those criteria
+    if (targetMajorIds.length > 0 && targetProgramIds.length === 0) {
+      queryParams.push(targetMajorIds)
+      studentsQuery += ` AND (u.major_id = ANY($${queryParams.length}) OR u.major_id IS NULL)`
+    } else if (targetProgramIds.length > 0 && targetMajorIds.length === 0) {
+      queryParams.push(targetProgramIds)
+      studentsQuery += ` AND (u.program_id = ANY($${queryParams.length}) OR u.program_id IS NULL)`
+    } else if (targetProgramIds.length > 0 && targetMajorIds.length > 0) {
+      queryParams.push(targetProgramIds)
+      const pIdx = queryParams.length
+      queryParams.push(targetMajorIds)
+      const mIdx = queryParams.length
+      studentsQuery += ` AND (u.program_id = ANY($${pIdx}) OR u.major_id = ANY($${mIdx}) OR (u.program_id IS NULL AND u.major_id IS NULL))`
+    }
+
+    studentsQuery += ` ORDER BY u.name ASC`
+
+    const studentsRes = await pool.query(studentsQuery, queryParams)
+
+    // 3. Get batch and exam info (use LEFT JOIN for safety)
+    const batchRes = await pool.query(`
+      SELECT b.id, b.name as batch_name, b.target_year, b.exam_id, e.name as exam_name 
+      FROM batches b 
+      LEFT JOIN examinations e ON b.exam_id = e.id 
+      WHERE b.id = $1
     `, [gradebook.batch_id])
+    const batchInfo = batchRes.rows[0] || {}
 
-    // 3. Fetch all mock exams that target this batch
-    const mockExamsRes = await pool.query(`
-      SELECT me.id, me.exam_code, me.title, me.status,
-             (SELECT COUNT(*) FROM jsonb_array_elements(
-               CASE WHEN jsonb_typeof(me.questions::jsonb->'questions') = 'array' 
-                    THEN me.questions::jsonb->'questions' 
-                    ELSE '[]'::jsonb END
-             )) as question_count
-      FROM mock_exams me
-      WHERE EXISTS (
-        SELECT 1 
-        FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(me.targets::jsonb) = 'array' THEN me.targets::jsonb ELSE '[]'::jsonb END) t
-        WHERE t = $1 OR t LIKE $2
-      )
-      OR me.targets IS NULL
-      OR jsonb_typeof(me.targets::jsonb) != 'array'
-      OR jsonb_array_length(me.targets::jsonb) = 0
-      ORDER BY me.created_at ASC
-    `, [`batch${gradebook.batch_id}`, `batch${gradebook.batch_id}-%`])
-
-    const mockExams = mockExamsRes.rows
-
-    // 4. Fetch all mock exams in the system so the admin can add them to this gradebook
+    // 4. Fetch all mock exams safely from DB and process in JS
     const allSystemMocksRes = await pool.query(`
-      SELECT me.id, me.exam_code, me.title, me.status, me.targets,
-             (SELECT COUNT(*) FROM jsonb_array_elements(
-               CASE WHEN jsonb_typeof(me.questions::jsonb->'questions') = 'array' 
-                    THEN me.questions::jsonb->'questions' 
-                    ELSE '[]'::jsonb END
-             )) as question_count
-      FROM mock_exams me
-      ORDER BY me.created_at ASC
+      SELECT id, exam_code, title, status, targets, questions, created_at
+      FROM mock_exams 
+      ORDER BY created_at ASC
     `)
+
+    const batchPrefix = `batch${gradebook.batch_id}`
+    const batchHyphen = `batch-${gradebook.batch_id}`
+    const batchIdStr = String(gradebook.batch_id)
+
+    const processedMocks = allSystemMocksRes.rows.map(me => {
+      let qCount = 0
+      if (me.questions) {
+        try {
+          const qObj = typeof me.questions === 'string' ? JSON.parse(me.questions) : me.questions
+          if (Array.isArray(qObj?.questions)) qCount = qObj.questions.length
+          else if (Array.isArray(qObj)) qCount = qObj.length
+        } catch (e) { qCount = 0 }
+      }
+
+      let targets = []
+      if (me.targets) {
+        try {
+          targets = typeof me.targets === 'string' ? JSON.parse(me.targets) : me.targets
+        } catch (e) { targets = [] }
+      }
+      if (!Array.isArray(targets)) targets = []
+
+      return {
+        id: me.id,
+        exam_code: me.exam_code,
+        title: me.title,
+        status: me.status,
+        targets,
+        question_count: qCount
+      }
+    })
+
+    // Filter mock exams that target this batch
+    const mockExams = processedMocks.filter(me => {
+      return me.targets.some(t => {
+        const tStr = String(t)
+        return tStr === batchPrefix || tStr.startsWith(batchPrefix + "-") ||
+               tStr === batchHyphen || tStr.startsWith(batchHyphen + "-") ||
+               tStr === batchIdStr
+      })
+    })
 
     // 5. Fetch all scores for these students
     const studentIds = studentsRes.rows.map(s => s.id)
@@ -87,25 +162,18 @@ export async function GET(req, { params }) {
       }
     }
 
-    // 6. Get batch and exam info
-    const batchRes = await pool.query(
-      "SELECT b.name as batch_name, b.target_year, e.name as exam_name FROM batches b JOIN examinations e ON b.exam_id = e.id WHERE b.id = $1",
-      [gradebook.batch_id]
-    )
-    const batchInfo = batchRes.rows[0] || {}
-
     return NextResponse.json({
       gradebook,
       batch: batchInfo,
       students: studentsRes.rows,
       mockExams: mockExams,
-      allSystemMockExams: allSystemMocksRes.rows,
+      allSystemMockExams: processedMocks,
       scoresMap
     })
 
   } catch (err) {
     console.error("[GET /api/admin/gradebook/[id]]", err)
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 })
+    return NextResponse.json({ error: err.message || "Internal server error." }, { status: 500 })
   }
 }
 
@@ -175,13 +243,17 @@ export async function PUT(req, { params }) {
       }
 
       const batchPrefix = `batch${batchId}`
+      const batchHyphen = `batch-${batchId}`
       const examSuffix = examName ? examName.toLowerCase() : ""
-      const targetBatchId = batchPrefix
       const targetExamId = examSuffix ? `${batchPrefix}-${examSuffix}` : null
 
       let updated = false
-      if (!targets.includes(targetBatchId)) {
-        targets.push(targetBatchId)
+      if (!targets.includes(batchPrefix)) {
+        targets.push(batchPrefix)
+        updated = true
+      }
+      if (!targets.includes(batchHyphen)) {
+        targets.push(batchHyphen)
         updated = true
       }
       if (targetExamId && !targets.includes(targetExamId)) {
@@ -214,10 +286,14 @@ export async function PUT(req, { params }) {
         targets = typeof mockExam.targets === 'string' ? JSON.parse(mockExam.targets) : mockExam.targets
       }
       if (Array.isArray(targets)) {
-        const prefix = `batch${batchId}`
+        const p1 = `batch${batchId}`
+        const p2 = `batch-${batchId}`
+        const p3 = String(batchId)
         targets = targets.filter(t => {
           const tStr = String(t)
-          return tStr !== prefix && !tStr.startsWith(prefix + "-")
+          return tStr !== p1 && !tStr.startsWith(p1 + "-") &&
+                 tStr !== p2 && !tStr.startsWith(p2 + "-") &&
+                 tStr !== p3
         })
         await pool.query("UPDATE mock_exams SET targets = $1 WHERE id = $2", [JSON.stringify(targets), parseInt(mockExamId)])
       }

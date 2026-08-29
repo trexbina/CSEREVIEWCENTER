@@ -59,12 +59,28 @@ export async function GET(request, props) {
             contents = contentsResult.rows
         }
 
+        // Fetch subject details for back navigation
+        const subjectResult = await pool.query(
+            `SELECT s.id, s.title, s.code, s.subcategory_id,
+                    COALESCE(sub.category_id, cat.id) as category_id
+             FROM subjects s
+             LEFT JOIN subcategories sub ON s.subcategory_id = sub.id
+             LEFT JOIN categories cat ON (
+                 s.category IS NOT NULL AND (
+                     s.category = cat.id::text OR LOWER(s.category) = LOWER(cat.name)
+                 )
+             )
+             WHERE s.id = $1`,
+            [subjectId]
+        )
+        const subject = subjectResult.rows[0] || null
+
         const structuredModules = modules.map(mod => ({
             ...mod,
             lessons: contents.filter(c => c.module_id === mod.id)
         }))
 
-        return NextResponse.json({ modules: structuredModules })
+        return NextResponse.json({ modules: structuredModules, subject })
     } catch (err) {
         console.error("[student/subjects/modules GET]", err)
         return NextResponse.json({ error: "Internal server error" }, { status: 500 })

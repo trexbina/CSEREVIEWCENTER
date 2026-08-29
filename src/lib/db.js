@@ -44,9 +44,9 @@ function createPool() {
     ssl: process.env.NODE_ENV === "production" || connectionString.includes("prisma.io") || connectionString.includes("supabase")
       ? { rejectUnauthorized: false }
       : undefined,
-    max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
+    max: 2, // Serverless-friendly: keep connections low per lambda
+    idleTimeoutMillis: 10000, // Close idle connections quickly
+    connectionTimeoutMillis: 5000,
   })
 
   pool.on("error", (err) => {

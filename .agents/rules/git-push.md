@@ -1,6 +1,5 @@
-# Git Push Rules
+# Git Auto-Push Rules
 
-## ALWAYS FOLLOW UNLESS EXPLICITLY OVERRIDDEN
-- **DO NOT automatically push to GitHub or any Git remote repository** after completing prompts, editing code, or making local commits.
-- All code modifications, local branches, and commits must remain strictly local.
-- **ONLY** run `git push` when the user explicitly sends the instruction `"push git"` (or "git push", "push to github").
+## AUTOMATIC COMMIT & PUSH POLICY
+- Automatically stage (`git add .`), commit with a descriptive message, and push (`git push target main`) to the remote repository whenever code changes/modifications are made.
+- Always ensure changes are pushed to `target` (or the configured upstream remote) upon completing tasks or updates.

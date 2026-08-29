@@ -174,13 +174,13 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                         ref={iconRef}
                         src={jsonSrc}
                         trigger="manual"
-                        size={20}
+                        size={26}
                         speed={1}
                         className={`${active ? "[&_svg_*]:stroke-[#E9C46A]" : ""}`}
                     />
                 </div>
             ) : (
-                <Icon className={`h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${active ? "text-[#E9C46A]" : ""}`} />
+                <Icon className={`h-6 w-6 shrink-0 transition-transform duration-200 group-hover:scale-110 ${active ? "text-[#E9C46A]" : ""}`} />
             )}
             {!collapsed && (
                 <div className="flex flex-col">

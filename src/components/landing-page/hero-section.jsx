@@ -40,7 +40,7 @@ export function HeroSection() {
   }, [])
 
   return (
-    <section className="relative w-full h-[90vh] min-h-[540px] max-h-[840px] sm:min-h-[580px] flex flex-col items-center justify-between overflow-hidden bg-slate-950">
+    <section className="relative w-full min-h-screen h-screen flex flex-col items-center justify-between overflow-hidden bg-slate-950">
       {/* Background Banner Carousel with Guaranteed Smooth Fade-In */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none bg-slate-950">
         {BANNER_SLIDES.map((slide, index) => {
@@ -151,7 +151,7 @@ export function HeroSection() {
 
             <LoginDialog>
               <Button className="rounded-full bg-[#E9C46A] text-white font-medium h-8 px-4 text-xs md:text-sm tracking-wide shadow-none border-none transition-opacity duration-300 hover:opacity-85 hover:bg-[#E9C46A] hover:translate-y-0 active:translate-y-0 active:opacity-75 cursor-pointer">
-                Log In
+                Log in
               </Button>
             </LoginDialog>
           </div>

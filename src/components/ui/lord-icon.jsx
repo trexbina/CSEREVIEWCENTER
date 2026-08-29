@@ -5,7 +5,7 @@ import lottie from "lottie-web"
 
 export function LordIcon({
   src,
-  size = 64,
+  size = 96,
   className = "",
 }) {
   const containerRef = useRef(null)
@@ -20,23 +20,15 @@ export function LordIcon({
       .then((data) => {
         if (!containerRef.current) return
 
-        // Deep copy animation data
-        const animData = JSON.parse(JSON.stringify(data))
-
-        // If it uses comp_1 composition layer, extract layers for direct root playback
-        if (animData.assets && animData.assets.length > 0) {
-          const comp = animData.assets.find((a) => a.id === "comp_1") || animData.assets[0]
-          if (comp && comp.layers && comp.layers.length > 0) {
-            animData.layers = comp.layers
-          }
-        }
+        // Clean container before mounting
+        containerRef.current.innerHTML = ""
 
         anim = lottie.loadAnimation({
           container: containerRef.current,
           renderer: "svg",
           loop: true,
           autoplay: true,
-          animationData: animData,
+          animationData: data,
         })
       })
       .catch((err) => console.error("Error rendering icon:", err))
@@ -49,8 +41,8 @@ export function LordIcon({
   return (
     <div
       ref={containerRef}
-      style={{ width: `${size}px`, height: `${size}px` }}
-      className={`inline-flex items-center justify-center ${className}`}
+      style={{ width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, minHeight: `${size}px` }}
+      className={`inline-flex items-center justify-center [&_svg]:w-full [&_svg]:h-full ${className}`}
     />
   )
 }

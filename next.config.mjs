@@ -9,6 +9,24 @@ const nextConfig = {
   reactCompiler: true,
   outputFileTracingRoot: __dirname,
 
+  /* ── Images: Allow Vercel Blob & Supabase storage domains ─── */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        port: "",
+        pathname: "/**",
+      },
+    ],
+  },
+
   /* ── Bundle optimizations ────────────────────────────────── */
   experimental: {
     // Tree‑shake barrel files so only used exports ship to the client

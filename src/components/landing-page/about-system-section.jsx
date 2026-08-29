@@ -39,31 +39,22 @@ const cardVariants = {
 export function AboutSystemSection() {
   return (
     <section id="features" className="pt-24 sm:pt-32 md:pt-36 pb-16 sm:pb-20 md:pb-24 bg-[#fafafa] relative border-t border-b border-border/50 overflow-hidden">
-      {/* Subtle decorative background morphing blur sphere */}
+      {/* Continuous slowly moving very subtle ambient gradient (red, yellow, green) */}
       <motion.div
         animate={{
-          scale: [1, 1.15, 1],
-          opacity: [0.35, 0.55, 0.35],
-          rotate: [0, 45, 0],
+          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
         }}
         transition={{
-          duration: 12,
+          duration: 16,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: "linear",
         }}
-        className="absolute -top-24 -right-24 w-96 h-96 bg-[#ebd9a6]/30 rounded-full blur-3xl pointer-events-none"
-      />
-      <motion.div
-        animate={{
-          scale: [1.1, 0.95, 1.1],
-          opacity: [0.25, 0.45, 0.25],
+        style={{
+          backgroundSize: "220% 220%",
+          backgroundImage:
+            "linear-gradient(135deg, rgba(254,226,226,0.22) 0%, rgba(254,243,199,0.25) 35%, rgba(254,249,195,0.22) 65%, rgba(220,252,231,0.22) 100%)",
         }}
-        transition={{
-          duration: 14,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        className="absolute -bottom-24 -left-24 w-96 h-96 bg-[#ebd9a6]/25 rounded-full blur-3xl pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
       />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">

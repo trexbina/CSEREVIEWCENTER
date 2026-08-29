@@ -4,18 +4,18 @@ import { useEffect, useRef } from "react"
 
 export function LordIcon({
   src,
-  size = 120,
-  speed = 1,          // Playback speed: 0.5 (half speed / slower), 1 (normal), 1.5 (faster), etc.
-  delay = 1500,       // Pause interval in milliseconds before repeating (0 for continuous loop)
+  size = 130,
+  speed = 0.65,      // Lower, smoother pace (65% of normal speed)
+  delay = 2500,      // 2.5 second rest/pause before repeating
   className = "",
 }) {
   const containerRef = useRef(null)
-  const timerRef = useRef(null)
 
   useEffect(() => {
     if (!containerRef.current || !src) return
 
     let anim = null
+    let timer = null
     let isCancelled = false
 
     // Dynamically import lottie-web on client-side only (SSR safe)
@@ -32,7 +32,7 @@ export function LordIcon({
           anim = lottie.loadAnimation({
             container: containerRef.current,
             renderer: "svg",
-            loop: delay === 0, // Continuous if delay is 0, otherwise manual delayed loop
+            loop: false, // We handle looping manually to allow the pause delay
             autoplay: true,
             animationData: data,
             rendererSettings: {
@@ -42,27 +42,25 @@ export function LordIcon({
             },
           })
 
-          // Adjust playback speed
+          // Set custom playback speed
           anim.setSpeed(speed)
 
-          // If a delay pause is requested between loops
-          if (delay > 0) {
-            anim.addEventListener("complete", () => {
-              if (timerRef.current) clearTimeout(timerRef.current)
-              timerRef.current = setTimeout(() => {
-                if (!isCancelled && anim) {
-                  anim.goToAndPlay(0, true)
-                }
-              }, delay)
-            })
-          }
+          // When the animation cycle finishes, pause for `delay` ms before playing again
+          anim.addEventListener("complete", () => {
+            if (timer) clearTimeout(timer)
+            timer = setTimeout(() => {
+              if (!isCancelled && anim) {
+                anim.goToAndPlay(0, true)
+              }
+            }, delay)
+          })
         })
         .catch((err) => console.error("Error loading animation data:", err))
     }).catch((err) => console.error("Error importing lottie-web:", err))
 
     return () => {
       isCancelled = true
-      if (timerRef.current) clearTimeout(timerRef.current)
+      if (timer) clearTimeout(timer)
       if (anim) anim.destroy()
     }
   }, [src, speed, delay])

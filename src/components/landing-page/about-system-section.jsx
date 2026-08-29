@@ -37,7 +37,7 @@ const cardVariants = {
 
 export function AboutSystemSection() {
   return (
-    <section id="features" className="py-16 sm:py-20 md:py-24 bg-[#fafafa] relative border-t border-b border-border/50 overflow-hidden">
+    <section id="features" className="py-24 sm:py-32 md:py-40 bg-[#fafafa] relative border-t border-b border-border/50 overflow-hidden">
       {/* Subtle decorative background morphing blur sphere */}
       <motion.div
         animate={{

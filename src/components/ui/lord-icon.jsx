@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import lottie from "lottie-web"
 
 export function LordIcon({
   src,
@@ -15,23 +14,27 @@ export function LordIcon({
 
     let anim = null
 
-    fetch(src)
-      .then((res) => res.json())
-      .then((data) => {
-        if (!containerRef.current) return
+    // Dynamically import lottie-web on client-side only (SSR safe)
+    import("lottie-web").then(({ default: lottie }) => {
+      if (!containerRef.current) return
 
-        // Clean container before mounting
-        containerRef.current.innerHTML = ""
+      fetch(src)
+        .then((res) => res.json())
+        .then((data) => {
+          if (!containerRef.current) return
 
-        anim = lottie.loadAnimation({
-          container: containerRef.current,
-          renderer: "svg",
-          loop: true,
-          autoplay: true,
-          animationData: data,
+          containerRef.current.innerHTML = ""
+
+          anim = lottie.loadAnimation({
+            container: containerRef.current,
+            renderer: "svg",
+            loop: true,
+            autoplay: true,
+            animationData: data,
+          })
         })
-      })
-      .catch((err) => console.error("Error rendering icon:", err))
+        .catch((err) => console.error("Error loading animation data:", err))
+    }).catch((err) => console.error("Error importing lottie-web:", err))
 
     return () => {
       if (anim) anim.destroy()

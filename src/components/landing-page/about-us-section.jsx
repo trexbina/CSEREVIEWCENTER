@@ -35,10 +35,12 @@ export function AboutUsSection() {
                 className="absolute inset-0 top-[20%] bg-[#e5e7eb] z-0 shadow-sm"
               />
               
-              <img 
+              <motion.img 
                 src="/landingpageassets/3c129750892d50fa132c282bcbcb60c3e356f5a7.png" 
                 alt="Instructor" 
-                className="relative z-10 w-[90%] sm:w-[95%] h-auto object-contain transform origin-bottom drop-shadow-md" 
+                whileHover={{ scale: 1.04, y: -4 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="relative z-10 w-[90%] sm:w-[95%] h-auto object-contain transform origin-bottom drop-shadow-md cursor-pointer" 
               />
             </div>
           </motion.div>

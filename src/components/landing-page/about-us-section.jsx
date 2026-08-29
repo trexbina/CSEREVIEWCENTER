@@ -53,20 +53,16 @@ export function AboutUsSection() {
             transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="space-y-6 sm:space-y-8 flex flex-col items-center md:pl-4 lg:pl-8 pt-0 md:pt-24 lg:pt-32 max-w-xl mx-auto md:mx-0 w-full"
           >
-            <div className="flex items-center justify-center gap-3 sm:gap-4 text-[#4a4a4a] w-full">
-              <motion.div
-                whileHover={{ rotate: 15, scale: 1.1 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full border-2 border-current"
-              >
+            <div className="flex items-center justify-center gap-3 sm:gap-4 text-[#505459] w-full">
+              <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 border-[#505459]">
                 <span className="font-serif italic font-bold text-sm sm:text-base leading-none translate-y-[-0.5px]">i</span>
-              </motion.div>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-wide text-[#4a4a4a]">
+              </div>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-wide text-[#505459]">
                 About Us
               </h2>
             </div>
             
-            <div className="space-y-4 sm:space-y-6 text-sm sm:text-[15px] text-[#4b5563] font-medium leading-[1.7] sm:leading-[1.8] text-justify w-full px-2 sm:px-0">
+            <div className="space-y-4 sm:space-y-6 text-xs sm:text-sm md:text-base text-[#808489] font-normal leading-relaxed text-justify w-full px-2 sm:px-0">
               <p>
                 The company has been involved in various review programs for more than sixteen (16) years and has maintained its quality and innovative review programs with certified top caliber National and Resident Specialist involved in providing comprehensive Lectures and Integrated Test series to improve the reviewees passing rate.
               </p>
@@ -78,11 +74,11 @@ export function AboutUsSection() {
 
             <div className="pt-2 sm:pt-4 w-full flex justify-center">
               <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.96 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <Button variant="outline" className="rounded-xl border-2 border-[#d1d5db] text-[#4b5563] font-bold px-8 sm:px-10 py-5 sm:py-6 hover:bg-gray-50 hover:border-gray-400 transition-all shadow-none text-sm sm:text-[15px]">
+                <Button variant="outline" className="rounded-full border border-[#808489]/40 text-[#505459] font-medium px-8 sm:px-10 py-5 hover:bg-[#F2F2F3] hover:text-[#1e293b] hover:border-[#808489] transition-all shadow-none text-xs sm:text-sm cursor-pointer">
                   Learn more
                 </Button>
               </motion.div>

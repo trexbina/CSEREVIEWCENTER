@@ -171,7 +171,7 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
             {jsonSrc ? (
                 <div className={`shrink-0 flex items-center justify-center pointer-events-none transition-colors duration-200 ${
                     active 
-                        ? "[&_path]:!stroke-[#E9C46A] [&_path]:!fill-[#E9C46A]/20 [&_circle]:!stroke-[#E9C46A] [&_rect]:!stroke-[#E9C46A]" 
+                        ? "[&_path]:!fill-[#d97706] [&_path]:!stroke-[#d97706] [&_path[stroke]]:!stroke-[#d97706] [&_circle]:!stroke-[#d97706] [&_rect]:!stroke-[#d97706] [&_g]:!fill-[#d97706] text-[#d97706]" 
                         : ""
                 }`}>
                     <LordIcon
@@ -183,7 +183,7 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                     />
                 </div>
             ) : (
-                <Icon className={`h-6 w-6 shrink-0 ${active ? "text-[#E9C46A]" : ""}`} />
+                <Icon className={`h-6 w-6 shrink-0 ${active ? "text-[#d97706]" : ""}`} />
             )}
             {!collapsed && (
                 <div className="flex flex-col">

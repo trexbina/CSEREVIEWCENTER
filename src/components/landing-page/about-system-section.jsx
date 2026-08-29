@@ -105,7 +105,7 @@ export function AboutSystemSection() {
                 trigger="loop"
                 delay={2500}
                 colors="primary:#505459,secondary:#808489"
-                size={64}
+                size={96}
               />
             </div>
             <div className="p-6 sm:p-8 md:p-10 pt-4">
@@ -127,7 +127,7 @@ export function AboutSystemSection() {
                 trigger="loop"
                 delay={2500}
                 colors="primary:#505459,secondary:#808489"
-                size={64}
+                size={96}
               />
             </div>
             <div className="p-6 sm:p-8 md:p-10 pt-4">
@@ -149,7 +149,7 @@ export function AboutSystemSection() {
                 trigger="loop"
                 delay={2500}
                 colors="primary:#505459,secondary:#808489"
-                size={64}
+                size={96}
               />
             </div>
             <div className="p-6 sm:p-8 md:p-10 pt-4">

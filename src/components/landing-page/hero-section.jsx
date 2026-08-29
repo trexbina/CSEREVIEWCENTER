@@ -77,7 +77,7 @@ export function HeroSection() {
               alt="Peak Excellence Logo"
               className="h-8 sm:h-9.5 w-auto object-contain drop-shadow-xs"
             />
-            <span className="text-sm sm:text-base md:text-lg font-bold tracking-wider text-[#505459] dark:text-slate-200 uppercase font-sans">
+            <span className="text-sm sm:text-base md:text-lg font-bold tracking-wider text-[#505459] dark:text-slate-200 font-sans">
               PEAK Excellence
             </span>
           </div>

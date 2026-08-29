@@ -9,6 +9,7 @@ export const LordIcon = forwardRef(function LordIcon(
     speed = 1,
     trigger = "loop", // "loop" | "hover" | "manual"
     delay = 3500,
+    color, // e.g. "#E9C46A"
     className = "",
   },
   ref
@@ -46,12 +47,42 @@ export const LordIcon = forwardRef(function LordIcon(
 
           containerRef.current.innerHTML = ""
 
+          // Deep copy animation data so color mutations don't pollute global cache
+          let animData = JSON.parse(JSON.stringify(data))
+
+          if (color) {
+            // Convert hex (#E9C46A) to RGB array [0..1, 0..1, 0..1, 1]
+            const hex = color.replace("#", "")
+            const r = parseInt(hex.substring(0, 2), 16) / 255
+            const g = parseInt(hex.substring(2, 4), 16) / 255
+            const b = parseInt(hex.substring(4, 6), 16) / 255
+            const targetColor = [r, g, b, 1]
+
+            // Replace all color definitions across layers and shapes
+            const replaceColors = (obj) => {
+              if (!obj || typeof obj !== "object") return
+              if (obj.ty === "fl" || obj.ty === "st") {
+                if (obj.c && obj.c.k) {
+                  if (Array.isArray(obj.c.k) && typeof obj.c.k[0] === "number") {
+                    obj.c.k = targetColor
+                  }
+                }
+              }
+              for (const key of Object.keys(obj)) {
+                if (typeof obj[key] === "object") {
+                  replaceColors(obj[key])
+                }
+              }
+            }
+            replaceColors(animData)
+          }
+
           const anim = lottie.loadAnimation({
             container: containerRef.current,
             renderer: "svg",
             loop: false,
             autoplay: trigger === "loop",
-            animationData: data,
+            animationData: animData,
             rendererSettings: {
               preserveAspectRatio: "xMidYMid meet",
               progressiveLoad: true,
@@ -87,7 +118,7 @@ export const LordIcon = forwardRef(function LordIcon(
         animRef.current = null
       }
     }
-  }, [src, speed, delay, trigger])
+  }, [src, speed, delay, trigger, color])
 
   return (
     <div

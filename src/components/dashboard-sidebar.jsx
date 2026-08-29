@@ -176,7 +176,7 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                         trigger="manual"
                         size={26}
                         speed={1}
-                        className={`${active ? "[&_svg_*]:stroke-[#E9C46A]" : ""}`}
+                        color={active ? "#E9C46A" : undefined}
                     />
                 </div>
             ) : (

@@ -470,49 +470,60 @@ export default function EditUserForm({ initialUser }) {
     }
 
     return (
-        <div className="space-y-6 w-full max-w-4xl mx-auto px-4 py-4 pb-16">
+        <div className="space-y-6 w-full max-w-4xl mx-auto px-2 sm:px-4 py-2 pb-16">
             {/* Header */}
-            <div className="border-b border-border pb-5">
-                <div className="flex items-center gap-2 mb-1">
-                    <UserCog className="h-6 w-6 text-[#E9C46A]" />
-                    <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase">
-                        EDIT USER
-                    </h1>
+            <div className="flex items-center justify-between pb-4 border-b border-black/5 dark:border-white/10">
+                <div className="flex items-center gap-3">
+                    <Link
+                        href="/admin/users"
+                        className="flex items-center justify-center size-9 rounded-xl bg-white dark:bg-white/10 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white border border-black/5 dark:border-white/10 shadow-2xs transition-all cursor-pointer"
+                        title="Back to Users"
+                    >
+                        <ArrowLeft className="size-4" />
+                    </Link>
+                    <div>
+                        <h1 className="text-xl font-bold tracking-wide text-[#3B3B3B] dark:text-white">
+                            Edit User
+                        </h1>
+                        <p className="text-xs text-[#696969] dark:text-gray-400">
+                            Update profile details, education, and account roles.
+                        </p>
+                    </div>
                 </div>
-                <p className="text-muted-foreground text-sm font-medium">
-                    Update personal, educational, and account details below.
-                </p>
             </div>
 
             {error && (
-                <div className="rounded-md bg-destructive/10 border border-destructive/30 p-3 text-sm text-destructive">
+                <div className="rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200/70 dark:border-rose-900/30 p-3.5 text-xs font-semibold text-rose-600">
                     {error}
                 </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-8">
                 {/* ═══ Personal Information ═══ */}
-                <section className="rounded-lg border border-border/80 bg-card/70 p-6 shadow-2xs space-y-5">
-                    <div className="border-b border-border pb-3">
-                        <h2 className="text-lg font-semibold text-foreground">Personal Information</h2>
+                <section className="space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-black/5 dark:border-white/10">
+                        <User className="size-4 text-[#696969]" />
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
+                            Personal Information
+                        </h2>
                     </div>
 
                     {/* Avatar Upload */}
-                    <div className="flex flex-col sm:flex-row items-center gap-5 pb-4 border-b border-border/50">
-                        <div className="relative h-20 w-20 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-solid border-border flex items-center justify-center overflow-hidden">
+                    <div className="flex items-center gap-4 py-1">
+                        <div className="relative size-16 rounded-full bg-white dark:bg-white/10 border border-black/10 dark:border-white/15 flex items-center justify-center overflow-hidden shadow-2xs shrink-0">
                             {avatarUrl ? (
                                 <img src={avatarUrl} alt="Avatar Preview" className="h-full w-full object-cover" />
                             ) : (
-                                <User className="h-8 w-8 text-muted-foreground" />
+                                <User className="size-7 text-[#696969]" />
                             )}
                             {uploadingAvatar && (
                                 <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                    <span className="size-4 animate-spin rounded-full border-2 border-[#E9C46A] border-t-transparent" />
                                 </div>
                             )}
                         </div>
-                        <div className="space-y-1 text-center sm:text-left">
-                            <Label htmlFor="avatar-file" className="cursor-pointer inline-flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground hover:bg-secondary/80 transition-colors">
+                        <div className="space-y-1">
+                            <Label htmlFor="avatar-file" className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-white dark:bg-white/10 px-3 py-1.5 text-xs font-semibold text-[#3B3B3B] dark:text-white hover:bg-white/80 border border-black/5 dark:border-white/10 transition-all shadow-2xs">
                                 Upload Photo
                             </Label>
                             <input
@@ -522,39 +533,39 @@ export default function EditUserForm({ initialUser }) {
                                 className="hidden"
                                 onChange={handleAvatarUpload}
                             />
-                            <p className="text-[10px] text-muted-foreground">JPG, PNG or WEBP. Max size 2MB.</p>
+                            <p className="text-[11px] text-[#696969]">JPG, PNG or WEBP (Max 2MB)</p>
                         </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="first-name">First Name *</Label>
-                            <Input id="first-name" required value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Juan" />
+                    <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="space-y-1">
+                            <Label htmlFor="first-name" className="text-xs font-semibold text-[#696969]">First Name *</Label>
+                            <input id="first-name" required value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Juan" className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="middle-name">Middle Name</Label>
-                            <Input id="middle-name" value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Santos" />
+                        <div className="space-y-1">
+                            <Label htmlFor="middle-name" className="text-xs font-semibold text-[#696969]">Middle Name</Label>
+                            <input id="middle-name" value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Santos" className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="last-name">Last Name *</Label>
-                            <Input id="last-name" required value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Dela Cruz" />
+                        <div className="space-y-1">
+                            <Label htmlFor="last-name" className="text-xs font-semibold text-[#696969]">Last Name *</Label>
+                            <input id="last-name" required value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Dela Cruz" className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="suffix">Suffix</Label>
-                            <Input id="suffix" value={suffix} onChange={(e) => setSuffix(e.target.value)} placeholder="Jr., III" />
+                        <div className="space-y-1">
+                            <Label htmlFor="suffix" className="text-xs font-semibold text-[#696969]">Suffix</Label>
+                            <input id="suffix" value={suffix} onChange={(e) => setSuffix(e.target.value)} placeholder="Jr., III" className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="birthday">Birthday</Label>
-                            <Input id="birthday" type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
+                    <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="space-y-1">
+                            <Label htmlFor="birthday" className="text-xs font-semibold text-[#696969]">Birthday</Label>
+                            <input id="birthday" type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
-                        <div className="space-y-1.5">
-                            <Label>Gender</Label>
+                        <div className="space-y-1">
+                            <Label className="text-xs font-semibold text-[#696969]">Gender</Label>
                             <Select value={gender || "none"} onValueChange={(val) => setGender(val === "none" ? "" : val)}>
-                                <SelectTrigger className="w-full"><SelectValue placeholder="Select gender" /></SelectTrigger>
-                                <SelectContent>
+                                <SelectTrigger className="w-full h-10 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select gender" /></SelectTrigger>
+                                <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                     <SelectItem value="none">None</SelectItem>
                                     <SelectItem value="male">Male</SelectItem>
                                     <SelectItem value="female">Female</SelectItem>
@@ -563,46 +574,49 @@ export default function EditUserForm({ initialUser }) {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+63 9XX XXX XXXX" />
+                        <div className="space-y-1">
+                            <Label htmlFor="phone" className="text-xs font-semibold text-[#696969]">Phone Number</Label>
+                            <input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+63 9XX XXX XXXX" className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-1.5 sm:col-span-2">
-                            <Label htmlFor="address">Street Address</Label>
-                            <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Main St., Barangay Example" />
+                    <div className="grid gap-3.5 sm:grid-cols-2">
+                        <div className="space-y-1 sm:col-span-2">
+                            <Label htmlFor="address" className="text-xs font-semibold text-[#696969]">Street Address</Label>
+                            <input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Main St., Barangay Example" className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="city">City / Municipality</Label>
-                            <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Quezon City" />
+                        <div className="space-y-1">
+                            <Label htmlFor="city" className="text-xs font-semibold text-[#696969]">City / Municipality</Label>
+                            <input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Quezon City" className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <Label htmlFor="province">Province</Label>
-                                <Input id="province" value={province} onChange={(e) => setProvince(e.target.value)} placeholder="Metro Manila" />
+                        <div className="grid grid-cols-2 gap-3.5">
+                            <div className="space-y-1">
+                                <Label htmlFor="province" className="text-xs font-semibold text-[#696969]">Province</Label>
+                                <input id="province" value={province} onChange={(e) => setProvince(e.target.value)} placeholder="Metro Manila" className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                             </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="zip">ZIP Code</Label>
-                                <Input id="zip" value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="1100" />
+                            <div className="space-y-1">
+                                <Label htmlFor="zip" className="text-xs font-semibold text-[#696969]">ZIP Code</Label>
+                                <input id="zip" value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="1100" className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                             </div>
                         </div>
                     </div>
                 </section>
 
                 {/* ═══ Education Background ═══ */}
-                <section className="rounded-lg border border-border/80 bg-card/70 p-6 shadow-2xs space-y-5">
-                    <div className="border-b border-border pb-3">
-                        <h2 className="text-lg font-semibold text-foreground">Education Background</h2>
+                <section className="space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-black/5 dark:border-white/10">
+                        <GraduationCap className="size-4 text-[#696969]" />
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
+                            Education Background
+                        </h2>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-1.5">
-                            <Label>Highest Education</Label>
+                    <div className="grid gap-3.5 sm:grid-cols-2">
+                        <div className="space-y-1">
+                            <Label className="text-xs font-semibold text-[#696969]">Highest Education</Label>
                             <Select value={highestEducation || "none"} onValueChange={(val) => setHighestEducation(val === "none" ? "" : val)}>
-                                <SelectTrigger className="w-full"><SelectValue placeholder="Select level" /></SelectTrigger>
-                                <SelectContent>
+                                <SelectTrigger className="w-full h-10 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select level" /></SelectTrigger>
+                                <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                     <SelectItem value="none">None</SelectItem>
                                     <SelectItem value="high_school">High School</SelectItem>
                                     <SelectItem value="vocational">Vocational / Technical</SelectItem>
@@ -612,11 +626,11 @@ export default function EditUserForm({ initialUser }) {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label>School / University</Label>
+                        <div className="space-y-1">
+                            <Label className="text-xs font-semibold text-[#696969]">School / University</Label>
                             <Select value={schoolId || "none"} onValueChange={(val) => setSchoolId(val === "none" ? "" : val)}>
-                                <SelectTrigger className="w-full"><SelectValue placeholder="Select School" /></SelectTrigger>
-                                <SelectContent>
+                                <SelectTrigger className="w-full h-10 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select School" /></SelectTrigger>
+                                <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                     <SelectItem value="none">None</SelectItem>
                                     {dropdownData.schools.map(s => (
                                         <SelectItem key={s.id} value={s.id.toString()}>
@@ -627,11 +641,11 @@ export default function EditUserForm({ initialUser }) {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label>Course / Program</Label>
+                        <div className="space-y-1">
+                            <Label className="text-xs font-semibold text-[#696969]">Course / Program</Label>
                             <Select value={academicCourseId || "none"} onValueChange={(val) => setAcademicCourseId(val === "none" ? "" : val)}>
-                                <SelectTrigger className="w-full"><SelectValue placeholder="Select Course" /></SelectTrigger>
-                                <SelectContent>
+                                <SelectTrigger className="w-full h-10 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Course" /></SelectTrigger>
+                                <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                     <SelectItem value="none">None</SelectItem>
                                     {dropdownData.academic_courses.map(c => (
                                         <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
@@ -640,34 +654,36 @@ export default function EditUserForm({ initialUser }) {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="year-grad">Year Graduated</Label>
-                            <Input id="year-grad" type="number" min="1950" max="2099" value={yearGraduated} onChange={(e) => setYearGraduated(e.target.value)} placeholder="2024" />
+                        <div className="space-y-1">
+                            <Label htmlFor="year-grad" className="text-xs font-semibold text-[#696969]">Year Graduated</Label>
+                            <input id="year-grad" type="number" min="1950" max="2099" value={yearGraduated} onChange={(e) => setYearGraduated(e.target.value)} placeholder="2024" className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
                     </div>
                 </section>
 
                 {/* ═══ Account Details ═══ */}
-                <section className="rounded-lg border border-border/80 bg-card/70 p-6 shadow-2xs space-y-5">
-                    <div className="border-b border-border pb-3">
-                        <h2 className="text-lg font-semibold text-foreground">Account Details</h2>
+                <section className="space-y-4">
+                    <div className="flex items-center gap-2 pb-2 border-b border-black/5 dark:border-white/10">
+                        <Shield className="size-4 text-[#696969]" />
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
+                            Account Details
+                        </h2>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-1.5 sm:col-span-2">
-                            <Label htmlFor="edit-email">Email *</Label>
-                            <Input id="edit-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="juan@school.edu" />
+                    <div className="grid gap-3.5 sm:grid-cols-2">
+                        <div className="space-y-1 sm:col-span-2">
+                            <Label htmlFor="edit-email" className="text-xs font-semibold text-[#696969]">Email *</Label>
+                            <input id="edit-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="juan@school.edu" className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="edit-password">New Password <span className="text-xs font-normal text-muted-foreground">(leave blank to keep current)</span></Label>
-                            <Input id="edit-password" type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                        <div className="space-y-1 sm:col-span-2">
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="edit-password" className="text-xs font-semibold text-[#696969]">Set New Password (optional)</Label>
+                                <span className="text-[10px] text-[#696969]">Original password is encrypted & hidden</span>
+                            </div>
+                            <input id="edit-password" type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Leave blank to keep unchanged" className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="edit-confirm-password">Confirm New Password</Label>
-                            <Input id="edit-confirm-password" type="password" minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>User Type *</Label>
+                        <div className="space-y-1">
+                            <Label className="text-xs font-semibold text-[#696969]">User Role *</Label>
                             <Select value={role} onValueChange={(val) => {
                                 setRole(val);
                                 if (val === "admin") {
@@ -675,12 +691,15 @@ export default function EditUserForm({ initialUser }) {
                                     setProgramId("");
                                     setMajorId("");
                                     setBatchId("");
+                                } else if (val === "teacher") {
+                                    setBatchId("");
+                                    setJobRoleDescription("");
                                 } else {
                                     setJobRoleDescription("");
                                 }
                             }}>
-                                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                                <SelectContent>
+                                <SelectTrigger className="w-full h-10 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue /></SelectTrigger>
+                                <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                     <SelectItem value="student">Student</SelectItem>
                                     <SelectItem value="teacher">Teacher</SelectItem>
                                     <SelectItem value="admin">Admin</SelectItem>
@@ -689,16 +708,16 @@ export default function EditUserForm({ initialUser }) {
                         </div>
                         
                         {role === "admin" && (
-                            <div className="space-y-1.5">
-                                <Label htmlFor="edit-job-role">Job Role Description *</Label>
-                                <Input id="edit-job-role" value={jobRoleDescription} onChange={(e) => setJobRoleDescription(e.target.value)} placeholder="e.g. System Administrator, Content Manager" required />
+                            <div className="space-y-1">
+                                <Label htmlFor="job-role" className="text-xs font-semibold text-[#696969]">Job Role Description *</Label>
+                                <input id="job-role" value={jobRoleDescription} onChange={(e) => setJobRoleDescription(e.target.value)} placeholder="e.g. System Administrator, Content Manager" required className="w-full h-10 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                             </div>
                         )}
 
                         {role === "teacher" && (
                             <div className="space-y-3 sm:col-span-2">
-                                <div className="space-y-1.5">
-                                    <Label>Target Examination / Courses / Specializations *</Label>
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-semibold text-[#696969]">Target Examination / Courses / Specializations *</Label>
                                     <CourseMultiSelect
                                         selected={teacherTargets}
                                         onChange={(newTargets) => {
@@ -710,8 +729,8 @@ export default function EditUserForm({ initialUser }) {
                                         }}
                                         tree={courseTree}
                                     />
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        Select the examination, programs, or specific major specializations this teacher can teach or access (e.g. Gen Ed, Prof Ed, English, Mathematics).
+                                    <p className="text-[11px] text-[#696969] mt-1">
+                                        Select the examination, programs, or specific major specializations this teacher can teach or access.
                                     </p>
                                 </div>
                             </div>
@@ -719,11 +738,11 @@ export default function EditUserForm({ initialUser }) {
 
                         {role === "student" && (
                             <>
-                                <div className="space-y-1.5">
-                                    <Label>Target Examination *</Label>
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-semibold text-[#696969]">Target Examination *</Label>
                                     <Select value={examId || "none"} onValueChange={(val) => { setExamId(val === "none" ? "" : val); setProgramId(""); setMajorId(""); }}>
-                                        <SelectTrigger className="w-full"><SelectValue placeholder="Select Exam" /></SelectTrigger>
-                                        <SelectContent>
+                                        <SelectTrigger className="w-full h-10 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Exam" /></SelectTrigger>
+                                        <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                             <SelectItem value="none">None</SelectItem>
                                             {dropdownData.examinations.map(e => (
                                                 <SelectItem key={e.id} value={e.id.toString()}>{e.name}</SelectItem>
@@ -733,11 +752,11 @@ export default function EditUserForm({ initialUser }) {
                                     </Select>
                                 </div>
                                 {examId && dropdownData.programs?.some(p => p.exam_id.toString() === examId) && (
-                                    <div className="space-y-1.5">
-                                        <Label>Course / Program</Label>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-semibold text-[#696969]">Course / Program</Label>
                                         <Select value={programId || "none"} onValueChange={(val) => { setProgramId(val === "none" ? "" : val); setMajorId(""); }}>
-                                            <SelectTrigger className="w-full"><SelectValue placeholder="Select Program" /></SelectTrigger>
-                                            <SelectContent>
+                                            <SelectTrigger className="w-full h-10 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Program" /></SelectTrigger>
+                                            <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                                 <SelectItem value="none">None</SelectItem>
                                                 {dropdownData.programs
                                                     .filter(p => p.exam_id.toString() === examId)
@@ -749,11 +768,11 @@ export default function EditUserForm({ initialUser }) {
                                     </div>
                                 )}
                                 {programId && dropdownData.majors?.some(m => m.program_id.toString() === programId) && (
-                                    <div className="space-y-1.5">
-                                        <Label>Specialization / Major</Label>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-semibold text-[#696969]">Specialization / Major</Label>
                                         <Select value={majorId || "none"} onValueChange={(val) => setMajorId(val === "none" ? "" : val)}>
-                                            <SelectTrigger className="w-full"><SelectValue placeholder="Select Major" /></SelectTrigger>
-                                            <SelectContent>
+                                            <SelectTrigger className="w-full h-10 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Major" /></SelectTrigger>
+                                            <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                                 <SelectItem value="none">None</SelectItem>
                                                 {dropdownData.majors
                                                     .filter(m => m.program_id.toString() === programId)
@@ -764,11 +783,11 @@ export default function EditUserForm({ initialUser }) {
                                         </Select>
                                     </div>
                                 )}
-                                <div className="space-y-1.5">
-                                    <Label>Batch *</Label>
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-semibold text-[#696969]">Batch *</Label>
                                     <Select value={batchId || "none"} onValueChange={(val) => setBatchId(val === "none" ? "" : val)}>
-                                        <SelectTrigger className="w-full"><SelectValue placeholder="Select Batch" /></SelectTrigger>
-                                        <SelectContent>
+                                        <SelectTrigger className="w-full h-10 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Batch" /></SelectTrigger>
+                                        <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                             <SelectItem value="none">None</SelectItem>
                                             {dropdownData.batches
                                                 .filter(b => !examId || b.exam_id.toString() === examId)
@@ -785,20 +804,26 @@ export default function EditUserForm({ initialUser }) {
                 </section>
 
                 {/* ═══ Actions ═══ */}
-                <div className="flex items-center justify-end gap-3 pt-2">
+                <div className="flex items-center justify-end gap-2.5 pt-2">
                     <Link href="/admin/users">
-                        <Button type="button" variant="outline">Cancel</Button>
+                        <button type="button" className="px-4 py-2 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer">
+                            Cancel
+                        </button>
                     </Link>
-                    <Button type="submit" disabled={saving}>
+                    <button
+                        type="submit"
+                        disabled={saving}
+                        className="flex items-center gap-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+                    >
                         {saving ? (
                             <>
-                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
                                 Saving…
                             </>
                         ) : (
                             "Save Changes"
                         )}
-                    </Button>
+                    </button>
                 </div>
             </form>
         </div>

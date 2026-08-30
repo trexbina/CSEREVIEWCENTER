@@ -45,6 +45,254 @@ import GradebookView from "./GradebookView"
 // modal dialog to confirm deleting items
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 
+// --- Helper Functions & External Subcomponents (defined outside parent to prevent losing input focus) ---
+const getStatusStyle = (status) => {
+  switch (status?.toLowerCase()) {
+    case "active":
+      return "text-emerald-600 font-medium"
+    case "upcoming":
+      return "text-blue-600 font-medium"
+    case "completed":
+      return "text-gray-500 font-medium"
+    default:
+      return "text-muted-foreground font-medium"
+  }
+}
+
+const NodeButton = ({ icon: Icon, label, colorClass, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`absolute -bottom-3 left-1/2 -translate-x-1/2 bg-background px-1.5 flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider rounded-md hover:scale-110 transition-transform ${colorClass}`}
+  >
+    <Icon className="h-3 w-3" /> {label}
+  </button>
+)
+
+const DeleteBtn = ({ onClick }) => (
+  <button
+    onClick={onClick}
+    className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+    title="Delete"
+  >
+    <Trash className="h-4 w-4" />
+  </button>
+)
+
+const SettingsBtn = ({ onClick }) => (
+  <button
+    onClick={onClick}
+    className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+    title="Settings"
+  >
+    <Settings className="h-4 w-4" />
+  </button>
+)
+
+const SortButton = ({ label, field, sortField, sortDir, onSort }) => {
+  const active = sortField === field
+  return (
+    <button
+      onClick={() => onSort(field)}
+      className="flex items-center gap-1 hover:text-foreground transition-colors font-semibold cursor-pointer text-foreground select-none"
+    >
+      <span>{label}</span>
+      <span className="flex flex-col text-[10px] leading-[8px] opacity-70">
+        {active ? (
+          sortDir === "asc" ? <ArrowUp className="h-3 w-3 text-primary stroke-[2.5]" /> : <ArrowDown className="h-3 w-3 text-primary stroke-[2.5]" />
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-40 hover:opacity-100 transition-opacity" />
+        )}
+      </span>
+    </button>
+  )
+}
+
+const ExpandBtn = ({ isOpen, onClick }) => (
+  <button onClick={onClick} className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors mr-2">
+    {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+  </button>
+)
+
+// simple custom text input prompt modal
+const CustomPrompt = ({ isOpen, title, value, onChange, onConfirm, onCancel, placeholder }) => {
+  if (!isOpen) return null
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full shadow-lg space-y-4">
+        <h3 className="font-bold text-foreground text-base">{title}</h3>
+        <input
+          type="text"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onConfirm()
+            if (e.key === "Escape") onCancel()
+          }}
+        />
+        <div className="flex justify-end gap-2">
+          <button onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
+          <button onClick={onConfirm} className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">Confirm</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// school create and edit modal
+const SchoolDialog = ({ isOpen, schoolForm, setSchoolForm, onSubmit, onCancel, isEdit }) => {
+  if (!isOpen) return null
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-lg space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-bold text-foreground text-base">{isEdit ? "Edit School" : "Add School"}</h3>
+          <button onClick={onCancel} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+        </div>
+        <form onSubmit={onSubmit} className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">School Name</label>
+            <input
+              type="text"
+              required
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+              value={schoolForm.name}
+              onChange={(e) => setSchoolForm({ ...schoolForm, name: e.target.value })}
+              placeholder="e.g. University of the Philippines"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Address / Campus</label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+              value={schoolForm.address}
+              onChange={(e) => setSchoolForm({ ...schoolForm, address: e.target.value })}
+              placeholder="e.g. Diliman, Quezon City"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
+            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">{isEdit ? "Save Changes" : "Add School"}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// batch create and edit modal
+const BatchDialog = ({ isOpen, batchForm, setBatchForm, onSubmit, onCancel, tree, isEdit }) => {
+  if (!isOpen) return null
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-lg space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-bold text-foreground text-base">{isEdit ? "Edit Batch" : "Add Batch"}</h3>
+          <button onClick={onCancel} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+        </div>
+        <form onSubmit={onSubmit} className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Batch Name / Number</label>
+            <input
+              type="text"
+              required
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+              value={batchForm.batchNumber}
+              onChange={(e) => setBatchForm({ ...batchForm, batchNumber: e.target.value })}
+              placeholder="e.g. Batch 1"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Target Year</label>
+            <input
+              type="text"
+              required
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+              value={batchForm.year}
+              onChange={(e) => setBatchForm({ ...batchForm, year: e.target.value })}
+              placeholder="e.g. 2025"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Target Examination</label>
+            <select
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+              value={batchForm.examId}
+              onChange={(e) => setBatchForm({ ...batchForm, examId: e.target.value })}
+              required
+            >
+              <option value="" disabled>Select Examination</option>
+              {tree.map((exam) => (
+                <option key={exam.id} value={exam.id}>{exam.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Status</label>
+            <select
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+              value={batchForm.status}
+              onChange={(e) => setBatchForm({ ...batchForm, status: e.target.value })}
+            >
+              <option value="upcoming">Upcoming</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
+            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">{isEdit ? "Save Changes" : "Create Batch"}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// exam settings modal
+const ExamSettingsDialog = ({ isOpen, examSettings, setExamSettings, onSave, onCancel }) => {
+  if (!isOpen) return null
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-lg space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-bold text-foreground text-base">Examination Settings</h3>
+          <button onClick={onCancel} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Examination Name</label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+              value={examSettings.name}
+              onChange={(e) => setExamSettings({ ...examSettings, name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-foreground">Max Depth Level</label>
+            <input
+              type="number"
+              min="1"
+              max="5"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+              value={examSettings.maxLevel}
+              onChange={(e) => setExamSettings({ ...examSettings, maxLevel: e.target.value })}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
+            <button type="button" onClick={onSave} className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">Save Settings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // main master data settings screen
 export default function MasterDataBuilderPage() {
   // tracks which sub menu or tab the user is viewing
@@ -422,254 +670,6 @@ export default function MasterDataBuilderPage() {
 
     return result;
   }, [batches, filterExam, filterStatus, filterYear, batchSortField, batchSortDir, tree]);
-
-  // --- Helper Components ---
-  const NodeButton = ({ icon: Icon, label, colorClass, onClick }) => (
-    <button
-      onClick={onClick}
-      className={`absolute -bottom-3 left-1/2 -translate-x-1/2 bg-background px-1.5 flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider rounded-md hover:scale-110 transition-transform ${colorClass}`}
-    >
-      <Icon className="h-3 w-3" /> {label}
-    </button>
-  )
-
-  const DeleteBtn = ({ onClick }) => (
-    <button
-      onClick={onClick}
-      className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-      title="Delete"
-    >
-      <Trash className="h-4 w-4" />
-    </button>
-  )
-
-  const SettingsBtn = ({ onClick }) => (
-    <button
-      onClick={onClick}
-      className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-      title="Settings"
-    >
-      <Settings className="h-4 w-4" />
-    </button>
-  )
-
-  const getStatusStyle = (status) => {
-    switch (status?.toLowerCase()) {
-      case "active":
-        return "text-emerald-600 font-medium"
-      case "upcoming":
-        return "text-blue-600 font-medium"
-      case "completed":
-        return "text-gray-500 font-medium"
-      default:
-        return "text-muted-foreground font-medium"
-    }
-  }
-
-  const SortButton = ({ label, field, sortField, sortDir, onSort }) => {
-    const active = sortField === field
-    return (
-      <button
-        onClick={() => onSort(field)}
-        className="flex items-center gap-1 hover:text-foreground transition-colors font-semibold cursor-pointer text-foreground select-none"
-      >
-        <span>{label}</span>
-        <span className="flex flex-col text-[10px] leading-[8px] opacity-70">
-          {active ? (
-            sortDir === "asc" ? <ArrowUp className="h-3 w-3 text-primary stroke-[2.5]" /> : <ArrowDown className="h-3 w-3 text-primary stroke-[2.5]" />
-          ) : (
-            <ArrowUpDown className="h-3 w-3 opacity-40 hover:opacity-100 transition-opacity" />
-          )}
-        </span>
-      </button>
-    )
-  }
-
-  const ExpandBtn = ({ isOpen, onClick }) => (
-    <button onClick={onClick} className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors mr-2">
-      {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-    </button>
-  )
-
-  // simple custom text input prompt modal
-  const CustomPrompt = ({ isOpen, title, value, onChange, onConfirm, onCancel, placeholder }) => {
-    if (!isOpen) return null
-    return (
-      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-        <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full shadow-lg space-y-4">
-          <h3 className="font-bold text-foreground text-base">{title}</h3>
-          <input
-            type="text"
-            className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === "Enter") onConfirm()
-              if (e.key === "Escape") onCancel()
-            }}
-          />
-          <div className="flex justify-end gap-2">
-            <button onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
-            <button onClick={onConfirm} className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">Confirm</button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // school create and edit modal
-  const SchoolDialog = ({ isOpen, schoolForm, setSchoolForm, onSubmit, onCancel, isEdit }) => {
-    if (!isOpen) return null
-    return (
-      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-        <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-lg space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-foreground text-base">{isEdit ? "Edit School" : "Add School"}</h3>
-            <button onClick={onCancel} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
-          </div>
-          <form onSubmit={onSubmit} className="space-y-3">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">School Name</label>
-              <input
-                type="text"
-                required
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
-                value={schoolForm.name}
-                onChange={(e) => setSchoolForm({ ...schoolForm, name: e.target.value })}
-                placeholder="e.g. University of the Philippines"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Address / Campus</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
-                value={schoolForm.address}
-                onChange={(e) => setSchoolForm({ ...schoolForm, address: e.target.value })}
-                placeholder="e.g. Diliman, Quezon City"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
-              <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">{isEdit ? "Save Changes" : "Add School"}</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    )
-  }
-
-  // batch create and edit modal
-  const BatchDialog = ({ isOpen, batchForm, setBatchForm, onSubmit, onCancel, tree, isEdit }) => {
-    if (!isOpen) return null
-    return (
-      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-        <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-lg space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-foreground text-base">{isEdit ? "Edit Batch" : "Add Batch"}</h3>
-            <button onClick={onCancel} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
-          </div>
-          <form onSubmit={onSubmit} className="space-y-3">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Batch Name / Number</label>
-              <input
-                type="text"
-                required
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
-                value={batchForm.batchNumber}
-                onChange={(e) => setBatchForm({ ...batchForm, batchNumber: e.target.value })}
-                placeholder="e.g. Batch 1"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Target Year</label>
-              <input
-                type="text"
-                required
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
-                value={batchForm.year}
-                onChange={(e) => setBatchForm({ ...batchForm, year: e.target.value })}
-                placeholder="e.g. 2025"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Target Examination</label>
-              <select
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
-                value={batchForm.examId}
-                onChange={(e) => setBatchForm({ ...batchForm, examId: e.target.value })}
-                required
-              >
-                <option value="" disabled>Select Examination</option>
-                {tree.map((exam) => (
-                  <option key={exam.id} value={exam.id}>{exam.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Status</label>
-              <select
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
-                value={batchForm.status}
-                onChange={(e) => setBatchForm({ ...batchForm, status: e.target.value })}
-              >
-                <option value="upcoming">Upcoming</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
-              <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">{isEdit ? "Save Changes" : "Create Batch"}</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    )
-  }
-
-  // exam settings modal
-  const ExamSettingsDialog = ({ isOpen, examSettings, setExamSettings, onSave, onCancel }) => {
-    if (!isOpen) return null
-    return (
-      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-        <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-lg space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-foreground text-base">Examination Settings</h3>
-            <button onClick={onCancel} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
-          </div>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Examination Name</label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
-                value={examSettings.name}
-                onChange={(e) => setExamSettings({ ...examSettings, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-foreground">Max Depth Level</label>
-              <input
-                type="number"
-                min="1"
-                max="5"
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
-                value={examSettings.maxLevel}
-                onChange={(e) => setExamSettings({ ...examSettings, maxLevel: e.target.value })}
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
-              <button type="button" onClick={onSave} className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">Save Settings</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-6 w-full max-w-6xl mx-auto px-4 py-4 relative animate-in fade-in duration-300">

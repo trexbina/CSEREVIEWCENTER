@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useImperativeHandle, forwardRef } from "react"
 
+// Global memory cache for parsed JSON animation assets so they only fetch once ever
+const animationDataCache = new Map()
+
 export const LordIcon = forwardRef(function LordIcon(
   {
     src,
@@ -35,49 +38,57 @@ export const LordIcon = forwardRef(function LordIcon(
     let timer = null
     let isCancelled = false
 
-    // Dynamically import lottie-web on client-side only (SSR safe)
-    import("lottie-web").then(({ default: lottie }) => {
-      if (!containerRef.current || isCancelled) return
+    async function initAnimation() {
+      try {
+        const { default: lottie } = await import("lottie-web")
+        if (!containerRef.current || isCancelled) return
 
-      fetch(src)
-        .then((res) => res.json())
-        .then((data) => {
-          if (!containerRef.current || isCancelled) return
+        let data = animationDataCache.get(src)
+        if (!data) {
+          const res = await fetch(src)
+          data = await res.json()
+          animationDataCache.set(src, data)
+        }
 
-          containerRef.current.innerHTML = ""
+        if (!containerRef.current || isCancelled) return
 
-          const anim = lottie.loadAnimation({
-            container: containerRef.current,
-            renderer: "svg",
-            loop: false,
-            autoplay: trigger === "loop",
-            animationData: data,
-            rendererSettings: {
-              preserveAspectRatio: "xMidYMid meet",
-              progressiveLoad: true,
-              hideOnTransparent: false,
-            },
-          })
+        containerRef.current.innerHTML = ""
 
-          animRef.current = anim
-          anim.setSpeed(speed)
-
-          if (trigger === "hover") {
-            // Start on frame 0
-            anim.goToAndStop(0, true)
-          } else if (trigger === "loop") {
-            anim.addEventListener("complete", () => {
-              if (timer) clearTimeout(timer)
-              timer = setTimeout(() => {
-                if (!isCancelled && animRef.current) {
-                  animRef.current.goToAndPlay(0, true)
-                }
-              }, delay)
-            })
-          }
+        const anim = lottie.loadAnimation({
+          container: containerRef.current,
+          renderer: "svg",
+          loop: false,
+          autoplay: trigger === "loop",
+          animationData: data,
+          rendererSettings: {
+            preserveAspectRatio: "xMidYMid meet",
+            progressiveLoad: true,
+            hideOnTransparent: false,
+          },
         })
-        .catch((err) => console.error("Error loading animation data:", err))
-    }).catch((err) => console.error("Error importing lottie-web:", err))
+
+        animRef.current = anim
+        anim.setSpeed(speed)
+
+        if (trigger === "hover" || trigger === "manual") {
+          // Start parked cleanly at frame 0
+          anim.goToAndStop(0, true)
+        } else if (trigger === "loop") {
+          anim.addEventListener("complete", () => {
+            if (timer) clearTimeout(timer)
+            timer = setTimeout(() => {
+              if (!isCancelled && animRef.current) {
+                animRef.current.goToAndPlay(0, true)
+              }
+            }, delay)
+          })
+        }
+      } catch (err) {
+        console.error("Error loading animation:", err)
+      }
+    }
+
+    initAnimation()
 
     return () => {
       isCancelled = true

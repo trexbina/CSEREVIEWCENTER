@@ -163,16 +163,16 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                 }
             }}
             title={collapsed ? item.label : undefined}
-            className={`group relative flex items-center gap-3.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+            className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
+                ? "bg-[#E9C46A]/15 text-[#b45309] dark:text-[#E9C46A]"
+                : "text-[#374151] dark:text-[#e5e7eb] hover:bg-sidebar-accent hover:text-black dark:hover:text-white"
                 } ${collapsed ? "justify-center" : ""}`}
         >
             {jsonSrc ? (
                 <div className={`shrink-0 flex items-center justify-center pointer-events-none transition-colors duration-200 ${
                     active 
-                        ? "[&_path]:!fill-[#d97706] [&_path]:!stroke-[#d97706] [&_path[stroke]]:!stroke-[#d97706] [&_circle]:!stroke-[#d97706] [&_rect]:!stroke-[#d97706] [&_g]:!fill-[#d97706] text-[#d97706]" 
-                        : ""
+                        ? "[&_path]:!fill-[#E9C46A] [&_path]:!stroke-[#E9C46A] [&_path[stroke]]:!stroke-[#E9C46A] [&_circle]:!stroke-[#E9C46A] [&_rect]:!stroke-[#E9C46A] [&_g]:!fill-[#E9C46A] text-[#E9C46A]" 
+                        : "[&_path]:!fill-[#4b5563] dark:[&_path]:!fill-[#9ca3af] [&_path]:!stroke-[#4b5563] dark:[&_path]:!stroke-[#9ca3af] [&_circle]:!stroke-[#4b5563] dark:[&_circle]:!stroke-[#9ca3af] [&_rect]:!stroke-[#4b5563] dark:[&_rect]:!stroke-[#9ca3af]"
                 }`}>
                     <LordIcon
                         ref={iconRef}
@@ -183,13 +183,15 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                     />
                 </div>
             ) : (
-                <Icon className={`h-6 w-6 shrink-0 ${active ? "text-[#d97706]" : ""}`} />
+                <Icon className={`h-6 w-6 shrink-0 ${active ? "text-[#E9C46A]" : "text-[#4b5563] dark:text-[#9ca3af]"}`} />
             )}
             {!collapsed && (
                 <div className="flex flex-col">
-                    <span>{item.label}</span>
+                    <span className={`text-[13.5px] font-semibold leading-snug ${active ? "text-[#1f2937] dark:text-white" : "text-[#374151] dark:text-[#e5e7eb]"}`}>
+                        {item.label}
+                    </span>
                     {item.description && (
-                        <span className="text-xs font-normal text-sidebar-foreground/50 leading-tight">
+                        <span className={`text-xs font-normal leading-tight mt-0.5 ${active ? "text-[#4b5563] dark:text-slate-300" : "text-[#6b7280] dark:text-slate-400"}`}>
                             {item.description}
                         </span>
                     )}
@@ -212,10 +214,10 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                     />
                     {!collapsed && (
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-semibold text-sidebar-foreground/50 tracking-wider uppercase truncate">
+                            <span className="text-[10px] font-bold text-[#6b7280] dark:text-[#9ca3af] tracking-wider uppercase truncate">
                                 TRAINING ACADEMY & REVIEW CE...
                             </span>
-                            <span className="text-[15px] font-black tracking-tight text-sidebar-foreground leading-tight truncate">
+                            <span className="text-[15px] font-black tracking-tight text-[#1f2937] dark:text-white leading-tight truncate">
                                 PEAK EXCELLENCE
                             </span>
                         </div>
@@ -228,7 +230,7 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                         // Section header support
                         if (item.section) {
                             return (
-                                <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 ${collapsed ? "hidden" : ""}`}>
+                                <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-[#6b7280] dark:text-[#9ca3af] ${collapsed ? "hidden" : ""}`}>
                                     {item.section}
                                 </p>
                             )

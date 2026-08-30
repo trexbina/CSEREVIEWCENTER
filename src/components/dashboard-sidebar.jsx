@@ -218,12 +218,12 @@ export function DashboardSidebar({ role }) {
     function SidebarContent() {
         return (
             <div className="flex h-full flex-col">
-                {/* Logo - Icon Only, centered & enlarged */}
-                <div className="flex items-center justify-center pt-6 pb-4 px-3">
+                {/* Logo - Centered & enlarged */}
+                <div className="flex items-center justify-center pt-6 pb-3 px-4">
                     <img
                         src="/landingpageassets/logo.png"
                         alt="Peak Excellence Review Center"
-                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-11 w-11" : "h-16 w-16"}`}
+                        className={`shrink-0 transition-all ${collapsed ? "h-10 w-10 object-contain" : "w-full max-w-[180px] h-auto object-contain"}`}
                     />
                 </div>
 

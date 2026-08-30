@@ -169,8 +169,8 @@ export function DashboardSidebar({ role }) {
                     }
                 }}
                 className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
-                    ? "bg-[#F2F2F3] dark:bg-sidebar-accent text-[#1f2937] dark:text-white"
-                    : "text-[#374151] dark:text-[#e5e7eb] hover:bg-sidebar-accent/60 hover:text-black dark:hover:text-white"
+                    ? "bg-black/[0.035] dark:bg-white/[0.06] text-[#1f2937] dark:text-white"
+                    : "text-[#374151] dark:text-[#e5e7eb] hover:bg-black/[0.025] dark:hover:bg-white/[0.04] hover:text-black dark:hover:text-white"
                     } ${collapsed ? "justify-center" : ""}`}
             >
                 {jsonSrc ? (

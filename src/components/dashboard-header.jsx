@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Bell, Maximize, Minimize, Trash, ChevronDown, User, Settings, ShieldCheck, CheckCheck } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { Search, Bell, Maximize, Minimize, Trash, ChevronRight, User, Settings, ShieldCheck, CheckCheck } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 import Link from "next/link"
@@ -22,13 +23,57 @@ const ROLE_LABELS = {
   admin: "ADMIN",
 }
 
+const ROUTE_NAME_MAP = {
+  admin: "Dashboard",
+  student: "Dashboard",
+  teacher: "Dashboard",
+  users: "User Management",
+  "all": "View All Users",
+  "add": "Add User",
+  "edit": "Edit User",
+  curriculum: "Curriculum Manager",
+  "mock-exams": "Mock Exams",
+  "master-data": "Master Data",
+  "analytical-overview": "Analytical Overview",
+  trash: "Trash & Recovery",
+  settings: "Settings",
+  notifications: "Notifications",
+  subjects: "Subjects",
+  assignments: "Assignments",
+  calendar: "Calendar",
+  progress: "My Progress",
+  profile: "Profile",
+  modules: "Modules",
+  content: "Content Manager",
+}
+
+function formatSegmentLabel(segment) {
+  if (ROUTE_NAME_MAP[segment]) return ROUTE_NAME_MAP[segment]
+  // If it's a numeric ID or UUID, label it as "Details"
+  if (/^(\d+|[0-9a-fA-F-]{10,})$/.test(segment)) return "Details"
+  return segment
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ")
+}
+
 export function DashboardHeader({ role }) {
+  const pathname = usePathname()
   const [user, setUser] = useState(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
   const [headerSearch, setHeaderSearch] = useState("")
+
+  // Construct breadcrumb items from current pathname
+  const segments = pathname.split("/").filter(Boolean)
+  const breadcrumbs = segments.map((segment, index) => {
+    const href = "/" + segments.slice(0, index + 1).join("/")
+    const label = formatSegmentLabel(segment)
+    const isLast = index === segments.length - 1
+    return { href, label, isLast }
+  })
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -100,23 +145,46 @@ export function DashboardHeader({ role }) {
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 px-4 lg:px-8 transition-all">
-      {/* Left side: Mobile spacer + Persistent Light Gray Search Bar */}
-      <div className="flex items-center gap-3 flex-1 max-w-md">
+      {/* Left side: Clickable Location Breadcrumb Navigation */}
+      <div className="flex items-center gap-2 min-w-0">
         <div className="w-8 shrink-0 lg:hidden" />
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#696969]/80 dark:text-gray-400" />
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs sm:text-[13px] font-medium truncate">
+          {breadcrumbs.map((crumb, idx) => (
+            <div key={crumb.href} className="flex items-center gap-1.5 truncate">
+              {idx > 0 && (
+                <ChevronRight className="size-3.5 text-[#696969]/50 dark:text-gray-500 shrink-0" />
+              )}
+              {crumb.isLast ? (
+                <span className="font-semibold text-[#3B3B3B] dark:text-white truncate">
+                  {crumb.label}
+                </span>
+              ) : (
+                <Link
+                  href={crumb.href}
+                  className="text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white transition-colors truncate"
+                >
+                  {crumb.label}
+                </Link>
+              )}
+            </div>
+          ))}
+        </nav>
+      </div>
+
+      {/* Right side controls: Compact Search Bar + Fullscreen + Notifications + User Profile */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+        {/* Compact Search Bar */}
+        <div className="relative w-44 sm:w-56 md:w-64">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#696969]/70 dark:text-gray-400" />
           <input
             type="search"
             value={headerSearch}
             onChange={(e) => setHeaderSearch(e.target.value)}
             placeholder="Search.."
-            className="w-full h-10 pl-10 pr-4 text-xs sm:text-sm rounded-xl bg-[#F2F2F2] dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 dark:placeholder:text-gray-400 border border-transparent focus:border-black/10 dark:focus:border-white/15 focus:bg-white dark:focus:bg-white/15 focus:outline-none focus:ring-1.5 focus:ring-black/10 transition-all shadow-2xs"
+            className="w-full h-9 pl-8.5 pr-3 text-xs rounded-xl bg-[#F2F2F2] dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 dark:placeholder:text-gray-400 border border-transparent focus:border-black/10 dark:focus:border-white/15 focus:bg-white dark:focus:bg-white/15 focus:outline-none focus:ring-1.5 focus:ring-black/10 transition-all shadow-2xs"
           />
         </div>
-      </div>
 
-      {/* Right side controls & user profile */}
-      <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-auto">
         {/* Fullscreen Toggle Button - Minimal borderless/backgroundless */}
         <button
           onClick={toggleFullscreen}

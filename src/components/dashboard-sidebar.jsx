@@ -26,6 +26,7 @@ import {
     PencilLine,
     Star,
     Search,
+    Trash,
 } from "lucide-react"
 
 import { Settings as AnimatedSettingsBase } from "@/components/animate-ui/icons/settings"

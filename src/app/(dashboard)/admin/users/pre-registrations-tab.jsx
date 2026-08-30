@@ -320,25 +320,26 @@ export function PreRegistrationsTab() {
     <TooltipProvider delayDuration={150}>
       <div className="space-y-4">
         {/* Controls / Filter row */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3 flex-1">
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-              <Input
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+          <div className="flex items-center gap-3 flex-1 min-w-[260px]">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#696969]/70 pointer-events-none" />
+              <input
+                type="search"
                 placeholder="Search applicant name, email, exam..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-9 text-xs rounded-xl bg-card border-border/80 focus-visible:ring-1"
+                className="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
               />
             </div>
 
             {/* Status Filter Dropdown */}
-            <div className="w-44">
+            <div className="w-44 shrink-0">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-9 w-full rounded-xl border border-border/80 bg-card text-xs font-medium px-3 shadow-2xs hover:bg-muted/40 cursor-pointer">
+                <SelectTrigger className="h-10 w-full rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white px-3.5 shadow-2xs cursor-pointer">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl border border-border bg-popover text-xs shadow-md">
+                <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 text-xs shadow-xl">
                   <SelectItem value="ALL" className="text-xs py-1.5 cursor-pointer">
                     All Statuses ({applications.length})
                   </SelectItem>
@@ -357,22 +358,20 @@ export function PreRegistrationsTab() {
           </div>
 
           {/* Right Action buttons: Deselect All & Delete Selected */}
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2">
             {filtered.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
+              <button
+                type="button"
                 onClick={handleToggleAll}
-                className="text-xs font-medium"
+                className="px-3.5 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer"
               >
                 {isAllSelected ? "Deselect All" : `Select All (${filtered.length})`}
-              </Button>
+              </button>
             )}
 
             {selectedIds.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => {
                   setDeleteTarget({
                     ids: selectedIds,
@@ -380,21 +379,21 @@ export function PreRegistrationsTab() {
                   })
                   setDeleteModalOpen(true)
                 }}
-                className="text-xs font-medium text-foreground hover:bg-muted"
+                className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/30 hover:bg-rose-100 transition-all shadow-2xs cursor-pointer"
               >
                 Delete Selected ({selectedIds.length})
-              </Button>
+              </button>
             )}
           </div>
         </div>
 
         {/* Flat Data Table */}
-        <div className="rounded-xl border border-border/80 bg-card overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-border/60 bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  <th className="w-12 px-4 py-3.5 text-center">
+        <div className="w-full overflow-hidden rounded-2xl border border-black/5 dark:border-white/10 bg-card shadow-2xs">
+          <div className="max-h-[920px] overflow-y-auto">
+            <table className="w-full text-left border-collapse" aria-label="Pre-registrations list">
+              <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
+                <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
+                  <th className="w-12 px-4 text-center" scope="col">
                     <input
                       type="checkbox"
                       checked={isAllSelected}
@@ -404,29 +403,29 @@ export function PreRegistrationsTab() {
                         }
                       }}
                       onChange={handleToggleAll}
-                      className="h-4 w-4 rounded border-border text-foreground accent-foreground cursor-pointer"
+                      className="h-4 w-4 rounded border-black/15 cursor-pointer accent-[#E9C46A] align-middle"
                       aria-label="Select all pre-registrations"
                     />
                   </th>
-                  <th className="px-4 py-3.5">Applicant</th>
-                  <th className="px-4 py-3.5">Contact</th>
-                  <th className="px-4 py-3.5">Target Review</th>
-                  <th className="px-4 py-3.5">School / Course</th>
-                  <th className="px-4 py-3.5">Submitted</th>
-                  <th className="px-4 py-3.5">Status</th>
-                  <th className="px-4 py-3.5 text-right">Actions</th>
+                  <th className="px-4 py-2.5" scope="col">Applicant</th>
+                  <th className="px-4 py-2.5" scope="col">Contact</th>
+                  <th className="px-4 py-2.5" scope="col">Target Review</th>
+                  <th className="px-4 py-2.5" scope="col">School / Course</th>
+                  <th className="px-4 py-2.5" scope="col">Submitted</th>
+                  <th className="px-4 py-2.5" scope="col">Status</th>
+                  <th className="px-4 py-2.5 text-right pr-6" scope="col">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50 font-normal">
+              <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-12 text-center text-muted-foreground text-sm">
+                    <td colSpan={8} className="py-12 text-center text-sm font-medium text-[#696969]">
                       Loading pre-registration records…
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-12 text-center text-muted-foreground text-sm">
+                    <td colSpan={8} className="py-12 text-center text-sm font-medium text-[#696969]">
                       No pre-registration applications found.
                     </td>
                   </tr>
@@ -439,71 +438,66 @@ export function PreRegistrationsTab() {
                     return (
                       <tr
                         key={app.id}
-                        className={`transition-colors ${
-                          isSelected ? "bg-muted/40" : "hover:bg-muted/20"
+                        className={`h-14 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${
+                          isSelected ? "bg-[#F2F2F2]/50 dark:bg-white/5" : ""
                         }`}
                       >
-                        <td className="w-12 px-4 py-3.5 text-center align-middle">
+                        <td className="w-12 px-4 text-center align-middle">
                           <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => handleToggleRow(app.id)}
-                            className="h-4 w-4 rounded border-border text-foreground accent-foreground cursor-pointer"
+                            className="h-4 w-4 rounded border-black/15 cursor-pointer accent-[#E9C46A] align-middle"
                             aria-label={`Select ${fullName}`}
                           />
                         </td>
-                        <td className="px-4 py-3.5 align-middle">
-                          <div className="font-semibold text-foreground leading-normal">{fullName}</div>
-                          <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{app.gender || "—"}</div>
+                        <td className="px-4 align-middle">
+                          <button
+                            type="button"
+                            onClick={() => openReviewModal(app)}
+                            className="font-semibold text-[#2563EB] hover:text-[#1D4ED8] dark:text-[#60A5FA] dark:hover:text-[#93C5FD] hover:underline transition-colors cursor-pointer text-left"
+                          >
+                            {fullName}
+                          </button>
+                          <div className="text-xs text-[#696969] dark:text-gray-400">{app.gender || "—"}</div>
                         </td>
-                        <td className="px-4 py-3.5 align-middle">
-                          <div className="text-foreground leading-normal">{app.email}</div>
-                          <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{app.phone || "—"}</div>
+                        <td className="px-4 align-middle text-sm text-[#696969] dark:text-gray-300 font-normal">
+                          <div className="text-[#3B3B3B] dark:text-white font-medium">{app.email}</div>
+                          <div className="text-xs text-[#696969] dark:text-gray-400">{app.phone || "—"}</div>
                         </td>
-                        <td className="px-4 py-3.5 align-middle">
-                          <div className="font-medium text-foreground leading-normal">{app.exam_name || "—"}</div>
-                          <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        <td className="px-4 align-middle text-sm">
+                          <div className="font-medium text-[#3B3B3B] dark:text-white">{app.exam_name || "—"}</div>
+                          <div className="text-xs text-[#696969] dark:text-gray-400">
                             {app.batch_name ? `Batch: ${app.batch_name}` : app.program_name || "—"}
                           </div>
                         </td>
-                        <td className="px-4 py-3.5 max-w-[220px] align-middle">
-                          <div className="text-foreground truncate leading-normal">{app.school_name || "—"}</div>
-                          <div className="text-xs text-muted-foreground truncate mt-1 leading-relaxed">{app.academic_course_name || "—"}</div>
+                        <td className="px-4 max-w-[220px] align-middle text-sm">
+                          <div className="text-[#3B3B3B] dark:text-white truncate font-medium">{app.school_name || "—"}</div>
+                          <div className="text-xs text-[#696969] dark:text-gray-400 truncate">{app.academic_course_name || "—"}</div>
                         </td>
-                        <td className="px-4 py-3.5 text-muted-foreground whitespace-nowrap align-middle">
+                        <td className="px-4 text-sm text-[#696969] dark:text-gray-400 font-normal whitespace-nowrap align-middle">
                           {new Date(app.created_at).toLocaleDateString()}
                         </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap align-middle">
-                          <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-wide">
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                app.status === "APPROVED"
-                                  ? "bg-emerald-500"
-                                  : app.status === "REJECTED"
-                                  ? "bg-destructive"
-                                  : "bg-amber-500"
-                              }`}
-                            />
-                            <span
-                              className={
-                                app.status === "APPROVED"
-                                  ? "text-emerald-600 dark:text-emerald-400"
-                                  : app.status === "REJECTED"
-                                  ? "text-destructive"
-                                  : "text-amber-600 dark:text-amber-400"
-                              }
-                            >
-                              {app.status}
-                            </span>
+                        <td className="px-4 whitespace-nowrap align-middle">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
+                              app.status === "APPROVED"
+                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/30"
+                                : app.status === "REJECTED"
+                                ? "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/30"
+                                : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/30"
+                            }`}
+                          >
+                            {app.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3.5 text-right align-middle">
+                        <td className="px-4 text-right pr-6 align-middle">
                           <div className="flex items-center justify-end gap-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <button
                                   onClick={() => openReviewModal(app)}
-                                  className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                                  className="h-8 w-8 rounded-xl flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                                 >
                                   <Eye className="h-4 w-4" />
                                 </button>
@@ -519,13 +513,14 @@ export function PreRegistrationsTab() {
                                   <TooltipTrigger asChild>
                                     <button
                                       onClick={() => handleApprove(app.id)}
-                                      className="h-8 w-8 rounded-lg flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:bg-muted transition-colors cursor-pointer"
+                                      disabled={actionLoading}
+                                      className="h-8 w-8 rounded-xl flex items-center justify-center text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors cursor-pointer"
                                     >
-                                      <Check className="h-4 w-4 stroke-[2.5]" />
+                                      <Check className="h-4 w-4" />
                                     </button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">
-                                    <p className="text-xs">Approve Application</p>
+                                    <p className="text-xs">Quick Approve</p>
                                   </TooltipContent>
                                 </Tooltip>
 
@@ -533,13 +528,14 @@ export function PreRegistrationsTab() {
                                   <TooltipTrigger asChild>
                                     <button
                                       onClick={() => handleReject(app.id)}
-                                      className="h-8 w-8 rounded-lg flex items-center justify-center text-destructive hover:bg-muted transition-colors cursor-pointer"
+                                      disabled={actionLoading}
+                                      className="h-8 w-8 rounded-xl flex items-center justify-center text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
                                     >
-                                      <X className="h-4 w-4 stroke-[2.5]" />
+                                      <X className="h-4 w-4" />
                                     </button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">
-                                    <p className="text-xs">Reject Application</p>
+                                    <p className="text-xs">Reject</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </>
@@ -549,19 +545,16 @@ export function PreRegistrationsTab() {
                               <TooltipTrigger asChild>
                                 <button
                                   onClick={() => {
-                                    setDeleteTarget({
-                                      ids: [app.id],
-                                      name: fullName || app.email,
-                                    })
+                                    setDeleteTarget({ ids: [app.id], name: fullName })
                                     setDeleteModalOpen(true)
                                   }}
-                                  className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                                  className="h-8 w-8 rounded-xl flex items-center justify-center text-[#696969] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
                                 >
-                                  <Trash className="h-3.5 w-3.5" />
+                                  <Trash className="h-4 w-4" />
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent side="top">
-                                <p className="text-xs">Delete Pre-Registration</p>
+                                <p className="text-xs">Delete Record</p>
                               </TooltipContent>
                             </Tooltip>
                           </div>
@@ -574,6 +567,7 @@ export function PreRegistrationsTab() {
             </table>
           </div>
         </div>
+      </div>
 
       {/* Delete Confirmation Modal */}
       <ConfirmDeleteModal

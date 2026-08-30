@@ -171,13 +171,13 @@ export function DashboardSidebar({ role }) {
                     }
                 }}
                 className={`group relative flex items-center gap-3.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${active
-                    ? "bg-white dark:bg-white/[0.12] text-[#2d3748] dark:text-white shadow-xs"
-                    : "text-[#696969] dark:text-[#e5e7eb] hover:bg-black/[0.035] dark:hover:bg-white/[0.04] hover:text-[#2d3748] dark:hover:text-white"
+                    ? "bg-white dark:bg-white/[0.12] text-[#3B3B3B] dark:text-white shadow-xs"
+                    : "text-[#696969] dark:text-[#e5e7eb] hover:bg-black/[0.035] dark:hover:bg-white/[0.04] hover:text-[#3B3B3B] dark:hover:text-white"
                     } ${collapsed ? "justify-center px-2" : ""}`}
             >
                 {jsonSrc ? (
                     <div className={`shrink-0 flex items-center justify-center pointer-events-none transition-colors duration-200 ${active
-                        ? "[&_path]:!fill-[#2d3748] dark:[&_path]:!fill-white [&_path]:!stroke-[#2d3748] dark:[&_path]:!stroke-white [&_circle]:!stroke-[#2d3748] dark:[&_circle]:!stroke-white [&_rect]:!stroke-[#2d3748] dark:[&_rect]:!stroke-white"
+                        ? "[&_path]:!fill-[#3B3B3B] dark:[&_path]:!fill-white [&_path]:!stroke-[#3B3B3B] dark:[&_path]:!stroke-white [&_circle]:!stroke-[#3B3B3B] dark:[&_circle]:!stroke-white [&_rect]:!stroke-[#3B3B3B] dark:[&_rect]:!stroke-white"
                         : "[&_path]:!fill-[#696969] dark:[&_path]:!fill-[#9ca3af] [&_path]:!stroke-[#696969] dark:[&_path]:!stroke-[#9ca3af] [&_circle]:!stroke-[#696969] dark:[&_circle]:!stroke-[#9ca3af] [&_rect]:!stroke-[#696969] dark:[&_rect]:!stroke-[#9ca3af]"
                         }`}>
                         <LordIcon
@@ -189,10 +189,10 @@ export function DashboardSidebar({ role }) {
                         />
                     </div>
                 ) : (
-                    <Icon className={`h-5.5 w-5.5 shrink-0 transition-colors ${active ? "text-[#2d3748] dark:text-white" : "text-[#696969] dark:text-[#9ca3af]"}`} />
+                    <Icon className={`h-5.5 w-5.5 shrink-0 transition-colors ${active ? "text-[#3B3B3B] dark:text-white" : "text-[#696969] dark:text-[#9ca3af]"}`} />
                 )}
                 {!collapsed && (
-                    <span className={`text-[13.5px] leading-none truncate transition-colors ${active ? "text-[#2d3748] dark:text-white font-semibold" : "text-[#696969] dark:text-[#e5e7eb]"}`}>
+                    <span className={`text-[13.5px] leading-none truncate transition-colors ${active ? "text-[#3B3B3B] dark:text-white font-semibold" : "text-[#696969] dark:text-[#e5e7eb]"}`}>
                         {item.label}
                     </span>
                 )}

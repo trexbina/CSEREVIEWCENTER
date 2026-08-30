@@ -61,6 +61,7 @@ const iconMap = {
     Layers,
     PencilLine,
     Star,
+    Trash,
 }
 
 import { LordIcon } from "@/components/ui/lord-icon"
@@ -81,6 +82,7 @@ const sidebarJsonMap = {
     Layers: "/icons/sidebar/layers.json",
     BarChart3: "/icons/sidebar/analytics.json",
     Settings: "/icons/sidebar/settings.json",
+    Trash: "/icons/sidebar/trash.json",
 }
 
 /* ------------------------------------------------------------------ */
@@ -113,6 +115,7 @@ const adminNav = [
     { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "Manage courses, batches, and gradebooks" },
     { label: "Analytical Overview", href: "/admin/analytical-overview", icon: "BarChart3", description: "Performance reports and learning insights" },
     { section: "OTHER" },
+    { label: "Trash", href: "/admin/trash", icon: "Trash", description: "Item recovery and recycle bin" },
     { label: "Settings", href: "/admin/settings", icon: "Settings" },
 ]
 
@@ -223,19 +226,19 @@ export function DashboardSidebar({ role }) {
         return (
             <TooltipProvider delayDuration={150}>
                 <div className="flex h-full flex-col bg-[#F2F2F2] dark:bg-[#14161b]">
-                    {/* Logo - Smaller Emblem with 'PEAK' & 'Excellence' stacked text */}
-                    <div className={`flex items-center pt-5 pb-3 ${collapsed ? "justify-center px-2" : "justify-start px-4 gap-2.5"}`}>
+                    {/* Logo - Emblem with 'PEAK' & 'Excellence' stacked text */}
+                    <div className={`flex items-center pt-5 pb-3 ${collapsed ? "justify-center px-2" : "justify-start px-4 gap-3"}`}>
                         <img
                             src="/landingpageassets/logo.png"
                             alt="Peak Excellence Review Center"
-                            className={`shrink-0 object-contain transition-all ${collapsed ? "size-8" : "size-8 sm:size-9"}`}
+                            className={`shrink-0 object-contain transition-all ${collapsed ? "size-9" : "size-10 sm:size-[42px]"}`}
                         />
                         {!collapsed && (
-                            <div className="flex flex-col leading-none select-none">
-                                <span className="text-[13px] font-black tracking-wider text-[#3B3B3B] dark:text-white uppercase font-sans">
+                            <div className="flex flex-col leading-tight select-none">
+                                <span className="text-[15px] font-black tracking-wider text-[#3B3B3B] dark:text-white uppercase font-sans">
                                     PEAK
                                 </span>
-                                <span className="text-[11px] font-semibold tracking-wide text-[#696969] dark:text-gray-400 font-sans mt-0.5">
+                                <span className="text-[12px] font-semibold tracking-wide text-[#696969] dark:text-gray-400 font-sans -mt-0.5">
                                     Excellence
                                 </span>
                             </div>

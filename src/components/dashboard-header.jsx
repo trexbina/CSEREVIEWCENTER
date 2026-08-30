@@ -116,27 +116,27 @@ export function DashboardHeader({ role }) {
       </div>
 
       {/* Right side controls & user profile */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
-        {/* Fullscreen Toggle Button */}
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-auto">
+        {/* Fullscreen Toggle Button - Minimal borderless/backgroundless */}
         <button
           onClick={toggleFullscreen}
-          className="relative inline-flex items-center justify-center size-9 rounded-xl border border-border/70 bg-card hover:bg-muted/70 transition-all text-muted-foreground hover:text-foreground cursor-pointer shadow-2xs active:scale-95"
+          className="inline-flex items-center justify-center size-9 rounded-xl text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer active:scale-95"
           aria-label="Toggle Fullscreen"
           title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
         >
-          {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+          {isFullscreen ? <Minimize className="h-4.5 w-4.5" /> : <Maximize className="h-4.5 w-4.5" />}
         </button>
 
-        {/* Notifications Dropdown */}
+        {/* Notifications Dropdown - Minimal borderless/backgroundless */}
         <div className="relative">
           <button
             onClick={() => setShowNotifDropdown(!showNotifDropdown)}
-            className="relative inline-flex items-center justify-center size-9 rounded-xl border border-border/70 bg-card hover:bg-muted/70 transition-all cursor-pointer shadow-2xs active:scale-95"
+            className="relative inline-flex items-center justify-center size-9 rounded-xl text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer active:scale-95"
             aria-label="Notifications"
           >
-            <Bell className="h-4 w-4 text-muted-foreground" />
+            <Bell className="h-4.5 w-4.5" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-background animate-pulse">
+              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-background animate-pulse">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
@@ -211,25 +211,25 @@ export function DashboardHeader({ role }) {
         </div>
 
         {/* Divider */}
-        <div className="h-6 w-px bg-border/80 mx-0.5 hidden sm:block" />
+        <div className="h-5 w-px bg-black/10 dark:bg-white/10 mx-1 hidden sm:block" />
 
-        {/* User Profile Button */}
+        {/* User Profile Button - Minimal hover without container background */}
         <Link 
           href={profileUrl}
-          className="flex items-center gap-2.5 pl-1 pr-1.5 py-1 rounded-xl hover:bg-muted/60 transition-all cursor-pointer group"
+          className="flex items-center gap-2.5 pl-1 pr-1.5 py-1 transition-all cursor-pointer group"
           title="View Profile"
         >
-          <Avatar className="size-9 border border-border group-hover:border-primary/50 transition-colors shadow-2xs">
+          <Avatar className="size-9 border border-black/10 dark:border-white/15 shadow-2xs">
             <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
               {getInitials(user?.name)}
             </AvatarFallback>
           </Avatar>
 
           <div className="hidden sm:flex flex-col items-start leading-tight">
-            <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate max-w-[130px]">
+            <span className="text-xs font-bold text-[#3B3B3B] dark:text-white group-hover:text-primary transition-colors truncate max-w-[130px]">
               {user?.name || (role === "admin" ? "Admin User" : "User")}
             </span>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
+            <span className="text-[10px] font-bold text-[#696969] dark:text-gray-400 uppercase tracking-wider mt-0.5">
               {ROLE_LABELS[role] || role}
             </span>
           </div>

@@ -221,18 +221,18 @@ export function DashboardSidebar({ role }) {
         return (
             <div className="flex h-full flex-col">
                 {/* Logo & Brand Name */}
-                <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-8 pb-4" : "justify-center gap-3.5 px-4 pt-9 pb-5"}`}>
+                <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-6 pb-3" : "justify-start pl-4 pr-3 pt-6 pb-3 gap-3"}`}>
                     <img
                         src="/landingpageassets/logo.png"
                         alt="Peak Excellence Review Center"
-                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-11 w-11" : "h-14 w-14"}`}
+                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-10 w-10" : "h-13 w-13"}`}
                     />
                     {!collapsed && (
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[19px] font-bold tracking-[0.16em] text-[#1f2937] dark:text-white leading-tight">
+                            <span className="text-[18.5px] font-bold tracking-[0.16em] text-[#1f2937] dark:text-white leading-tight">
                                 PEAK
                             </span>
-                            <span className="text-[12px] font-semibold tracking-[0.24em] text-[#6b7280] dark:text-[#9ca3af] uppercase leading-tight -mt-0.5">
+                            <span className="text-[11.5px] font-semibold tracking-[0.24em] text-[#6b7280] dark:text-[#9ca3af] uppercase leading-tight -mt-0.5">
                                 Excellence
                             </span>
                         </div>
@@ -241,12 +241,12 @@ export function DashboardSidebar({ role }) {
 
                 {/* Nav links */}
                 <TooltipProvider delayDuration={150}>
-                    <nav className="flex-1 space-y-3 overflow-y-auto px-3 pt-3 pb-6">
+                    <nav className="flex-1 space-y-2 overflow-y-auto px-3 pt-1 pb-6">
                         {navItems.map((item, idx) => {
                             // Section header support
                             if (item.section) {
                                 return (
-                                    <p key={`section-${idx}`} className={`px-3 pt-5 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#9ca3af]/80 dark:text-[#6b7280]/80 ${collapsed ? "hidden" : ""}`}>
+                                    <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#9ca3af]/80 dark:text-[#6b7280]/80 ${collapsed ? "hidden" : ""}`}>
                                         {item.section}
                                     </p>
                                 )

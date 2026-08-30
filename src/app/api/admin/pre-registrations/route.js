@@ -198,20 +198,27 @@ export async function PATCH(request) {
     const fullName = [app.first_name, app.middle_name, app.last_name, app.suffix].filter(Boolean).join(" ")
     const defaultPassword = customPassword?.trim() || "Student@123"
     const hash = await bcrypt.hash(defaultPassword, 10)
+    const accountEmail = (body.accountEmail || body.customEmail || app.email).toLowerCase().trim()
+
+    if (!accountEmail) {
+      return NextResponse.json({ error: "Account email is required." }, { status: 400 })
+    }
 
     const insertUserRes = await pool.query(
       `INSERT INTO users (
-        name, email, password, role,
+        name, email, personal_email, password, role,
         first_name, middle_name, last_name, suffix,
         birthday, gender, phone, address, city, province, zip_code,
         school, course, year_graduated, highest_education,
         exam_id, batch_id, program_id, major_id,
-        school_id, academic_course_id, targets
+        school_id, academic_course_id, targets, created_at
       )
-      VALUES ($1,$2,$3,'student',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,'[]'::jsonb)
+      VALUES ($1,$2,$3,$4,'student',$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,'[]'::jsonb, NOW())
       ON CONFLICT (email) DO UPDATE SET
         name = EXCLUDED.name,
+        personal_email = EXCLUDED.personal_email,
         role = 'student',
+        password = EXCLUDED.password,
         first_name = EXCLUDED.first_name,
         middle_name = EXCLUDED.middle_name,
         last_name = EXCLUDED.last_name,
@@ -233,10 +240,11 @@ export async function PATCH(request) {
         major_id = EXCLUDED.major_id,
         school_id = EXCLUDED.school_id,
         academic_course_id = EXCLUDED.academic_course_id
-      RETURNING id, name, email, role, created_at`,
+      RETURNING id, name, email, personal_email, role, created_at`,
       [
         fullName,
-        app.email.toLowerCase().trim(),
+        accountEmail,
+        app.email?.toLowerCase().trim() || null,
         hash,
         app.first_name,
         app.middle_name,
@@ -276,6 +284,7 @@ export async function PATCH(request) {
       status: "APPROVED",
       user: insertUserRes.rows[0],
       initialPassword: defaultPassword,
+      accountEmail: accountEmail,
     })
   } catch (err) {
     console.error("[admin/pre-registrations PATCH] error:", err)

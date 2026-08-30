@@ -5,7 +5,8 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 
 // these are small icons used on the buttons and cards
-import { X, Pencil, Trash, Image as ImageIcon, Plus, FolderTree, ChevronDown, Lock, Clock, ChevronLeft, ChevronRight, Settings, ArrowUpDown } from "lucide-react"
+import { X, Pencil, Trash, Image as ImageIcon, Plus, ChevronDown, Lock, Clock, ChevronLeft, ChevronRight, Settings, ArrowUpDown } from "lucide-react"
+import { LordIcon } from "@/components/ui/lord-icon"
 
 // this lets us make clickable links to other pages
 import Link from "next/link"
@@ -610,7 +611,15 @@ export default function CurriculumManagerPage() {
                 <div className="space-y-4 border-b border-border pb-6">
                     <div>
                         <div className="flex items-center gap-2">
-                            <FolderTree className="h-6 w-6 text-[#E9C46A]" />
+                            <div className="shrink-0 flex items-center justify-center pointer-events-none [&_path]:!fill-[#E9C46A] [&_path]:!stroke-[#E9C46A] [&_circle]:!stroke-[#E9C46A] [&_rect]:!stroke-[#E9C46A]">
+                                <LordIcon
+                                    src="/icons/category.json"
+                                    trigger="loop"
+                                    delay={4000}
+                                    size={28}
+                                    speed={1}
+                                />
+                            </div>
                             <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase">
                                 CATEGORY
                             </h1>

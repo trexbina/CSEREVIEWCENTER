@@ -46,8 +46,15 @@ export const LordIcon = forwardRef(function LordIcon(
         let data = animationDataCache.get(src)
         if (!data) {
           const res = await fetch(src)
+          if (!res.ok) throw new Error(`Failed to load icon from ${src}`)
           data = await res.json()
           animationDataCache.set(src, data)
+        }
+
+        // Validate that data is a valid Lottie JSON object (must have layers, v, or assets)
+        if (!data || typeof data !== "object" || Array.isArray(data) || (!data.layers && !data.assets)) {
+          console.warn(`[LordIcon] Invalid Lottie animation JSON structure for: ${src}`)
+          return
         }
 
         if (!containerRef.current || isCancelled) return

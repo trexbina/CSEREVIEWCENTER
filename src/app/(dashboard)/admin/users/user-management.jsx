@@ -996,11 +996,10 @@ export function UserSearchTable({ users, currentUserId }) {
 // ─── Full User Table (used on /admin/users/all) ─────────
 export function UserTable({ users, currentUserId }) {
   const router = useRouter()
+  const [search, setSearch] = useState("")
+  const [roleFilter, setRoleFilter] = useState("ALL")
   const [sortField, setSortField] = useState("created_at")
   const [sortDir, setSortDir] = useState("desc")
-  const [editOpen, setEditOpen] = useState(false)
-  const [assignOpen, setAssignOpen] = useState(false)
-  const [selected, setSelected] = useState(null)
 
   // Selection & Bulk Delete state
   const [selectedIds, setSelectedIds] = useState([])
@@ -1016,8 +1015,25 @@ export function UserTable({ users, currentUserId }) {
     }
   }
 
-  const sorted = useMemo(() =>
-    [...users].sort((a, b) => {
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim()
+    return users.filter((u) => {
+      const matchesRole = roleFilter === "ALL" ? true : u.role === roleFilter
+      const fullName = (u.name || "").toLowerCase()
+      const matchesSearch =
+        !q ||
+        fullName.includes(q) ||
+        (u.email || "").toLowerCase().includes(q) ||
+        (u.academic_course_name || u.course || "").toLowerCase().includes(q) ||
+        (u.program_name || "").toLowerCase().includes(q) ||
+        (u.major_name || "").toLowerCase().includes(q)
+
+      return matchesRole && matchesSearch
+    })
+  }, [users, search, roleFilter])
+
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
       let av = a[sortField] ?? ""
       let bv = b[sortField] ?? ""
       if (sortField === "created_at") {
@@ -1029,7 +1045,7 @@ export function UserTable({ users, currentUserId }) {
       }
       return sortDir === "asc" ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1)
     })
-    , [users, sortField, sortDir])
+  }, [filtered, sortField, sortDir])
 
   const selectableUsers = useMemo(() => sorted.filter((u) => u.id !== currentUserId), [sorted, currentUserId])
   const isAllSelected = selectableUsers.length > 0 && selectableUsers.every((u) => selectedIds.includes(u.id))
@@ -1037,9 +1053,11 @@ export function UserTable({ users, currentUserId }) {
 
   function handleToggleAll() {
     if (isAllSelected) {
-      setSelectedIds([])
+      const selectableIdSet = new Set(selectableUsers.map((u) => u.id))
+      setSelectedIds((prev) => prev.filter((id) => !selectableIdSet.has(id)))
     } else {
-      setSelectedIds(selectableUsers.map((u) => u.id))
+      const selectableIdSet = selectableUsers.map((u) => u.id)
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...selectableIdSet])))
     }
   }
 
@@ -1073,40 +1091,81 @@ export function UserTable({ users, currentUserId }) {
     }
   }
 
+  const studentCount = users.filter((u) => u.role === "student").length
+  const teacherCount = users.filter((u) => u.role === "teacher").length
+  const adminCount = users.filter((u) => u.role === "admin").length
+
   return (
-    <>
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2">
-          {selectableUsers.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleToggleAll}
-              className="text-xs font-medium"
-            >
-              {isAllSelected ? "Deselect All" : `Select All (${selectableUsers.length})`}
-            </Button>
-          )}
+    <div className="space-y-6">
+      {/* Controls & Filter toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3 flex-1 min-w-[260px]">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#696969]/70 pointer-events-none" />
+            <input
+              type="search"
+              placeholder="Search user name, email, course, program..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
+            />
+          </div>
+
+          {/* Role Filter Dropdown */}
+          <div className="w-44 shrink-0">
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="h-10 w-full rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white px-3.5 shadow-2xs cursor-pointer">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 text-xs shadow-xl">
+                <SelectItem value="ALL" className="text-xs py-1.5 cursor-pointer">
+                  All Roles ({users.length})
+                </SelectItem>
+                <SelectItem value="student" className="text-xs py-1.5 cursor-pointer">
+                  Students ({studentCount})
+                </SelectItem>
+                <SelectItem value="teacher" className="text-xs py-1.5 cursor-pointer">
+                  Teachers ({teacherCount})
+                </SelectItem>
+                <SelectItem value="admin" className="text-xs py-1.5 cursor-pointer">
+                  Admins ({adminCount})
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {selectedIds.length > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setConfirmDeleteOpen(true)}
-            className="gap-1.5 text-xs font-medium text-foreground hover:bg-muted"
-          >
-            Delete Selected ({selectedIds.length})
-          </Button>
-        )}
+        {/* Right Action buttons: Select All & Delete Selected */}
+        <div className="flex items-center gap-2">
+          {selectableUsers.length > 0 && (
+            <button
+              type="button"
+              onClick={handleToggleAll}
+              className="px-3.5 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer"
+            >
+              {isAllSelected ? "Deselect All" : `Select All (${selectableUsers.length})`}
+            </button>
+          )}
+
+          {selectedIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setConfirmDeleteOpen(true)}
+              className="px-3.5 h-9 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-200 dark:border-rose-900/30 transition-all shadow-2xs cursor-pointer"
+            >
+              Delete Selected ({selectedIds.length})
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="mdc-data-table w-full">
-        <div className="mdc-data-table__table-container max-h-[920px] overflow-y-auto">
-          <table className="mdc-data-table__table relative" aria-label="All users">
-            <thead className="sticky top-0 z-10">
-              <tr className="mdc-data-table__header-row shadow-2xs">
-                <th className="mdc-data-table__header-cell w-10 text-center" role="columnheader" scope="col">
+      {/* Styled Data Table */}
+      <div className="w-full overflow-hidden rounded-2xl border border-black/5 dark:border-white/10 bg-card shadow-2xs">
+        <div className="max-h-[920px] overflow-y-auto">
+          <table className="w-full text-left border-collapse" aria-label="All users table">
+            <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
+              <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
+                <th className="w-12 px-4 text-center" scope="col">
                   <input
                     type="checkbox"
                     checked={isAllSelected}
@@ -1115,39 +1174,39 @@ export function UserTable({ users, currentUserId }) {
                     }}
                     onChange={handleToggleAll}
                     disabled={selectableUsers.length === 0}
-                    className="h-4 w-4 rounded border-input cursor-pointer accent-primary align-middle"
+                    className="h-4 w-4 rounded border-black/15 cursor-pointer accent-[#E9C46A] align-middle"
                     title={isAllSelected ? "Deselect All" : "Select All"}
                   />
                 </th>
-                <th className="mdc-data-table__header-cell w-[18%]" role="columnheader" scope="col">
+                <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="mdc-data-table__header-cell w-[18%]" role="columnheader" scope="col">
+                <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Email" field="email" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="mdc-data-table__header-cell w-[18%]" role="columnheader" scope="col">
+                <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Course" field="academic_course_name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="mdc-data-table__header-cell w-[10%]" role="columnheader" scope="col">
+                <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Program" field="program_name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="mdc-data-table__header-cell w-[12%]" role="columnheader" scope="col">
+                <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Major" field="major_name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="mdc-data-table__header-cell w-[8%]" role="columnheader" scope="col">
+                <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Role" field="role" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="mdc-data-table__header-cell w-[10%]" role="columnheader" scope="col">
+                <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Joined" field="created_at" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="mdc-data-table__header-cell w-[6%]" role="columnheader" scope="col">Actions</th>
+                <th className="px-4 py-2.5 text-right pr-6" scope="col">Actions</th>
               </tr>
             </thead>
-            <tbody className="mdc-data-table__content">
+            <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
               {sorted.length === 0 ? (
-                <tr className="mdc-data-table__row">
-                  <td className="mdc-data-table__cell py-8 text-center text-muted-foreground" colSpan={9}>
-                    No users found.
+                <tr>
+                  <td className="py-12 text-center text-sm font-medium text-[#696969]" colSpan={9}>
+                    {search ? `No users matching "${search}"` : "No users found."}
                   </td>
                 </tr>
               ) : (
@@ -1159,39 +1218,53 @@ export function UserTable({ users, currentUserId }) {
                   const majorName = user.major_name || "—"
 
                   return (
-                    <tr className={`mdc-data-table__row h-11 ${isChecked ? "bg-muted/40" : ""}`} key={user.id}>
-                      <td className="mdc-data-table__cell text-center">
+                    <tr
+                      key={user.id}
+                      className={`h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${
+                        isChecked ? "bg-[#F2F2F2]/50 dark:bg-white/5" : ""
+                      }`}
+                    >
+                      <td className="px-4 text-center">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           disabled={isCurrentAdmin}
                           onChange={() => handleToggleUser(user.id)}
-                          className="h-4 w-4 rounded border-input cursor-pointer accent-primary align-middle disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="h-4 w-4 rounded border-black/15 cursor-pointer accent-[#E9C46A] align-middle disabled:opacity-30 disabled:cursor-not-allowed"
                           title={isCurrentAdmin ? "Cannot select yourself" : `Select ${user.name}`}
                         />
                       </td>
-                      <td className="mdc-data-table__cell font-medium">
-                        <Link href={`/admin/users/${user.id}`} className="hover:underline text-[#4382DF]">
+                      <td className="px-4 font-semibold">
+                        <Link
+                          href={`/admin/users/${user.id}`}
+                          className="text-[#2563EB] hover:text-[#1D4ED8] dark:text-[#60A5FA] dark:hover:text-[#93C5FD] hover:underline transition-colors"
+                        >
                           {user.name}
                         </Link>
                       </td>
-                      <td className="mdc-data-table__cell text-muted-foreground">{user.email}</td>
-                      <td className="mdc-data-table__cell text-muted-foreground max-w-[200px]" title={courseName !== "—" ? courseName : undefined}>
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal">{user.email}</td>
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal max-w-[200px]" title={courseName !== "—" ? courseName : undefined}>
                         <span className="block truncate">
                           {courseName}
                         </span>
                       </td>
-                      <td className="mdc-data-table__cell text-muted-foreground whitespace-nowrap">{programName}</td>
-                      <td className="mdc-data-table__cell text-muted-foreground whitespace-nowrap">{majorName}</td>
-                      <td className="mdc-data-table__cell text-muted-foreground capitalize">{user.role}</td>
-                      <td className="mdc-data-table__cell text-muted-foreground whitespace-nowrap">
-                        {user.created_at ? new Date(user.created_at).toLocaleDateString() : ""}
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{programName}</td>
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{majorName}</td>
+                      <td className="px-4">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize bg-black/5 dark:bg-white/10 text-[#3B3B3B] dark:text-white">
+                          {user.role}
+                        </span>
                       </td>
-                      <td className="mdc-data-table__cell">
-                        <ActionButtons
-                          user={user}
-                          currentUserId={currentUserId}
-                        />
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-400 font-normal whitespace-nowrap">
+                        {user.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}
+                      </td>
+                      <td className="px-4 text-right pr-6">
+                        <div className="flex justify-end">
+                          <ActionButtons
+                            user={user}
+                            currentUserId={currentUserId}
+                          />
+                        </div>
                       </td>
                     </tr>
                   )
@@ -1202,43 +1275,22 @@ export function UserTable({ users, currentUserId }) {
         </div>
       </div>
 
-      {/* Confirmation Dialog for Batch Delete */}
-      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Selected Users</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to permanently delete {selectedIds.length} selected user{selectedIds.length > 1 ? "s" : ""}? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={bulkDeleteLoading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkDelete}
-              disabled={bulkDeleteLoading}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {bulkDeleteLoading ? "Deleting…" : `Delete ${selectedIds.length} User${selectedIds.length > 1 ? "s" : ""}`}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {selected && (
-        <>
-          <EditUserDialog
-            open={editOpen}
-            onOpenChange={(v) => { setEditOpen(v); if (!v) setSelected(null) }}
-            user={selected}
-          />
-          <AssignSubjectsDialog
-            open={assignOpen}
-            onOpenChange={(v) => { setAssignOpen(v); if (!v) setSelected(null) }}
-            user={selected}
-          />
-        </>
+      {search && sorted.length > 0 && (
+        <p className="mt-2 text-xs text-[#696969] text-right">
+          Showing {sorted.length} of {users.length} users.
+        </p>
       )}
-    </>
+
+      {/* Confirmation Dialog for Batch Delete */}
+      <ConfirmDeleteModal
+        isOpen={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleBulkDelete}
+        title="Delete Selected Users"
+        message={`Are you sure you want to permanently delete ${selectedIds.length} selected user${selectedIds.length > 1 ? "s" : ""}? This action cannot be undone.`}
+        confirmText={bulkDeleteLoading ? "Deleting…" : `Delete ${selectedIds.length} User${selectedIds.length > 1 ? "s" : ""}`}
+      />
+    </div>
   )
 }
 

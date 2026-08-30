@@ -27,6 +27,7 @@ export async function GET() {
 async function ensureTable() {
   await pool.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS targets JSONB DEFAULT '[]'::jsonb;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS personal_email VARCHAR(255);
   `).catch(console.error)
 }
 
@@ -41,11 +42,11 @@ export async function POST(request) {
     await ensureTable()
 
     const body = await request.json()
-    const { name, email, password, role } = body
+    const { name, email, password, role, personal_email } = body
 
     if (!name || !email || !password) {
       return NextResponse.json(
-        { error: "Name, email and password are required." },
+        { error: "Name, login email and password are required." },
         { status: 400 }
       )
     }
@@ -54,6 +55,15 @@ export async function POST(request) {
       return NextResponse.json(
         { error: "Role must be 'student', 'teacher', or 'admin'." },
         { status: 400 }
+      )
+    }
+
+    // Check if login email already exists
+    const existing = await pool.query("SELECT id FROM users WHERE email = $1", [email.toLowerCase().trim()])
+    if (existing.rows.length > 0) {
+      return NextResponse.json(
+        { error: "Login email already registered." },
+        { status: 409 }
       )
     }
 
@@ -66,11 +76,10 @@ export async function POST(request) {
         birthday, gender, phone, address, city, province, zip_code,
         school, course, year_graduated, highest_education,
         exam_id, batch_id, program_id, major_id, job_role_description,
-        school_id, academic_course_id, avatar_url, targets
+        school_id, academic_course_id, avatar_url, targets, personal_email, created_at
       )
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28)
-       ON CONFLICT (email) DO NOTHING
-       RETURNING id, name, email, role, created_at, avatar_url`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29, NOW())
+       RETURNING id, name, email, personal_email, role, created_at, avatar_url`,
       [
         name.trim(),
         email.toLowerCase().trim(),
@@ -100,15 +109,9 @@ export async function POST(request) {
         body.academic_course_id || null,
         body.avatar_url || null,
         JSON.stringify(body.targets || []),
+        personal_email?.toLowerCase().trim() || email.toLowerCase().trim(),
       ]
     )
-
-    if (result.rows.length === 0) {
-      return NextResponse.json(
-        { error: "Email already registered." },
-        { status: 409 }
-      )
-    }
 
     revalidatePath("/admin/users")
     revalidatePath("/admin/users/all")
@@ -197,11 +200,11 @@ export async function PUT(request) {
     }
 
     const body = await request.json()
-    const { name, email, role, password } = body
+    const { name, email, role, password, personal_email } = body
 
-    if (!name?.trim() || !email?.trim()) {
+    if (!name || !email) {
       return NextResponse.json(
-        { error: "Name and email are required." },
+        { error: "Name and login email are required." },
         { status: 400 }
       )
     }
@@ -213,14 +216,14 @@ export async function PUT(request) {
       )
     }
 
-    // Check email uniqueness (excluding current user)
-    const dup = await pool.query(
+    // Check if login email is taken by another user
+    const existing = await pool.query(
       "SELECT id FROM users WHERE email = $1 AND id != $2",
       [email.toLowerCase().trim(), userId]
     )
-    if (dup.rows.length > 0) {
+    if (existing.rows.length > 0) {
       return NextResponse.json(
-        { error: "Email already used by another account." },
+        { error: "Login email already in use by another account." },
         { status: 409 }
       )
     }
@@ -235,9 +238,10 @@ export async function PUT(request) {
           birthday = $9, gender = $10, phone = $11, address = $12, city = $13, province = $14, zip_code = $15,
           school = $16, course = $17, year_graduated = $18, highest_education = $19,
           exam_id = $20, batch_id = $21, program_id = $22, major_id = $23, job_role_description = $24,
-          school_id = $25, academic_course_id = $26, avatar_url = $27, targets = $28
-         WHERE id = $29
-         RETURNING id, name, email, role, created_at, avatar_url`,
+          school_id = $25, academic_course_id = $26, avatar_url = $27, targets = $28,
+          personal_email = $29
+         WHERE id = $30
+         RETURNING id, name, email, personal_email, role, created_at, avatar_url`,
         [
           name.trim(),
           email.toLowerCase().trim(),
@@ -267,6 +271,7 @@ export async function PUT(request) {
           body.academic_course_id || null,
           body.avatar_url || null,
           body.targets !== undefined ? JSON.stringify(body.targets) : null,
+          personal_email?.toLowerCase().trim() || email.toLowerCase().trim(),
           userId,
         ]
       )
@@ -278,9 +283,10 @@ export async function PUT(request) {
           birthday = $8, gender = $9, phone = $10, address = $11, city = $12, province = $13, zip_code = $14,
           school = $15, course = $16, year_graduated = $17, highest_education = $18,
           exam_id = $19, batch_id = $20, program_id = $21, major_id = $22, job_role_description = $23,
-          school_id = $24, academic_course_id = $25, avatar_url = $26, targets = $27
-         WHERE id = $28
-         RETURNING id, name, email, role, created_at, avatar_url`,
+          school_id = $24, academic_course_id = $25, avatar_url = $26, targets = $27,
+          personal_email = $28
+         WHERE id = $29
+         RETURNING id, name, email, personal_email, role, created_at, avatar_url`,
         [
           name.trim(),
           email.toLowerCase().trim(),
@@ -309,6 +315,7 @@ export async function PUT(request) {
           body.academic_course_id || null,
           body.avatar_url || null,
           body.targets !== undefined ? JSON.stringify(body.targets) : null,
+          personal_email?.toLowerCase().trim() || email.toLowerCase().trim(),
           userId,
         ]
       )

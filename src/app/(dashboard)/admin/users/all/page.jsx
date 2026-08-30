@@ -44,59 +44,31 @@ export default async function AllUsersPage() {
     // get users if logged in
     const users = session?.userId ? await getAllUsers() : []
 
-    // aggregate user counts by role
-    const counts = users.reduce(
-        (acc, u) => { acc[u.role] = (acc[u.role] || 0) + 1; return acc },
-        {}
-    )
-
     return (
-        <div className="space-y-6 w-full max-w-6xl mx-auto px-4 py-4 pb-16">
-            {/* header section */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2.5">
-                        <Link
-                            href="/admin/users"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground shadow-2xs"
-                            title="Back to User Management"
-                        >
-                            <ArrowLeft className="h-4 w-4" />
-                        </Link>
-                        <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase">
-                            ALL USERS
+        <div className="space-y-4 w-full max-w-7xl mx-auto px-2 sm:px-4 py-2 pb-16">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-2">
+                <div className="flex items-center gap-3">
+                    <Link
+                        href="/admin/users"
+                        className="flex items-center justify-center size-9 rounded-xl bg-white dark:bg-white/10 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white border border-black/5 dark:border-white/10 shadow-2xs transition-all cursor-pointer"
+                        title="Back to User Management"
+                    >
+                        <ArrowLeft className="size-4" />
+                    </Link>
+                    <div>
+                        <h1 className="text-xl font-bold tracking-wide text-[#3B3B3B] dark:text-white">
+                            All Users
                         </h1>
+                        <p className="text-xs text-[#696969] dark:text-gray-400">
+                            Complete user directory — sort by any column, edit, delete, or manage accounts.
+                        </p>
                     </div>
-                    <p className="text-muted-foreground text-sm font-medium">
-                        Complete user directory — sort by any column, edit, delete, or assign subjects.
-                    </p>
-                </div>
-            </div>
-
-            {/* user role summary cards */}
-            <div className="flex flex-wrap items-center gap-2.5">
-                <div className="inline-flex items-center gap-2 bg-card border border-border rounded-xl px-3.5 py-1.5 shadow-2xs">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total:</span>
-                    <span className="text-xs font-bold text-foreground">{users.length}</span>
-                </div>
-                <div className="inline-flex items-center gap-2 bg-card border border-border rounded-xl px-3.5 py-1.5 shadow-2xs">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Students:</span>
-                    <span className="text-xs font-bold text-[#E9C46A]">{counts.student || 0}</span>
-                </div>
-                <div className="inline-flex items-center gap-2 bg-card border border-border rounded-xl px-3.5 py-1.5 shadow-2xs">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Teachers:</span>
-                    <span className="text-xs font-bold text-[#4382DF]">{counts.teacher || 0}</span>
-                </div>
-                <div className="inline-flex items-center gap-2 bg-card border border-border rounded-xl px-3.5 py-1.5 shadow-2xs">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Admins:</span>
-                    <span className="text-xs font-bold text-rose-600 dark:text-rose-400">{counts.admin || 0}</span>
                 </div>
             </div>
 
             {/* Full sortable table */}
-            <div className="pt-2">
-                <UserTable users={users} currentUserId={session?.userId} />
-            </div>
+            <UserTable users={users} currentUserId={session?.userId} />
         </div>
     )
 }

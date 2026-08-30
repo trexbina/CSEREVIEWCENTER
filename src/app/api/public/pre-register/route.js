@@ -33,6 +33,7 @@ async function ensurePreRegistrationsTable() {
       reviewed_at TIMESTAMP WITH TIME ZONE,
       reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL
     );
+    CREATE UNIQUE INDEX IF NOT EXISTS pre_registrations_email_unique_idx ON pre_registrations(email);
   `).catch(console.error)
 }
 

@@ -42,6 +42,7 @@ export function PreRegistrationsTab() {
   const [reviewOpen, setReviewOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({})
+  const [customAccountEmail, setCustomAccountEmail] = useState("")
   const [customPassword, setCustomPassword] = useState("Student@123")
   const [actionLoading, setActionLoading] = useState(false)
   const [actionMsg, setActionMsg] = useState(null)
@@ -96,6 +97,8 @@ export function PreRegistrationsTab() {
   function openReviewModal(app) {
     setSelectedApp(app)
     setIsEditing(false)
+    setCustomAccountEmail(app.email || "")
+    setCustomPassword("Student@123")
     setEditForm({
       first_name: app.first_name || "",
       middle_name: app.middle_name || "",
@@ -243,6 +246,7 @@ export function PreRegistrationsTab() {
         body: JSON.stringify({
           id: appId,
           action: "APPROVE",
+          accountEmail: customAccountEmail?.trim() || selectedApp?.email,
           customPassword: customPassword,
         }),
       })
@@ -250,7 +254,7 @@ export function PreRegistrationsTab() {
       if (res.ok) {
         setActionMsg({
           type: "success",
-          text: `Approved! Account created with password: ${data.initialPassword}`,
+          text: `Approved! Account created for ${data.accountEmail || 'student'} with password: ${data.initialPassword}`,
         })
         loadApplications()
         router.refresh()
@@ -320,7 +324,7 @@ export function PreRegistrationsTab() {
     <TooltipProvider delayDuration={150}>
       <div className="space-y-4">
         {/* Controls / Filter row */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3 flex-1 min-w-[260px]">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#696969]/70 pointer-events-none" />
@@ -393,7 +397,7 @@ export function PreRegistrationsTab() {
             <table className="w-full text-left border-collapse" aria-label="Pre-registrations list">
               <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
                 <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
-                  <th className="w-12 px-4 text-center" scope="col">
+                  <th className="w-12 px-5 py-3.5 text-center" scope="col">
                     <input
                       type="checkbox"
                       checked={isAllSelected}
@@ -407,13 +411,13 @@ export function PreRegistrationsTab() {
                       aria-label="Select all pre-registrations"
                     />
                   </th>
-                  <th className="px-4 py-2.5" scope="col">Applicant</th>
-                  <th className="px-4 py-2.5" scope="col">Contact</th>
-                  <th className="px-4 py-2.5" scope="col">Target Review</th>
-                  <th className="px-4 py-2.5" scope="col">School / Course</th>
-                  <th className="px-4 py-2.5" scope="col">Submitted</th>
-                  <th className="px-4 py-2.5" scope="col">Status</th>
-                  <th className="px-4 py-2.5 text-right pr-6" scope="col">Actions</th>
+                  <th className="px-5 py-3.5 min-w-[150px]" scope="col">Applicant</th>
+                  <th className="px-5 py-3.5 min-w-[180px]" scope="col">Contact</th>
+                  <th className="px-5 py-3.5 min-w-[200px]" scope="col">Target Review</th>
+                  <th className="px-5 py-3.5 min-w-[220px]" scope="col">School / Course</th>
+                  <th className="px-5 py-3.5 min-w-[110px]" scope="col">Submitted</th>
+                  <th className="px-5 py-3.5 min-w-[100px]" scope="col">Status</th>
+                  <th className="px-5 py-3.5 text-right pr-6 min-w-[120px]" scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
@@ -438,11 +442,11 @@ export function PreRegistrationsTab() {
                     return (
                       <tr
                         key={app.id}
-                        className={`h-14 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${
+                        className={`transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${
                           isSelected ? "bg-[#F2F2F2]/50 dark:bg-white/5" : ""
                         }`}
                       >
-                        <td className="w-12 px-4 text-center align-middle">
+                        <td className="w-12 px-5 py-4 text-center align-middle">
                           <input
                             type="checkbox"
                             checked={isSelected}
@@ -451,95 +455,69 @@ export function PreRegistrationsTab() {
                             aria-label={`Select ${fullName}`}
                           />
                         </td>
-                        <td className="px-4 align-middle">
-                          <button
-                            type="button"
-                            onClick={() => openReviewModal(app)}
-                            className="font-semibold text-[#2563EB] hover:text-[#1D4ED8] dark:text-[#60A5FA] dark:hover:text-[#93C5FD] hover:underline transition-colors cursor-pointer text-left"
-                          >
-                            {fullName}
-                          </button>
-                          <div className="text-xs text-[#696969] dark:text-gray-400">{app.gender || "—"}</div>
-                        </td>
-                        <td className="px-4 align-middle text-sm text-[#696969] dark:text-gray-300 font-normal">
-                          <div className="text-[#3B3B3B] dark:text-white font-medium">{app.email}</div>
-                          <div className="text-xs text-[#696969] dark:text-gray-400">{app.phone || "—"}</div>
-                        </td>
-                        <td className="px-4 align-middle text-sm">
-                          <div className="font-medium text-[#3B3B3B] dark:text-white">{app.exam_name || "—"}</div>
-                          <div className="text-xs text-[#696969] dark:text-gray-400">
-                            {app.batch_name ? `Batch: ${app.batch_name}` : app.program_name || "—"}
+                        <td className="px-5 py-4 align-middle">
+                          <div className="space-y-1">
+                            <button
+                              type="button"
+                              onClick={() => openReviewModal(app)}
+                              className="font-semibold text-[#2563EB] hover:text-[#1D4ED8] dark:text-[#60A5FA] dark:hover:text-[#93C5FD] hover:underline transition-colors cursor-pointer text-left block"
+                            >
+                              {fullName}
+                            </button>
+                            <div className="text-xs text-[#696969] dark:text-gray-400">{app.gender || "—"}</div>
                           </div>
                         </td>
-                        <td className="px-4 max-w-[220px] align-middle text-sm">
-                          <div className="text-[#3B3B3B] dark:text-white truncate font-medium">{app.school_name || "—"}</div>
-                          <div className="text-xs text-[#696969] dark:text-gray-400 truncate">{app.academic_course_name || "—"}</div>
+                        <td className="px-5 py-4 align-middle text-sm text-[#696969] dark:text-gray-300 font-normal">
+                          <div className="space-y-1">
+                            <div className="text-[#3B3B3B] dark:text-white font-medium">{app.email}</div>
+                            <div className="text-xs text-[#696969] dark:text-gray-400">{app.phone || "—"}</div>
+                          </div>
                         </td>
-                        <td className="px-4 text-sm text-[#696969] dark:text-gray-400 font-normal whitespace-nowrap align-middle">
+                        <td className="px-5 py-4 align-middle text-sm">
+                          <div className="space-y-1">
+                            <div className="font-medium text-[#3B3B3B] dark:text-white">{app.exam_name || "—"}</div>
+                            <div className="text-xs text-[#696969] dark:text-gray-400">
+                              {app.batch_name ? `Batch: ${app.batch_name}` : app.program_name || "—"}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 max-w-[240px] align-middle text-sm">
+                          <div className="space-y-1">
+                            <div className="text-[#3B3B3B] dark:text-white truncate font-medium">{app.school_name || "—"}</div>
+                            <div className="text-xs text-[#696969] dark:text-gray-400 truncate">{app.academic_course_name || "—"}</div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-sm text-[#696969] dark:text-gray-400 font-normal whitespace-nowrap align-middle">
                           {new Date(app.created_at).toLocaleDateString()}
                         </td>
-                        <td className="px-4 whitespace-nowrap align-middle">
+                        <td className="px-5 py-4 whitespace-nowrap align-middle">
                           <span
-                            className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${
                               app.status === "APPROVED"
-                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/30"
+                                ? "bg-black/5 dark:bg-white/10 text-emerald-700 dark:text-emerald-400"
                                 : app.status === "REJECTED"
-                                ? "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/30"
-                                : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/30"
+                                ? "bg-black/5 dark:bg-white/10 text-rose-600 dark:text-rose-400"
+                                : "bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300"
                             }`}
                           >
                             {app.status}
                           </span>
                         </td>
-                        <td className="px-4 text-right pr-6 align-middle">
+                        <td className="px-5 py-4 text-right pr-6 align-middle">
                           <div className="flex items-center justify-end gap-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <button
                                   onClick={() => openReviewModal(app)}
-                                  className="h-8 w-8 rounded-xl flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                  className="h-7 w-7 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <Eye className="h-3.5 w-3.5" />
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent side="top">
                                 <p className="text-xs">Review Details</p>
                               </TooltipContent>
                             </Tooltip>
-
-                            {app.status === "PENDING" && (
-                              <>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      onClick={() => handleApprove(app.id)}
-                                      disabled={actionLoading}
-                                      className="h-8 w-8 rounded-xl flex items-center justify-center text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors cursor-pointer"
-                                    >
-                                      <Check className="h-4 w-4" />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top">
-                                    <p className="text-xs">Quick Approve</p>
-                                  </TooltipContent>
-                                </Tooltip>
-
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      onClick={() => handleReject(app.id)}
-                                      disabled={actionLoading}
-                                      className="h-8 w-8 rounded-xl flex items-center justify-center text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top">
-                                    <p className="text-xs">Reject</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </>
-                            )}
 
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -548,9 +526,9 @@ export function PreRegistrationsTab() {
                                     setDeleteTarget({ ids: [app.id], name: fullName })
                                     setDeleteModalOpen(true)
                                   }}
-                                  className="h-8 w-8 rounded-xl flex items-center justify-center text-[#696969] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                                  className="h-7 w-7 rounded-lg flex items-center justify-center text-[#696969] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
                                 >
-                                  <Trash className="h-4 w-4" />
+                                  <Trash className="h-3.5 w-3.5" />
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent side="top">
@@ -593,31 +571,29 @@ export function PreRegistrationsTab() {
       {/* Review & Details Dialog */}
       {selectedApp && (
         <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
-          <DialogContent className="max-w-2xl max-h-[88vh] overflow-y-auto p-6 sm:p-7 bg-card border border-border/80 rounded-2xl shadow-xl">
-            <DialogHeader className="border-b border-border/60 pb-4">
+          <DialogContent className="max-w-2xl max-h-[88vh] overflow-y-auto p-6 sm:p-7 bg-white dark:bg-[#14161b] border border-black/10 dark:border-white/10 rounded-2xl shadow-xl text-[#3B3B3B] dark:text-white">
+            <DialogHeader className="border-b border-black/5 dark:border-white/10 pb-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <DialogTitle className="text-base font-bold uppercase tracking-wider text-foreground">
-                    {isEditing ? "Edit Pre-Registration" : "Application Review"}
+                  <DialogTitle className="text-base font-bold text-[#3B3B3B] dark:text-white">
+                    {isEditing ? "Edit Application" : "Application Details"}
                   </DialogTitle>
-                  <DialogDescription className="text-xs text-muted-foreground mt-1">
-                    Submitted on {new Date(selectedApp.created_at).toLocaleString()}
+                  <DialogDescription className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
+                    Submitted on {new Date(selectedApp.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </DialogDescription>
                 </div>
                 {selectedApp.status === "PENDING" && (
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
                     onClick={() => {
                       setIsEditing(!isEditing)
                       setActionMsg(null)
                     }}
-                    className="gap-1.5 text-xs font-medium cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 h-8 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-300 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-black/5 dark:hover:bg-white/15 border border-black/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
                   >
                     <Pencil className="w-3.5 h-3.5" />
-                    <span>{isEditing ? "Cancel Edit" : "Edit Form"}</span>
-                  </Button>
+                    <span>{isEditing ? "Cancel Edit" : "Edit Details"}</span>
+                  </button>
                 )}
               </div>
             </DialogHeader>
@@ -626,8 +602,8 @@ export function PreRegistrationsTab() {
               <div
                 className={`p-3 rounded-xl text-xs font-medium text-center ${
                   actionMsg.type === "success"
-                    ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-                    : "bg-destructive/10 text-destructive border border-destructive/20"
+                    ? "bg-black/5 dark:bg-white/10 text-[#3B3B3B] dark:text-white border border-black/10 dark:border-white/10"
+                    : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
                 }`}
               >
                 {actionMsg.text}
@@ -638,105 +614,105 @@ export function PreRegistrationsTab() {
               /* ── EDIT MODE FORM ── */
               <div className="space-y-6 text-sm py-2">
                 {/* Personal Details */}
-                <div className="space-y-3.5">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-2">
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
                     Applicant Information
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">First Name</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">First Name</label>
                       <Input
                         value={editForm.first_name}
                         onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
-                        className="text-sm h-9 rounded-xl"
+                        className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/5"
                       />
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Middle Name</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Middle Name</label>
                       <Input
                         value={editForm.middle_name}
                         onChange={(e) => setEditForm({ ...editForm, middle_name: e.target.value })}
-                        className="text-sm h-9 rounded-xl"
+                        className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/5"
                       />
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Last Name</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Last Name</label>
                       <Input
                         value={editForm.last_name}
                         onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
-                        className="text-sm h-9 rounded-xl"
+                        className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/5"
                       />
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Suffix</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Suffix</label>
                       <Input
                         value={editForm.suffix}
                         onChange={(e) => setEditForm({ ...editForm, suffix: e.target.value })}
                         placeholder="Jr., III, etc."
-                        className="text-sm h-9 rounded-xl"
+                        className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/5"
                       />
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Email Address</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Email Address</label>
                       <Input
                         value={editForm.email}
                         onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                        className="text-sm h-9 rounded-xl"
+                        className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/5"
                       />
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Contact Number</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Contact Number</label>
                       <Input
                         value={editForm.phone}
                         onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                        className="text-sm h-9 rounded-xl"
+                        className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/5"
                       />
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Gender</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Gender</label>
                       <Select
                         value={editForm.gender}
                         onValueChange={(val) => setEditForm({ ...editForm, gender: val })}
                       >
-                        <SelectTrigger className="text-sm h-9 rounded-xl w-full">
+                        <SelectTrigger className="text-sm h-9.5 rounded-xl w-full border-black/10 dark:border-white/10 bg-white dark:bg-white/5">
                           <SelectValue placeholder="Select Gender" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-xl border-black/10 dark:border-white/10">
                           <SelectItem value="Male">Male</SelectItem>
                           <SelectItem value="Female">Female</SelectItem>
                           <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Birthday</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Birthday</label>
                       <Input
                         type="date"
                         value={editForm.birthday}
                         onChange={(e) => setEditForm({ ...editForm, birthday: e.target.value })}
-                        className="text-sm h-9 rounded-xl"
+                        className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/5"
                       />
                     </div>
-                    <div className="sm:col-span-2">
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Address</label>
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Address</label>
                       <Input
                         value={editForm.address}
                         onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
                         placeholder="Street Address, City, Province"
-                        className="text-sm h-9 rounded-xl"
+                        className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/5"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Academic Details */}
-                <div className="space-y-3.5">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-2">
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
                     Academic Background
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">School / University</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">School / University</label>
                       <Select
                         value={editForm.school_id || "custom"}
                         onValueChange={(val) => {
@@ -744,14 +720,14 @@ export function PreRegistrationsTab() {
                             setEditForm({ ...editForm, school_id: "", school: "" })
                           } else {
                             const found = dropdownData.schools.find((s) => s.id.toString() === val)
-                            setEditForm({ ...editForm, school_id: val, school: found?.name || "" })
+                            setEditForm({ ...editForm, school_id: val, school: found ? found.name : "" })
                           }
                         }}
                       >
-                        <SelectTrigger className="text-sm h-9 rounded-xl w-full">
+                        <SelectTrigger className="text-sm h-9.5 rounded-xl w-full border-black/10 dark:border-white/10 bg-white dark:bg-white/5">
                           <SelectValue placeholder="Select School" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-xl border-black/10 dark:border-white/10">
                           {dropdownData.schools.map((s) => (
                             <SelectItem key={s.id} value={s.id.toString()}>
                               {s.name}
@@ -761,8 +737,9 @@ export function PreRegistrationsTab() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Course / Degree</label>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Degree / Course</label>
                       <Select
                         value={editForm.academic_course_id || "custom"}
                         onValueChange={(val) => {
@@ -770,14 +747,14 @@ export function PreRegistrationsTab() {
                             setEditForm({ ...editForm, academic_course_id: "", course: "" })
                           } else {
                             const found = dropdownData.academic_courses.find((c) => c.id.toString() === val)
-                            setEditForm({ ...editForm, academic_course_id: val, course: found?.name || "" })
+                            setEditForm({ ...editForm, academic_course_id: val, course: found ? found.name : "" })
                           }
                         }}
                       >
-                        <SelectTrigger className="text-sm h-9 rounded-xl w-full">
+                        <SelectTrigger className="text-sm h-9.5 rounded-xl w-full border-black/10 dark:border-white/10 bg-white dark:bg-white/5">
                           <SelectValue placeholder="Select Course" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-xl border-black/10 dark:border-white/10">
                           {dropdownData.academic_courses.map((c) => (
                             <SelectItem key={c.id} value={c.id.toString()}>
                               {c.name}
@@ -787,49 +764,53 @@ export function PreRegistrationsTab() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Year Graduated</label>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Year Graduated</label>
                       <Input
                         value={editForm.year_graduated}
                         onChange={(e) => setEditForm({ ...editForm, year_graduated: e.target.value })}
-                        className="text-sm h-9 rounded-xl"
+                        placeholder="e.g. 2024"
+                        className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/5"
                       />
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Highest Education</label>
-                      <Input
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Highest Education</label>
+                      <Select
                         value={editForm.highest_education}
-                        onChange={(e) => setEditForm({ ...editForm, highest_education: e.target.value })}
-                        className="text-sm h-9 rounded-xl"
-                      />
+                        onValueChange={(val) => setEditForm({ ...editForm, highest_education: val })}
+                      >
+                        <SelectTrigger className="text-sm h-9.5 rounded-xl w-full border-black/10 dark:border-white/10 bg-white dark:bg-white/5">
+                          <SelectValue placeholder="Select Education" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-black/10 dark:border-white/10">
+                          <SelectItem value="College Graduate">College Graduate</SelectItem>
+                          <SelectItem value="College Undergraduate">College Undergraduate</SelectItem>
+                          <SelectItem value="Master's Degree">Master's Degree</SelectItem>
+                          <SelectItem value="Doctorate Degree">Doctorate Degree</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
 
-                {/* Target Review Details (including Batch assignment) */}
-                <div className="space-y-3.5">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-2">
-                    Target Review & Batch Assignment
+                {/* Target Review */}
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+                    Target Review Program
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Target Examination</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Examination</label>
                       <Select
                         value={editForm.exam_id}
-                        onValueChange={(val) =>
-                          setEditForm({
-                            ...editForm,
-                            exam_id: val,
-                            program_id: "",
-                            major_id: "",
-                            batch_id: "",
-                          })
-                        }
+                        onValueChange={(val) => setEditForm({ ...editForm, exam_id: val, batch_id: "", program_id: "", major_id: "" })}
                       >
-                        <SelectTrigger className="text-sm h-9 rounded-xl w-full">
+                        <SelectTrigger className="text-sm h-9.5 rounded-xl w-full border-black/10 dark:border-white/10 bg-white dark:bg-white/5">
                           <SelectValue placeholder="Select Exam" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-xl border-black/10 dark:border-white/10">
                           {dropdownData.examinations.map((e) => (
                             <SelectItem key={e.id} value={e.id.toString()}>
                               {e.name}
@@ -839,18 +820,16 @@ export function PreRegistrationsTab() {
                       </Select>
                     </div>
 
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">
-                        Assigned Batch / Term
-                      </label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Assigned Batch</label>
                       <Select
                         value={editForm.batch_id}
                         onValueChange={(val) => setEditForm({ ...editForm, batch_id: val })}
                       >
-                        <SelectTrigger className="text-sm h-9 rounded-xl w-full">
-                          <SelectValue placeholder="Select Batch to Assign" />
+                        <SelectTrigger className="text-sm h-9.5 rounded-xl w-full border-black/10 dark:border-white/10 bg-white dark:bg-white/5">
+                          <SelectValue placeholder="Select Batch" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-xl border-black/10 dark:border-white/10">
                           {dropdownData.batches
                             .filter((b) => !editForm.exam_id || b.exam_id?.toString() === editForm.exam_id)
                             .map((b) => (
@@ -862,16 +841,16 @@ export function PreRegistrationsTab() {
                       </Select>
                     </div>
 
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Program / Level</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Program / Level</label>
                       <Select
                         value={editForm.program_id}
                         onValueChange={(val) => setEditForm({ ...editForm, program_id: val, major_id: "" })}
                       >
-                        <SelectTrigger className="text-sm h-9 rounded-xl w-full">
+                        <SelectTrigger className="text-sm h-9.5 rounded-xl w-full border-black/10 dark:border-white/10 bg-white dark:bg-white/5">
                           <SelectValue placeholder="Select Program" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-xl border-black/10 dark:border-white/10">
                           {dropdownData.programs
                             .filter((p) => !editForm.exam_id || p.exam_id?.toString() === editForm.exam_id)
                             .map((p) => (
@@ -883,16 +862,16 @@ export function PreRegistrationsTab() {
                       </Select>
                     </div>
 
-                    <div>
-                      <label className="text-xs text-muted-foreground block mb-1 font-medium">Major / Specialization</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-[#696969] dark:text-gray-400 block">Major / Specialization</label>
                       <Select
                         value={editForm.major_id}
                         onValueChange={(val) => setEditForm({ ...editForm, major_id: val })}
                       >
-                        <SelectTrigger className="text-sm h-9 rounded-xl w-full">
+                        <SelectTrigger className="text-sm h-9.5 rounded-xl w-full border-black/10 dark:border-white/10 bg-white dark:bg-white/5">
                           <SelectValue placeholder="Select Major" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-xl border-black/10 dark:border-white/10">
                           {dropdownData.majors
                             .filter((m) => !editForm.program_id || m.program_id?.toString() === editForm.program_id)
                             .map((m) => (
@@ -908,32 +887,32 @@ export function PreRegistrationsTab() {
               </div>
             ) : (
               /* ── VIEW / READ-ONLY MODE ── */
-              <div className="space-y-6 text-sm py-2">
-                {/* Personal Details */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-2">
+              <div className="space-y-5 text-sm py-2">
+                {/* Personal Information */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
                     Applicant Information
                   </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">Full Name</span>
-                      <span className="font-semibold text-foreground leading-normal">
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Full Name</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">
                         {[selectedApp.first_name, selectedApp.middle_name, selectedApp.last_name, selectedApp.suffix]
                           .filter(Boolean)
                           .join(" ") || "—"}
                       </span>
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">Email</span>
-                      <span className="font-semibold text-foreground leading-normal break-all">{selectedApp.email}</span>
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Email</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal break-all">{selectedApp.email}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">Contact Number</span>
-                      <span className="font-semibold text-foreground leading-normal">{selectedApp.phone || "—"}</span>
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Contact Number</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">{selectedApp.phone || "—"}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">Birthday</span>
-                      <span className="font-semibold text-foreground leading-normal">
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Birthday</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">
                         {selectedApp.birthday
                           ? new Date(selectedApp.birthday).toLocaleDateString(undefined, {
                               year: "numeric",
@@ -944,12 +923,12 @@ export function PreRegistrationsTab() {
                       </span>
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">Gender</span>
-                      <span className="font-semibold text-foreground leading-normal">{selectedApp.gender || "—"}</span>
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Gender</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">{selectedApp.gender || "—"}</span>
                     </div>
                     <div className="sm:col-span-3">
-                      <span className="text-xs text-muted-foreground block mb-0.5">Address</span>
-                      <span className="font-semibold text-foreground leading-normal">
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Address</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">
                         {[selectedApp.address, selectedApp.city, selectedApp.province, selectedApp.zip_code]
                           .filter(Boolean)
                           .join(", ") || "—"}
@@ -958,133 +937,145 @@ export function PreRegistrationsTab() {
                   </div>
                 </div>
 
-                {/* Educational Background */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-2">
+                {/* Academic Background */}
+                <div className="space-y-2 pt-1 border-t border-black/5 dark:border-white/5">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400 pt-2">
                     Academic Background
                   </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">School / University</span>
-                      <span className="font-semibold text-foreground leading-normal">{selectedApp.school_name || "—"}</span>
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">School / University</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">{selectedApp.school_name || "—"}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">Course / Degree</span>
-                      <span className="font-semibold text-foreground leading-normal">{selectedApp.academic_course_name || "—"}</span>
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Course / Degree</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">{selectedApp.academic_course_name || "—"}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">Year Graduated</span>
-                      <span className="font-semibold text-foreground leading-normal">{selectedApp.year_graduated || "—"}</span>
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Year Graduated</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">{selectedApp.year_graduated || "—"}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">Highest Education</span>
-                      <span className="font-semibold text-foreground leading-normal">{selectedApp.highest_education || "—"}</span>
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Highest Education</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">{selectedApp.highest_education || "—"}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Review Program Selection */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-2">
+                {/* Target Review Details */}
+                <div className="space-y-2 pt-1 border-t border-black/5 dark:border-white/5">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400 pt-2">
                     Target Review Details
                   </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3">
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">Examination</span>
-                      <span className="font-semibold text-foreground leading-normal">{selectedApp.exam_name || "—"}</span>
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Examination</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">{selectedApp.exam_name || "—"}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">Batch</span>
-                      <span className="font-semibold text-foreground leading-normal">{selectedApp.batch_name || "—"}</span>
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Batch</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">{selectedApp.batch_name || "—"}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">Program</span>
-                      <span className="font-semibold text-foreground leading-normal">{selectedApp.program_name || "—"}</span>
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Program</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">{selectedApp.program_name || "—"}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-0.5">Major</span>
-                      <span className="font-semibold text-foreground leading-normal">{selectedApp.major_name || "—"}</span>
+                      <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Major</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white leading-normal">{selectedApp.major_name || "—"}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Temporary Password for approval */}
+                {/* Account Credentials Setup for Approval */}
                 {selectedApp.status === "PENDING" && (
-                  <div className="pt-3 border-t border-border/40 space-y-1.5">
-                    <label className="text-xs font-semibold text-foreground block">
-                      Initial Student Account Password:
-                    </label>
-                    <Input
-                      value={customPassword}
-                      onChange={(e) => setCustomPassword(e.target.value)}
-                      placeholder="Student@123"
-                      className="text-sm h-9 rounded-xl max-w-xs border-border"
-                    />
-                    <span className="text-xs text-muted-foreground block mt-1">
-                      This password will be assigned to their new student account upon approval.
-                    </span>
+                  <div className="pt-2 border-t border-black/5 dark:border-white/5 space-y-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400 pt-1">
+                      Student Account Setup
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-[#3B3B3B] dark:text-white block">
+                          Student Login Email *
+                        </label>
+                        <Input
+                          type="email"
+                          value={customAccountEmail}
+                          onChange={(e) => setCustomAccountEmail(e.target.value)}
+                          placeholder="student@peak.edu.ph"
+                          className="text-sm h-9 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10"
+                        />
+                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block">
+                          The official portal login email.
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-[#3B3B3B] dark:text-white block">
+                          Initial Password *
+                        </label>
+                        <Input
+                          value={customPassword}
+                          onChange={(e) => setCustomPassword(e.target.value)}
+                          placeholder="Student@123"
+                          className="text-sm h-9 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10"
+                        />
+                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block">
+                          Temporary initial password.
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
             )}
 
-            <DialogFooter className="border-t border-border/60 pt-4 flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
-              <DialogClose asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full sm:w-auto text-xs font-medium cursor-pointer"
-                >
-                  Close
-                </Button>
-              </DialogClose>
-
+            <DialogFooter className="border-t border-black/5 dark:border-white/10 pt-4 flex items-center justify-end gap-2">
               {isEditing ? (
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
                     onClick={() => setIsEditing(false)}
-                    className="text-xs font-medium cursor-pointer"
+                    className="px-4 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-black/5 border border-black/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
                   >
                     Cancel
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     type="button"
-                    size="sm"
                     disabled={actionLoading}
                     onClick={handleSaveEdit}
-                    className="text-xs font-semibold cursor-pointer"
+                    className="px-4 h-9 rounded-xl text-xs font-bold uppercase tracking-wide text-white bg-[#E9C46A] hover:bg-[#dfb550] transition-all cursor-pointer shadow-xs disabled:opacity-50"
                   >
                     {actionLoading ? "Saving…" : "Save Changes"}
-                  </Button>
+                  </button>
+                </div>
+              ) : selectedApp.status === "PENDING" ? (
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <button
+                    type="button"
+                    disabled={actionLoading}
+                    onClick={() => handleReject(selectedApp.id)}
+                    className="px-3.5 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-rose-600 dark:text-gray-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-black/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
+                  >
+                    Reject
+                  </button>
+                  <button
+                    type="button"
+                    disabled={actionLoading}
+                    onClick={() => handleApprove(selectedApp.id)}
+                    className="px-4 h-9 rounded-xl text-xs font-bold uppercase tracking-wide text-white bg-[#E9C46A] hover:bg-[#dfb550] transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    {actionLoading ? "Processing…" : "Approve Account"}
+                  </button>
                 </div>
               ) : (
-                selectedApp.status === "PENDING" && (
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={actionLoading}
-                      onClick={() => handleReject(selectedApp.id)}
-                      className="text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer border-destructive/20"
-                    >
-                      Reject Application
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={actionLoading}
-                      onClick={() => handleApprove(selectedApp.id)}
-                      className="text-xs font-semibold cursor-pointer"
-                    >
-                      {actionLoading ? "Processing…" : "Approve & Create Account"}
-                    </Button>
-                  </div>
-                )
+                <DialogClose asChild>
+                  <button
+                    type="button"
+                    className="px-4 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-black/5 dark:hover:bg-white/15 border border-black/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
+                  >
+                    Close
+                  </button>
+                </DialogClose>
               )}
             </DialogFooter>
           </DialogContent>

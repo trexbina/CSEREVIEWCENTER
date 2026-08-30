@@ -12,7 +12,7 @@ import Link from "next/link"
 
 // icons used on form section headers and buttons
 import {
-    ArrowLeft, User, UserCog, Save, ChevronRight, ChevronDown, Check,
+    ArrowLeft, User, UserCog, Save, ChevronRight, ChevronDown, Check, Eye, EyeOff, GraduationCap, Shield,
 } from "lucide-react"
 
 // form component helpers
@@ -278,13 +278,16 @@ export default function EditUserForm({ initialUser }) {
     const [saving, setSaving] = useState(false)
 
     // account details prefilled with existing user info
-    const [email, setEmail] = useState(initialUser.email || "")
+    const [accountEmail, setAccountEmail] = useState(initialUser.email || "")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [role, setRole] = useState(initialUser.role || "student")
     const [jobRoleDescription, setJobRoleDescription] = useState(initialUser.job_role_description || "")
 
     // personal profile information prefilled with existing user info
+    const [personalEmail, setPersonalEmail] = useState(initialUser.personal_email || initialUser.email || "")
     const [firstName, setFirstName] = useState(initialUser.first_name || "")
     const [middleName, setMiddleName] = useState(initialUser.middle_name || "")
     const [lastName, setLastName] = useState(initialUser.last_name || "")
@@ -369,8 +372,8 @@ export default function EditUserForm({ initialUser }) {
         e.preventDefault()
         setError("")
 
-        if (!email.trim()) {
-            setError("Email is required.")
+        if (!accountEmail.trim()) {
+            setError("Account login email is required.")
             return
         }
 
@@ -413,11 +416,12 @@ export default function EditUserForm({ initialUser }) {
         }
 
         try {
-            const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(" ").trim() || initialUser.name || email.split("@")[0]
+            const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(" ").trim() || initialUser.name || accountEmail.split("@")[0]
 
             const payload = {
                 name: fullName,
-                email: email.toLowerCase().trim(),
+                email: accountEmail.toLowerCase().trim(),
+                personal_email: personalEmail.toLowerCase().trim(),
                 role,
                 first_name: firstName.trim() || null,
                 middle_name: middleName.trim() || null,
@@ -430,21 +434,21 @@ export default function EditUserForm({ initialUser }) {
                 city: city.trim() || null,
                 province: province.trim() || null,
                 zip_code: zipCode.trim() || null,
-                highest_education: highestEducation || null,
-                school_id: schoolId ? parseInt(schoolId) : null,
-                academic_course_id: academicCourseId ? parseInt(academicCourseId) : null,
-                year_graduated: yearGraduated ? parseInt(yearGraduated) : null,
-                exam_id: role !== "admin" && resolvedExamId ? parseInt(resolvedExamId) : null,
-                batch_id: role !== "admin" && batchId ? parseInt(batchId) : null,
-                program_id: role !== "admin" && programId ? parseInt(programId) : null,
-                major_id: role !== "admin" && majorId ? parseInt(majorId) : null,
+                school_id: schoolId && schoolId !== "none" ? parseInt(schoolId) : null,
+                academic_course_id: academicCourseId && academicCourseId !== "none" ? parseInt(academicCourseId) : null,
+                year_graduated: yearGraduated || null,
+                highest_education: highestEducation && highestEducation !== "none" ? highestEducation : null,
+                exam_id: resolvedExamId ? parseInt(resolvedExamId) : null,
+                batch_id: role !== "admin" && batchId && batchId !== "none" ? parseInt(batchId) : null,
+                program_id: role !== "admin" && programId && programId !== "none" ? parseInt(programId) : null,
+                major_id: role !== "admin" && majorId && majorId !== "none" ? parseInt(majorId) : null,
                 job_role_description: role === "admin" ? jobRoleDescription.trim() : null,
                 avatar_url: avatarUrl || null,
                 targets: role === "teacher" ? teacherTargets : [],
             }
 
-            if (password) {
-                payload.password = password
+            if (password.trim()) {
+                payload.password = password.trim()
             }
 
             const res = await fetch(`/api/admin/users?id=${initialUser.id}`, {
@@ -461,7 +465,7 @@ export default function EditUserForm({ initialUser }) {
                 return
             }
 
-            router.push("/admin/users")
+            router.push(`/admin/users/${initialUser.id}`)
             router.refresh()
         } catch {
             setError("Network error. Please try again.")
@@ -470,35 +474,23 @@ export default function EditUserForm({ initialUser }) {
     }
 
     return (
-        <div className="space-y-6 w-full max-w-4xl mx-auto px-2 sm:px-4 py-2 pb-16">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-black/5 dark:border-white/10">
-                <div className="flex items-center gap-3">
-                    <Link
-                        href="/admin/users"
-                        className="flex items-center justify-center size-9 rounded-xl bg-white dark:bg-white/10 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white border border-black/5 dark:border-white/10 shadow-2xs transition-all cursor-pointer"
-                        title="Back to Users"
-                    >
-                        <ArrowLeft className="size-4" />
-                    </Link>
-                    <div>
-                        <h1 className="text-xl font-bold tracking-wide text-[#3B3B3B] dark:text-white">
-                            Edit User
-                        </h1>
-                        <p className="text-xs text-[#696969] dark:text-gray-400">
-                            Update profile details, education, and account roles.
-                        </p>
-                    </div>
-                </div>
+        <div className="space-y-6 max-w-4xl mx-auto pb-16">
+            <div>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                    Edit User
+                </h1>
+                <p className="text-xs sm:text-sm text-[#696969]">
+                    Update user profile, credentials, and settings.
+                </p>
             </div>
 
-            {error && (
-                <div className="rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200/70 dark:border-rose-900/30 p-3.5 text-xs font-semibold text-rose-600">
-                    {error}
-                </div>
-            )}
+            <form onSubmit={handleSubmit} className="space-y-6">
+                {error && (
+                    <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive font-medium">
+                        {error}
+                    </div>
+                )}
 
-            <form onSubmit={handleSubmit} className="space-y-8">
                 {/* ═══ Personal Information ═══ */}
                 <section className="space-y-4">
                     <div className="flex items-center gap-2.5 pt-1">
@@ -556,7 +548,7 @@ export default function EditUserForm({ initialUser }) {
                         </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="birthday" className="text-sm font-semibold text-[#696969]">Birthday</Label>
                             <input id="birthday" type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
@@ -577,6 +569,10 @@ export default function EditUserForm({ initialUser }) {
                         <div className="space-y-1.5">
                             <Label htmlFor="phone" className="text-sm font-semibold text-[#696969]">Phone Number</Label>
                             <input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+63 9XX XXX XXXX" className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="personal-email" className="text-sm font-semibold text-[#696969]">Email Address</Label>
+                            <input id="personal-email" type="email" value={personalEmail} onChange={(e) => setPersonalEmail(e.target.value)} placeholder="personal@gmail.com" className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
                     </div>
 
@@ -603,7 +599,7 @@ export default function EditUserForm({ initialUser }) {
                 </section>
 
                 {/* ═══ Education Background ═══ */}
-                <section className="space-y-4">
+                <section className="space-y-4 pt-6 border-t border-black/5 dark:border-white/10">
                     <div className="flex items-center gap-2.5 pt-1">
                         <GraduationCap className="size-4.5 text-[#696969]" />
                         <h2 className="text-base font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
@@ -613,31 +609,31 @@ export default function EditUserForm({ initialUser }) {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
-                            <Label className="text-sm font-semibold text-[#696969]">Highest Education</Label>
-                            <Select value={highestEducation || "none"} onValueChange={(val) => setHighestEducation(val === "none" ? "" : val)}>
-                                <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select level" /></SelectTrigger>
-                                <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                                    <SelectItem value="none">None</SelectItem>
-                                    <SelectItem value="high_school">High School</SelectItem>
-                                    <SelectItem value="vocational">Vocational / Technical</SelectItem>
-                                    <SelectItem value="bachelor">Bachelor&apos;s Degree</SelectItem>
-                                    <SelectItem value="master">Master&apos;s Degree</SelectItem>
-                                    <SelectItem value="doctorate">Doctorate</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1.5">
                             <Label className="text-sm font-semibold text-[#696969]">School / University</Label>
                             <Select value={schoolId || "none"} onValueChange={(val) => setSchoolId(val === "none" ? "" : val)}>
                                 <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select School" /></SelectTrigger>
                                 <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                     <SelectItem value="none">None</SelectItem>
                                     {dropdownData.schools.map(s => (
-                                        <SelectItem key={s.id} value={s.id.toString()}>
-                                          {s.name} {s.address ? `— ${s.address}` : ""}
-                                        </SelectItem>
+                                        <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
                                     ))}
                                     {dropdownData.schools.length === 0 && <SelectItem value="no_schools" disabled>No schools available</SelectItem>}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-semibold text-[#696969]">Highest Education</Label>
+                            <Select value={highestEducation || "none"} onValueChange={(val) => setHighestEducation(val === "none" ? "" : val)}>
+                                <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Education" /></SelectTrigger>
+                                <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                                    <SelectItem value="none">None</SelectItem>
+                                    <SelectItem value="High School">High School</SelectItem>
+                                    <SelectItem value="Senior High School">Senior High School</SelectItem>
+                                    <SelectItem value="Vocational / Associate">Vocational / Associate</SelectItem>
+                                    <SelectItem value="College Undergraduate">College Undergraduate</SelectItem>
+                                    <SelectItem value="Bachelor's Degree">Bachelor's Degree</SelectItem>
+                                    <SelectItem value="Master's Degree">Master's Degree</SelectItem>
+                                    <SelectItem value="Doctorate Degree">Doctorate Degree</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -662,7 +658,7 @@ export default function EditUserForm({ initialUser }) {
                 </section>
 
                 {/* ═══ Account Details ═══ */}
-                <section className="space-y-4">
+                <section className="space-y-4 pt-6 border-t border-black/5 dark:border-white/10">
                     <div className="flex items-center gap-2.5 pt-1">
                         <Shield className="size-4.5 text-[#696969]" />
                         <h2 className="text-base font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
@@ -672,16 +668,53 @@ export default function EditUserForm({ initialUser }) {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5 sm:col-span-2">
-                            <Label htmlFor="edit-email" className="text-sm font-semibold text-[#696969]">Email *</Label>
-                            <input id="edit-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="juan@school.edu" className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
+                            <Label htmlFor="account-email" className="text-sm font-semibold text-[#696969]">Account Login Email *</Label>
+                            <input id="account-email" type="email" required value={accountEmail} onChange={(e) => setAccountEmail(e.target.value)} placeholder="student@peak.edu.ph" className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
+                            <p className="text-xs text-[#696969]">This email is used to log into the PEAK Review System.</p>
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="edit-password" className="text-sm font-semibold text-[#696969]">New Password (Optional)</Label>
-                            <input id="edit-password" type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Leave blank to keep current password" className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
+                            <div className="relative">
+                                <input
+                                    id="edit-password"
+                                    type={showPassword ? "text" : "password"}
+                                    minLength={6}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Leave blank to keep current password"
+                                    className="w-full h-10.5 pl-3.5 pr-10 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer p-0.5"
+                                    title={showPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
+                                </button>
+                            </div>
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="confirm-password" className="text-sm font-semibold text-[#696969]">Confirm New Password</Label>
-                            <input id="confirm-password" type="password" minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Leave blank to keep current password" className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
+                            <div className="relative">
+                                <input
+                                    id="confirm-password"
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    minLength={6}
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="Leave blank to keep current password"
+                                    className="w-full h-10.5 pl-3.5 pr-10 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer p-0.5"
+                                    title={showConfirmPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showConfirmPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
+                                </button>
+                            </div>
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-sm font-semibold text-[#696969]">User Role *</Label>

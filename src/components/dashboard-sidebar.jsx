@@ -152,6 +152,7 @@ export function DashboardSidebar({ role }) {
     }
 
     /* ------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------ */
     /*  Sidebar Nav Item component with hover interaction & tooltip       */
     /* ------------------------------------------------------------------ */
     function SidebarNavItem({ item, active, collapsed, onNavigate }) {
@@ -168,13 +169,16 @@ export function DashboardSidebar({ role }) {
                         iconRef.current.play()
                     }
                 }}
-                className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
-                    ? "bg-black/[0.03] dark:bg-white/[0.06] text-[#696969] dark:text-white"
-                    : "text-[#696969] dark:text-[#e5e7eb] hover:bg-black/[0.025] dark:hover:bg-white/[0.04] hover:text-black dark:hover:text-white"
-                    } ${collapsed ? "justify-center" : ""}`}
+                className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 ease-in-out hover:bg-black/[0.02] dark:hover:bg-white/[0.03] ${
+                    collapsed ? "justify-center" : ""
+                }`}
             >
                 {jsonSrc ? (
-                    <div className="shrink-0 flex items-center justify-center pointer-events-none transition-colors duration-200 [&_path]:!fill-[#696969] dark:[&_path]:!fill-[#9ca3af] [&_path]:!stroke-[#696969] dark:[&_path]:!stroke-[#9ca3af] [&_circle]:!stroke-[#696969] dark:[&_circle]:!stroke-[#9ca3af] [&_rect]:!stroke-[#696969] dark:[&_rect]:!stroke-[#9ca3af]">
+                    <div className={`shrink-0 flex items-center justify-center pointer-events-none transition-all duration-300 ease-in-out ${
+                        active
+                            ? "[&_path]:!fill-[#E9C46A] [&_path]:!stroke-[#E9C46A] [&_circle]:!stroke-[#E9C46A] [&_rect]:!stroke-[#E9C46A] [&_g]:!fill-[#E9C46A] text-[#E9C46A]"
+                            : "[&_path]:!fill-[#696969] dark:[&_path]:!fill-[#9ca3af] [&_path]:!stroke-[#696969] dark:[&_path]:!stroke-[#9ca3af] [&_circle]:!stroke-[#696969] dark:[&_circle]:!stroke-[#9ca3af] [&_rect]:!stroke-[#696969] dark:[&_rect]:!stroke-[#9ca3af] text-[#696969]"
+                    }`}>
                         <LordIcon
                             ref={iconRef}
                             src={jsonSrc}
@@ -184,10 +188,14 @@ export function DashboardSidebar({ role }) {
                         />
                     </div>
                 ) : (
-                    <Icon className="h-6 w-6 shrink-0 text-[#696969] dark:text-[#9ca3af]" />
+                    <Icon className={`h-6 w-6 shrink-0 transition-colors duration-300 ease-in-out ${
+                        active ? "text-[#E9C46A]" : "text-[#696969] dark:text-[#9ca3af]"
+                    }`} />
                 )}
                 {!collapsed && (
-                    <span className={`text-[13.5px] font-medium leading-none truncate ${active ? "text-[#696969] dark:text-white" : "text-[#696969] dark:text-[#e5e7eb]"}`}>
+                    <span className={`text-[13.5px] font-medium leading-none truncate transition-colors duration-300 ease-in-out ${
+                        active ? "text-[#E9C46A] font-semibold" : "text-[#696969] dark:text-[#e5e7eb] group-hover:text-black dark:group-hover:text-white"
+                    }`}>
                         {item.label}
                     </span>
                 )}
@@ -218,12 +226,12 @@ export function DashboardSidebar({ role }) {
     function SidebarContent() {
         return (
             <div className="flex h-full flex-col">
-                {/* Logo - Left-aligned & nicely sized */}
-                <div className={`flex items-center pt-6 pb-3 ${collapsed ? "justify-center px-2" : "justify-start pl-4 pr-3"}`}>
+                {/* Logo - Centered & slightly decreased */}
+                <div className="flex items-center justify-center pt-6 pb-3 px-4">
                     <img
                         src="/landingpageassets/logo.png"
                         alt="Peak Excellence Review Center"
-                        className={`shrink-0 transition-all ${collapsed ? "h-10 w-10 object-contain" : "w-full max-w-[145px] h-auto object-contain"}`}
+                        className={`shrink-0 transition-all ${collapsed ? "h-10 w-10 object-contain" : "w-full max-w-[130px] h-auto object-contain"}`}
                     />
                 </div>
 
@@ -234,7 +242,7 @@ export function DashboardSidebar({ role }) {
                             // Section header support
                             if (item.section) {
                                 return (
-                                    <p key={`section-${idx}`} className={`px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#696969] dark:text-[#6b7280]/80 ${collapsed ? "hidden" : ""}`}>
+                                    <p key={`section-${idx}`} className={`px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#696969]/60 dark:text-[#6b7280]/60 ${collapsed ? "hidden" : ""}`}>
                                         {item.section}
                                     </p>
                                 )

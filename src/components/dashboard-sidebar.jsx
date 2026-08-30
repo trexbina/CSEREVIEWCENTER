@@ -220,19 +220,17 @@ export function DashboardSidebar({ role }) {
     function SidebarContent() {
         return (
             <div className="flex h-full flex-col">
-                {/* Logo */}
-                <div className={`flex items-center gap-3.5 px-4 pt-8 pb-5 ${collapsed ? "justify-center px-2" : ""}`}>
+                {/* Logo & Brand Name */}
+                <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-8 pb-4" : "justify-center gap-3.5 px-4 pt-9 pb-5"}`}>
                     <img
                         src="/landingpageassets/logo.png"
                         alt="Peak Excellence Review Center"
-                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-10 w-10" : "h-12 w-12"}`}
+                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-11 w-11" : "h-14 w-14"}`}
                     />
                     {!collapsed && (
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-[17px] font-bold tracking-[0.2em] text-[#1f2937] dark:text-white leading-tight truncate">
-                                PEAK
-                            </span>
-                        </div>
+                        <span className="text-[20px] font-bold tracking-[0.22em] text-[#1f2937] dark:text-white leading-none">
+                            PEAK
+                        </span>
                     )}
                 </div>
 

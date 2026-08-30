@@ -63,6 +63,12 @@ const iconMap = {
 }
 
 import { LordIcon } from "@/components/ui/lord-icon"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const sidebarJsonMap = {
     Home: "/icons/sidebar/home.json",
@@ -146,14 +152,14 @@ export function DashboardSidebar({ role }) {
     }
 
 /* ------------------------------------------------------------------ */
-/*  Sidebar Nav Item component with hover interaction                  */
+/*  Sidebar Nav Item component with hover interaction & tooltip       */
 /* ------------------------------------------------------------------ */
 function SidebarNavItem({ item, active, collapsed, onNavigate }) {
     const iconRef = useRef(null)
     const jsonSrc = sidebarJsonMap[item.icon]
     const Icon = iconMap[item.icon] || LayoutDashboard
 
-    return (
+    const content = (
         <Link
             href={item.href}
             onClick={onNavigate}
@@ -162,7 +168,6 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                     iconRef.current.play()
                 }
             }}
-            title={collapsed ? item.label : undefined}
             className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
                 ? "bg-[#F2F2F3] dark:bg-sidebar-accent text-[#1f2937] dark:text-white"
                 : "text-[#374151] dark:text-[#e5e7eb] hover:bg-sidebar-accent/60 hover:text-black dark:hover:text-white"
@@ -186,19 +191,30 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                 <Icon className={`h-6 w-6 shrink-0 ${active ? "text-[#E9C46A]" : "text-[#4b5563] dark:text-[#9ca3af]"}`} />
             )}
             {!collapsed && (
-                <div className="flex flex-col">
-                    <span className={`text-[13.5px] font-semibold leading-snug ${active ? "text-[#1f2937] dark:text-white" : "text-[#374151] dark:text-[#e5e7eb]"}`}>
-                        {item.label}
-                    </span>
-                    {item.description && (
-                        <span className={`text-xs font-normal leading-tight mt-0.5 ${active ? "text-[#4b5563] dark:text-slate-300" : "text-[#6b7280] dark:text-slate-400"}`}>
-                            {item.description}
-                        </span>
-                    )}
-                </div>
+                <span className={`text-[13.5px] font-semibold leading-none truncate ${active ? "text-[#1f2937] dark:text-white" : "text-[#374151] dark:text-[#e5e7eb]"}`}>
+                    {item.label}
+                </span>
             )}
         </Link>
     )
+
+    if (item.description || collapsed) {
+        return (
+            <Tooltip delayDuration={150}>
+                <TooltipTrigger asChild>
+                    {content}
+                </TooltipTrigger>
+                <TooltipContent side="right" align="center" className="max-w-xs text-xs">
+                    <p className="font-semibold text-white">{item.label}</p>
+                    {item.description && (
+                        <p className="text-[11px] text-gray-300 font-normal mt-0.5">{item.description}</p>
+                    )}
+                </TooltipContent>
+            </Tooltip>
+        )
+    }
+
+    return content
 }
 
     /* ---- Sidebar content (shared between mobile & desktop) ---- */
@@ -225,30 +241,32 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                 </div>
 
                 {/* Nav links */}
-                <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-2 pb-4">
-                    {navItems.map((item, idx) => {
-                        // Section header support
-                        if (item.section) {
+                <TooltipProvider delayDuration={150}>
+                    <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-2 pb-4">
+                        {navItems.map((item, idx) => {
+                            // Section header support
+                            if (item.section) {
+                                return (
+                                    <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-[#6b7280] dark:text-[#9ca3af] ${collapsed ? "hidden" : ""}`}>
+                                        {item.section}
+                                    </p>
+                                )
+                            }
+
+                            const active = isActive(item.href)
+
                             return (
-                                <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-[#6b7280] dark:text-[#9ca3af] ${collapsed ? "hidden" : ""}`}>
-                                    {item.section}
-                                </p>
+                                <SidebarNavItem
+                                    key={item.href}
+                                    item={item}
+                                    active={active}
+                                    collapsed={collapsed}
+                                    onNavigate={() => setMobileOpen(false)}
+                                />
                             )
-                        }
-
-                        const active = isActive(item.href)
-
-                        return (
-                            <SidebarNavItem
-                                key={item.href}
-                                item={item}
-                                active={active}
-                                collapsed={collapsed}
-                                onNavigate={() => setMobileOpen(false)}
-                            />
-                        )
-                    })}
-                </nav>
+                        })}
+                    </nav>
+                </TooltipProvider>
 
                 {/* Bottom section */}
                 <div className="border-t border-sidebar-border p-3 space-y-2">

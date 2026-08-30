@@ -169,15 +169,12 @@ export function DashboardSidebar({ role }) {
                     }
                 }}
                 className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
-                    ? "bg-black/[0.03] dark:bg-white/[0.06] text-[#E9C46A]"
+                    ? "bg-black/[0.03] dark:bg-white/[0.06] text-[#1f2937] dark:text-white"
                     : "text-[#374151] dark:text-[#e5e7eb] hover:bg-black/[0.025] dark:hover:bg-white/[0.04] hover:text-black dark:hover:text-white"
                     } ${collapsed ? "justify-center" : ""}`}
             >
                 {jsonSrc ? (
-                    <div className={`shrink-0 flex items-center justify-center pointer-events-none transition-colors duration-200 ${active
-                        ? "[&_path]:!fill-[#E9C46A] [&_path]:!stroke-[#E9C46A] [&_path[stroke]]:!stroke-[#E9C46A] [&_circle]:!stroke-[#E9C46A] [&_rect]:!stroke-[#E9C46A] [&_g]:!fill-[#E9C46A] text-[#E9C46A]"
-                        : "[&_path]:!fill-[#4b5563] dark:[&_path]:!fill-[#9ca3af] [&_path]:!stroke-[#4b5563] dark:[&_path]:!stroke-[#9ca3af] [&_circle]:!stroke-[#4b5563] dark:[&_circle]:!stroke-[#9ca3af] [&_rect]:!stroke-[#4b5563] dark:[&_rect]:!stroke-[#9ca3af]"
-                        }`}>
+                    <div className="shrink-0 flex items-center justify-center pointer-events-none transition-colors duration-200 [&_path]:!fill-[#4b5563] dark:[&_path]:!fill-[#9ca3af] [&_path]:!stroke-[#4b5563] dark:[&_path]:!stroke-[#9ca3af] [&_circle]:!stroke-[#4b5563] dark:[&_circle]:!stroke-[#9ca3af] [&_rect]:!stroke-[#4b5563] dark:[&_rect]:!stroke-[#9ca3af]">
                         <LordIcon
                             ref={iconRef}
                             src={jsonSrc}
@@ -187,10 +184,10 @@ export function DashboardSidebar({ role }) {
                         />
                     </div>
                 ) : (
-                    <Icon className={`h-6 w-6 shrink-0 ${active ? "text-[#E9C46A]" : "text-[#4b5563] dark:text-[#9ca3af]"}`} />
+                    <Icon className="h-6 w-6 shrink-0 text-[#4b5563] dark:text-[#9ca3af]" />
                 )}
                 {!collapsed && (
-                    <span className={`text-[13.5px] font-medium leading-none truncate ${active ? "text-[#E9C46A]" : "text-[#374151] dark:text-[#e5e7eb]"}`}>
+                    <span className={`text-[13.5px] font-medium leading-none truncate ${active ? "text-[#1f2937] dark:text-white" : "text-[#374151] dark:text-[#e5e7eb]"}`}>
                         {item.label}
                     </span>
                 )}

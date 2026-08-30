@@ -798,7 +798,7 @@ export function UserSearchTable({ users, currentUserId }) {
               placeholder="Search by name, email or role…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-[#F2F2F2]/60 dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 focus:bg-white dark:focus:bg-white/10 transition-all shadow-2xs"
+              className="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
             />
           </div>
           <TooltipProvider>
@@ -806,7 +806,7 @@ export function UserSearchTable({ users, currentUserId }) {
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 px-3.5 h-10 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-[#F2F2F2]/60 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-black/5 dark:border-white/10 transition-all shadow-2xs shrink-0 cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 h-10 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 border border-black/5 dark:border-white/10 transition-all shadow-2xs shrink-0 cursor-pointer"
                   onClick={() => router.push("/admin/users/all")}
                 >
                   <span>View All</span>
@@ -825,7 +825,7 @@ export function UserSearchTable({ users, currentUserId }) {
             <button
               type="button"
               onClick={handleToggleAll}
-              className="px-3.5 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-[#F2F2F2]/60 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer"
+              className="px-3.5 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer"
             >
               {isAllSelected ? "Deselect All" : `Select All (${selectableUsers.length})`}
             </button>
@@ -910,8 +910,8 @@ export function UserSearchTable({ users, currentUserId }) {
                           title={isCurrentAdmin ? "Cannot select yourself" : `Select ${user.name}`}
                         />
                       </td>
-                      <td className="px-4 font-semibold text-[#3B3B3B] dark:text-white">
-                        <Link href={`/admin/users/${user.id}`} className="hover:underline hover:text-black dark:hover:text-white transition-colors">
+                      <td className="px-4 font-semibold">
+                        <Link href={`/admin/users/${user.id}`} className="text-[#2563EB] hover:text-[#1D4ED8] dark:text-[#60A5FA] dark:hover:text-[#93C5FD] hover:underline transition-colors">
                           {user.name}
                         </Link>
                       </td>

@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
-import { motion } from "framer-motion"
 import {
     LayoutDashboard,
     Users,
@@ -169,13 +168,16 @@ export function DashboardSidebar({ role }) {
                         iconRef.current.play()
                     }
                 }}
-                className={`group relative flex items-center gap-4 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 ${active
-                    ? "bg-[#E9C46A]/50 dark:bg-[#E9C46A]/20 text-[#1f2937] dark:text-white font-semibold"
-                    : "text-[#374151] dark:text-[#e5e7eb] hover:bg-[#E9C46A]/15 hover:text-black dark:hover:text-white"
-                    } ${collapsed ? "justify-center !px-2.5" : ""}`}
+                className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
+                    ? "bg-black/[0.02] dark:bg-white/[0.06] text-[#1f2937] dark:text-white"
+                    : "text-[#374151] dark:text-[#e5e7eb] hover:bg-black/[0.025] dark:hover:bg-white/[0.04] hover:text-black dark:hover:text-white"
+                    } ${collapsed ? "justify-center" : ""}`}
             >
                 {jsonSrc ? (
-                    <div className="shrink-0 flex items-center justify-center pointer-events-none [&_path]:!fill-[#4b5563] dark:[&_path]:!fill-[#e5e7eb] [&_path]:!stroke-[#4b5563] dark:[&_path]:!stroke-[#e5e7eb] [&_circle]:!stroke-[#4b5563] dark:[&_circle]:!stroke-[#e5e7eb] [&_rect]:!stroke-[#4b5563] dark:[&_rect]:!stroke-[#e5e7eb]">
+                    <div className={`shrink-0 flex items-center justify-center pointer-events-none transition-colors duration-200 ${active
+                        ? "[&_path]:!fill-[#E9C46A] [&_path]:!stroke-[#E9C46A] [&_path[stroke]]:!stroke-[#E9C46A] [&_circle]:!stroke-[#E9C46A] [&_rect]:!stroke-[#E9C46A] [&_g]:!fill-[#E9C46A] text-[#E9C46A]"
+                        : "[&_path]:!fill-[#4b5563] dark:[&_path]:!fill-[#9ca3af] [&_path]:!stroke-[#4b5563] dark:[&_path]:!stroke-[#9ca3af] [&_circle]:!stroke-[#4b5563] dark:[&_circle]:!stroke-[#9ca3af] [&_rect]:!stroke-[#4b5563] dark:[&_rect]:!stroke-[#9ca3af]"
+                        }`}>
                         <LordIcon
                             ref={iconRef}
                             src={jsonSrc}
@@ -185,10 +187,10 @@ export function DashboardSidebar({ role }) {
                         />
                     </div>
                 ) : (
-                    <Icon className="h-6 w-6 shrink-0 text-[#4b5563] dark:text-[#e5e7eb]" />
+                    <Icon className={`h-6 w-6 shrink-0 ${active ? "text-[#E9C46A]" : "text-[#4b5563] dark:text-[#9ca3af]"}`} />
                 )}
                 {!collapsed && (
-                    <span className={`text-[13.5px] leading-none truncate ${active ? "text-[#1f2937] dark:text-white font-semibold" : "text-[#374151] dark:text-[#e5e7eb] font-medium"}`}>
+                    <span className={`text-[13.5px] font-medium leading-none truncate ${active ? "text-[#1f2937] dark:text-white" : "text-[#374151] dark:text-[#e5e7eb]"}`}>
                         {item.label}
                     </span>
                 )}
@@ -218,115 +220,58 @@ export function DashboardSidebar({ role }) {
     /* ---- Sidebar content (shared between mobile & desktop) ---- */
     function SidebarContent() {
         return (
-            <div className="relative flex h-full flex-col overflow-hidden bg-sidebar">
-                {/* Ambient Soft Moving Gradient Background Shadows */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                    <motion.div
-                        animate={{
-                            x: [0, 25, -20, 0],
-                            y: [0, -35, 20, 0],
-                            scale: [1, 1.25, 0.95, 1],
-                            rotate: [0, 90, 180, 0],
-                        }}
-                        transition={{
-                            duration: 20,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                        }}
-                        style={{
-                            background: "radial-gradient(circle, rgba(239,68,68,0.07) 0%, rgba(245,158,11,0.06) 50%, transparent 75%)",
-                        }}
-                        className="absolute -top-16 -left-12 w-64 h-64 rounded-full blur-3xl"
+            <div className="flex h-full flex-col">
+                {/* Logo & Brand Name */}
+                <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-6 pb-3" : "justify-start pl-4 pr-3 pt-6 pb-3 gap-3.5"}`}>
+                    <img
+                        src="/landingpageassets/logo.png"
+                        alt="Peak Excellence Review Center"
+                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-11 w-11" : "h-14.5 w-14.5 sm:h-14 sm:w-14"}`}
                     />
-                    <motion.div
-                        animate={{
-                            x: [0, -30, 25, 0],
-                            y: [0, 40, -30, 0],
-                            scale: [1, 1.3, 1.05, 1],
-                            rotate: [0, -120, -240, 0],
-                        }}
-                        transition={{
-                            duration: 24,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                        }}
-                        style={{
-                            background: "radial-gradient(circle, rgba(233,196,106,0.09) 0%, rgba(34,197,94,0.06) 55%, transparent 80%)",
-                        }}
-                        className="absolute top-1/3 -right-16 w-72 h-72 rounded-full blur-3xl"
-                    />
-                    <motion.div
-                        animate={{
-                            x: [0, 20, -25, 0],
-                            y: [0, -25, 30, 0],
-                            scale: [1.1, 0.9, 1.2, 1.1],
-                        }}
-                        transition={{
-                            duration: 22,
-                            repeat: Infinity,
-                            ease: "easeInOut",
-                        }}
-                        style={{
-                            background: "radial-gradient(circle, rgba(34,197,94,0.06) 0%, rgba(233,196,106,0.07) 60%, transparent 75%)",
-                        }}
-                        className="absolute -bottom-16 -left-10 w-64 h-64 rounded-full blur-3xl"
-                    />
+                    {!collapsed && (
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[18.5px] font-bold tracking-[0.16em] text-[#1f2937] dark:text-white leading-tight">
+                                PEAK
+                            </span>
+                            <span className="text-[11.5px] font-semibold tracking-[0.24em] text-[#6b7280] dark:text-[#9ca3af] uppercase leading-tight -mt-0.5">
+                                Excellence
+                            </span>
+                        </div>
+                    )}
                 </div>
 
-                {/* Content layers */}
-                <div className="relative z-10 flex h-full flex-col">
-                    {/* Logo & Brand Name */}
-                    <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-6 pb-3" : "justify-start pl-5 pr-4 pt-6 pb-3 gap-3.5"}`}>
-                        <img
-                            src="/landingpageassets/logo.png"
-                            alt="Peak Excellence Review Center"
-                            className={`object-contain shrink-0 transition-all ${collapsed ? "h-11 w-11" : "h-14.5 w-14.5 sm:h-14 sm:w-14"}`}
-                        />
-                        {!collapsed && (
-                            <div className="flex flex-col min-w-0">
-                                <span className="text-[18.5px] font-bold tracking-[0.16em] text-[#1f2937] dark:text-white leading-tight">
-                                    PEAK
-                                </span>
-                                <span className="text-[11.5px] font-semibold tracking-[0.24em] text-[#6b7280] dark:text-[#9ca3af] uppercase leading-tight -mt-0.5">
-                                    Excellence
-                                </span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Nav links */}
-                    <TooltipProvider delayDuration={150}>
-                        <nav className="flex-1 space-y-2 overflow-y-auto px-4.5 sm:px-5 pt-1 pb-6">
-                            {navItems.map((item, idx) => {
-                                // Section header support
-                                if (item.section) {
-                                    return (
-                                        <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#9ca3af]/80 dark:text-[#6b7280]/80 ${collapsed ? "hidden" : ""}`}>
-                                            {item.section}
-                                        </p>
-                                    )
-                                }
-
-                                const active = isActive(item.href)
-
+                {/* Nav links */}
+                <TooltipProvider delayDuration={150}>
+                    <nav className="flex-1 space-y-2 overflow-y-auto px-3 pt-1 pb-6">
+                        {navItems.map((item, idx) => {
+                            // Section header support
+                            if (item.section) {
                                 return (
-                                    <SidebarNavItem
-                                        key={item.href}
-                                        item={item}
-                                        active={active}
-                                        collapsed={collapsed}
-                                        onNavigate={() => setMobileOpen(false)}
-                                    />
+                                    <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#9ca3af]/80 dark:text-[#6b7280]/80 ${collapsed ? "hidden" : ""}`}>
+                                        {item.section}
+                                    </p>
                                 )
-                            })}
-                        </nav>
-                    </TooltipProvider>
+                            }
 
-                    {/* Bottom section */}
-                    <div className="border-t border-sidebar-border px-4.5 sm:px-5 py-3 space-y-2">
-                        <div className={`flex ${collapsed ? "justify-center" : "justify-start"}`}>
-                            <LogoutButton iconOnly={collapsed} />
-                        </div>
+                            const active = isActive(item.href)
+
+                            return (
+                                <SidebarNavItem
+                                    key={item.href}
+                                    item={item}
+                                    active={active}
+                                    collapsed={collapsed}
+                                    onNavigate={() => setMobileOpen(false)}
+                                />
+                            )
+                        })}
+                    </nav>
+                </TooltipProvider>
+
+                {/* Bottom section */}
+                <div className="border-t border-sidebar-border p-3 space-y-2">
+                    <div className={`flex ${collapsed ? "justify-center" : "justify-start"}`}>
+                        <LogoutButton iconOnly={collapsed} />
                     </div>
                 </div>
             </div>
@@ -355,7 +300,7 @@ export function DashboardSidebar({ role }) {
 
             {/* Mobile drawer */}
             <aside
-                className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-80 transform bg-sidebar transition-transform duration-200 ease-in-out lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+                className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-sidebar transition-transform duration-200 ease-in-out lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
                     }`}
             >
                 <button
@@ -370,7 +315,7 @@ export function DashboardSidebar({ role }) {
 
             {/* Desktop sidebar */}
             <aside
-                className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:border-r lg:border-sidebar-border lg:bg-sidebar transition-all duration-200 ${collapsed ? "lg:w-[68px]" : "lg:w-72"
+                className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:border-r lg:border-sidebar-border lg:bg-sidebar transition-all duration-200 ${collapsed ? "lg:w-[68px]" : "lg:w-64"
                     }`}
             >
                 <SidebarContent />
@@ -385,7 +330,7 @@ export function DashboardSidebar({ role }) {
             </aside>
 
             {/* Spacer to push content */}
-            <div className={`hidden lg:block shrink-0 transition-all duration-200 ${collapsed ? "lg:w-[68px]" : "lg:w-72"}`} />
+            <div className={`hidden lg:block shrink-0 transition-all duration-200 ${collapsed ? "lg:w-[68px]" : "lg:w-64"}`} />
         </>
     )
 }

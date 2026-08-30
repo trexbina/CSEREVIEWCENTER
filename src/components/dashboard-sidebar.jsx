@@ -170,8 +170,8 @@ export function DashboardSidebar({ role }) {
                     }
                 }}
                 className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
-                    ? "bg-black/[0.02] dark:bg-white/[0.06] text-[#1f2937] dark:text-white"
-                    : "text-[#374151] dark:text-[#e5e7eb] hover:bg-black/[0.025] dark:hover:bg-white/[0.04] hover:text-black dark:hover:text-white"
+                    ? "text-[#1f2937] dark:text-white"
+                    : "text-[#374151] dark:text-[#e5e7eb] hover:text-black dark:hover:text-white"
                     } ${collapsed ? "justify-center" : ""}`}
             >
                 {jsonSrc ? (

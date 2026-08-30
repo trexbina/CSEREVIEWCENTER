@@ -1,9 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Bell, Maximize, Minimize, Trash, ChevronDown, User, Settings, ShieldCheck, CheckCheck } from "lucide-react"
+import { Bell, Maximize, Minimize, Trash, ChevronDown, User, Settings, ShieldCheck, CheckCheck } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
 
 import Link from "next/link"
 

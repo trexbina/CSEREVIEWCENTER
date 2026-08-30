@@ -99,24 +99,14 @@ export function DashboardHeader({ role }) {
   const profileUrl = role === "student" ? "/student/profile" : role === "teacher" ? "/teacher/profile" : "/admin/settings"
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-border/80 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 px-4 lg:px-8 transition-all">
-      {/* Left spacer — keeps search aligned on mobile for hamburger button */}
-      <div className="w-10 shrink-0 lg:hidden" />
-
-      {/* Search Bar */}
-      <div className="flex-1 flex justify-start">
-        <div className="relative w-full max-w-md">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
-          <Input
-            type="search"
-            placeholder="Search lessons, quizzes, resources..."
-            className="h-9.5 pl-10 pr-4 rounded-full border border-border/80 bg-muted/30 shadow-2xs hover:bg-muted/50 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary text-xs transition-all placeholder:text-muted-foreground/60"
-          />
-        </div>
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-border/80 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 px-4 lg:px-8 transition-all">
+      {/* Left spacer / mobile alignment */}
+      <div className="flex items-center gap-2">
+        <div className="w-10 shrink-0 lg:hidden" />
       </div>
 
       {/* Right side controls & user profile */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
         {/* Fullscreen Toggle Button */}
         <button
           onClick={toggleFullscreen}

@@ -135,9 +135,6 @@ export function DashboardSidebar({ role }) {
     const router = useRouter()
     const [collapsed, setCollapsed] = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
-    const [searchQuery, setSearchQuery] = useState("")
-    const [searchExpanded, setSearchExpanded] = useState(false)
-    const searchInputRef = useRef(null)
 
     const navItems = navByRole[role] || studentNav
     const badge = roleBadgeMap[role]
@@ -226,69 +223,24 @@ export function DashboardSidebar({ role }) {
         return (
             <TooltipProvider delayDuration={150}>
                 <div className="flex h-full flex-col bg-[#F2F2F2] dark:bg-[#14161b]">
-                    {/* Logo - Left-aligned & scaled cleanly */}
-                    <div className={`flex items-center pt-5 pb-2 ${collapsed ? "justify-center px-2" : "justify-start pl-4 pr-3"}`}>
+                    {/* Logo - Smaller Emblem with 'PEAK' & 'Excellence' stacked text */}
+                    <div className={`flex items-center pt-5 pb-3 ${collapsed ? "justify-center px-2" : "justify-start px-4 gap-2.5"}`}>
                         <img
                             src="/landingpageassets/logo.png"
                             alt="Peak Excellence Review Center"
-                            className={`shrink-0 transition-all ${collapsed ? "h-9 w-9 object-contain" : "w-full max-w-[115px] h-auto object-contain"}`}
+                            className={`shrink-0 object-contain transition-all ${collapsed ? "size-8" : "size-8 sm:size-9"}`}
                         />
-                    </div>
-
-                    {/* Collapsible & Expandable Search Bar */}
-                    {!collapsed && (
-                        <div className="px-3 pt-2 pb-1">
-                            <div className="flex items-center">
-                                {searchExpanded ? (
-                                    <div className="relative flex items-center w-full animate-in fade-in slide-in-from-left-3 duration-300">
-                                        <Search className="pointer-events-none absolute left-3 size-4 text-[#3B3B3B] dark:text-white shrink-0" />
-                                        <input
-                                            ref={searchInputRef}
-                                            type="search"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            placeholder="Search lessons, topics..."
-                                            className="w-full h-10 pl-9 pr-8 text-xs rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 dark:placeholder:text-gray-400 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-xs"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setSearchExpanded(false)
-                                                setSearchQuery("")
-                                            }}
-                                            className="absolute right-2.5 flex items-center justify-center size-5 rounded-full text-[#696969] hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                            title="Collapse search"
-                                        >
-                                            <X className="size-3.5" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <Tooltip delayDuration={150}>
-                                        <TooltipTrigger asChild>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setSearchExpanded(true)
-                                                    setTimeout(() => searchInputRef.current?.focus(), 50)
-                                                }}
-                                                className="flex items-center justify-center size-10 rounded-full bg-white dark:bg-white/10 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white border border-black/5 dark:border-white/10 hover:bg-white hover:shadow-xs transition-all duration-200 cursor-pointer shadow-2xs group"
-                                                aria-label="Expand search"
-                                            >
-                                                <Search className="size-4.5 transition-transform group-hover:scale-110" />
-                                            </button>
-                                        </TooltipTrigger>
-                                        <TooltipContent
-                                            side="right"
-                                            align="center"
-                                            className="bg-white text-gray-800 dark:bg-slate-900 dark:text-slate-100 border border-gray-200 dark:border-slate-800 shadow-md text-xs px-2.5 py-1 rounded-lg font-normal"
-                                        >
-                                            Search
-                                        </TooltipContent>
-                                    </Tooltip>
-                                )}
+                        {!collapsed && (
+                            <div className="flex flex-col leading-none select-none">
+                                <span className="text-[13px] font-black tracking-wider text-[#3B3B3B] dark:text-white uppercase font-sans">
+                                    PEAK
+                                </span>
+                                <span className="text-[11px] font-semibold tracking-wide text-[#696969] dark:text-gray-400 font-sans mt-0.5">
+                                    Excellence
+                                </span>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
                     {/* Nav links */}
                     <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-2">

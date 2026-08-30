@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Bell, Maximize, Minimize, Trash, ChevronDown, User, Settings, ShieldCheck, CheckCheck } from "lucide-react"
+import { Search, Bell, Maximize, Minimize, Trash, ChevronDown, User, Settings, ShieldCheck, CheckCheck } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 import Link from "next/link"
@@ -28,6 +28,7 @@ export function DashboardHeader({ role }) {
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
+  const [headerSearch, setHeaderSearch] = useState("")
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -98,10 +99,20 @@ export function DashboardHeader({ role }) {
   const profileUrl = role === "student" ? "/student/profile" : role === "teacher" ? "/teacher/profile" : "/admin/settings"
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-border/80 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 px-4 lg:px-8 transition-all">
-      {/* Left spacer / mobile alignment */}
-      <div className="flex items-center gap-2">
-        <div className="w-10 shrink-0 lg:hidden" />
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 px-4 lg:px-8 transition-all">
+      {/* Left side: Mobile spacer + Persistent Light Gray Search Bar */}
+      <div className="flex items-center gap-3 flex-1 max-w-md">
+        <div className="w-8 shrink-0 lg:hidden" />
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#696969]/80 dark:text-gray-400" />
+          <input
+            type="search"
+            value={headerSearch}
+            onChange={(e) => setHeaderSearch(e.target.value)}
+            placeholder="Search.."
+            className="w-full h-10 pl-10 pr-4 text-xs sm:text-sm rounded-xl bg-[#F2F2F2] dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 dark:placeholder:text-gray-400 border border-transparent focus:border-black/10 dark:focus:border-white/15 focus:bg-white dark:focus:bg-white/15 focus:outline-none focus:ring-1.5 focus:ring-black/10 transition-all shadow-2xs"
+          />
+        </div>
       </div>
 
       {/* Right side controls & user profile */}

@@ -169,7 +169,7 @@ export function DashboardSidebar({ role }) {
                     }
                 }}
                 className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
-                    ? "bg-black/[0.03] dark:bg-white/[0.06] text-[#1f2937] dark:text-white"
+                    ? "bg-black/[0.03] dark:bg-white/[0.06] text-[#E9C46A]"
                     : "text-[#374151] dark:text-[#e5e7eb] hover:bg-black/[0.025] dark:hover:bg-white/[0.04] hover:text-black dark:hover:text-white"
                     } ${collapsed ? "justify-center" : ""}`}
             >
@@ -190,7 +190,7 @@ export function DashboardSidebar({ role }) {
                     <Icon className={`h-6 w-6 shrink-0 ${active ? "text-[#E9C46A]" : "text-[#4b5563] dark:text-[#9ca3af]"}`} />
                 )}
                 {!collapsed && (
-                    <span className={`text-[13.5px] font-medium leading-none truncate ${active ? "text-[#1f2937] dark:text-white" : "text-[#374151] dark:text-[#e5e7eb]"}`}>
+                    <span className={`text-[13.5px] font-medium leading-none truncate ${active ? "text-[#E9C46A]" : "text-[#374151] dark:text-[#e5e7eb]"}`}>
                         {item.label}
                     </span>
                 )}

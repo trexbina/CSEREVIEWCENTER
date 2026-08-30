@@ -242,7 +242,7 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
 
                 {/* Nav links */}
                 <TooltipProvider delayDuration={150}>
-                    <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-2 pb-4">
+                    <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pt-2 pb-4">
                         {navItems.map((item, idx) => {
                             // Section header support
                             if (item.section) {

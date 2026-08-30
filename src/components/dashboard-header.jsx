@@ -99,18 +99,18 @@ export function DashboardHeader({ role }) {
   const profileUrl = role === "student" ? "/student/profile" : role === "teacher" ? "/teacher/profile" : "/admin/settings"
 
   return (
-    <header className="sticky top-0 z-20 flex h-20 items-center gap-4 border-b border-border/80 bg-[#E9C46A] dark:bg-[#E9C46A]/90 px-4 lg:px-8 transition-all shadow-xs">
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-border/80 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 px-4 lg:px-8 transition-all">
       {/* Left spacer — keeps search aligned on mobile for hamburger button */}
       <div className="w-10 shrink-0 lg:hidden" />
 
       {/* Search Bar */}
       <div className="flex-1 flex justify-start">
         <div className="relative w-full max-w-md">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600" />
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
           <Input
             type="search"
             placeholder="Search lessons, quizzes, resources..."
-            className="h-10 pl-10 pr-4 rounded-full border border-black/10 bg-white/90 shadow-2xs hover:bg-white focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-black/20 text-xs text-gray-900 placeholder:text-gray-500 transition-all"
+            className="h-9.5 pl-10 pr-4 rounded-full border border-border/80 bg-muted/30 shadow-2xs hover:bg-muted/50 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary text-xs transition-all placeholder:text-muted-foreground/60"
           />
         </div>
       </div>
@@ -120,7 +120,7 @@ export function DashboardHeader({ role }) {
         {/* Fullscreen Toggle Button */}
         <button
           onClick={toggleFullscreen}
-          className="relative inline-flex items-center justify-center size-9.5 rounded-xl border border-black/10 bg-white/80 hover:bg-white transition-all text-gray-800 cursor-pointer shadow-2xs active:scale-95"
+          className="relative inline-flex items-center justify-center size-9 rounded-xl border border-border/70 bg-card hover:bg-muted/70 transition-all text-muted-foreground hover:text-foreground cursor-pointer shadow-2xs active:scale-95"
           aria-label="Toggle Fullscreen"
           title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
         >
@@ -131,12 +131,12 @@ export function DashboardHeader({ role }) {
         <div className="relative">
           <button
             onClick={() => setShowNotifDropdown(!showNotifDropdown)}
-            className="relative inline-flex items-center justify-center size-9.5 rounded-xl border border-black/10 bg-white/80 hover:bg-white transition-all text-gray-800 cursor-pointer shadow-2xs active:scale-95"
+            className="relative inline-flex items-center justify-center size-9 rounded-xl border border-border/70 bg-card hover:bg-muted/70 transition-all cursor-pointer shadow-2xs active:scale-95"
             aria-label="Notifications"
           >
-            <Bell className="h-4 w-4 text-gray-800" />
+            <Bell className="h-4 w-4 text-muted-foreground" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-white animate-pulse">
+              <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-background animate-pulse">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
@@ -211,25 +211,25 @@ export function DashboardHeader({ role }) {
         </div>
 
         {/* Divider */}
-        <div className="h-6 w-px bg-black/15 mx-0.5 hidden sm:block" />
+        <div className="h-6 w-px bg-border/80 mx-0.5 hidden sm:block" />
 
         {/* User Profile Button */}
         <Link 
           href={profileUrl}
-          className="flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-xl bg-black/5 hover:bg-black/10 transition-all cursor-pointer group border border-black/5"
+          className="flex items-center gap-2.5 pl-1 pr-1.5 py-1 rounded-xl hover:bg-muted/60 transition-all cursor-pointer group"
           title="View Profile"
         >
-          <Avatar className="size-9 border border-black/15 bg-white shadow-2xs">
-            <AvatarFallback className="bg-white text-gray-900 text-xs font-bold">
+          <Avatar className="size-9 border border-border group-hover:border-primary/50 transition-colors shadow-2xs">
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
               {getInitials(user?.name)}
             </AvatarFallback>
           </Avatar>
 
           <div className="hidden sm:flex flex-col items-start leading-tight">
-            <span className="text-xs font-bold text-gray-900 truncate max-w-[130px]">
+            <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate max-w-[130px]">
               {user?.name || (role === "admin" ? "Admin User" : "User")}
             </span>
-            <span className="text-[10px] font-bold text-gray-700 uppercase tracking-wider mt-0.5">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
               {ROLE_LABELS[role] || role}
             </span>
           </div>

@@ -170,7 +170,7 @@ export function DashboardSidebar({ role }) {
                     }
                 }}
                 className={`group relative flex items-center gap-4 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 ${active
-                    ? "bg-[#E9C46A]/30 dark:bg-[#E9C46A]/20 text-[#1f2937] dark:text-white font-semibold"
+                    ? "bg-[#E9C46A]/50 dark:bg-[#E9C46A]/20 text-[#1f2937] dark:text-white font-semibold"
                     : "text-[#374151] dark:text-[#e5e7eb] hover:bg-[#E9C46A]/15 hover:text-black dark:hover:text-white"
                     } ${collapsed ? "justify-center !px-2.5" : ""}`}
             >
@@ -275,59 +275,59 @@ export function DashboardSidebar({ role }) {
 
                 {/* Content layers */}
                 <div className="relative z-10 flex h-full flex-col">
-                {/* Logo & Brand Name */}
-                <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-6 pb-3" : "justify-start pl-4 pr-3 pt-6 pb-3 gap-3.5"}`}>
-                    <img
-                        src="/landingpageassets/logo.png"
-                        alt="Peak Excellence Review Center"
-                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-11 w-11" : "h-14.5 w-14.5 sm:h-14 sm:w-14"}`}
-                    />
-                    {!collapsed && (
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-[18.5px] font-bold tracking-[0.16em] text-[#1f2937] dark:text-white leading-tight">
-                                PEAK
-                            </span>
-                            <span className="text-[11.5px] font-semibold tracking-[0.24em] text-[#6b7280] dark:text-[#9ca3af] uppercase leading-tight -mt-0.5">
-                                Excellence
-                            </span>
-                        </div>
-                    )}
-                </div>
-
-                {/* Nav links */}
-                <TooltipProvider delayDuration={150}>
-                    <nav className="flex-1 space-y-2 overflow-y-auto px-3 pt-1 pb-6">
-                        {navItems.map((item, idx) => {
-                            // Section header support
-                            if (item.section) {
-                                return (
-                                    <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#9ca3af]/80 dark:text-[#6b7280]/80 ${collapsed ? "hidden" : ""}`}>
-                                        {item.section}
-                                    </p>
-                                )
-                            }
-
-                            const active = isActive(item.href)
-
-                            return (
-                                <SidebarNavItem
-                                    key={item.href}
-                                    item={item}
-                                    active={active}
-                                    collapsed={collapsed}
-                                    onNavigate={() => setMobileOpen(false)}
-                                />
-                            )
-                        })}
-                    </nav>
-                </TooltipProvider>
-
-                {/* Bottom section */}
-                <div className="border-t border-sidebar-border p-3 space-y-2">
-                    <div className={`flex ${collapsed ? "justify-center" : "justify-start"}`}>
-                        <LogoutButton iconOnly={collapsed} />
+                    {/* Logo & Brand Name */}
+                    <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-6 pb-3" : "justify-start pl-4 pr-3 pt-6 pb-3 gap-3.5"}`}>
+                        <img
+                            src="/landingpageassets/logo.png"
+                            alt="Peak Excellence Review Center"
+                            className={`object-contain shrink-0 transition-all ${collapsed ? "h-11 w-11" : "h-14.5 w-14.5 sm:h-14 sm:w-14"}`}
+                        />
+                        {!collapsed && (
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-[18.5px] font-bold tracking-[0.16em] text-[#1f2937] dark:text-white leading-tight">
+                                    PEAK
+                                </span>
+                                <span className="text-[11.5px] font-semibold tracking-[0.24em] text-[#6b7280] dark:text-[#9ca3af] uppercase leading-tight -mt-0.5">
+                                    Excellence
+                                </span>
+                            </div>
+                        )}
                     </div>
-                </div>
+
+                    {/* Nav links */}
+                    <TooltipProvider delayDuration={150}>
+                        <nav className="flex-1 space-y-2 overflow-y-auto px-3 pt-1 pb-6">
+                            {navItems.map((item, idx) => {
+                                // Section header support
+                                if (item.section) {
+                                    return (
+                                        <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#9ca3af]/80 dark:text-[#6b7280]/80 ${collapsed ? "hidden" : ""}`}>
+                                            {item.section}
+                                        </p>
+                                    )
+                                }
+
+                                const active = isActive(item.href)
+
+                                return (
+                                    <SidebarNavItem
+                                        key={item.href}
+                                        item={item}
+                                        active={active}
+                                        collapsed={collapsed}
+                                        onNavigate={() => setMobileOpen(false)}
+                                    />
+                                )
+                            })}
+                        </nav>
+                    </TooltipProvider>
+
+                    {/* Bottom section */}
+                    <div className="border-t border-sidebar-border p-3 space-y-2">
+                        <div className={`flex ${collapsed ? "justify-center" : "justify-start"}`}>
+                            <LogoutButton iconOnly={collapsed} />
+                        </div>
+                    </div>
                 </div>
             </div>
         )

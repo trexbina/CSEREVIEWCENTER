@@ -169,7 +169,7 @@ export function DashboardSidebar({ role }) {
                     }
                 }}
                 className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
-                    ? "bg-black/[0.035] dark:bg-white/[0.06] text-[#1f2937] dark:text-white"
+                    ? "bg-black/[0.02] dark:bg-white/[0.06] text-[#1f2937] dark:text-white"
                     : "text-[#374151] dark:text-[#e5e7eb] hover:bg-black/[0.025] dark:hover:bg-white/[0.04] hover:text-black dark:hover:text-white"
                     } ${collapsed ? "justify-center" : ""}`}
             >
@@ -203,9 +203,9 @@ export function DashboardSidebar({ role }) {
                     <TooltipTrigger asChild>
                         {content}
                     </TooltipTrigger>
-                    <TooltipContent 
-                        side="right" 
-                        align="center" 
+                    <TooltipContent
+                        side="right"
+                        align="center"
                         className="bg-white text-gray-800 dark:bg-slate-900 dark:text-slate-100 border border-gray-200 dark:border-slate-800 shadow-md text-xs px-3 py-1.5 rounded-lg max-w-xs font-normal"
                     >
                         {item.description || item.label}

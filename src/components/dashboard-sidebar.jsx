@@ -218,33 +218,23 @@ export function DashboardSidebar({ role }) {
     function SidebarContent() {
         return (
             <div className="flex h-full flex-col">
-                {/* Logo & Brand Name */}
-                <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-6 pb-3" : "justify-start pl-4 pr-3 pt-6 pb-3 gap-3.5"}`}>
+                {/* Logo - Icon Only, centered & enlarged */}
+                <div className="flex items-center justify-center pt-6 pb-4 px-3">
                     <img
                         src="/landingpageassets/logo.png"
                         alt="Peak Excellence Review Center"
-                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-11 w-11" : "h-14.5 w-14.5 sm:h-14 sm:w-14"}`}
+                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-11 w-11" : "h-16 w-16"}`}
                     />
-                    {!collapsed && (
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-[18.5px] font-bold tracking-[0.16em] text-[#1f2937] dark:text-white leading-tight">
-                                PEAK
-                            </span>
-                            <span className="text-[11.5px] font-semibold tracking-[0.24em] text-[#696969] dark:text-[#9ca3af] uppercase leading-tight -mt-0.5">
-                                Excellence
-                            </span>
-                        </div>
-                    )}
                 </div>
 
                 {/* Nav links */}
                 <TooltipProvider delayDuration={150}>
-                    <nav className="flex-1 space-y-2 overflow-y-auto px-3 pt-1 pb-6">
+                    <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-2">
                         {navItems.map((item, idx) => {
                             // Section header support
                             if (item.section) {
                                 return (
-                                    <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#696969] dark:text-[#6b7280]/80 ${collapsed ? "hidden" : ""}`}>
+                                    <p key={`section-${idx}`} className={`px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#696969] dark:text-[#6b7280]/80 ${collapsed ? "hidden" : ""}`}>
                                         {item.section}
                                     </p>
                                 )
@@ -266,7 +256,7 @@ export function DashboardSidebar({ role }) {
                 </TooltipProvider>
 
                 {/* Bottom section */}
-                <div className="border-t border-sidebar-border p-3 space-y-2">
+                <div className="border-t border-sidebar-border p-3">
                     <div className={`flex ${collapsed ? "justify-center" : "justify-start"}`}>
                         <LogoutButton iconOnly={collapsed} />
                     </div>

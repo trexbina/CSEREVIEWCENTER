@@ -266,37 +266,39 @@ export function DashboardCarousel() {
                 ))}
             </div>
 
-            {/* Left arrow */}
+            {/* Left arrow - Sleek Minimal Pill/Glass */}
             {slides.length > 1 && (
                 <button
                     onClick={prev}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-background/85 border border-border shadow-md hover:bg-background transition-colors"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex size-8 items-center justify-center rounded-full bg-black/25 hover:bg-black/50 text-white/85 hover:text-white backdrop-blur-md border border-white/10 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-xs"
                     aria-label="Previous slide"
                 >
-                    <ChevronLeft className="h-5 w-5 text-foreground" />
+                    <ChevronLeft className="size-4" />
                 </button>
             )}
 
-            {/* Right arrow */}
+            {/* Right arrow - Sleek Minimal Pill/Glass */}
             {slides.length > 1 && (
                 <button
                     onClick={next}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-background/85 border border-border shadow-md hover:bg-background transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex size-8 items-center justify-center rounded-full bg-black/25 hover:bg-black/50 text-white/85 hover:text-white backdrop-blur-md border border-white/10 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-xs"
                     aria-label="Next slide"
                 >
-                    <ChevronRight className="h-5 w-5 text-foreground" />
+                    <ChevronRight className="size-4" />
                 </button>
             )}
 
-            {/* Pagination Dots */}
+            {/* Minimal Pagination Dots / Pill Bars */}
             {slides.length > 1 && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/25 backdrop-blur-md border border-white/10">
                     {slides.map((_, i) => (
                         <button
                             key={i}
                             onClick={() => setCurrent(i)}
-                            className={`h-2 w-2 rounded-full transition-colors ${
-                                i === current ? "bg-primary" : "bg-white/40 hover:bg-white/60"
+                            className={`transition-all duration-300 rounded-full cursor-pointer ${
+                                i === current 
+                                    ? "w-5 h-1.5 bg-[#E9C46A]" 
+                                    : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70"
                             }`}
                             aria-label={`Go to slide ${i + 1}`}
                         />
@@ -312,10 +314,10 @@ export function DashboardCarousel() {
                         setSelectedSlide(null)
                         setIsModalOpen(true)
                     }}
-                    className="absolute top-3 right-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 border border-border shadow-md text-foreground hover:bg-background transition-all opacity-0 group-hover:opacity-100 hover:scale-105"
+                    className="absolute top-3 right-3 z-30 flex size-8 items-center justify-center rounded-full bg-black/25 hover:bg-black/50 text-white/85 hover:text-white backdrop-blur-md border border-white/10 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer shadow-xs"
                     title="Configure Carousel Slides"
                 >
-                    <Settings className="h-4 w-4" />
+                    <Settings className="size-3.5" />
                 </button>
             )}
 

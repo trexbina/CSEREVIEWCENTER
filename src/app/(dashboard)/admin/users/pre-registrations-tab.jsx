@@ -567,7 +567,6 @@ export function PreRegistrationsTab() {
             </table>
           </div>
         </div>
-      </div>
 
       {/* Delete Confirmation Modal */}
       <ConfirmDeleteModal

@@ -141,15 +141,6 @@ function LoginFormInner() {
           Need an account or forgot your password? <br className="hidden sm:block" />
           <span className="text-foreground font-medium">Contact your administrator</span>
         </p>
-        <p className="text-[11px] text-muted-foreground">
-          New Student?{" "}
-          <a
-            href="/pre-register"
-            className="text-[#E9C46A] hover:underline font-bold"
-          >
-            Pre-register here
-          </a>
-        </p>
       </div>
     </div>
   )

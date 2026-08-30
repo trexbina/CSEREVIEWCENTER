@@ -47,18 +47,8 @@ export function UserManagementTabs({ users, currentUserId, pendingCount = 0 }) {
 
       {/* Tab Panels */}
       {activeTab === "users" ? (
-        <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-          <div className="border-b border-border px-6 py-4 bg-muted/40">
-            <h2 className="text-base font-bold uppercase tracking-wider text-foreground">
-              Quick User Search
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Search by name, email, or role. Use &quot;View All&quot; to manage the complete list.
-            </p>
-          </div>
-          <div className="p-6">
-            <UserSearchTable users={users} currentUserId={currentUserId} />
-          </div>
+        <div className="w-full">
+          <UserSearchTable users={users} currentUserId={currentUserId} />
         </div>
       ) : (
         <PreRegistrationsTab />

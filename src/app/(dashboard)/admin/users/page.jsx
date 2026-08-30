@@ -60,20 +60,12 @@ export default async function UserManagementPage() {
     const pendingCount = session?.userId ? await getPendingPreRegistrationsCount() : 0
 
     return (
-        <div className="space-y-6 w-full max-w-6xl mx-auto px-4 py-4 pb-16">
-            {/* page header with title and add user button */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase">
-                        USER MANAGEMENT
-                    </h1>
-                    <p className="text-muted-foreground text-sm font-medium">
-                        Manage registered accounts and review student pre-registrations.
-                    </p>
-                </div>
+        <div className="space-y-6 w-full max-w-6xl mx-auto px-4 py-2 pb-16">
+            {/* Action Bar with Add User Button */}
+            <div className="flex justify-end">
                 <Link
                     href="/admin/users/add"
-                    className="flex items-center justify-center bg-[#E9C46A] text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 rounded-lg shadow-sm hover:bg-[#dfb550] hover:-translate-y-0.5 transition-all shrink-0 self-start sm:self-auto cursor-pointer"
+                    className="flex items-center justify-center bg-[#E9C46A] text-white font-bold text-xs tracking-wide uppercase px-4 py-2 rounded-xl shadow-xs hover:bg-[#dfb550] transition-all shrink-0 cursor-pointer"
                 >
                     ADD USER
                 </Link>

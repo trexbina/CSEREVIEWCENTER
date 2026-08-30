@@ -789,66 +789,66 @@ export function UserSearchTable({ users, currentUserId }) {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3 flex-1 min-w-[240px]">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-3 flex-1 min-w-[260px]">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#696969]/70" />
+            <input
+              type="search"
               placeholder="Search by name, email or role…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-9"
+              className="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-[#F2F2F2]/60 dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 focus:bg-white dark:focus:bg-white/10 transition-all shadow-2xs"
             />
           </div>
           <TooltipProvider>
-            <Tooltip>
+            <Tooltip delayDuration={150}>
               <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 shrink-0"
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 px-3.5 h-10 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-[#F2F2F2]/60 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-black/5 dark:border-white/10 transition-all shadow-2xs shrink-0 cursor-pointer"
                   onClick={() => router.push("/admin/users/all")}
                 >
-                  View All
+                  <span>View All</span>
                   <ChevronRight className="h-3.5 w-3.5" />
-                </Button>
+                </button>
               </TooltipTrigger>
-              <TooltipContent>See the full user list with advanced filters</TooltipContent>
+              <TooltipContent className="bg-white text-gray-800 dark:bg-slate-900 dark:text-slate-100 border border-gray-200 dark:border-slate-800 shadow-md text-xs px-2.5 py-1 rounded-lg">
+                See the full user list with advanced filters
+              </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
 
         <div className="flex items-center gap-2">
           {selectableUsers.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={handleToggleAll}
-              className="text-xs font-medium"
+              className="px-3.5 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-[#F2F2F2]/60 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer"
             >
               {isAllSelected ? "Deselect All" : `Select All (${selectableUsers.length})`}
-            </Button>
+            </button>
           )}
 
           {selectedIds.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={() => setConfirmDeleteOpen(true)}
-              className="gap-1.5 text-xs font-medium text-foreground hover:bg-muted"
+              className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/30 hover:bg-rose-100 transition-all shadow-2xs cursor-pointer"
             >
               Delete Selected ({selectedIds.length})
-            </Button>
+            </button>
           )}
         </div>
       </div>
 
-      <div className="mdc-data-table w-full">
-        <div className="mdc-data-table__table-container max-h-[920px] overflow-y-auto">
-          <table className="mdc-data-table__table relative" aria-label="User search results">
-            <thead className="sticky top-0 z-10">
-              <tr className="mdc-data-table__header-row shadow-2xs">
-                <th className="mdc-data-table__header-cell w-10 text-center" role="columnheader" scope="col">
+      <div className="w-full overflow-hidden rounded-2xl border border-black/5 dark:border-white/10 bg-card shadow-2xs">
+        <div className="max-h-[920px] overflow-y-auto">
+          <table className="w-full text-left border-collapse" aria-label="User search results">
+            <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
+              <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
+                <th className="w-12 px-4 text-center" scope="col">
                   <input
                     type="checkbox"
                     checked={isAllSelected}
@@ -857,40 +857,40 @@ export function UserSearchTable({ users, currentUserId }) {
                     }}
                     onChange={handleToggleAll}
                     disabled={selectableUsers.length === 0}
-                    className="h-4 w-4 rounded border-input cursor-pointer accent-primary align-middle"
+                    className="h-4 w-4 rounded border-black/15 cursor-pointer accent-[#E9C46A] align-middle"
                     title={isAllSelected ? "Deselect All" : "Select All"}
                   />
                 </th>
-                <th className="mdc-data-table__header-cell w-[24%]" role="columnheader" scope="col">
+                <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="mdc-data-table__header-cell w-[32%]" role="columnheader" scope="col">
+                <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Email" field="email" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="mdc-data-table__header-cell w-[16%]" role="columnheader" scope="col">
+                <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Role" field="role" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="mdc-data-table__header-cell w-[16%]" role="columnheader" scope="col">
+                <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Joined" field="created_at" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="mdc-data-table__header-cell w-[12%]" role="columnheader" scope="col">Actions</th>
+                <th className="px-4 py-2.5 text-right pr-6" scope="col">Actions</th>
               </tr>
             </thead>
-            <tbody className="mdc-data-table__content">
+            <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
               {isDebouncing ? (
                 Array.from({ length: 4 }).map((_, i) => (
-                  <tr className="mdc-data-table__row h-11" key={`skel-${i}`}>
-                    <td className="mdc-data-table__cell"><div className="h-4 w-4 animate-pulse rounded bg-muted mx-auto" /></td>
-                    <td className="mdc-data-table__cell"><div className="h-4 w-28 animate-pulse rounded bg-muted" /></td>
-                    <td className="mdc-data-table__cell"><div className="h-4 w-40 animate-pulse rounded bg-muted" /></td>
-                    <td className="mdc-data-table__cell"><div className="h-5 w-16 animate-pulse rounded-full bg-muted" /></td>
-                    <td className="mdc-data-table__cell"><div className="h-4 w-20 animate-pulse rounded bg-muted" /></td>
-                    <td className="mdc-data-table__cell"><div className="h-4 w-16 animate-pulse rounded bg-muted" /></td>
+                  <tr className="h-13" key={`skel-${i}`}>
+                    <td className="px-4 text-center"><div className="h-4 w-4 animate-pulse rounded bg-muted mx-auto" /></td>
+                    <td className="px-4"><div className="h-4 w-28 animate-pulse rounded bg-muted" /></td>
+                    <td className="px-4"><div className="h-4 w-40 animate-pulse rounded bg-muted" /></td>
+                    <td className="px-4"><div className="h-5 w-16 animate-pulse rounded-full bg-muted" /></td>
+                    <td className="px-4"><div className="h-4 w-20 animate-pulse rounded bg-muted" /></td>
+                    <td className="px-4 text-right pr-6"><div className="h-4 w-16 animate-pulse rounded bg-muted ml-auto" /></td>
                   </tr>
                 ))
               ) : filtered.length === 0 ? (
-                <tr className="mdc-data-table__row">
-                  <td className="mdc-data-table__cell py-8 text-center text-muted-foreground" colSpan={6}>
+                <tr>
+                  <td className="py-12 text-center text-sm font-medium text-[#696969]" colSpan={6}>
                     {hasQuery ? `No users matching "${debouncedQuery}"` : "No users found."}
                   </td>
                 </tr>
@@ -899,32 +899,38 @@ export function UserSearchTable({ users, currentUserId }) {
                   const isCurrentAdmin = user.id === currentUserId
                   const isChecked = selectedIds.includes(user.id)
                   return (
-                    <tr className={`mdc-data-table__row h-11 ${isChecked ? "bg-muted/40" : ""}`} key={user.id}>
-                      <td className="mdc-data-table__cell text-center">
+                    <tr className={`h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${isChecked ? "bg-[#F2F2F2]/50 dark:bg-white/5" : ""}`} key={user.id}>
+                      <td className="px-4 text-center">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           disabled={isCurrentAdmin}
                           onChange={() => handleToggleUser(user.id)}
-                          className="h-4 w-4 rounded border-input cursor-pointer accent-primary align-middle disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="h-4 w-4 rounded border-black/15 cursor-pointer accent-[#E9C46A] align-middle disabled:opacity-30 disabled:cursor-not-allowed"
                           title={isCurrentAdmin ? "Cannot select yourself" : `Select ${user.name}`}
                         />
                       </td>
-                      <td className="mdc-data-table__cell font-medium">
-                        <Link href={`/admin/users/${user.id}`} className="hover:underline text-[#4382DF]">
+                      <td className="px-4 font-semibold text-[#3B3B3B] dark:text-white">
+                        <Link href={`/admin/users/${user.id}`} className="hover:underline hover:text-black dark:hover:text-white transition-colors">
                           {user.name}
                         </Link>
                       </td>
-                      <td className="mdc-data-table__cell text-muted-foreground">{user.email}</td>
-                      <td className="mdc-data-table__cell text-muted-foreground">{user.role}</td>
-                      <td className="mdc-data-table__cell text-muted-foreground">
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal">{user.email}</td>
+                      <td className="px-4">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize bg-black/5 dark:bg-white/10 text-[#3B3B3B] dark:text-white">
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-400 font-normal">
                         {user.created_at ? new Date(user.created_at).toLocaleDateString() : ""}
                       </td>
-                      <td className="mdc-data-table__cell">
-                        <ActionButtons
-                          user={user}
-                          currentUserId={currentUserId}
-                        />
+                      <td className="px-4 text-right pr-6">
+                        <div className="flex justify-end">
+                          <ActionButtons
+                            user={user}
+                            currentUserId={currentUserId}
+                          />
+                        </div>
                       </td>
                     </tr>
                   )
@@ -936,12 +942,12 @@ export function UserSearchTable({ users, currentUserId }) {
       </div>
 
       {hasQuery && filtered.length > 0 && (
-        <p className="mt-2 text-xs text-muted-foreground text-right">
+        <p className="mt-3 text-xs text-[#696969] text-right">
           Showing {filtered.length} of {users.filter((u) => {
             const q = debouncedQuery.toLowerCase().trim()
             return u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.role?.toLowerCase().includes(q)
           }).length} matching users.{" "}
-          <button onClick={() => router.push("/admin/users/all")} className="underline hover:text-foreground transition-colors">
+          <button onClick={() => router.push("/admin/users/all")} className="underline text-[#3B3B3B] dark:text-white hover:text-black font-semibold transition-colors">
             View all {users.length} users →
           </button>
         </p>

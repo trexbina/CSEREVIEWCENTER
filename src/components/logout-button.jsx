@@ -22,8 +22,8 @@ export function LogoutButton({ iconOnly = false, className = "" }) {
       aria-label="Logout"
       className={`group/logout inline-flex items-center gap-2.5 rounded-xl border border-transparent font-semibold text-xs transition-all cursor-pointer disabled:opacity-50 ${
         iconOnly
-          ? "size-9 justify-center p-0 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 shadow-2xs"
-          : "w-full h-9.5 px-3 justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
+          ? "size-9 justify-center p-0 text-[#696969] dark:text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 shadow-2xs"
+          : "w-full h-9.5 px-3 justify-start text-[#696969] dark:text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
       } ${className}`}
     >
       {loggingOut ? (

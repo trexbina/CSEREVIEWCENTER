@@ -169,8 +169,8 @@ export function DashboardSidebar({ role }) {
                     }
                 }}
                 className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
-                    ? "bg-black/[0.03] dark:bg-white/[0.06] text-[#1f2937] dark:text-white"
-                    : "text-[#374151] dark:text-[#e5e7eb] hover:bg-black/[0.025] dark:hover:bg-white/[0.04] hover:text-black dark:hover:text-white"
+                    ? "bg-black/[0.03] dark:bg-white/[0.06] text-[#696969] dark:text-white"
+                    : "text-[#696969] dark:text-[#e5e7eb] hover:bg-black/[0.025] dark:hover:bg-white/[0.04] hover:text-black dark:hover:text-white"
                     } ${collapsed ? "justify-center" : ""}`}
             >
                 {jsonSrc ? (
@@ -187,7 +187,7 @@ export function DashboardSidebar({ role }) {
                     <Icon className="h-6 w-6 shrink-0 text-[#4b5563] dark:text-[#9ca3af]" />
                 )}
                 {!collapsed && (
-                    <span className={`text-[13.5px] font-medium leading-none truncate ${active ? "text-[#1f2937] dark:text-white" : "text-[#374151] dark:text-[#e5e7eb]"}`}>
+                    <span className={`text-[13.5px] font-medium leading-none truncate ${active ? "text-[#696969] dark:text-white" : "text-[#696969] dark:text-[#e5e7eb]"}`}>
                         {item.label}
                     </span>
                 )}
@@ -230,7 +230,7 @@ export function DashboardSidebar({ role }) {
                             <span className="text-[18.5px] font-bold tracking-[0.16em] text-[#1f2937] dark:text-white leading-tight">
                                 PEAK
                             </span>
-                            <span className="text-[11.5px] font-semibold tracking-[0.24em] text-[#6b7280] dark:text-[#9ca3af] uppercase leading-tight -mt-0.5">
+                            <span className="text-[11.5px] font-semibold tracking-[0.24em] text-[#696969] dark:text-[#9ca3af] uppercase leading-tight -mt-0.5">
                                 Excellence
                             </span>
                         </div>
@@ -244,7 +244,7 @@ export function DashboardSidebar({ role }) {
                             // Section header support
                             if (item.section) {
                                 return (
-                                    <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#9ca3af]/80 dark:text-[#6b7280]/80 ${collapsed ? "hidden" : ""}`}>
+                                    <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#696969] dark:text-[#6b7280]/80 ${collapsed ? "hidden" : ""}`}>
                                         {item.section}
                                     </p>
                                 )

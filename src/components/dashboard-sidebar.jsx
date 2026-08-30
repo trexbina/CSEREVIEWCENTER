@@ -276,7 +276,7 @@ export function DashboardSidebar({ role }) {
                 {/* Content layers */}
                 <div className="relative z-10 flex h-full flex-col">
                     {/* Logo & Brand Name */}
-                    <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-6 pb-3" : "justify-start pl-4 pr-3 pt-6 pb-3 gap-3.5"}`}>
+                    <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-6 pb-3" : "justify-start pl-5 pr-4 pt-6 pb-3 gap-3.5"}`}>
                         <img
                             src="/landingpageassets/logo.png"
                             alt="Peak Excellence Review Center"
@@ -296,7 +296,7 @@ export function DashboardSidebar({ role }) {
 
                     {/* Nav links */}
                     <TooltipProvider delayDuration={150}>
-                        <nav className="flex-1 space-y-2 overflow-y-auto px-3 pt-1 pb-6">
+                        <nav className="flex-1 space-y-2 overflow-y-auto px-4.5 sm:px-5 pt-1 pb-6">
                             {navItems.map((item, idx) => {
                                 // Section header support
                                 if (item.section) {
@@ -323,7 +323,7 @@ export function DashboardSidebar({ role }) {
                     </TooltipProvider>
 
                     {/* Bottom section */}
-                    <div className="border-t border-sidebar-border p-3 space-y-2">
+                    <div className="border-t border-sidebar-border px-4.5 sm:px-5 py-3 space-y-2">
                         <div className={`flex ${collapsed ? "justify-center" : "justify-start"}`}>
                             <LogoutButton iconOnly={collapsed} />
                         </div>
@@ -355,7 +355,7 @@ export function DashboardSidebar({ role }) {
 
             {/* Mobile drawer */}
             <aside
-                className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-sidebar transition-transform duration-200 ease-in-out lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+                className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-80 transform bg-sidebar transition-transform duration-200 ease-in-out lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
                     }`}
             >
                 <button
@@ -370,7 +370,7 @@ export function DashboardSidebar({ role }) {
 
             {/* Desktop sidebar */}
             <aside
-                className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:border-r lg:border-sidebar-border lg:bg-sidebar transition-all duration-200 ${collapsed ? "lg:w-[68px]" : "lg:w-64"
+                className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:border-r lg:border-sidebar-border lg:bg-sidebar transition-all duration-200 ${collapsed ? "lg:w-[68px]" : "lg:w-72"
                     }`}
             >
                 <SidebarContent />
@@ -385,7 +385,7 @@ export function DashboardSidebar({ role }) {
             </aside>
 
             {/* Spacer to push content */}
-            <div className={`hidden lg:block shrink-0 transition-all duration-200 ${collapsed ? "lg:w-[68px]" : "lg:w-64"}`} />
+            <div className={`hidden lg:block shrink-0 transition-all duration-200 ${collapsed ? "lg:w-[68px]" : "lg:w-72"}`} />
         </>
     )
 }

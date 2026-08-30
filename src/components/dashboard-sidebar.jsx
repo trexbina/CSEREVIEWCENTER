@@ -191,7 +191,7 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
                 <Icon className={`h-6 w-6 shrink-0 ${active ? "text-[#E9C46A]" : "text-[#4b5563] dark:text-[#9ca3af]"}`} />
             )}
             {!collapsed && (
-                <span className={`text-[13.5px] font-semibold leading-none truncate ${active ? "text-[#1f2937] dark:text-white" : "text-[#374151] dark:text-[#e5e7eb]"}`}>
+                <span className={`text-[13.5px] font-medium leading-none truncate ${active ? "text-[#1f2937] dark:text-white" : "text-[#374151] dark:text-[#e5e7eb]"}`}>
                     {item.label}
                 </span>
             )}

@@ -60,17 +60,7 @@ export default async function UserManagementPage() {
     const pendingCount = session?.userId ? await getPendingPreRegistrationsCount() : 0
 
     return (
-        <div className="space-y-6 w-full max-w-6xl mx-auto px-4 py-2 pb-16">
-            {/* Action Bar with Add User Button */}
-            <div className="flex justify-end">
-                <Link
-                    href="/admin/users/add"
-                    className="flex items-center justify-center bg-[#E9C46A] text-white font-bold text-xs tracking-wide uppercase px-4 py-2 rounded-xl shadow-xs hover:bg-[#dfb550] transition-all shrink-0 cursor-pointer"
-                >
-                    ADD USER
-                </Link>
-            </div>
-
+        <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-1 pb-12">
             {/* Interactive Tabs: User Directory vs Pre-Registrations */}
             <UserManagementTabs
                 users={users}

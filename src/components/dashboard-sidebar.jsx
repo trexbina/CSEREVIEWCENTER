@@ -164,8 +164,8 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
             }}
             title={collapsed ? item.label : undefined}
             className={`group relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${active
-                ? "bg-[#E9C46A]/15 text-[#b45309] dark:text-[#E9C46A]"
-                : "text-[#374151] dark:text-[#e5e7eb] hover:bg-sidebar-accent hover:text-black dark:hover:text-white"
+                ? "bg-[#F2F2F3] dark:bg-sidebar-accent text-[#1f2937] dark:text-white"
+                : "text-[#374151] dark:text-[#e5e7eb] hover:bg-sidebar-accent/60 hover:text-black dark:hover:text-white"
                 } ${collapsed ? "justify-center" : ""}`}
         >
             {jsonSrc ? (

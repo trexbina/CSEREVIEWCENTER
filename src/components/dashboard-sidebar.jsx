@@ -203,11 +203,12 @@ export function DashboardSidebar({ role }) {
                     <TooltipTrigger asChild>
                         {content}
                     </TooltipTrigger>
-                    <TooltipContent side="right" align="center" className="max-w-xs text-xs">
-                        <p className="font-semibold text-white">{item.label}</p>
-                        {item.description && (
-                            <p className="text-[11px] text-gray-300 font-normal mt-0.5">{item.description}</p>
-                        )}
+                    <TooltipContent 
+                        side="right" 
+                        align="center" 
+                        className="bg-white text-gray-800 dark:bg-slate-900 dark:text-slate-100 border border-gray-200 dark:border-slate-800 shadow-md text-xs px-3 py-1.5 rounded-lg max-w-xs font-normal"
+                    >
+                        {item.description || item.label}
                     </TooltipContent>
                 </Tooltip>
             )
@@ -221,11 +222,11 @@ export function DashboardSidebar({ role }) {
         return (
             <div className="flex h-full flex-col">
                 {/* Logo & Brand Name */}
-                <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-6 pb-3" : "justify-start pl-4 pr-3 pt-6 pb-3 gap-3"}`}>
+                <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-6 pb-3" : "justify-start pl-4 pr-3 pt-6 pb-3 gap-3.5"}`}>
                     <img
                         src="/landingpageassets/logo.png"
                         alt="Peak Excellence Review Center"
-                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-10 w-10" : "h-13 w-13"}`}
+                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-11 w-11" : "h-14.5 w-14.5 sm:h-14 sm:w-14"}`}
                     />
                     {!collapsed && (
                         <div className="flex flex-col min-w-0">

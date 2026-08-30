@@ -136,6 +136,8 @@ export function DashboardSidebar({ role }) {
     const [collapsed, setCollapsed] = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
+    const [searchExpanded, setSearchExpanded] = useState(false)
+    const searchInputRef = useRef(null)
 
     const navItems = navByRole[role] || studentNav
     const badge = roleBadgeMap[role]
@@ -232,18 +234,57 @@ export function DashboardSidebar({ role }) {
                     />
                 </div>
 
-                {/* Minimal Search Bar under Logo */}
+                {/* Collapsible & Expandable Search Bar */}
                 {!collapsed && (
                     <div className="px-3 pt-2 pb-1">
-                        <div className="relative flex items-center">
-                            <Search className="pointer-events-none absolute left-3 size-3.5 text-[#696969]/70 dark:text-gray-400" />
-                            <input
-                                type="search"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search..."
-                                className="w-full h-8 pl-8 pr-3 text-xs rounded-lg border border-black/5 dark:border-white/10 bg-white/75 dark:bg-white/5 text-[#2d3748] dark:text-gray-200 placeholder:text-[#696969]/55 dark:placeholder:text-gray-500 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 focus:bg-white dark:focus:bg-white/10 transition-all shadow-2xs"
-                            />
+                        <div className="flex items-center">
+                            {searchExpanded ? (
+                                <div className="relative flex items-center w-full animate-in fade-in slide-in-from-left-3 duration-300">
+                                    <Search className="pointer-events-none absolute left-3 size-4 text-[#3B3B3B] dark:text-white shrink-0" />
+                                    <input
+                                        ref={searchInputRef}
+                                        type="search"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="Search lessons, topics..."
+                                        className="w-full h-10 pl-9 pr-8 text-xs rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 dark:placeholder:text-gray-400 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-xs"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchExpanded(false)
+                                            setSearchQuery("")
+                                        }}
+                                        className="absolute right-2.5 flex items-center justify-center size-5 rounded-full text-[#696969] hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                        title="Collapse search"
+                                    >
+                                        <X className="size-3.5" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <Tooltip delayDuration={150}>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSearchExpanded(true)
+                                                setTimeout(() => searchInputRef.current?.focus(), 50)
+                                            }}
+                                            className="flex items-center justify-center size-10 rounded-full bg-white dark:bg-white/10 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white border border-black/5 dark:border-white/10 hover:bg-white hover:shadow-xs transition-all duration-200 cursor-pointer shadow-2xs group"
+                                            aria-label="Expand search"
+                                        >
+                                            <Search className="size-4.5 transition-transform group-hover:scale-110" />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent
+                                        side="right"
+                                        align="center"
+                                        className="bg-white text-gray-800 dark:bg-slate-900 dark:text-slate-100 border border-gray-200 dark:border-slate-800 shadow-md text-xs px-2.5 py-1 rounded-lg font-normal"
+                                    >
+                                        Search
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
                         </div>
                     </div>
                 )}

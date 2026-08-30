@@ -174,7 +174,7 @@ export function DashboardSidebar({ role }) {
                     } ${collapsed ? "justify-center" : ""}`}
             >
                 {jsonSrc ? (
-                    <div className="shrink-0 flex items-center justify-center pointer-events-none transition-colors duration-200 [&_path]:!fill-[#4b5563] dark:[&_path]:!fill-[#9ca3af] [&_path]:!stroke-[#4b5563] dark:[&_path]:!stroke-[#9ca3af] [&_circle]:!stroke-[#4b5563] dark:[&_circle]:!stroke-[#9ca3af] [&_rect]:!stroke-[#4b5563] dark:[&_rect]:!stroke-[#9ca3af]">
+                    <div className="shrink-0 flex items-center justify-center pointer-events-none transition-colors duration-200 [&_path]:!fill-[#696969] dark:[&_path]:!fill-[#9ca3af] [&_path]:!stroke-[#696969] dark:[&_path]:!stroke-[#9ca3af] [&_circle]:!stroke-[#696969] dark:[&_circle]:!stroke-[#9ca3af] [&_rect]:!stroke-[#696969] dark:[&_rect]:!stroke-[#9ca3af]">
                         <LordIcon
                             ref={iconRef}
                             src={jsonSrc}
@@ -184,7 +184,7 @@ export function DashboardSidebar({ role }) {
                         />
                     </div>
                 ) : (
-                    <Icon className="h-6 w-6 shrink-0 text-[#4b5563] dark:text-[#9ca3af]" />
+                    <Icon className="h-6 w-6 shrink-0 text-[#696969] dark:text-[#9ca3af]" />
                 )}
                 {!collapsed && (
                     <span className={`text-[13.5px] font-medium leading-none truncate ${active ? "text-[#696969] dark:text-white" : "text-[#696969] dark:text-[#e5e7eb]"}`}>

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
+import { motion } from "framer-motion"
 import {
     LayoutDashboard,
     Users,
@@ -220,7 +221,63 @@ export function DashboardSidebar({ role }) {
     /* ---- Sidebar content (shared between mobile & desktop) ---- */
     function SidebarContent() {
         return (
-            <div className="flex h-full flex-col">
+            <div className="relative flex h-full flex-col overflow-hidden bg-sidebar">
+                {/* Ambient Soft Moving Gradient Background Shadows */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                    <motion.div
+                        animate={{
+                            x: [0, 25, -20, 0],
+                            y: [0, -35, 20, 0],
+                            scale: [1, 1.25, 0.95, 1],
+                            rotate: [0, 90, 180, 0],
+                        }}
+                        transition={{
+                            duration: 20,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                        }}
+                        style={{
+                            background: "radial-gradient(circle, rgba(239,68,68,0.07) 0%, rgba(245,158,11,0.06) 50%, transparent 75%)",
+                        }}
+                        className="absolute -top-16 -left-12 w-64 h-64 rounded-full blur-3xl"
+                    />
+                    <motion.div
+                        animate={{
+                            x: [0, -30, 25, 0],
+                            y: [0, 40, -30, 0],
+                            scale: [1, 1.3, 1.05, 1],
+                            rotate: [0, -120, -240, 0],
+                        }}
+                        transition={{
+                            duration: 24,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                        }}
+                        style={{
+                            background: "radial-gradient(circle, rgba(233,196,106,0.09) 0%, rgba(34,197,94,0.06) 55%, transparent 80%)",
+                        }}
+                        className="absolute top-1/3 -right-16 w-72 h-72 rounded-full blur-3xl"
+                    />
+                    <motion.div
+                        animate={{
+                            x: [0, 20, -25, 0],
+                            y: [0, -25, 30, 0],
+                            scale: [1.1, 0.9, 1.2, 1.1],
+                        }}
+                        transition={{
+                            duration: 22,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                        }}
+                        style={{
+                            background: "radial-gradient(circle, rgba(34,197,94,0.06) 0%, rgba(233,196,106,0.07) 60%, transparent 75%)",
+                        }}
+                        className="absolute -bottom-16 -left-10 w-64 h-64 rounded-full blur-3xl"
+                    />
+                </div>
+
+                {/* Content layers */}
+                <div className="relative z-10 flex h-full flex-col">
                 {/* Logo & Brand Name */}
                 <div className={`flex items-center ${collapsed ? "justify-center px-2 pt-6 pb-3" : "justify-start pl-4 pr-3 pt-6 pb-3 gap-3.5"}`}>
                     <img
@@ -273,6 +330,7 @@ export function DashboardSidebar({ role }) {
                     <div className={`flex ${collapsed ? "justify-center" : "justify-start"}`}>
                         <LogoutButton iconOnly={collapsed} />
                     </div>
+                </div>
                 </div>
             </div>
         )

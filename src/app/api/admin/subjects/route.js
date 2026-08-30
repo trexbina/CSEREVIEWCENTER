@@ -49,30 +49,11 @@ export async function GET() {
     }
 }
 
-import { writeFile, mkdir } from "fs/promises"
-import path from "path"
+import { saveUploadedFile } from "@/lib/storage"
 
 // ── helper for file upload ──
 async function saveImage(file) {
-    if (!file || typeof file === "string") return null
-    try {
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "subjects")
-        await mkdir(uploadDir, { recursive: true })
-
-        // Create unique filename safely
-        const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "")
-        const filename = `${Date.now()}-${safeName}`
-        const filepath = path.join(uploadDir, filename)
-
-        await writeFile(filepath, buffer)
-        return `/uploads/subjects/${filename}`
-    } catch (err) {
-        console.error("Error saving image:", err)
-        return null
-    }
+    return await saveUploadedFile(file, "subjects")
 }
 
 // ── POST /api/admin/subjects ────────────────────────────

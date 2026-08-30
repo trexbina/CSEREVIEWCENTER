@@ -6,9 +6,6 @@ export const runtime = "nodejs"
 
 export async function GET(request, props) {
     try {
-        const session = await getSession()
-        if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-
         const params = await props.params
         const fileId = Number(params.fileId)
 

@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
-import { mkdir, writeFile } from "fs/promises"
-import path from "path"
+import { saveUploadedFile } from "@/lib/storage"
 
 async function adminGuard() {
     const session = await getSession()
@@ -18,25 +17,7 @@ async function ensureSubcategorySchema() {
 }
 
 async function saveImage(file) {
-    if (!file || typeof file === "string") return null
-
-    try {
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "subcategories")
-        await mkdir(uploadDir, { recursive: true })
-
-        const safeName = String(file.name || "subcategory-image").replace(/[^a-zA-Z0-9._-]/g, "")
-        const filename = `${Date.now()}-${safeName}`
-        const filepath = path.join(uploadDir, filename)
-
-        await writeFile(filepath, buffer)
-        return `/uploads/subcategories/${filename}`
-    } catch (err) {
-        console.error("[admin/subcategories saveImage]", err)
-        return null
-    }
+    return await saveUploadedFile(file, "subcategories")
 }
 
 async function readPayload(request) {

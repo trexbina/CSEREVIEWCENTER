@@ -228,9 +228,14 @@ export function DashboardSidebar({ role }) {
                         className={`object-contain shrink-0 transition-all ${collapsed ? "h-11 w-11" : "h-14 w-14"}`}
                     />
                     {!collapsed && (
-                        <span className="text-[20px] font-bold tracking-[0.22em] text-[#1f2937] dark:text-white leading-none">
-                            PEAK
-                        </span>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[19px] font-bold tracking-[0.16em] text-[#1f2937] dark:text-white leading-tight">
+                                PEAK
+                            </span>
+                            <span className="text-[12px] font-semibold tracking-[0.24em] text-[#6b7280] dark:text-[#9ca3af] uppercase leading-tight -mt-0.5">
+                                Excellence
+                            </span>
+                        </div>
                     )}
                 </div>
 

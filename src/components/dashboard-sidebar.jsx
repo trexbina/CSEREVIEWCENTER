@@ -222,19 +222,19 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
         return (
             <div className="flex h-full flex-col">
                 {/* Logo */}
-                <div className={`flex items-center gap-3 px-4 pt-6 pb-4 ${collapsed ? "justify-center px-2" : ""}`}>
+                <div className={`flex items-center gap-3.5 px-4 pt-9 sm:pt-10 pb-5 ${collapsed ? "justify-center px-2" : ""}`}>
                     <img
                         src="/landingpageassets/logo.png"
                         alt="Peak Excellence Review Center"
-                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-8 w-8" : "h-9 w-9"}`}
+                        className={`object-contain shrink-0 transition-all ${collapsed ? "h-9 w-9" : "h-11 w-11"}`}
                     />
                     {!collapsed && (
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-bold text-[#6b7280] dark:text-[#9ca3af] tracking-wider uppercase truncate">
+                            <span className="text-[9.5px] font-semibold text-[#9ca3af] dark:text-[#6b7280] tracking-wider uppercase truncate">
                                 TRAINING ACADEMY & REVIEW CE...
                             </span>
-                            <span className="text-[15px] font-black tracking-tight text-[#1f2937] dark:text-white leading-tight truncate">
-                                PEAK EXCELLENCE
+                            <span className="text-[16px] font-bold tracking-[0.18em] text-[#1f2937] dark:text-white leading-tight truncate">
+                                PEAK
                             </span>
                         </div>
                     )}
@@ -242,12 +242,12 @@ function SidebarNavItem({ item, active, collapsed, onNavigate }) {
 
                 {/* Nav links */}
                 <TooltipProvider delayDuration={150}>
-                    <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 pt-2 pb-4">
+                    <nav className="flex-1 space-y-3 overflow-y-auto px-3 pt-3 pb-6">
                         {navItems.map((item, idx) => {
                             // Section header support
                             if (item.section) {
                                 return (
-                                    <p key={`section-${idx}`} className={`px-3 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-[#6b7280] dark:text-[#9ca3af] ${collapsed ? "hidden" : ""}`}>
+                                    <p key={`section-${idx}`} className={`px-3 pt-5 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#9ca3af]/80 dark:text-[#6b7280]/80 ${collapsed ? "hidden" : ""}`}>
                                         {item.section}
                                     </p>
                                 )

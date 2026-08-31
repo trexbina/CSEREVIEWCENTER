@@ -1128,14 +1128,19 @@ export default function CurriculumManagerPage() {
                                                             </div>
                                                         </div>
 
-                                                        {/* smooth collapsible drawer - seamless minimal flat layout */}
+                                                        {/* smooth sliding & morphing collapsible drawer */}
                                                         <div
-                                                            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
-                                                                isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+                                                            className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                                                                isExpanded
+                                                                    ? 'max-h-[300px] opacity-100'
+                                                                    : 'max-h-0 opacity-0 pointer-events-none'
                                                             }`}
                                                         >
-                                                            <div className="overflow-hidden">
-                                                                <div className="px-5 sm:px-6 py-4 bg-[#FAFAFA] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-4">
+                                                            <div
+                                                                className={`px-5 sm:px-6 py-4 bg-[#FAFAFA] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-4 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                                                                    isExpanded ? 'translate-y-0' : '-translate-y-2'
+                                                                }`}
+                                                            >
                                                                     {/* Inline Stats & Metadata Row */}
                                                                     <div className="flex items-center flex-wrap gap-x-6 gap-y-2.5 text-xs text-[#696969] dark:text-gray-400">
                                                                         <div className="flex items-center gap-1.5">

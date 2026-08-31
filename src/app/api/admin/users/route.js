@@ -4,13 +4,14 @@ import bcrypt from "bcryptjs"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 
-const VALID_ROLES = ["student", "teacher", "admin"]
+const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
+const VALID_ROLES = ["student", "teacher", ...ADMIN_ROLES]
 
 /** GET /api/admin/users — list all users (admin only). */
 export async function GET() {
   try {
     const session = await getSession()
-    if (session?.role !== "admin") {
+    if (!session || !ADMIN_ROLES.includes(session.role)) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 
@@ -35,7 +36,7 @@ async function ensureTable() {
 export async function POST(request) {
   try {
     const session = await getSession()
-    if (session?.role !== "admin") {
+    if (!session || !ADMIN_ROLES.includes(session.role)) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 
@@ -127,7 +128,7 @@ export async function POST(request) {
 export async function DELETE(request) {
   try {
     const session = await getSession()
-    if (session?.role !== "admin") {
+    if (!session || !ADMIN_ROLES.includes(session.role)) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 
@@ -188,7 +189,7 @@ export async function DELETE(request) {
 export async function PUT(request) {
   try {
     const session = await getSession()
-    if (session?.role !== "admin") {
+    if (!session || !ADMIN_ROLES.includes(session.role)) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 

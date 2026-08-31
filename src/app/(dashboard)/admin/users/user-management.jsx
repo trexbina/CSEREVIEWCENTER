@@ -236,7 +236,8 @@ export function EditUserDialog({ open, onOpenChange, user }) {
       .trim() || user?.name || email
 
     try {
-      const payload = {
+        const isAdminRole = role === "admin" || role === "super_admin" || role === "academic_admin" || role === "registrar"
+        const payload = {
         name: fullName,
         email,
         role,
@@ -256,10 +257,10 @@ export function EditUserDialog({ open, onOpenChange, user }) {
         year_graduated: yearGraduated || null,
         highest_education: highestEducation || null,
         exam_id: examId ? parseInt(examId) : null,
-        batch_id: role !== "admin" && batchId ? parseInt(batchId) : null,
-        program_id: role !== "admin" && programId ? parseInt(programId) : null,
-        major_id: role !== "admin" && majorId ? parseInt(majorId) : null,
-        job_role_description: role === "admin" ? jobRoleDescription : null,
+        batch_id: !isAdminRole && batchId ? parseInt(batchId) : null,
+        program_id: !isAdminRole && programId ? parseInt(programId) : null,
+        major_id: !isAdminRole && majorId ? parseInt(majorId) : null,
+        job_role_description: isAdminRole ? jobRoleDescription : null,
         avatar_url: avatarUrl || null,
       }
 
@@ -489,7 +490,7 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                 <Label className="text-xs">User Role *</Label>
                 <Select value={role} onValueChange={(val) => {
                   setRole(val);
-                  if (val === "admin") {
+                  if (val === "admin" || val === "super_admin" || val === "academic_admin" || val === "registrar") {
                     setExamId("");
                     setProgramId("");
                     setMajorId("");
@@ -504,16 +505,28 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                   <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="teacher">Teacher</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="teacher">Teacher (Instructor)</SelectItem>
+                    <SelectItem value="admin">Super Admin (System Owner)</SelectItem>
+                    <SelectItem value="academic_admin">Academic Coordinator (Curriculum & Exams)</SelectItem>
+                    <SelectItem value="registrar">Registrar (Students & Admissions)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {role === "admin" && (
+              {(role === "admin" || role === "super_admin" || role === "academic_admin" || role === "registrar") && (
                 <div className="space-y-1">
-                  <Label htmlFor="edit-job-role" className="text-xs">Job Role Description *</Label>
-                  <Input id="edit-job-role" value={jobRoleDescription} onChange={(e) => setJobRoleDescription(e.target.value)} placeholder="e.g. System Administrator" required />
+                  <Label htmlFor="edit-job-role" className="text-xs">Job Role / Title *</Label>
+                  <Input 
+                    id="edit-job-role" 
+                    value={jobRoleDescription} 
+                    onChange={(e) => setJobRoleDescription(e.target.value)} 
+                    placeholder={
+                      role === "academic_admin" ? "e.g. Lead Academic Coordinator, Curriculum Head" :
+                      role === "registrar" ? "e.g. Head Registrar, Admissions Officer" :
+                      "e.g. System Administrator, IT Director"
+                    } 
+                    required 
+                  />
                 </div>
               )}
 
@@ -1093,7 +1106,7 @@ export function UserTable({ users, currentUserId }) {
 
   const studentCount = users.filter((u) => u.role === "student").length
   const teacherCount = users.filter((u) => u.role === "teacher").length
-  const adminCount = users.filter((u) => u.role === "admin").length
+  const adminCount = users.filter((u) => u.role === "admin" || u.role === "super_admin" || u.role === "academic_admin" || u.role === "registrar").length
 
   return (
     <div className="space-y-6">
@@ -1251,9 +1264,42 @@ export function UserTable({ users, currentUserId }) {
                       <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{programName}</td>
                       <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{majorName}</td>
                       <td className="px-4">
-                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize bg-black/5 dark:bg-white/10 text-[#3B3B3B] dark:text-white">
-                          {user.role}
-                        </span>
+                        {(() => {
+                          const r = user.role
+                          if (r === "super_admin" || r === "admin") {
+                            return (
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/30">
+                                Super Admin
+                              </span>
+                            )
+                          }
+                          if (r === "academic_admin") {
+                            return (
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-amber-50 dark:bg-amber-950/40 text-[#B8860B] dark:text-[#E9C46A] border border-amber-200/50 dark:border-amber-800/30">
+                                Academic Coord.
+                              </span>
+                            )
+                          }
+                          if (r === "registrar") {
+                            return (
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/30">
+                                Registrar
+                              </span>
+                            )
+                          }
+                          if (r === "teacher") {
+                            return (
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/30">
+                                Instructor
+                              </span>
+                            )
+                          }
+                          return (
+                            <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize bg-black/5 dark:bg-white/10 text-[#3B3B3B] dark:text-white">
+                              {r}
+                            </span>
+                          )
+                        })()}
                       </td>
                       <td className="px-4 text-sm text-[#696969] dark:text-gray-400 font-normal whitespace-nowrap">
                         {user.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}

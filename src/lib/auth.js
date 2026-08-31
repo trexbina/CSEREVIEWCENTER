@@ -44,4 +44,7 @@ export const ROLE_HOME = {
   student: "/student",
   teacher: "/teacher",
   admin: "/admin",
+  super_admin: "/admin",
+  academic_admin: "/admin",
+  registrar: "/admin",
 }

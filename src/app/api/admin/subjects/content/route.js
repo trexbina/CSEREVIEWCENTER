@@ -21,9 +21,11 @@ async function ensureContentTable() {
   `)
 }
 
+const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
+
 async function adminGuard() {
     const session = await getSession()
-    if (session?.role !== "admin") return null
+    if (!session || !ADMIN_ROLES.includes(session.role)) return null
     return session
 }
 

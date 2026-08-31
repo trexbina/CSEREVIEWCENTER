@@ -397,8 +397,9 @@ export default function EditUserForm({ initialUser }) {
             return
         }
 
-        if (role === "admin" && !jobRoleDescription.trim()) {
-            setError("Job Role Description is required for admins.")
+        const isAdminRole = role === "admin" || role === "super_admin" || role === "academic_admin" || role === "registrar"
+        if (isAdminRole && !jobRoleDescription.trim()) {
+            setError("Job Role / Title is required for administrative staff.")
             return
         }
 
@@ -439,10 +440,10 @@ export default function EditUserForm({ initialUser }) {
                 year_graduated: yearGraduated || null,
                 highest_education: highestEducation && highestEducation !== "none" ? highestEducation : null,
                 exam_id: resolvedExamId ? parseInt(resolvedExamId) : null,
-                batch_id: role !== "admin" && batchId && batchId !== "none" ? parseInt(batchId) : null,
-                program_id: role !== "admin" && programId && programId !== "none" ? parseInt(programId) : null,
-                major_id: role !== "admin" && majorId && majorId !== "none" ? parseInt(majorId) : null,
-                job_role_description: role === "admin" ? jobRoleDescription.trim() : null,
+                batch_id: !isAdminRole && batchId && batchId !== "none" ? parseInt(batchId) : null,
+                program_id: !isAdminRole && programId && programId !== "none" ? parseInt(programId) : null,
+                major_id: !isAdminRole && majorId && majorId !== "none" ? parseInt(majorId) : null,
+                job_role_description: isAdminRole ? jobRoleDescription.trim() : null,
                 avatar_url: avatarUrl || null,
                 targets: role === "teacher" ? teacherTargets : [],
             }
@@ -720,7 +721,7 @@ export default function EditUserForm({ initialUser }) {
                             <Label className="text-sm font-semibold text-[#696969]">User Role *</Label>
                             <Select value={role} onValueChange={(val) => {
                                 setRole(val);
-                                if (val === "admin") {
+                                if (val === "admin" || val === "super_admin" || val === "academic_admin" || val === "registrar") {
                                     setExamId("");
                                     setProgramId("");
                                     setMajorId("");
@@ -735,16 +736,29 @@ export default function EditUserForm({ initialUser }) {
                                 <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue /></SelectTrigger>
                                 <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                     <SelectItem value="student">Student</SelectItem>
-                                    <SelectItem value="teacher">Teacher</SelectItem>
-                                    <SelectItem value="admin">Admin</SelectItem>
+                                    <SelectItem value="teacher">Teacher (Instructor)</SelectItem>
+                                    <SelectItem value="admin">Super Admin (System Owner)</SelectItem>
+                                    <SelectItem value="academic_admin">Academic Coordinator (Curriculum & Exams)</SelectItem>
+                                    <SelectItem value="registrar">Registrar (Students & Admissions)</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         
-                        {role === "admin" && (
+                        {(role === "admin" || role === "super_admin" || role === "academic_admin" || role === "registrar") && (
                             <div className="space-y-1.5">
-                                <Label htmlFor="job-role" className="text-sm font-semibold text-[#696969]">Job Role Description *</Label>
-                                <input id="job-role" value={jobRoleDescription} onChange={(e) => setJobRoleDescription(e.target.value)} placeholder="e.g. System Administrator, Content Manager" required className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
+                                <Label htmlFor="job-role" className="text-sm font-semibold text-[#696969]">Job Role / Title *</Label>
+                                <input 
+                                    id="job-role" 
+                                    value={jobRoleDescription} 
+                                    onChange={(e) => setJobRoleDescription(e.target.value)} 
+                                    placeholder={
+                                        role === "academic_admin" ? "e.g. Lead Academic Coordinator, Curriculum Head" :
+                                        role === "registrar" ? "e.g. Head Registrar, Admissions Officer" :
+                                        "e.g. System Administrator, IT Director"
+                                    } 
+                                    required 
+                                    className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" 
+                                />
                             </div>
                         )}
 

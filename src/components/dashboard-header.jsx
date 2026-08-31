@@ -20,7 +20,10 @@ function getInitials(name) {
 const ROLE_LABELS = {
   student: "STUDENT",
   teacher: "INSTRUCTOR",
-  admin: "ADMIN",
+  admin: "SUPER ADMIN",
+  super_admin: "SUPER ADMIN",
+  academic_admin: "ACADEMIC COORD.",
+  registrar: "REGISTRAR",
 }
 
 const ROUTE_NAME_MAP = {

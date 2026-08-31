@@ -107,7 +107,7 @@ const teacherNav = [
     { label: "Modules", href: "/teacher/modules", icon: "Layers", description: "Curriculum modules & categories" },
 ]
 
-const adminNav = [
+const superAdminNav = [
     { section: "GENERAL" },
     { label: "Admin Dashboard", href: "/admin", icon: "Home", description: "System overview, active users, and others" },
     { label: "User Management", href: "/admin/users", icon: "User", description: "Manage students, teachers, and accounts" },
@@ -120,15 +120,37 @@ const adminNav = [
     { label: "Settings", href: "/admin/settings", icon: "Settings" },
 ]
 
+const academicAdminNav = [
+    { section: "GENERAL" },
+    { label: "Admin Dashboard", href: "/admin", icon: "Home", description: "System overview & academic metrics" },
+    { label: "Curriculum Manager", href: "/admin/curriculum", icon: "FileText", description: "Manage exam programs, subjects, and topics" },
+    { label: "Mock Exams", href: "/admin/mock-exams", icon: "PencilLine", description: "Create and configure mock exams" },
+    { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "View curriculum master data & courses" },
+    { label: "Analytical Overview", href: "/admin/analytical-overview", icon: "BarChart3", description: "Performance reports and learning insights" },
+]
+
+const registrarNav = [
+    { section: "GENERAL" },
+    { label: "Admin Dashboard", href: "/admin", icon: "Home", description: "System overview & enrollment counts" },
+    { label: "User Management", href: "/admin/users", icon: "User", description: "Manage students and pre-registrations" },
+    { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "Manage batches, programs, and schools" },
+]
+
 const navByRole = {
     student: studentNav,
     teacher: teacherNav,
-    admin: adminNav,
+    admin: superAdminNav,
+    super_admin: superAdminNav,
+    academic_admin: academicAdminNav,
+    registrar: registrarNav,
 }
 
 const roleBadgeMap = {
     teacher: { label: "instructor", color: "bg-primary/15 text-primary" },
-    admin: { label: "administrator", color: "bg-destructive/15 text-destructive" },
+    admin: { label: "super admin", color: "bg-destructive/15 text-destructive" },
+    super_admin: { label: "super admin", color: "bg-destructive/15 text-destructive" },
+    academic_admin: { label: "academic coordinator", color: "bg-[#E9C46A]/20 text-[#B8860B] dark:text-[#E9C46A]" },
+    registrar: { label: "registrar", color: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
 }
 
 /* ------------------------------------------------------------------ */

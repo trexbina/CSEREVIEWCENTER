@@ -5,10 +5,12 @@ import { verifyToken } from "@/lib/auth"
 // Runs BEFORE every matched request. JWT-only — no DB.
 // Session = 1 hour. Expired/invalid token → cookie cleared → login.
 
+const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
+
 const ROUTE_PERMISSIONS = {
-  "/student": ["student", "admin"],
-  "/teacher": ["teacher", "admin"],
-  "/admin":   ["admin"],
+  "/student": ["student", ...ADMIN_ROLES],
+  "/teacher": ["teacher", ...ADMIN_ROLES],
+  "/admin":   ADMIN_ROLES,
 }
 
 const AUTH_ROUTES = ["/login"]
@@ -17,6 +19,9 @@ const ROLE_HOME = {
   student: "/student",
   teacher: "/teacher/modules",
   admin:   "/admin",
+  super_admin: "/admin",
+  academic_admin: "/admin",
+  registrar: "/admin",
 }
 
 const DEFAULT_HOME = "/student"

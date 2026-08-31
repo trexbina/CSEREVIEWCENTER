@@ -737,7 +737,7 @@ export default function EditUserForm({ initialUser }) {
                                 <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                     <SelectItem value="student">Student</SelectItem>
                                     <SelectItem value="teacher">Teacher (Instructor)</SelectItem>
-                                    <SelectItem value="admin">Super Admin (System Owner)</SelectItem>
+                                    <SelectItem value="super_admin">Super Admin (System Owner)</SelectItem>
                                     <SelectItem value="academic_admin">Academic Coordinator (Curriculum & Exams)</SelectItem>
                                     <SelectItem value="registrar">Registrar (Students & Admissions)</SelectItem>
                                 </SelectContent>

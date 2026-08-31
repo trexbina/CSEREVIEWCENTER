@@ -1104,14 +1104,17 @@ export default function CurriculumManagerPage() {
                                                                 </div>
                                                             </div>
 
-                                                            {/* right: stats summary + chevron toggle */}
-                                                            <div className="flex items-center gap-3 shrink-0" onClick={e => e.stopPropagation()}>
-                                                                <Link
-                                                                    href={`/admin/curriculum/${subject.id}/content`}
-                                                                    className="inline-flex items-center justify-center bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/15 px-3.5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors border border-black/10 dark:border-white/15 shadow-2xs"
-                                                                >
-                                                                    Edit content
-                                                                </Link>
+                                                            {/* right: actions + chevron toggle */}
+                                                            <div className="flex items-center gap-2.5 shrink-0" onClick={e => e.stopPropagation()}>
+                                                                {/* Only show 'Manage content' button in top row when collapsed */}
+                                                                {!isExpanded && (
+                                                                    <Link
+                                                                        href={`/admin/curriculum/${subject.id}/content`}
+                                                                        className="inline-flex items-center justify-center bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/15 px-3.5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors border border-black/10 dark:border-white/15 shadow-2xs"
+                                                                    >
+                                                                        Manage content
+                                                                    </Link>
+                                                                )}
 
                                                                 {/* expand/collapse chevron trigger */}
                                                                 <button
@@ -1132,9 +1135,9 @@ export default function CurriculumManagerPage() {
                                                             }`}
                                                         >
                                                             <div className="overflow-hidden">
-                                                                <div className="px-5 sm:px-6 py-4 bg-[#FAFAFA] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-3.5">
+                                                                <div className="px-5 sm:px-6 py-4 bg-[#FAFAFA] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-4">
                                                                     {/* Inline Stats & Metadata Row */}
-                                                                    <div className="flex items-center flex-wrap gap-x-6 gap-y-2 text-xs text-[#696969] dark:text-gray-400">
+                                                                    <div className="flex items-center flex-wrap gap-x-6 gap-y-2.5 text-xs text-[#696969] dark:text-gray-400">
                                                                         <div className="flex items-center gap-1.5">
                                                                             <span className="font-semibold uppercase tracking-wider text-[10px]">Modules:</span>
                                                                             <strong className="text-[#3B3B3B] dark:text-white font-bold">{modulesCount}</strong>
@@ -1154,56 +1157,53 @@ export default function CurriculumManagerPage() {
                                                                                 <span>{subject.status === "inactive" ? "Locked" : "Active"}</span>
                                                                             </span>
                                                                         </div>
-                                                                        {subject.created_at && (
-                                                                            <div className="flex items-center gap-1.5 text-[11px]">
-                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Date added:</span>
-                                                                                <span className="text-[#3B3B3B] dark:text-white">{new Date(subject.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                                                            </div>
-                                                                        )}
-                                                                        {subject.unlock_date && (
-                                                                            <div className="flex items-center gap-1.5 text-[11px]">
-                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Opens:</span>
-                                                                                <span className="text-amber-600 dark:text-amber-400 font-semibold">{new Date(subject.unlock_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
 
-                                                                    {/* Full Description / Overview */}
-                                                                    <div className="pt-2 border-t border-black/5 dark:border-white/5">
-                                                                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#696969] dark:text-gray-400 mb-1">
-                                                                            Curriculum Overview
+                                                                        {/* Released Date & Updated Timestamps */}
+                                                                        <div className="flex items-center gap-1.5 text-[11px]">
+                                                                            <span className="font-semibold uppercase tracking-wider text-[10px]">Released:</span>
+                                                                            <span className="text-[#3B3B3B] dark:text-white">
+                                                                                {subject.unlock_date
+                                                                                    ? new Date(subject.unlock_date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                    : (subject.created_at ? new Date(subject.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : "Immediate")}
+                                                                            </span>
                                                                         </div>
-                                                                        <p className="text-xs sm:text-[13px] text-[#3B3B3B] dark:text-gray-300 leading-relaxed">
-                                                                            {subject.description || "No description provided."}
-                                                                        </p>
+
+                                                                        <div className="flex items-center gap-1.5 text-[11px]">
+                                                                            <span className="font-semibold uppercase tracking-wider text-[10px]">Updated:</span>
+                                                                            <span className="text-[#3B3B3B] dark:text-white">
+                                                                                {subject.updated_at
+                                                                                    ? new Date(subject.updated_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                    : (subject.created_at ? new Date(subject.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A")}
+                                                                            </span>
+                                                                        </div>
                                                                     </div>
 
-                                                                    {/* Action Buttons */}
+                                                                    {/* Action Buttons - minimal styling with Manage content at the end */}
                                                                     <div className="flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/5">
                                                                         <div className="flex items-center gap-2">
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => openSubjectModal("edit", subject)}
-                                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/10 text-xs font-semibold text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                                                                             >
-                                                                                <Pencil className="h-3.5 w-3.5 text-[#696969]" />
+                                                                                <Pencil className="h-3.5 w-3.5" />
                                                                                 <span>Edit Details</span>
                                                                             </button>
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => handleDeleteSubject(subject.id)}
-                                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-200/60 dark:border-rose-900/30 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
+                                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#696969] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
                                                                             >
                                                                                 <Trash className="h-3.5 w-3.5" />
-                                                                                <span>Delete Subject</span>
+                                                                                <span>Delete</span>
                                                                             </button>
                                                                         </div>
 
                                                                         <Link
                                                                             href={`/admin/curriculum/${subject.id}/content`}
-                                                                            className="inline-flex items-center gap-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-xs"
+                                                                            className="inline-flex items-center gap-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-2xs"
                                                                         >
-                                                                            <span>Manage Content</span>
+                                                                            <span>Manage content</span>
                                                                             <ArrowRight className="h-3.5 w-3.5" />
                                                                         </Link>
                                                                     </div>

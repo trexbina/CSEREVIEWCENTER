@@ -1215,12 +1215,11 @@ export default function CurriculumManagerPage() {
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    </>
-                                )}
+                                                    )
+                                                })}
+                                            </div>
+                                        </>
+                                    )}
                             </>
                         )
                     })()}

@@ -1125,69 +1125,66 @@ export default function CurriculumManagerPage() {
                                                             </div>
                                                         </div>
 
-                                                        {/* smooth collapsible drawer */}
+                                                        {/* smooth collapsible drawer - seamless minimal flat layout */}
                                                         <div
                                                             className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
                                                                 isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
                                                             }`}
                                                         >
                                                             <div className="overflow-hidden">
-                                                                <div className="px-5 sm:px-6 py-5 bg-[#FAFAFA] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-4">
-                                                                    {/* Minimal Stat Chips */}
-                                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                                                                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs">
-                                                                            <div className="text-[10px] font-bold text-[#696969] dark:text-gray-400 uppercase tracking-wider">Modules</div>
-                                                                            <div className="text-base font-bold text-[#3B3B3B] dark:text-white mt-0.5">{modulesCount}</div>
+                                                                <div className="px-5 sm:px-6 py-4 bg-[#FAFAFA] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-3.5">
+                                                                    {/* Inline Stats & Metadata Row */}
+                                                                    <div className="flex items-center flex-wrap gap-x-6 gap-y-2 text-xs text-[#696969] dark:text-gray-400">
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="font-semibold uppercase tracking-wider text-[10px]">Modules:</span>
+                                                                            <strong className="text-[#3B3B3B] dark:text-white font-bold">{modulesCount}</strong>
                                                                         </div>
-
-                                                                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs">
-                                                                            <div className="text-[10px] font-bold text-[#696969] dark:text-gray-400 uppercase tracking-wider">Lessons</div>
-                                                                            <div className="text-base font-bold text-[#3B3B3B] dark:text-white mt-0.5">{lessonsCount}</div>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="font-semibold uppercase tracking-wider text-[10px]">Lessons:</span>
+                                                                            <strong className="text-[#3B3B3B] dark:text-white font-bold">{lessonsCount}</strong>
                                                                         </div>
-
-                                                                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs">
-                                                                            <div className="text-[10px] font-bold text-[#696969] dark:text-gray-400 uppercase tracking-wider">Quizzes</div>
-                                                                            <div className="text-base font-bold text-[#3B3B3B] dark:text-white mt-0.5">{quizzesCount}</div>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="font-semibold uppercase tracking-wider text-[10px]">Quizzes:</span>
+                                                                            <strong className="text-[#3B3B3B] dark:text-white font-bold">{quizzesCount}</strong>
                                                                         </div>
-
-                                                                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs">
-                                                                            <div className="text-[10px] font-bold text-[#696969] dark:text-gray-400 uppercase tracking-wider">Status</div>
-                                                                            <div className="text-xs font-bold text-[#3B3B3B] dark:text-white mt-1 uppercase flex items-center gap-1.5">
-                                                                                <span className={`h-2 w-2 rounded-full ${subject.status === "inactive" ? "bg-amber-400" : "bg-emerald-500"}`} />
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="font-semibold uppercase tracking-wider text-[10px]">Status:</span>
+                                                                            <span className={`inline-flex items-center gap-1 font-semibold ${subject.status === "inactive" ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                                                                                <span className={`h-1.5 w-1.5 rounded-full ${subject.status === "inactive" ? "bg-amber-500" : "bg-emerald-500"}`} />
                                                                                 <span>{subject.status === "inactive" ? "Locked" : "Active"}</span>
-                                                                            </div>
+                                                                            </span>
                                                                         </div>
+                                                                        {subject.created_at && (
+                                                                            <div className="flex items-center gap-1.5 text-[11px]">
+                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Date added:</span>
+                                                                                <span className="text-[#3B3B3B] dark:text-white">{new Date(subject.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                                                            </div>
+                                                                        )}
+                                                                        {subject.unlock_date && (
+                                                                            <div className="flex items-center gap-1.5 text-[11px]">
+                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Opens:</span>
+                                                                                <span className="text-amber-600 dark:text-amber-400 font-semibold">{new Date(subject.unlock_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
 
-                                                                    {/* Syllabus / Description & Timestamps */}
-                                                                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs space-y-3">
-                                                                        <div>
-                                                                            <div className="text-[10px] font-bold uppercase tracking-wider text-[#696969] dark:text-gray-400 mb-1">
-                                                                                Curriculum Overview
-                                                                            </div>
-                                                                            <p className="text-xs sm:text-[13px] text-[#3B3B3B] dark:text-gray-300 leading-relaxed">
-                                                                                {subject.description || "No description provided."}
-                                                                            </p>
+                                                                    {/* Full Description / Overview */}
+                                                                    <div className="pt-2 border-t border-black/5 dark:border-white/5">
+                                                                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#696969] dark:text-gray-400 mb-1">
+                                                                            Curriculum Overview
                                                                         </div>
-
-                                                                        <div className="flex items-center flex-wrap gap-4 pt-2.5 border-t border-black/5 dark:border-white/5 text-[11px] text-[#696969] dark:text-gray-400">
-                                                                            {subject.created_at && (
-                                                                                <span>Date added: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{new Date(subject.created_at).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}</strong></span>
-                                                                            )}
-
-                                                                            {subject.unlock_date && (
-                                                                                <span>Schedule: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{new Date(subject.unlock_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</strong></span>
-                                                                            )}
-                                                                        </div>
+                                                                        <p className="text-xs sm:text-[13px] text-[#3B3B3B] dark:text-gray-300 leading-relaxed">
+                                                                            {subject.description || "No description provided."}
+                                                                        </p>
                                                                     </div>
 
-                                                                    {/* Actions */}
-                                                                    <div className="flex items-center justify-between pt-0.5">
+                                                                    {/* Action Buttons */}
+                                                                    <div className="flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/5">
                                                                         <div className="flex items-center gap-2">
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => openSubjectModal("edit", subject)}
-                                                                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-semibold text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors shadow-2xs cursor-pointer"
+                                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/10 text-xs font-semibold text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                                                                             >
                                                                                 <Pencil className="h-3.5 w-3.5 text-[#696969]" />
                                                                                 <span>Edit Details</span>
@@ -1195,7 +1192,7 @@ export default function CurriculumManagerPage() {
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => handleDeleteSubject(subject.id)}
-                                                                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-rose-200/60 dark:border-rose-900/30 bg-white dark:bg-white/5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors shadow-2xs cursor-pointer"
+                                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-200/60 dark:border-rose-900/30 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
                                                                             >
                                                                                 <Trash className="h-3.5 w-3.5" />
                                                                                 <span>Delete Subject</span>

@@ -111,35 +111,42 @@ export async function GET() {
             }
 
             // 2. Otherwise (e.g. legacy assignments), filter by course/exam, program, and major
-            const cTarget = (cat.target_course || "all").trim().toLowerCase()
-            const pTarget = (cat.target_program || "all").trim().toLowerCase()
-            const mTarget = (cat.target_major || "all").trim().toLowerCase()
+            // Helper for multi-target check
+            const matchesMultiTarget = (targetValue, allowedSet, singleVal) => {
+                if (!targetValue || targetValue === "all") return true
+                let targets = []
+                try {
+                    if (targetValue.startsWith("[") && targetValue.endsWith("]")) {
+                        targets = JSON.parse(targetValue)
+                    } else {
+                        targets = targetValue.split(",").map(t => t.trim())
+                    }
+                } catch (e) {
+                    targets = [targetValue.trim()]
+                }
+                if (targets.includes("all") || targets.length === 0) return true
+
+                return targets.some(t => {
+                    const tLower = t.toLowerCase()
+                    if (allowedSet && allowedSet.size > 0) {
+                        return Array.from(allowedSet).some(name => name.includes(tLower) || tLower.includes(name))
+                    }
+                    if (singleVal) {
+                        const sLower = singleVal.toLowerCase()
+                        return sLower.includes(tLower) || tLower.includes(sLower)
+                    }
+                    return false
+                })
+            }
 
             // Course / Exam check
-            if (cTarget !== "all" && assignedExamNames.size > 0) {
-                const matchesExam = Array.from(assignedExamNames).some(name => name.includes(cTarget) || cTarget.includes(name))
-                if (!matchesExam) return false
-            }
+            if (!matchesMultiTarget(cat.target_course, assignedExamNames, null)) return false
 
             // Program check
-            if (pTarget !== "all") {
-                if (assignedProgNames.size > 0) {
-                    const matchesProg = Array.from(assignedProgNames).some(name => name.includes(pTarget) || pTarget.includes(name))
-                    if (!matchesProg) return false
-                } else if (userProg) {
-                    if (!userProg.includes(pTarget) && !pTarget.includes(userProg)) return false
-                }
-            }
+            if (!matchesMultiTarget(cat.target_program, assignedProgNames, userProg)) return false
 
             // Major check
-            if (mTarget !== "all") {
-                if (assignedMajNames.size > 0) {
-                    const matchesMajor = Array.from(assignedMajNames).some(name => name.includes(mTarget) || mTarget.includes(name))
-                    if (!matchesMajor) return false
-                } else if (userMajor) {
-                    if (!userMajor.includes(mTarget) && !mTarget.includes(userMajor)) return false
-                }
-            }
+            if (!matchesMultiTarget(cat.target_major, assignedMajNames, userMajor)) return false
 
             return true
         })

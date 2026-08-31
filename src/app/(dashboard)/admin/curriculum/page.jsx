@@ -15,6 +15,7 @@ import Link from "next/link"
 // these are small helper popups to pick dates and times easily
 import MinimalDatePicker from "@/components/ui/MinimalDatePicker"
 import MinimalTimePicker from "@/components/ui/MinimalTimePicker"
+import MultiSelectDropdown from "@/components/ui/MultiSelectDropdown"
 
 // this is the popup that asks if you really want to delete something
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
@@ -289,7 +290,22 @@ export default function CurriculumManagerPage() {
         return false
     })
 
-    // CATEGORY FUNCTIONS
+    // Helper to normalize multi-value target fields into string arrays
+    function parseTargetArray(val) {
+        if (!val || val === "all") return ["all"]
+        if (Array.isArray(val)) return val.length === 0 ? ["all"] : val
+        if (typeof val === "string") {
+            try {
+                if (val.startsWith("[") && val.endsWith("]")) {
+                    const parsed = JSON.parse(val)
+                    return Array.isArray(parsed) && parsed.length > 0 ? parsed : ["all"]
+                }
+            } catch (e) {}
+            const split = val.split(",").map(s => s.trim()).filter(Boolean)
+            return split.length > 0 ? split : ["all"]
+        }
+        return ["all"]
+    }
 
     // this opens the popup window to add or edit a category
     function openCatModal(mode, cat = null) {
@@ -299,18 +315,18 @@ export default function CurriculumManagerPage() {
                 id: cat.id,
                 name: cat.name,
                 has_subcategories: cat.has_subcategories !== false,
-                target_course: cat.target_course || "all",
-                target_program: cat.target_program || "all",
-                target_major: cat.target_major || "all"
+                target_course: parseTargetArray(cat.target_course),
+                target_program: parseTargetArray(cat.target_program),
+                target_major: parseTargetArray(cat.target_major)
             })
         } else {
             setCatModalData({
                 id: null,
                 name: "",
                 has_subcategories: true,
-                target_course: "all",
-                target_program: "all",
-                target_major: "all"
+                target_course: ["all"],
+                target_program: ["all"],
+                target_major: ["all"]
             })
         }
         setIsCatModalOpen(true)
@@ -324,15 +340,20 @@ export default function CurriculumManagerPage() {
             const method = catModalMode === "add" ? "POST" : "PUT"
             const url = catModalMode === "add" ? "/api/admin/categories" : `/api/admin/categories?id=${catModalData.id}`
 
+            const formatTarget = (arr) => {
+                if (!arr || !Array.isArray(arr) || arr.length === 0 || arr.includes("all")) return "all"
+                return JSON.stringify(arr)
+            }
+
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     name: catModalData.name.trim(),
                     has_subcategories: catModalData.has_subcategories,
-                    target_course: catModalData.target_course,
-                    target_program: catModalData.target_program,
-                    target_major: catModalData.target_major
+                    target_course: formatTarget(catModalData.target_course),
+                    target_program: formatTarget(catModalData.target_program),
+                    target_major: formatTarget(catModalData.target_major)
                 }),
             })
             if (!res.ok) throw new Error((await res.json()).error || `Failed to ${catModalMode} category`)
@@ -1321,87 +1342,74 @@ export default function CurriculumManagerPage() {
 
                             {/* course program and major dropdown choices */}
                             {(() => {
-                                // filter available programs based on selected course
+                                const selectedCourses = Array.isArray(catModalData.target_course)
+                                    ? catModalData.target_course
+                                    : [catModalData.target_course || "all"]
+                                const isAllCourses = selectedCourses.length === 0 || selectedCourses.includes("all")
+
+                                // filter available programs based on selected courses
                                 let availablePrograms = masterData.programs
-                                if (catModalData.target_course && catModalData.target_course !== "all") {
-                                    const matchedExam = masterData.examinations.find(ex => ex.name.toLowerCase() === catModalData.target_course.toLowerCase())
-                                    if (matchedExam) {
-                                        availablePrograms = masterData.programs.filter(p => String(p.exam_id) === String(matchedExam.id))
-                                    } else {
-                                        availablePrograms = []
-                                    }
+                                if (!isAllCourses) {
+                                    const matchedExamIds = masterData.examinations
+                                        .filter(ex => selectedCourses.some(sc => sc.toLowerCase() === ex.name.toLowerCase()))
+                                        .map(ex => String(ex.id))
+                                    availablePrograms = masterData.programs.filter(p => matchedExamIds.includes(String(p.exam_id)))
                                 }
 
-                                // filter available majors based on selected program or course
+                                const selectedPrograms = Array.isArray(catModalData.target_program)
+                                    ? catModalData.target_program
+                                    : [catModalData.target_program || "all"]
+                                const isAllPrograms = selectedPrograms.length === 0 || selectedPrograms.includes("all")
+
+                                // filter available majors based on selected programs or courses
                                 let availableMajors = masterData.majors
-                                if (catModalData.target_program && catModalData.target_program !== "all") {
-                                    const matchedProg = masterData.programs.find(pr => pr.name.toLowerCase() === catModalData.target_program.toLowerCase())
-                                    if (matchedProg) {
-                                        availableMajors = masterData.majors.filter(m => String(m.program_id) === String(matchedProg.id))
-                                    } else {
-                                        availableMajors = []
-                                    }
-                                } else if (catModalData.target_course && catModalData.target_course !== "all") {
+                                if (!isAllPrograms) {
+                                    const matchedProgIds = masterData.programs
+                                        .filter(pr => selectedPrograms.some(sp => sp.toLowerCase() === pr.name.toLowerCase()))
+                                        .map(pr => String(pr.id))
+                                    availableMajors = masterData.majors.filter(m => matchedProgIds.includes(String(m.program_id)))
+                                } else if (!isAllCourses) {
                                     const validProgIds = availablePrograms.map(p => String(p.id))
                                     availableMajors = masterData.majors.filter(m => validProgIds.includes(String(m.program_id)))
                                 }
 
                                 return (
                                     <div className="grid grid-cols-3 gap-2.5 pt-1">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1 truncate" title="Target Course">
-                                                Course:
-                                            </label>
-                                            <select
-                                                value={catModalData.target_course || "all"}
-                                                onChange={(e) => setCatModalData({
-                                                    ...catModalData,
-                                                    target_course: e.target.value,
-                                                    target_program: "all",
-                                                    target_major: "all"
-                                                })}
-                                                className="w-full h-9 rounded-lg border border-gray-200 bg-white px-2 text-xs font-medium text-gray-700 focus:outline-none focus:border-gray-400 cursor-pointer"
-                                            >
-                                                <option value="all">All Courses</option>
-                                                {masterData.examinations.map(e => (
-                                                    <option key={e.id} value={e.name}>{e.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1 truncate" title="Target Program">
-                                                Program:
-                                            </label>
-                                            <select
-                                                value={catModalData.target_program || "all"}
-                                                onChange={(e) => setCatModalData({
-                                                    ...catModalData,
-                                                    target_program: e.target.value,
-                                                    target_major: "all"
-                                                })}
-                                                className="w-full h-9 rounded-lg border border-gray-200 bg-white px-2 text-xs font-medium text-gray-700 focus:outline-none focus:border-gray-400 cursor-pointer"
-                                            >
-                                                <option value="all">All Programs</option>
-                                                {availablePrograms.map(p => (
-                                                    <option key={p.id} value={p.name}>{p.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1 truncate" title="Target Major">
-                                                Major:
-                                            </label>
-                                            <select
-                                                value={catModalData.target_major || "all"}
-                                                onChange={(e) => setCatModalData({ ...catModalData, target_major: e.target.value })}
-                                                className="w-full h-9 rounded-lg border border-gray-200 bg-white px-2 text-xs font-medium text-gray-700 focus:outline-none focus:border-gray-400 cursor-pointer"
-                                            >
-                                                <option value="all">All Majors</option>
-                                                {availableMajors.map(m => (
-                                                    <option key={m.id} value={m.name}>{m.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                        <MultiSelectDropdown
+                                            label="Course:"
+                                            placeholder="All Courses"
+                                            options={masterData.examinations}
+                                            selectedValues={selectedCourses}
+                                            onChange={(vals) => setCatModalData({
+                                                ...catModalData,
+                                                target_course: vals,
+                                                target_program: ["all"],
+                                                target_major: ["all"]
+                                            })}
+                                        />
+
+                                        <MultiSelectDropdown
+                                            label="Program:"
+                                            placeholder="All Programs"
+                                            options={availablePrograms}
+                                            selectedValues={selectedPrograms}
+                                            onChange={(vals) => setCatModalData({
+                                                ...catModalData,
+                                                target_program: vals,
+                                                target_major: ["all"]
+                                            })}
+                                        />
+
+                                        <MultiSelectDropdown
+                                            label="Major:"
+                                            placeholder="All Majors"
+                                            options={availableMajors}
+                                            selectedValues={Array.isArray(catModalData.target_major) ? catModalData.target_major : [catModalData.target_major || "all"]}
+                                            onChange={(vals) => setCatModalData({
+                                                ...catModalData,
+                                                target_major: vals
+                                            })}
+                                        />
                                     </div>
                                 )
                             })()}

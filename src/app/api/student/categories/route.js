@@ -44,24 +44,32 @@ export async function GET() {
             grouped[sub.category_id].push(sub)
         }
 
+        // Helper to check multi-target match (handles 'all', comma-separated, or JSON arrays)
+        const isMatch = (targetValue, userValue) => {
+            if (!targetValue || targetValue === "all" || !userValue) return true
+            let targets = []
+            try {
+                if (targetValue.startsWith("[") && targetValue.endsWith("]")) {
+                    targets = JSON.parse(targetValue)
+                } else {
+                    targets = targetValue.split(",").map(t => t.trim())
+                }
+            } catch (e) {
+                targets = [targetValue.trim()]
+            }
+            if (targets.includes("all") || targets.length === 0) return true
+            const uLower = userValue.toLowerCase()
+            return targets.some(t => {
+                const tLower = t.toLowerCase()
+                return uLower.includes(tLower) || tLower.includes(uLower)
+            })
+        }
+
         // Filter categories according to target_course, target_program, and target_major
         const eligibleCategories = categories.filter((cat) => {
-            const cTarget = (cat.target_course || "all").toLowerCase()
-            const pTarget = (cat.target_program || "all").toLowerCase()
-            const mTarget = (cat.target_major || "all").toLowerCase()
-
-            if (cTarget !== "all" && userExam) {
-                if (!userExam.includes(cTarget) && !cTarget.includes(userExam)) return false
-            }
-
-            if (pTarget !== "all" && userProg) {
-                if (!userProg.includes(pTarget) && !pTarget.includes(userProg)) return false
-            }
-
-            if (mTarget !== "all" && userMajor) {
-                if (!userMajor.includes(mTarget) && !mTarget.includes(userMajor)) return false
-            }
-
+            if (!isMatch(cat.target_course, userExam)) return false
+            if (!isMatch(cat.target_program, userProg)) return false
+            if (!isMatch(cat.target_major, userMajor)) return false
             return true
         })
 

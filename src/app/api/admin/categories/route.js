@@ -15,16 +15,19 @@ async function ensureTable() {
       name VARCHAR(255) UNIQUE NOT NULL,
       description TEXT,
       has_subcategories BOOLEAN DEFAULT TRUE,
-      target_course VARCHAR(50) DEFAULT 'all',
-      target_program VARCHAR(50) DEFAULT 'all',
-      target_major VARCHAR(50) DEFAULT 'all',
+      target_course TEXT DEFAULT 'all',
+      target_program TEXT DEFAULT 'all',
+      target_major TEXT DEFAULT 'all',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     ALTER TABLE categories ADD COLUMN IF NOT EXISTS has_subcategories BOOLEAN DEFAULT TRUE;
-    ALTER TABLE categories ADD COLUMN IF NOT EXISTS target_course VARCHAR(50) DEFAULT 'all';
-    ALTER TABLE categories ADD COLUMN IF NOT EXISTS target_program VARCHAR(50) DEFAULT 'all';
-    ALTER TABLE categories ADD COLUMN IF NOT EXISTS target_major VARCHAR(50) DEFAULT 'all';
+    ALTER TABLE categories ALTER COLUMN target_course TYPE TEXT;
+    ALTER TABLE categories ALTER COLUMN target_program TYPE TEXT;
+    ALTER TABLE categories ALTER COLUMN target_major TYPE TEXT;
+    ALTER TABLE categories ADD COLUMN IF NOT EXISTS target_course TEXT DEFAULT 'all';
+    ALTER TABLE categories ADD COLUMN IF NOT EXISTS target_program TEXT DEFAULT 'all';
+    ALTER TABLE categories ADD COLUMN IF NOT EXISTS target_major TEXT DEFAULT 'all';
   `)
 }
 

@@ -37,11 +37,15 @@ export async function GET() {
             return NextResponse.json({ error: "Forbidden." }, { status: 403 })
         }
 
-        await ensureTable()
-
         const { rows } = await pool.query(`
             SELECT 
                 s.*,
+                COALESCE(s.unlock_date, s.created_at) AS effective_release_date,
+                GREATEST(
+                    s.updated_at,
+                    s.created_at,
+                    COALESCE(sc_updates.max_updated, s.updated_at, s.created_at)
+                ) AS latest_updated_at,
                 COALESCE(m.modules_count, 0)::int AS modules_count,
                 COALESCE(l.lessons_count, 0)::int AS lessons_count,
                 COALESCE(q.quizzes_count, 0)::int AS quizzes_count
@@ -65,6 +69,12 @@ export async function GET() {
                 WHERE sc.lesson_type = 'quiz'
                 GROUP BY sm.subject_id
             ) q ON s.id = q.subject_id
+            LEFT JOIN (
+                SELECT sm.subject_id, MAX(sc.updated_at) AS max_updated
+                FROM subject_modules sm
+                JOIN subject_contents sc ON sm.id = sc.module_id
+                GROUP BY sm.subject_id
+            ) sc_updates ON s.id = sc_updates.subject_id
             ORDER BY s.created_at DESC
         `)
         return NextResponse.json({ subjects: rows })

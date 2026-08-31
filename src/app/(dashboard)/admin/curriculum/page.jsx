@@ -1130,17 +1130,19 @@ export default function CurriculumManagerPage() {
 
                                                         {/* smooth sliding & morphing collapsible drawer */}
                                                         <div
-                                                            className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                                                                isExpanded
-                                                                    ? 'max-h-[300px] opacity-100'
-                                                                    : 'max-h-0 opacity-0 pointer-events-none'
-                                                            }`}
+                                                            className="grid transition-all duration-400 ease-[cubic-bezier(0.2,0.9,0.2,1)] overflow-hidden"
+                                                            style={{
+                                                                gridTemplateRows: isExpanded ? "1fr" : "0fr",
+                                                                opacity: isExpanded ? 1 : 0
+                                                            }}
                                                         >
-                                                            <div
-                                                                className={`px-5 sm:px-6 py-4 bg-[#FAFAFA] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-4 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                                                                    isExpanded ? 'translate-y-0' : '-translate-y-2'
-                                                                }`}
-                                                            >
+                                                            <div className="min-h-0 overflow-hidden">
+                                                                <div
+                                                                    className="px-5 sm:px-6 py-4 bg-[#FAFAFA] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-4 transition-transform duration-400 ease-[cubic-bezier(0.2,0.9,0.2,1)]"
+                                                                    style={{
+                                                                        transform: isExpanded ? "translateY(0)" : "translateY(-12px)"
+                                                                    }}
+                                                                >
                                                                     {/* Inline Stats & Metadata Row */}
                                                                     <div className="flex items-center flex-wrap gap-x-6 gap-y-2.5 text-xs text-[#696969] dark:text-gray-400">
                                                                         <div className="flex items-center gap-1.5">
@@ -1163,22 +1165,28 @@ export default function CurriculumManagerPage() {
                                                                             </span>
                                                                         </div>
 
-                                                                        {/* Released Date & Updated Timestamps */}
+                                                                        {/* Functional Released Date & Updated Timestamps */}
                                                                         <div className="flex items-center gap-1.5 text-[11px]">
                                                                             <span className="font-semibold uppercase tracking-wider text-[10px]">Released:</span>
                                                                             <span className="text-[#3B3B3B] dark:text-white">
-                                                                                {subject.unlock_date
-                                                                                    ? new Date(subject.unlock_date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-                                                                                    : (subject.created_at ? new Date(subject.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : "Immediate")}
+                                                                                {(() => {
+                                                                                    const relDate = subject.unlock_date || subject.effective_release_date || subject.created_at
+                                                                                    if (!relDate) return "Immediate"
+                                                                                    const d = new Date(relDate)
+                                                                                    return isNaN(d.getTime()) ? "Immediate" : d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                })()}
                                                                             </span>
                                                                         </div>
 
                                                                         <div className="flex items-center gap-1.5 text-[11px]">
                                                                             <span className="font-semibold uppercase tracking-wider text-[10px]">Updated:</span>
                                                                             <span className="text-[#3B3B3B] dark:text-white">
-                                                                                {subject.updated_at
-                                                                                    ? new Date(subject.updated_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-                                                                                    : (subject.created_at ? new Date(subject.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A")}
+                                                                                {(() => {
+                                                                                    const updDate = subject.latest_updated_at || subject.updated_at || subject.created_at
+                                                                                    if (!updDate) return "Just now"
+                                                                                    const d = new Date(updDate)
+                                                                                    return isNaN(d.getTime()) ? "Just now" : d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                })()}
                                                                             </span>
                                                                         </div>
                                                                     </div>

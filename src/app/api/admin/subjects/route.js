@@ -39,9 +39,34 @@ export async function GET() {
 
         await ensureTable()
 
-        const { rows } = await pool.query(
-            "SELECT * FROM subjects ORDER BY created_at DESC"
-        )
+        const { rows } = await pool.query(`
+            SELECT 
+                s.*,
+                COALESCE(m.modules_count, 0)::int AS modules_count,
+                COALESCE(l.lessons_count, 0)::int AS lessons_count,
+                COALESCE(q.quizzes_count, 0)::int AS quizzes_count
+            FROM subjects s
+            LEFT JOIN (
+                SELECT subject_id, COUNT(*) AS modules_count 
+                FROM subject_modules 
+                GROUP BY subject_id
+            ) m ON s.id = m.subject_id
+            LEFT JOIN (
+                SELECT sm.subject_id, COUNT(sc.id) AS lessons_count 
+                FROM subject_modules sm
+                JOIN subject_contents sc ON sm.id = sc.module_id
+                WHERE sc.lesson_type != 'quiz' OR sc.lesson_type IS NULL
+                GROUP BY sm.subject_id
+            ) l ON s.id = l.subject_id
+            LEFT JOIN (
+                SELECT sm.subject_id, COUNT(sc.id) AS quizzes_count 
+                FROM subject_modules sm
+                JOIN subject_contents sc ON sm.id = sc.module_id
+                WHERE sc.lesson_type = 'quiz'
+                GROUP BY sm.subject_id
+            ) q ON s.id = q.subject_id
+            ORDER BY s.created_at DESC
+        `)
         return NextResponse.json({ subjects: rows })
     } catch (err) {
         console.error("[admin/subjects GET]", err)

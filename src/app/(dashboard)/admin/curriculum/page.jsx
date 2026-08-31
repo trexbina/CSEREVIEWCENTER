@@ -5,7 +5,7 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 
 // these are small icons used on the buttons and cards
-import { X, Pencil, Trash, Image as ImageIcon, Plus, ChevronDown, Lock, Clock, ChevronLeft, ChevronRight, Settings, ArrowUpDown } from "lucide-react"
+import { X, Pencil, Trash, Image as ImageIcon, Plus, ChevronDown, ChevronUp, Lock, Clock, ChevronLeft, ChevronRight, Settings, ArrowUpDown, Layers, BookOpen, HelpCircle, Calendar, CheckCircle2, ArrowRight } from "lucide-react"
 import { LordIcon } from "@/components/ui/lord-icon"
 
 // this lets us make clickable links to other pages
@@ -38,7 +38,8 @@ export default function CurriculumManagerPage() {
     const [subjectSortBy, setSubjectSortBy] = useState("date_desc")
     const [showMoreDropdown, setShowMoreDropdown] = useState(false)
     const [subCurrentPage, setSubCurrentPage] = useState(1)
-    const [subjectCurrentPage, setSubjectCurrentPage] = useState(1)
+    // this tracks which subject row is expanded to show full details
+    const [expandedSubjectId, setExpandedSubjectId] = useState(null)
     const [saving, setSaving] = useState(false)
 
     // this holds the list of courses programs and majors for the dropdowns
@@ -1052,85 +1053,187 @@ export default function CurriculumManagerPage() {
                                             </div>
                                         </div>
 
-                                        {/* unified list layout */}
+                                        {/* unified list layout with smooth slide-down accordion details */}
                                         <div className="bg-white dark:bg-slate-900/50 rounded-2xl border border-black/5 dark:border-white/10 shadow-2xs overflow-hidden divide-y divide-black/5 dark:divide-white/5 mt-2">
-                                            {paginatedSubjects.map((subject) => (
-                                                <div
-                                                    key={subject.id}
-                                                    className="group relative flex items-center justify-between gap-4 p-4 sm:px-6 sm:py-4.5 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
-                                                >
-                                                    {/* left: 16:9 banner thumbnail + title + code + description */}
-                                                    <div className="flex items-center gap-4 min-w-0 flex-1">
-                                                        {/* 16:9 banner thumbnail */}
-                                                        <div className="w-22 h-14 sm:w-26 sm:h-16 shrink-0 rounded-xl overflow-hidden bg-black/[0.03] dark:bg-white/[0.04] border border-black/8 dark:border-white/10 shadow-2xs relative group/thumb">
-                                                            <img
-                                                                src={subject.image_url || "/images/default-subject.png"}
-                                                                alt={subject.title}
-                                                                loading="lazy"
-                                                                decoding="async"
-                                                                className="absolute inset-0 h-full w-full object-cover rounded-xl transition-all duration-300 group-hover:scale-105"
-                                                            />
-                                                            <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-black/5 dark:ring-white/10 pointer-events-none" />
-                                                        </div>
+                                            {paginatedSubjects.map((subject) => {
+                                                const isExpanded = expandedSubjectId === subject.id
+                                                const modulesCount = subject.modules_count ?? 0
+                                                const lessonsCount = subject.lessons_count ?? 0
+                                                const quizzesCount = subject.quizzes_count ?? 0
 
-                                                        {/* title & meta */}
-                                                        <div className="min-w-0 flex-1 space-y-1">
-                                                            <div className="flex items-center gap-2.5 flex-wrap">
-                                                                <h3 className="text-[15px] sm:text-[16px] font-bold text-[#3B3B3B] dark:text-white uppercase tracking-wide truncate">
-                                                                    {subject.title}
-                                                                </h3>
-                                                                <span className="shrink-0 bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10 text-[#696969] dark:text-gray-400 px-2.5 py-0.5 rounded-md text-[11px] font-semibold">
-                                                                    {subject.code}
-                                                                </span>
-                                                                {subject.status === "inactive" && (
-                                                                    <span className="shrink-0 inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 px-2 py-0.5 rounded-full text-[11px] font-semibold">
-                                                                        <Lock className="h-3 w-3 text-[#696969] dark:text-gray-300" />
-                                                                        <span>Locked</span>
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <p className="text-[#696969] dark:text-gray-300 text-xs sm:text-[13px] leading-relaxed truncate max-w-2xl">
-                                                                {subject.description || "No description provided."}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* right: actions */}
-                                                    <div className="flex items-center gap-2 shrink-0">
-                                                        {subject.status === "inactive" && subject.unlock_date && new Date(subject.unlock_date) > new Date() && (
-                                                            <span className="hidden md:inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 px-2.5 py-1 rounded-full text-[11px] font-medium">
-                                                                <Clock className="h-3 w-3 text-[#696969]" />
-                                                                <span>Opens: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{new Date(subject.unlock_date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</strong></span>
-                                                            </span>
-                                                        )}
-
-                                                        <Link
-                                                            href={`/admin/curriculum/${subject.id}/content`}
-                                                            className="inline-flex items-center justify-center bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/15 px-3.5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors border border-black/10 dark:border-white/15 shadow-2xs"
+                                                return (
+                                                    <div key={subject.id} className="transition-colors">
+                                                        {/* main row - clicking anywhere on the info toggles accordion */}
+                                                        <div
+                                                            onClick={() => setExpandedSubjectId(isExpanded ? null : subject.id)}
+                                                            className={`group relative flex items-center justify-between gap-4 p-4 sm:px-6 sm:py-4.5 cursor-pointer select-none transition-colors ${isExpanded ? 'bg-black/[0.025] dark:bg-white/[0.04]' : 'hover:bg-black/[0.015] dark:hover:bg-white/[0.02]'}`}
                                                         >
-                                                            Edit content
-                                                        </Link>
+                                                            {/* left: thumbnail + title + code + description preview */}
+                                                            <div className="flex items-center gap-4 min-w-0 flex-1">
+                                                                {/* subject thumbnail */}
+                                                                <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-xl overflow-hidden bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10 shadow-2xs flex items-center justify-center relative">
+                                                                    <img
+                                                                        src={subject.image_url || "/images/default-subject.png"}
+                                                                        alt={subject.title}
+                                                                        loading="lazy"
+                                                                        decoding="async"
+                                                                        className="absolute inset-0 h-full w-full object-cover rounded-xl transition-opacity duration-300"
+                                                                    />
+                                                                </div>
 
-                                                        {/* action icons */}
-                                                        <div className="flex items-center gap-0.5">
-                                                            <button
-                                                                onClick={() => openSubjectModal("edit", subject)}
-                                                                className="h-8 w-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                                                title="Edit Subject Details"
-                                                            >
-                                                                <Pencil className="h-3.5 w-3.5" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDeleteSubject(subject.id)}
-                                                                className="h-8 w-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
-                                                                title="Delete Subject"
-                                                            >
-                                                                <Trash className="h-3.5 w-3.5" />
-                                                            </button>
+                                                                {/* title & meta */}
+                                                                <div className="min-w-0 flex-1 space-y-1">
+                                                                    <div className="flex items-center gap-2.5 flex-wrap">
+                                                                        <h3 className="text-[15px] sm:text-[16px] font-bold text-[#3B3B3B] dark:text-white uppercase tracking-wide truncate">
+                                                                            {subject.title}
+                                                                        </h3>
+                                                                        <span className="shrink-0 bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10 text-[#696969] dark:text-gray-400 px-2.5 py-0.5 rounded-md text-[11px] font-semibold">
+                                                                            {subject.code}
+                                                                        </span>
+                                                                        {subject.status === "inactive" && (
+                                                                            <span className="shrink-0 inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 px-2 py-0.5 rounded-full text-[11px] font-semibold">
+                                                                                <Lock className="h-3 w-3 text-[#696969] dark:text-gray-300" />
+                                                                                <span>Locked</span>
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <p className="text-[#696969] dark:text-gray-300 text-xs sm:text-[13px] leading-relaxed truncate max-w-2xl">
+                                                                        {subject.description || "No description provided."}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* right: stats summary + chevron toggle */}
+                                                            <div className="flex items-center gap-3 shrink-0" onClick={e => e.stopPropagation()}>
+                                                                <Link
+                                                                    href={`/admin/curriculum/${subject.id}/content`}
+                                                                    className="inline-flex items-center justify-center bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/15 px-3.5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors border border-black/10 dark:border-white/15 shadow-2xs"
+                                                                >
+                                                                    Edit content
+                                                                </Link>
+
+                                                                {/* expand/collapse chevron trigger */}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setExpandedSubjectId(isExpanded ? null : subject.id)}
+                                                                    className="h-8 w-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                                                    title={isExpanded ? "Collapse details" : "Expand details"}
+                                                                >
+                                                                    <ChevronDown className={`h-4 w-4 transition-transform duration-300 ease-out ${isExpanded ? 'rotate-180 text-[#3B3B3B] dark:text-white' : ''}`} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* smooth collapsible drawer */}
+                                                        <div
+                                                            className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                                                                isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+                                                            }`}
+                                                        >
+                                                            <div className="overflow-hidden">
+                                                                <div className="px-6 py-5 bg-black/[0.015] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-4">
+                                                                    {/* 4-Stat Metric Cards */}
+                                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                                        <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs flex items-center gap-3">
+                                                                            <div className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                                                                                <Layers className="h-4.5 w-4.5" />
+                                                                            </div>
+                                                                            <div>
+                                                                                <div className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wide">Modules</div>
+                                                                                <div className="text-base font-bold text-[#3B3B3B] dark:text-white">{modulesCount}</div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs flex items-center gap-3">
+                                                                            <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                                                                                <BookOpen className="h-4.5 w-4.5" />
+                                                                            </div>
+                                                                            <div>
+                                                                                <div className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wide">Lessons</div>
+                                                                                <div className="text-base font-bold text-[#3B3B3B] dark:text-white">{lessonsCount}</div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs flex items-center gap-3">
+                                                                            <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                                                                                <HelpCircle className="h-4.5 w-4.5" />
+                                                                            </div>
+                                                                            <div>
+                                                                                <div className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wide">Quizzes</div>
+                                                                                <div className="text-base font-bold text-[#3B3B3B] dark:text-white">{quizzesCount}</div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs flex items-center gap-3">
+                                                                            <div className="h-9 w-9 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+                                                                                <CheckCircle2 className="h-4.5 w-4.5" />
+                                                                            </div>
+                                                                            <div>
+                                                                                <div className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wide">Status</div>
+                                                                                <div className="text-xs font-bold text-[#3B3B3B] dark:text-white uppercase">
+                                                                                    {subject.status === "inactive" ? "Locked / Inactive" : "Active / Enrolled"}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Full Description & Release Schedule */}
+                                                                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs space-y-2.5">
+                                                                        <div className="text-xs font-bold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+                                                                            Curriculum Overview & Syllabus Details
+                                                                        </div>
+                                                                        <p className="text-xs sm:text-sm text-[#3B3B3B] dark:text-gray-300 leading-relaxed">
+                                                                            {subject.description || "No extensive description has been specified for this subject syllabus yet."}
+                                                                        </p>
+
+                                                                        <div className="flex items-center flex-wrap gap-4 pt-2 border-t border-black/5 dark:border-white/5 text-xs text-[#696969] dark:text-gray-400">
+                                                                            <span className="flex items-center gap-1.5">
+                                                                                <Calendar className="h-3.5 w-3.5" />
+                                                                                <span>Created: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{new Date(subject.created_at).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}</strong></span>
+                                                                            </span>
+
+                                                                            {subject.unlock_date && (
+                                                                                <span className="flex items-center gap-1.5">
+                                                                                    <Clock className="h-3.5 w-3.5 text-amber-500" />
+                                                                                    <span>Release Schedule: <strong className="font-semibold text-amber-600 dark:text-amber-400">{new Date(subject.unlock_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</strong></span>
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Bottom Action Tray */}
+                                                                    <div className="flex items-center justify-between pt-1">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <button
+                                                                                onClick={() => openSubjectModal("edit", subject)}
+                                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/10 text-xs font-semibold text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                                                            >
+                                                                                <Pencil className="h-3.5 w-3.5" />
+                                                                                <span>Edit Details</span>
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleDeleteSubject(subject.id)}
+                                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/10 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
+                                                                            >
+                                                                                <Trash className="h-3.5 w-3.5" />
+                                                                                <span>Delete Subject</span>
+                                                                            </button>
+                                                                        </div>
+
+                                                                        <Link
+                                                                            href={`/admin/curriculum/${subject.id}/content`}
+                                                                            className="inline-flex items-center gap-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-xs"
+                                                                        >
+                                                                            <span>Manage Lessons & Content</span>
+                                                                            <ArrowRight className="h-3.5 w-3.5" />
+                                                                        </Link>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                )
+                                            })}
                                         </div>
                                     </>
                                 )}

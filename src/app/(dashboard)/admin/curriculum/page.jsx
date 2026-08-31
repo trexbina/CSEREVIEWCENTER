@@ -1210,42 +1210,44 @@ export default function CurriculumManagerPage() {
                                                                             </div>
                                                                         </div>
 
-                                                                        {/* Action Buttons - placed together on the right without divider, icons only with white modern tooltips */}
-                                                                        <div className="flex items-center justify-end gap-2.5 pt-1">
-                                                                            {/* Edit Details - icon only with modern white tooltip */}
-                                                                            <div className="relative group/tooltip flex items-center">
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => openSubjectModal("edit", subject)}
-                                                                                    className="h-8 w-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                                                                    aria-label="Edit details"
-                                                                                >
-                                                                                    <Pencil className="h-4 w-4" />
-                                                                                </button>
-                                                                                <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block bg-white dark:bg-[#1E1E1E] text-[#3B3B3B] dark:text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md border border-black/5 dark:border-white/10 whitespace-nowrap z-30 animate-in fade-in zoom-in-95 duration-150">
-                                                                                    Edit Details
-                                                                                </span>
-                                                                            </div>
+                                                                        {/* Action Buttons - edit & delete on left, manage content on right */}
+                                                                        <div className="flex items-center justify-between gap-3 pt-1">
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                {/* Edit Details - icon only with modern white tooltip */}
+                                                                                <div className="relative group/tooltip flex items-center">
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => openSubjectModal("edit", subject)}
+                                                                                        className="h-8 w-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                                                                        aria-label="Edit details"
+                                                                                    >
+                                                                                        <Pencil className="h-4 w-4" />
+                                                                                    </button>
+                                                                                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block bg-white dark:bg-[#1E1E1E] text-[#3B3B3B] dark:text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md border border-black/5 dark:border-white/10 whitespace-nowrap z-30 animate-in fade-in zoom-in-95 duration-150">
+                                                                                        Edit Details
+                                                                                    </span>
+                                                                                </div>
 
-                                                                            {/* Delete - icon only with modern white tooltip */}
-                                                                            <div className="relative group/tooltip flex items-center">
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => handleDeleteSubject(subject.id)}
-                                                                                    className="h-8 w-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                                                                    aria-label="Delete subject"
-                                                                                >
-                                                                                    <Trash className="h-4 w-4" />
-                                                                                </button>
-                                                                                <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block bg-white dark:bg-[#1E1E1E] text-[#3B3B3B] dark:text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md border border-black/5 dark:border-white/10 whitespace-nowrap z-30 animate-in fade-in zoom-in-95 duration-150">
-                                                                                    Delete Subject
-                                                                                </span>
+                                                                                {/* Delete - icon only with modern white tooltip */}
+                                                                                <div className="relative group/tooltip flex items-center">
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => handleDeleteSubject(subject.id)}
+                                                                                        className="h-8 w-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                                                                        aria-label="Delete subject"
+                                                                                    >
+                                                                                        <Trash className="h-4 w-4" />
+                                                                                    </button>
+                                                                                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block bg-white dark:bg-[#1E1E1E] text-[#3B3B3B] dark:text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md border border-black/5 dark:border-white/10 whitespace-nowrap z-30 animate-in fade-in zoom-in-95 duration-150">
+                                                                                        Delete Subject
+                                                                                    </span>
+                                                                                </div>
                                                                             </div>
 
                                                                             {/* Manage Content button without symbol */}
                                                                             <Link
                                                                                 href={`/admin/curriculum/${subject.id}/content`}
-                                                                                className="inline-flex items-center justify-center bg-[#E9C46A] hover:bg-[#dfb550] text-white px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-2xs cursor-pointer ml-1"
+                                                                                className="inline-flex items-center justify-center bg-[#E9C46A] hover:bg-[#dfb550] text-white px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-2xs cursor-pointer"
                                                                             >
                                                                                 Manage Content
                                                                             </Link>

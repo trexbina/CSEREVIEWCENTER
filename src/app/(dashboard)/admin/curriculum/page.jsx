@@ -1059,17 +1059,18 @@ export default function CurriculumManagerPage() {
                                                     key={subject.id}
                                                     className="group relative flex items-center justify-between gap-4 p-4 sm:px-6 sm:py-4.5 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
                                                 >
-                                                    {/* left: thumbnail + title + code + description */}
+                                                    {/* left: 16:9 banner thumbnail + title + code + description */}
                                                     <div className="flex items-center gap-4 min-w-0 flex-1">
-                                                        {/* subject thumbnail */}
-                                                        <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-xl overflow-hidden bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10 shadow-2xs flex items-center justify-center relative">
+                                                        {/* 16:9 banner thumbnail */}
+                                                        <div className="w-22 h-14 sm:w-26 sm:h-16 shrink-0 rounded-xl overflow-hidden bg-black/[0.03] dark:bg-white/[0.04] border border-black/8 dark:border-white/10 shadow-2xs relative group/thumb">
                                                             <img
                                                                 src={subject.image_url || "/images/default-subject.png"}
                                                                 alt={subject.title}
                                                                 loading="lazy"
                                                                 decoding="async"
-                                                                className="absolute inset-0 h-full w-full object-cover rounded-xl transition-opacity duration-300"
+                                                                className="absolute inset-0 h-full w-full object-cover rounded-xl transition-all duration-300 group-hover:scale-105"
                                                             />
+                                                            <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-black/5 dark:ring-white/10 pointer-events-none" />
                                                         </div>
 
                                                         {/* title & meta */}

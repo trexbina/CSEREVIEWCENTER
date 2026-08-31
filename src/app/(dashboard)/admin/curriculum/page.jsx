@@ -3,6 +3,7 @@
 
 // these are helper tools from react to remember things and do actions when page opens
 import { useEffect, useState, useCallback, useRef } from "react"
+import { motion, AnimatePresence } from "motion/react"
 
 // these are small icons used on the buttons and cards
 import { X, Pencil, Trash, Image as ImageIcon, Plus, ChevronDown, ChevronUp, Lock, Clock, ChevronLeft, ChevronRight, Settings, ArrowUpDown, Layers, BookOpen, HelpCircle, Calendar, CheckCircle2, ArrowRight } from "lucide-react"
@@ -1128,50 +1129,60 @@ export default function CurriculumManagerPage() {
                                                             </div>
                                                         </div>
 
-                                                        {/* smooth sliding & morphing collapsible drawer */}
-                                                        <div
-                                                            className="grid transition-all duration-400 ease-[cubic-bezier(0.2,0.9,0.2,1)] overflow-hidden"
-                                                            style={{
-                                                                gridTemplateRows: isExpanded ? "1fr" : "0fr",
-                                                                opacity: isExpanded ? 1 : 0
-                                                            }}
-                                                        >
-                                                            <div className="min-h-0 overflow-hidden">
-                                                                <div
-                                                                    className="px-5 sm:px-6 py-4 bg-[#FAFAFA] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-4 transition-transform duration-400 ease-[cubic-bezier(0.2,0.9,0.2,1)]"
-                                                                    style={{
-                                                                        transform: isExpanded ? "translateY(0)" : "translateY(-12px)"
+                                                        {/* smooth sliding & morphing collapsible drawer with Framer Motion */}
+                                                        <AnimatePresence initial={false}>
+                                                            {isExpanded && (
+                                                                <motion.div
+                                                                    key="content"
+                                                                    initial={{ height: 0, opacity: 0 }}
+                                                                    animate={{
+                                                                        height: "auto",
+                                                                        opacity: 1,
+                                                                        transition: {
+                                                                            height: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+                                                                            opacity: { duration: 0.25, delay: 0.05 }
+                                                                        }
                                                                     }}
+                                                                    exit={{
+                                                                        height: 0,
+                                                                        opacity: 0,
+                                                                        transition: {
+                                                                            height: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+                                                                            opacity: { duration: 0.2 }
+                                                                        }
+                                                                    }}
+                                                                    className="overflow-hidden"
                                                                 >
-                                                                    {/* Inline Stats & Metadata Row */}
-                                                                    <div className="flex items-center flex-wrap gap-x-6 gap-y-2.5 text-xs text-[#696969] dark:text-gray-400">
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span className="font-semibold uppercase tracking-wider text-[10px]">Modules:</span>
-                                                                            <strong className="text-[#3B3B3B] dark:text-white font-bold">{modulesCount}</strong>
-                                                                        </div>
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span className="font-semibold uppercase tracking-wider text-[10px]">Lessons:</span>
-                                                                            <strong className="text-[#3B3B3B] dark:text-white font-bold">{lessonsCount}</strong>
-                                                                        </div>
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span className="font-semibold uppercase tracking-wider text-[10px]">Quizzes:</span>
-                                                                            <strong className="text-[#3B3B3B] dark:text-white font-bold">{quizzesCount}</strong>
-                                                                        </div>
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span className="font-semibold uppercase tracking-wider text-[10px]">Status:</span>
-                                                                            <span className={`inline-flex items-center gap-1 font-semibold ${subject.status === "inactive" ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
-                                                                                <span className={`h-1.5 w-1.5 rounded-full ${subject.status === "inactive" ? "bg-amber-500" : "bg-emerald-500"}`} />
-                                                                                <span>{subject.status === "inactive" ? "Locked" : "Active"}</span>
-                                                                            </span>
-                                                                        </div>
+                                                                    <div className="px-5 sm:px-6 py-4 bg-[#FAFAFA] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-4">
+                                                                        {/* Inline Stats & Metadata Row */}
+                                                                        <div className="flex items-center flex-wrap gap-x-6 gap-y-2.5 text-xs text-[#696969] dark:text-gray-400">
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Modules:</span>
+                                                                                <strong className="text-[#3B3B3B] dark:text-white font-bold">{modulesCount}</strong>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Lessons:</span>
+                                                                                <strong className="text-[#3B3B3B] dark:text-white font-bold">{lessonsCount}</strong>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Quizzes:</span>
+                                                                                <strong className="text-[#3B3B3B] dark:text-white font-bold">{quizzesCount}</strong>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Status:</span>
+                                                                                <span className={`inline-flex items-center gap-1 font-semibold ${subject.status === "inactive" ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                                                                                    <span className={`h-1.5 w-1.5 rounded-full ${subject.status === "inactive" ? "bg-amber-500" : "bg-emerald-500"}`} />
+                                                                                    <span>{subject.status === "inactive" ? "Locked" : "Active"}</span>
+                                                                                </span>
+                                                                            </div>
 
-                                                                        {/* Functional Released Date & Updated Timestamps */}
-                                                                        <div className="flex items-center gap-1.5 text-[11px]">
-                                                                            <span className="font-semibold uppercase tracking-wider text-[10px]">Released:</span>
-                                                                            <span className="text-[#3B3B3B] dark:text-white">
-                                                                                {(() => {
-                                                                                    const relDate = subject.unlock_date || subject.effective_release_date || subject.created_at || subject.updated_at
-                                                                                    if (relDate) {
+                                                                            {/* Functional Released Date & Updated Timestamps */}
+                                                                            <div className="flex items-center gap-1.5 text-[11px]">
+                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Released:</span>
+                                                                                <span className="text-[#3B3B3B] dark:text-white">
+                                                                                    {(() => {
+                                                                                        const relDate = subject.unlock_date || subject.effective_release_date || subject.created_at || subject.updated_at
+                                                                                        if (relDate) {
                                                                                         const d = new Date(relDate)
                                                                                         if (!isNaN(d.getTime())) {
                                                                                             return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
@@ -1229,8 +1240,9 @@ export default function CurriculumManagerPage() {
                                                                         </Link>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        </div>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
                                                     </div>
                                                 )
                                             })}

@@ -1057,12 +1057,12 @@ export default function CurriculumManagerPage() {
                                             {paginatedSubjects.map((subject) => (
                                                 <div
                                                     key={subject.id}
-                                                    className="group relative flex items-center justify-between gap-4 p-3.5 sm:px-5 sm:py-4 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
+                                                    className="group relative flex items-center justify-between gap-4 p-4 sm:px-6 sm:py-4.5 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
                                                 >
                                                     {/* left: thumbnail + title + code + description */}
-                                                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                                    <div className="flex items-center gap-4 min-w-0 flex-1">
                                                         {/* subject thumbnail */}
-                                                        <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl overflow-hidden bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10 shadow-2xs flex items-center justify-center relative">
+                                                        <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-xl overflow-hidden bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10 shadow-2xs flex items-center justify-center relative">
                                                             <img
                                                                 src={subject.image_url || "/images/default-subject.png"}
                                                                 alt={subject.title}
@@ -1073,22 +1073,22 @@ export default function CurriculumManagerPage() {
                                                         </div>
 
                                                         {/* title & meta */}
-                                                        <div className="min-w-0 flex-1 space-y-0.5">
-                                                            <div className="flex items-center gap-2 flex-wrap">
-                                                                <h3 className="text-sm sm:text-base font-bold text-[#3B3B3B] dark:text-white uppercase tracking-wide truncate">
+                                                        <div className="min-w-0 flex-1 space-y-1">
+                                                            <div className="flex items-center gap-2.5 flex-wrap">
+                                                                <h3 className="text-[15px] sm:text-[16px] font-bold text-[#3B3B3B] dark:text-white uppercase tracking-wide truncate">
                                                                     {subject.title}
                                                                 </h3>
-                                                                <span className="shrink-0 bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10 text-[#696969] dark:text-gray-400 px-2 py-0.5 rounded-md text-[10px] font-semibold">
+                                                                <span className="shrink-0 bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10 text-[#696969] dark:text-gray-400 px-2.5 py-0.5 rounded-md text-[11px] font-semibold">
                                                                     {subject.code}
                                                                 </span>
                                                                 {subject.status === "inactive" && (
-                                                                    <span className="shrink-0 inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                                                                    <span className="shrink-0 inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 px-2 py-0.5 rounded-full text-[11px] font-semibold">
                                                                         <Lock className="h-3 w-3 text-[#696969] dark:text-gray-300" />
                                                                         <span>Locked</span>
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <p className="text-[#696969] dark:text-gray-400 text-xs truncate max-w-2xl">
+                                                            <p className="text-[#696969] dark:text-gray-300 text-xs sm:text-[13px] leading-relaxed truncate max-w-2xl">
                                                                 {subject.description || "No description provided."}
                                                             </p>
                                                         </div>

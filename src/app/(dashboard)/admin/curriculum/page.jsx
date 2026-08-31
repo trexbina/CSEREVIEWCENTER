@@ -949,8 +949,8 @@ export default function CurriculumManagerPage() {
                         return (
                             <>
                                 {/* top bar with back button and add subject button */}
-                                <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
-                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-3 border-b border-black/5 dark:border-white/10 pb-4">
+                                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
                                         <button
                                             onClick={() => {
                                                 if (selectedSubcategory) {
@@ -969,20 +969,20 @@ export default function CurriculumManagerPage() {
                                                     }
                                                 }
                                             }}
-                                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/80 bg-card text-muted-foreground transition-all hover:bg-muted hover:text-foreground shadow-xs shrink-0 cursor-pointer"
+                                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-all shadow-2xs shrink-0 cursor-pointer"
                                             title={selectedSubcategory ? "Back to subcategories" : "Back to categories"}
                                         >
-                                            <ChevronLeft className="h-4 w-4" />
+                                            <ChevronLeft className="h-4.5 w-4.5" />
                                         </button>
-                                        <div className="flex items-center gap-2 min-w-0 overflow-hidden flex-1">
-                                            <h2 className="text-base sm:text-lg font-bold uppercase tracking-wider text-foreground flex items-center min-w-0 overflow-hidden" title={`${cleanTitle} / SUBJECTS`}>
+                                        <div className="flex items-center gap-2.5 min-w-0 overflow-hidden flex-1">
+                                            <h2 className="text-lg sm:text-xl font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white flex items-center min-w-0 overflow-hidden" title={`${cleanTitle} / SUBJECTS`}>
                                                 <span className="truncate max-w-[240px] sm:max-w-[400px] md:max-w-[600px]">
                                                     {cleanTitle}
                                                 </span>
-                                                <span className="text-muted-foreground/40 mx-1.5 shrink-0">/</span>
-                                                <span className="shrink-0 text-muted-foreground">SUBJECTS</span>
+                                                <span className="text-[#696969]/30 dark:text-white/20 mx-2 shrink-0">/</span>
+                                                <span className="shrink-0 text-[#696969] dark:text-gray-400 font-semibold">SUBJECTS</span>
                                             </h2>
-                                            <span className="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-bold bg-muted text-muted-foreground uppercase tracking-wider">
+                                            <span className="shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 uppercase tracking-wider">
                                                 {currentSubjects.length} AVAILABLE
                                             </span>
                                         </div>
@@ -991,7 +991,7 @@ export default function CurriculumManagerPage() {
                                     {/* button to add a new subject */}
                                     <button
                                         onClick={() => openSubjectModal("add")}
-                                        className="shrink-0 rounded-lg bg-[#E9C46A] px-4 py-2 text-xs font-bold text-white hover:bg-[#dfb550] transition-colors shadow-sm uppercase tracking-wide cursor-pointer"
+                                        className="shrink-0 rounded-xl bg-[#E9C46A] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#dfb550] transition-colors shadow-xs uppercase tracking-wider cursor-pointer"
                                     >
                                         ADD SUBJECT
                                     </button>
@@ -1053,11 +1053,14 @@ export default function CurriculumManagerPage() {
                                         </div>
 
                                         {/* list of subject cards */}
-                                        <div className="space-y-3 pt-2">
+                                        <div className="space-y-4.5 pt-3">
                                             {paginatedSubjects.map((subject) => (
-                                                <div key={subject.id} className="group relative flex bg-card border border-border/80 rounded-xl overflow-hidden shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all p-3.5 items-stretch">
+                                                <div
+                                                    key={subject.id}
+                                                    className="group relative flex flex-col sm:flex-row bg-white dark:bg-slate-900/50 border border-black/5 dark:border-white/10 rounded-2xl overflow-hidden shadow-2xs hover:border-black/15 dark:hover:border-white/20 transition-all p-5 sm:p-6 items-stretch gap-5"
+                                                >
                                                     {/* subject image box */}
-                                                    <div className="h-28 w-28 shrink-0 rounded-xl overflow-hidden bg-muted/60 border border-border/80 shadow-2xs flex items-center justify-center self-center mr-5 relative">
+                                                    <div className="h-32 w-32 sm:h-36 sm:w-36 shrink-0 rounded-xl overflow-hidden bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10 shadow-2xs flex items-center justify-center self-start sm:self-center relative">
                                                         <img
                                                             src={subject.image_url || "/images/default-subject.png"}
                                                             alt={subject.title}
@@ -1068,62 +1071,67 @@ export default function CurriculumManagerPage() {
                                                     </div>
 
                                                     {/* subject information title and description */}
-                                                    <div className="flex-1 flex flex-col justify-between py-0.5">
-                                                        <div>
-                                                            <div className="flex items-center flex-wrap gap-2.5 mb-1.5">
-                                                                <h3 className="text-base font-bold text-foreground uppercase tracking-wide">
+                                                    <div className="flex-1 flex flex-col justify-between py-0.5 space-y-3">
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center flex-wrap gap-2.5">
+                                                                <h3 className="text-lg sm:text-xl font-bold text-[#3B3B3B] dark:text-white uppercase tracking-wide leading-snug">
                                                                     {subject.title}
                                                                 </h3>
                                                                 {subject.status === "inactive" && (
-                                                                    <span className="inline-flex items-center gap-1.5 bg-muted text-muted-foreground px-2.5 py-0.5 rounded-full border border-border text-xs font-semibold">
-                                                                        <Lock className="h-3 w-3 text-muted-foreground" />
+                                                                    <span className="inline-flex items-center gap-1.5 bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                                                                        <Lock className="h-3.5 w-3.5 text-[#696969] dark:text-gray-300" />
                                                                         <span>Locked</span>
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <p className="text-muted-foreground text-xs leading-relaxed mb-2 line-clamp-2">
+                                                            <p className="text-[#696969] dark:text-gray-300 text-sm sm:text-[15px] leading-relaxed line-clamp-2">
                                                                 {subject.description || "No description provided."}
                                                             </p>
                                                         </div>
 
-                                                        <div className="flex items-center gap-3 text-xs font-semibold text-muted-foreground">
-                                                            <span className="bg-muted px-2.5 py-1 rounded-full border border-border">
-                                                                Date added: {new Date(subject.created_at).toLocaleDateString()}
-                                                            </span>
-                                                            <span className="bg-muted px-2.5 py-1 rounded-full border border-border">
-                                                                Code: {subject.code}
+                                                        <div className="flex items-center flex-wrap gap-2.5 text-xs font-medium text-[#696969] dark:text-gray-400 pt-1">
+                                                            {subject.created_at && (
+                                                                <span className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10 px-3 py-1 rounded-lg">
+                                                                    Date added: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{new Date(subject.created_at).toLocaleDateString()}</strong>
+                                                                </span>
+                                                            )}
+                                                            <span className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10 px-3 py-1 rounded-lg">
+                                                                Code: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{subject.code}</strong>
                                                             </span>
                                                         </div>
                                                     </div>
 
                                                     {/* button to enter and edit lessons inside the subject */}
-                                                    <div className="flex items-end justify-end gap-3 shrink-0 ml-4 py-0.5">
+                                                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0">
                                                         {subject.status === "inactive" && subject.unlock_date && new Date(subject.unlock_date) > new Date() && (
-                                                            <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-500 px-3 py-1.5 rounded-full border border-gray-200 text-xs font-semibold">
-                                                                <Clock className="h-3.5 w-3.5 text-gray-400" />
-                                                                <span>Scheduled to open: <span className="font-bold text-gray-700">{new Date(subject.unlock_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></span>
+                                                            <span className="inline-flex items-center gap-1.5 bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 px-3 py-1 rounded-full text-xs font-medium">
+                                                                <Clock className="h-3.5 w-3.5 text-[#696969]" />
+                                                                <span>Opens: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{new Date(subject.unlock_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</strong></span>
                                                             </span>
                                                         )}
-                                                        <Link href={`/admin/curriculum/${subject.id}/content`} className="bg-gray-100 text-[#4d4d4d] hover:bg-gray-200 px-4 py-1.5 rounded-lg font-bold text-xs transition-colors border border-gray-200 shadow-sm inline-block">
+                                                        <Link
+                                                            href={`/admin/curriculum/${subject.id}/content`}
+                                                            className="inline-flex items-center justify-center bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/15 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors border border-black/10 dark:border-white/15 shadow-2xs"
+                                                        >
                                                             Edit content
                                                         </Link>
                                                     </div>
 
                                                     {/* buttons to edit or delete subject */}
-                                                    <div className="absolute top-3 right-3 flex opacity-0 group-hover:opacity-100 transition-opacity gap-1 z-10">
+                                                    <div className="absolute top-4 right-4 flex opacity-0 group-hover:opacity-100 transition-opacity gap-1.5 z-10">
                                                         <button
                                                             onClick={() => openSubjectModal("edit", subject)}
-                                                            className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                                                            className="p-1.5 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white bg-white/90 dark:bg-slate-800/90 border border-black/5 dark:border-white/10 hover:bg-black/5 rounded-lg transition-colors shadow-2xs"
                                                             title="Edit Subject Details"
                                                         >
-                                                            <Pencil className="h-3.5 w-3.5" />
+                                                            <Pencil className="h-4 w-4" />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteSubject(subject.id)}
-                                                            className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                                                            className="p-1.5 text-[#696969] hover:text-rose-600 bg-white/90 dark:bg-slate-800/90 border border-black/5 dark:border-white/10 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg transition-colors shadow-2xs"
                                                             title="Delete Subject"
                                                         >
-                                                            <Trash className="h-3.5 w-3.5" />
+                                                            <Trash className="h-4 w-4" />
                                                         </button>
                                                     </div>
                                                 </div>

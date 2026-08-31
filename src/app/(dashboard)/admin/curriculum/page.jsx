@@ -38,6 +38,7 @@ export default function CurriculumManagerPage() {
     const [subjectSortBy, setSubjectSortBy] = useState("date_desc")
     const [showMoreDropdown, setShowMoreDropdown] = useState(false)
     const [subCurrentPage, setSubCurrentPage] = useState(1)
+    const [subjectCurrentPage, setSubjectCurrentPage] = useState(1)
     // this tracks which subject row is expanded to show full details
     const [expandedSubjectId, setExpandedSubjectId] = useState(null)
     const [saving, setSaving] = useState(false)

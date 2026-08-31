@@ -29,6 +29,8 @@ async function ensureTable() {
   await pool.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS targets JSONB DEFAULT '[]'::jsonb;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS personal_email VARCHAR(255);
+    ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+    ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('student', 'teacher', 'admin', 'super_admin', 'academic_admin', 'registrar'));
   `).catch(console.error)
 }
 

@@ -1170,10 +1170,14 @@ export default function CurriculumManagerPage() {
                                                                             <span className="font-semibold uppercase tracking-wider text-[10px]">Released:</span>
                                                                             <span className="text-[#3B3B3B] dark:text-white">
                                                                                 {(() => {
-                                                                                    const relDate = subject.unlock_date || subject.effective_release_date || subject.created_at
-                                                                                    if (!relDate) return "Immediate"
-                                                                                    const d = new Date(relDate)
-                                                                                    return isNaN(d.getTime()) ? "Immediate" : d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                    const relDate = subject.unlock_date || subject.effective_release_date || subject.created_at || subject.updated_at
+                                                                                    if (relDate) {
+                                                                                        const d = new Date(relDate)
+                                                                                        if (!isNaN(d.getTime())) {
+                                                                                            return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                        }
+                                                                                    }
+                                                                                    return new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
                                                                                 })()}
                                                                             </span>
                                                                         </div>
@@ -1182,10 +1186,14 @@ export default function CurriculumManagerPage() {
                                                                             <span className="font-semibold uppercase tracking-wider text-[10px]">Updated:</span>
                                                                             <span className="text-[#3B3B3B] dark:text-white">
                                                                                 {(() => {
-                                                                                    const updDate = subject.latest_updated_at || subject.updated_at || subject.created_at
-                                                                                    if (!updDate) return "Just now"
-                                                                                    const d = new Date(updDate)
-                                                                                    return isNaN(d.getTime()) ? "Just now" : d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                    const updDate = subject.latest_updated_at || subject.updated_at || subject.created_at || subject.unlock_date
+                                                                                    if (updDate) {
+                                                                                        const d = new Date(updDate)
+                                                                                        if (!isNaN(d.getTime())) {
+                                                                                            return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                        }
+                                                                                    }
+                                                                                    return new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
                                                                                 })()}
                                                                             </span>
                                                                         </div>

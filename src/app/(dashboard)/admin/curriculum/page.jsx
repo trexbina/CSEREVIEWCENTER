@@ -1153,93 +1153,104 @@ export default function CurriculumManagerPage() {
                                                                     }}
                                                                     className="overflow-hidden"
                                                                 >
-                                                                    <div className="px-5 sm:px-6 py-4 bg-white dark:bg-transparent border-t border-black/5 dark:border-white/5 space-y-4">
+                                                                    <div className="px-5 sm:px-6 pt-3 pb-5 bg-white dark:bg-transparent space-y-5">
                                                                         {/* Inline Stats & Metadata Row */}
-                                                                        <div className="flex items-center flex-wrap gap-x-6 gap-y-2.5 text-xs text-[#696969] dark:text-gray-400">
+                                                                        <div className="flex items-center flex-wrap gap-x-7 gap-y-3 text-[13px] text-[#696969] dark:text-gray-400">
                                                                             <div className="flex items-center gap-1.5">
-                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Modules:</span>
-                                                                                <strong className="text-[#3B3B3B] dark:text-white font-bold">{modulesCount}</strong>
+                                                                                <span className="font-semibold uppercase tracking-wider text-[11px]">Modules:</span>
+                                                                                <strong className="text-[#3B3B3B] dark:text-white font-bold text-[14px]">{modulesCount}</strong>
                                                                             </div>
                                                                             <div className="flex items-center gap-1.5">
-                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Lessons:</span>
-                                                                                <strong className="text-[#3B3B3B] dark:text-white font-bold">{lessonsCount}</strong>
+                                                                                <span className="font-semibold uppercase tracking-wider text-[11px]">Lessons:</span>
+                                                                                <strong className="text-[#3B3B3B] dark:text-white font-bold text-[14px]">{lessonsCount}</strong>
                                                                             </div>
                                                                             <div className="flex items-center gap-1.5">
-                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Quizzes:</span>
-                                                                                <strong className="text-[#3B3B3B] dark:text-white font-bold">{quizzesCount}</strong>
+                                                                                <span className="font-semibold uppercase tracking-wider text-[11px]">Quizzes:</span>
+                                                                                <strong className="text-[#3B3B3B] dark:text-white font-bold text-[14px]">{quizzesCount}</strong>
                                                                             </div>
                                                                             <div className="flex items-center gap-1.5">
-                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Status:</span>
-                                                                                <span className={`inline-flex items-center gap-1 font-semibold ${subject.status === "inactive" ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                                                                                <span className="font-semibold uppercase tracking-wider text-[11px]">Status:</span>
+                                                                                <span className={`inline-flex items-center gap-1.5 font-semibold text-[13px] ${subject.status === "inactive" ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                                                                                     <span className={`h-1.5 w-1.5 rounded-full ${subject.status === "inactive" ? "bg-amber-500" : "bg-emerald-500"}`} />
                                                                                     <span>{subject.status === "inactive" ? "Locked" : "Active"}</span>
                                                                                 </span>
                                                                             </div>
 
                                                                             {/* Functional Released Date & Updated Timestamps */}
-                                                                            <div className="flex items-center gap-1.5 text-[11px]">
-                                                                                <span className="font-semibold uppercase tracking-wider text-[10px]">Released:</span>
-                                                                                <span className="text-[#3B3B3B] dark:text-white">
+                                                                            <div className="flex items-center gap-1.5 text-[12px]">
+                                                                                <span className="font-semibold uppercase tracking-wider text-[11px]">Released:</span>
+                                                                                <span className="text-[#3B3B3B] dark:text-white font-medium">
                                                                                     {(() => {
                                                                                         const relDate = subject.unlock_date || subject.effective_release_date || subject.created_at || subject.updated_at
                                                                                         if (relDate) {
-                                                                                        const d = new Date(relDate)
-                                                                                        if (!isNaN(d.getTime())) {
-                                                                                            return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                            const d = new Date(relDate)
+                                                                                            if (!isNaN(d.getTime())) {
+                                                                                                return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                            }
                                                                                         }
-                                                                                    }
-                                                                                    return new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-                                                                                })()}
-                                                                            </span>
+                                                                                        return new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                    })()}
+                                                                                </span>
+                                                                            </div>
+
+                                                                            <div className="flex items-center gap-1.5 text-[12px]">
+                                                                                <span className="font-semibold uppercase tracking-wider text-[11px]">Updated:</span>
+                                                                                <span className="text-[#3B3B3B] dark:text-white font-medium">
+                                                                                    {(() => {
+                                                                                        const updDate = subject.latest_updated_at || subject.updated_at || subject.created_at || subject.unlock_date
+                                                                                        if (updDate) {
+                                                                                            const d = new Date(updDate)
+                                                                                            if (!isNaN(d.getTime())) {
+                                                                                                return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                            }
+                                                                                        }
+                                                                                        return new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                                                                                    })()}
+                                                                                </span>
+                                                                            </div>
                                                                         </div>
 
-                                                                        <div className="flex items-center gap-1.5 text-[11px]">
-                                                                            <span className="font-semibold uppercase tracking-wider text-[10px]">Updated:</span>
-                                                                            <span className="text-[#3B3B3B] dark:text-white">
-                                                                                {(() => {
-                                                                                    const updDate = subject.latest_updated_at || subject.updated_at || subject.created_at || subject.unlock_date
-                                                                                    if (updDate) {
-                                                                                        const d = new Date(updDate)
-                                                                                        if (!isNaN(d.getTime())) {
-                                                                                            return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-                                                                                        }
-                                                                                    }
-                                                                                    return new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-                                                                                })()}
-                                                                            </span>
+                                                                        {/* Action Buttons - placed together on the right without divider, icons only with white modern tooltips */}
+                                                                        <div className="flex items-center justify-end gap-2.5 pt-1">
+                                                                            {/* Edit Details - icon only with modern white tooltip */}
+                                                                            <div className="relative group/tooltip flex items-center">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => openSubjectModal("edit", subject)}
+                                                                                    className="h-8 w-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                                                                    aria-label="Edit details"
+                                                                                >
+                                                                                    <Pencil className="h-4 w-4" />
+                                                                                </button>
+                                                                                <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block bg-white dark:bg-[#1E1E1E] text-[#3B3B3B] dark:text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md border border-black/5 dark:border-white/10 whitespace-nowrap z-30 animate-in fade-in zoom-in-95 duration-150">
+                                                                                    Edit Details
+                                                                                </span>
+                                                                            </div>
+
+                                                                            {/* Delete - icon only with modern white tooltip */}
+                                                                            <div className="relative group/tooltip flex items-center">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleDeleteSubject(subject.id)}
+                                                                                    className="h-8 w-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                                                                    aria-label="Delete subject"
+                                                                                >
+                                                                                    <Trash className="h-4 w-4" />
+                                                                                </button>
+                                                                                <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block bg-white dark:bg-[#1E1E1E] text-[#3B3B3B] dark:text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md border border-black/5 dark:border-white/10 whitespace-nowrap z-30 animate-in fade-in zoom-in-95 duration-150">
+                                                                                    Delete Subject
+                                                                                </span>
+                                                                            </div>
+
+                                                                            {/* Manage Content button without symbol */}
+                                                                            <Link
+                                                                                href={`/admin/curriculum/${subject.id}/content`}
+                                                                                className="inline-flex items-center justify-center bg-[#E9C46A] hover:bg-[#dfb550] text-white px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-2xs cursor-pointer ml-1"
+                                                                            >
+                                                                                Manage Content
+                                                                            </Link>
                                                                         </div>
                                                                     </div>
-
-                                                                    {/* Action Buttons - minimal styling with Manage content at the end */}
-                                                                    <div className="flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/5">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => openSubjectModal("edit", subject)}
-                                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                                                            >
-                                                                                <Pencil className="h-3.5 w-3.5" />
-                                                                                <span>Edit Details</span>
-                                                                            </button>
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => handleDeleteSubject(subject.id)}
-                                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#696969] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
-                                                                            >
-                                                                                <Trash className="h-3.5 w-3.5" />
-                                                                                <span>Delete</span>
-                                                                            </button>
-                                                                        </div>
-
-                                                                        <Link
-                                                                            href={`/admin/curriculum/${subject.id}/content`}
-                                                                            className="inline-flex items-center gap-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-2xs"
-                                                                        >
-                                                                            <span>Manage content</span>
-                                                                            <ArrowRight className="h-3.5 w-3.5" />
-                                                                        </Link>
-                                                                    </div>
-                                                                </div>
                                                             </motion.div>
                                                         )}
                                                     </AnimatePresence>

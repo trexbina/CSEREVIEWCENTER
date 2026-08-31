@@ -1132,89 +1132,70 @@ export default function CurriculumManagerPage() {
                                                             }`}
                                                         >
                                                             <div className="overflow-hidden">
-                                                                <div className="px-6 py-5 bg-black/[0.015] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-4">
-                                                                    {/* 4-Stat Metric Cards */}
-                                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                                                        <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs flex items-center gap-3">
-                                                                            <div className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
-                                                                                <Layers className="h-4.5 w-4.5" />
-                                                                            </div>
-                                                                            <div>
-                                                                                <div className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wide">Modules</div>
-                                                                                <div className="text-base font-bold text-[#3B3B3B] dark:text-white">{modulesCount}</div>
-                                                                            </div>
+                                                                <div className="px-5 sm:px-6 py-5 bg-[#FAFAFA] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-4">
+                                                                    {/* Minimal Stat Chips */}
+                                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                                                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs">
+                                                                            <div className="text-[10px] font-bold text-[#696969] dark:text-gray-400 uppercase tracking-wider">Modules</div>
+                                                                            <div className="text-base font-bold text-[#3B3B3B] dark:text-white mt-0.5">{modulesCount}</div>
                                                                         </div>
 
-                                                                        <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs flex items-center gap-3">
-                                                                            <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
-                                                                                <BookOpen className="h-4.5 w-4.5" />
-                                                                            </div>
-                                                                            <div>
-                                                                                <div className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wide">Lessons</div>
-                                                                                <div className="text-base font-bold text-[#3B3B3B] dark:text-white">{lessonsCount}</div>
-                                                                            </div>
+                                                                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs">
+                                                                            <div className="text-[10px] font-bold text-[#696969] dark:text-gray-400 uppercase tracking-wider">Lessons</div>
+                                                                            <div className="text-base font-bold text-[#3B3B3B] dark:text-white mt-0.5">{lessonsCount}</div>
                                                                         </div>
 
-                                                                        <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs flex items-center gap-3">
-                                                                            <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                                                                                <HelpCircle className="h-4.5 w-4.5" />
-                                                                            </div>
-                                                                            <div>
-                                                                                <div className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wide">Quizzes</div>
-                                                                                <div className="text-base font-bold text-[#3B3B3B] dark:text-white">{quizzesCount}</div>
-                                                                            </div>
+                                                                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs">
+                                                                            <div className="text-[10px] font-bold text-[#696969] dark:text-gray-400 uppercase tracking-wider">Quizzes</div>
+                                                                            <div className="text-base font-bold text-[#3B3B3B] dark:text-white mt-0.5">{quizzesCount}</div>
                                                                         </div>
 
-                                                                        <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs flex items-center gap-3">
-                                                                            <div className="h-9 w-9 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
-                                                                                <CheckCircle2 className="h-4.5 w-4.5" />
-                                                                            </div>
-                                                                            <div>
-                                                                                <div className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wide">Status</div>
-                                                                                <div className="text-xs font-bold text-[#3B3B3B] dark:text-white uppercase">
-                                                                                    {subject.status === "inactive" ? "Locked / Inactive" : "Active / Enrolled"}
-                                                                                </div>
+                                                                        <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs">
+                                                                            <div className="text-[10px] font-bold text-[#696969] dark:text-gray-400 uppercase tracking-wider">Status</div>
+                                                                            <div className="text-xs font-bold text-[#3B3B3B] dark:text-white mt-1 uppercase flex items-center gap-1.5">
+                                                                                <span className={`h-2 w-2 rounded-full ${subject.status === "inactive" ? "bg-amber-400" : "bg-emerald-500"}`} />
+                                                                                <span>{subject.status === "inactive" ? "Locked" : "Active"}</span>
                                                                             </div>
                                                                         </div>
                                                                     </div>
 
-                                                                    {/* Full Description & Release Schedule */}
-                                                                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs space-y-2.5">
-                                                                        <div className="text-xs font-bold uppercase tracking-wider text-[#696969] dark:text-gray-400">
-                                                                            Curriculum Overview & Syllabus Details
+                                                                    {/* Syllabus / Description & Timestamps */}
+                                                                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-black/5 dark:border-white/10 shadow-2xs space-y-3">
+                                                                        <div>
+                                                                            <div className="text-[10px] font-bold uppercase tracking-wider text-[#696969] dark:text-gray-400 mb-1">
+                                                                                Curriculum Overview
+                                                                            </div>
+                                                                            <p className="text-xs sm:text-[13px] text-[#3B3B3B] dark:text-gray-300 leading-relaxed">
+                                                                                {subject.description || "No description provided."}
+                                                                            </p>
                                                                         </div>
-                                                                        <p className="text-xs sm:text-sm text-[#3B3B3B] dark:text-gray-300 leading-relaxed">
-                                                                            {subject.description || "No extensive description has been specified for this subject syllabus yet."}
-                                                                        </p>
 
-                                                                        <div className="flex items-center flex-wrap gap-4 pt-2 border-t border-black/5 dark:border-white/5 text-xs text-[#696969] dark:text-gray-400">
-                                                                            <span className="flex items-center gap-1.5">
-                                                                                <Calendar className="h-3.5 w-3.5" />
-                                                                                <span>Created: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{new Date(subject.created_at).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}</strong></span>
-                                                                            </span>
+                                                                        <div className="flex items-center flex-wrap gap-4 pt-2.5 border-t border-black/5 dark:border-white/5 text-[11px] text-[#696969] dark:text-gray-400">
+                                                                            {subject.created_at && (
+                                                                                <span>Date added: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{new Date(subject.created_at).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}</strong></span>
+                                                                            )}
 
                                                                             {subject.unlock_date && (
-                                                                                <span className="flex items-center gap-1.5">
-                                                                                    <Clock className="h-3.5 w-3.5 text-amber-500" />
-                                                                                    <span>Release Schedule: <strong className="font-semibold text-amber-600 dark:text-amber-400">{new Date(subject.unlock_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</strong></span>
-                                                                                </span>
+                                                                                <span>Schedule: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{new Date(subject.unlock_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</strong></span>
                                                                             )}
                                                                         </div>
                                                                     </div>
 
-                                                                    {/* Bottom Action Tray */}
-                                                                    <div className="flex items-center justify-between pt-1">
+                                                                    {/* Actions */}
+                                                                    <div className="flex items-center justify-between pt-0.5">
                                                                         <div className="flex items-center gap-2">
                                                                             <button
+                                                                                type="button"
                                                                                 onClick={() => openSubjectModal("edit", subject)}
-                                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/10 text-xs font-semibold text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                                                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-semibold text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors shadow-2xs cursor-pointer"
                                                                             >
-                                                                                <Pencil className="h-3.5 w-3.5" />
+                                                                                <Pencil className="h-3.5 w-3.5 text-[#696969]" />
                                                                                 <span>Edit Details</span>
                                                                             </button>
                                                                             <button
+                                                                                type="button"
                                                                                 onClick={() => handleDeleteSubject(subject.id)}
-                                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/10 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
+                                                                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-rose-200/60 dark:border-rose-900/30 bg-white dark:bg-white/5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors shadow-2xs cursor-pointer"
                                                                             >
                                                                                 <Trash className="h-3.5 w-3.5" />
                                                                                 <span>Delete Subject</span>
@@ -1225,7 +1206,7 @@ export default function CurriculumManagerPage() {
                                                                             href={`/admin/curriculum/${subject.id}/content`}
                                                                             className="inline-flex items-center gap-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-xs"
                                                                         >
-                                                                            <span>Manage Lessons & Content</span>
+                                                                            <span>Manage Content</span>
                                                                             <ArrowRight className="h-3.5 w-3.5" />
                                                                         </Link>
                                                                     </div>

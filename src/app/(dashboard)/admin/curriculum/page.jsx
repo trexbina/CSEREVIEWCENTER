@@ -1052,87 +1052,81 @@ export default function CurriculumManagerPage() {
                                             </div>
                                         </div>
 
-                                        {/* list of subject cards */}
-                                        <div className="space-y-4.5 pt-3">
+                                        {/* unified list layout */}
+                                        <div className="bg-white dark:bg-slate-900/50 rounded-2xl border border-black/5 dark:border-white/10 shadow-2xs overflow-hidden divide-y divide-black/5 dark:divide-white/5 mt-2">
                                             {paginatedSubjects.map((subject) => (
                                                 <div
                                                     key={subject.id}
-                                                    className="group relative flex flex-col sm:flex-row bg-white dark:bg-slate-900/50 border border-black/5 dark:border-white/10 rounded-2xl overflow-hidden shadow-2xs hover:border-black/15 dark:hover:border-white/20 transition-all p-5 sm:p-6 items-stretch gap-5"
+                                                    className="group relative flex items-center justify-between gap-4 p-3.5 sm:px-5 sm:py-4 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
                                                 >
-                                                    {/* subject image box */}
-                                                    <div className="h-32 w-32 sm:h-36 sm:w-36 shrink-0 rounded-xl overflow-hidden bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10 shadow-2xs flex items-center justify-center self-start sm:self-center relative">
-                                                        <img
-                                                            src={subject.image_url || "/images/default-subject.png"}
-                                                            alt={subject.title}
-                                                            loading="lazy"
-                                                            decoding="async"
-                                                            className="absolute inset-0 h-full w-full object-cover rounded-xl transition-opacity duration-300"
-                                                        />
-                                                    </div>
+                                                    {/* left: thumbnail + title + code + description */}
+                                                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                                        {/* subject thumbnail */}
+                                                        <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 rounded-xl overflow-hidden bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10 shadow-2xs flex items-center justify-center relative">
+                                                            <img
+                                                                src={subject.image_url || "/images/default-subject.png"}
+                                                                alt={subject.title}
+                                                                loading="lazy"
+                                                                decoding="async"
+                                                                className="absolute inset-0 h-full w-full object-cover rounded-xl transition-opacity duration-300"
+                                                            />
+                                                        </div>
 
-                                                    {/* subject information title and description */}
-                                                    <div className="flex-1 flex flex-col justify-between py-0.5 space-y-3">
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center flex-wrap gap-2.5">
-                                                                <h3 className="text-lg sm:text-xl font-bold text-[#3B3B3B] dark:text-white uppercase tracking-wide leading-snug">
+                                                        {/* title & meta */}
+                                                        <div className="min-w-0 flex-1 space-y-0.5">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <h3 className="text-sm sm:text-base font-bold text-[#3B3B3B] dark:text-white uppercase tracking-wide truncate">
                                                                     {subject.title}
                                                                 </h3>
+                                                                <span className="shrink-0 bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10 text-[#696969] dark:text-gray-400 px-2 py-0.5 rounded-md text-[10px] font-semibold">
+                                                                    {subject.code}
+                                                                </span>
                                                                 {subject.status === "inactive" && (
-                                                                    <span className="inline-flex items-center gap-1.5 bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-                                                                        <Lock className="h-3.5 w-3.5 text-[#696969] dark:text-gray-300" />
+                                                                    <span className="shrink-0 inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                                                                        <Lock className="h-3 w-3 text-[#696969] dark:text-gray-300" />
                                                                         <span>Locked</span>
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <p className="text-[#696969] dark:text-gray-300 text-sm sm:text-[15px] leading-relaxed line-clamp-2">
+                                                            <p className="text-[#696969] dark:text-gray-400 text-xs truncate max-w-2xl">
                                                                 {subject.description || "No description provided."}
                                                             </p>
                                                         </div>
-
-                                                        <div className="flex items-center flex-wrap gap-2.5 text-xs font-medium text-[#696969] dark:text-gray-400 pt-1">
-                                                            {subject.created_at && (
-                                                                <span className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10 px-3 py-1 rounded-lg">
-                                                                    Date added: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{new Date(subject.created_at).toLocaleDateString()}</strong>
-                                                                </span>
-                                                            )}
-                                                            <span className="bg-black/[0.03] dark:bg-white/[0.05] border border-black/5 dark:border-white/10 px-3 py-1 rounded-lg">
-                                                                Code: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{subject.code}</strong>
-                                                            </span>
-                                                        </div>
                                                     </div>
 
-                                                    {/* button to enter and edit lessons inside the subject */}
-                                                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0">
+                                                    {/* right: actions */}
+                                                    <div className="flex items-center gap-2 shrink-0">
                                                         {subject.status === "inactive" && subject.unlock_date && new Date(subject.unlock_date) > new Date() && (
-                                                            <span className="inline-flex items-center gap-1.5 bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 px-3 py-1 rounded-full text-xs font-medium">
-                                                                <Clock className="h-3.5 w-3.5 text-[#696969]" />
-                                                                <span>Opens: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{new Date(subject.unlock_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</strong></span>
+                                                            <span className="hidden md:inline-flex items-center gap-1 bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 px-2.5 py-1 rounded-full text-[11px] font-medium">
+                                                                <Clock className="h-3 w-3 text-[#696969]" />
+                                                                <span>Opens: <strong className="font-semibold text-[#3B3B3B] dark:text-white">{new Date(subject.unlock_date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</strong></span>
                                                             </span>
                                                         )}
+
                                                         <Link
                                                             href={`/admin/curriculum/${subject.id}/content`}
-                                                            className="inline-flex items-center justify-center bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/15 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors border border-black/10 dark:border-white/15 shadow-2xs"
+                                                            className="inline-flex items-center justify-center bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/15 px-3.5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors border border-black/10 dark:border-white/15 shadow-2xs"
                                                         >
                                                             Edit content
                                                         </Link>
-                                                    </div>
 
-                                                    {/* buttons to edit or delete subject */}
-                                                    <div className="absolute top-4 right-4 flex opacity-0 group-hover:opacity-100 transition-opacity gap-1.5 z-10">
-                                                        <button
-                                                            onClick={() => openSubjectModal("edit", subject)}
-                                                            className="p-1.5 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white bg-white/90 dark:bg-slate-800/90 border border-black/5 dark:border-white/10 hover:bg-black/5 rounded-lg transition-colors shadow-2xs"
-                                                            title="Edit Subject Details"
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteSubject(subject.id)}
-                                                            className="p-1.5 text-[#696969] hover:text-rose-600 bg-white/90 dark:bg-slate-800/90 border border-black/5 dark:border-white/10 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg transition-colors shadow-2xs"
-                                                            title="Delete Subject"
-                                                        >
-                                                            <Trash className="h-4 w-4" />
-                                                        </button>
+                                                        {/* action icons */}
+                                                        <div className="flex items-center gap-0.5">
+                                                            <button
+                                                                onClick={() => openSubjectModal("edit", subject)}
+                                                                className="h-8 w-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                                                title="Edit Subject Details"
+                                                            >
+                                                                <Pencil className="h-3.5 w-3.5" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteSubject(subject.id)}
+                                                                className="h-8 w-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
+                                                                title="Delete Subject"
+                                                            >
+                                                                <Trash className="h-3.5 w-3.5" />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}

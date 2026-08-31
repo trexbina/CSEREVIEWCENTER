@@ -1153,7 +1153,7 @@ export default function CurriculumManagerPage() {
                                                                     }}
                                                                     className="overflow-hidden"
                                                                 >
-                                                                    <div className="px-5 sm:px-6 py-4 bg-[#FAFAFA] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 space-y-4">
+                                                                    <div className="px-5 sm:px-6 py-4 bg-white dark:bg-transparent border-t border-black/5 dark:border-white/5 space-y-4">
                                                                         {/* Inline Stats & Metadata Row */}
                                                                         <div className="flex items-center flex-wrap gap-x-6 gap-y-2.5 text-xs text-[#696969] dark:text-gray-400">
                                                                             <div className="flex items-center gap-1.5">

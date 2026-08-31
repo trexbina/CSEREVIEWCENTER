@@ -28,6 +28,7 @@ import {
 // date and time picker components
 import MinimalDatePicker from "@/components/ui/MinimalDatePicker"
 import MinimalTimePicker from "@/components/ui/MinimalTimePicker"
+import MultiSelectDropdown from "@/components/ui/MultiSelectDropdown"
 
 // confirmation modal popup for delete actions
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
@@ -355,11 +356,32 @@ function CourseMultiSelect({ selected, onChange, tree }) {
 
 // ─── Target Label Parser ─────────────────────────────────────────────────────
 function parseTargets(targets, tree = [], masterData = null) {
-    if (!targets || targets.length === 0) return { batch: "All", type: "All", course: "All" }
+    if (!targets || targets.length === 0 || (targets.length === 1 && targets[0] === 'all')) {
+        return { batch: "All", type: "All", course: "All" }
+    }
     
     const batches = []
     const types = []
     const courses = []
+
+    targets.forEach(t => {
+        if (typeof t === 'string') {
+            if (t.startsWith('course_')) {
+                const cName = t.replace('course_', '')
+                courses.push(cName)
+                types.push(cName)
+            } else if (t.startsWith('batch_')) {
+                const bName = t.replace('batch_', '')
+                batches.push(bName)
+            } else if (t.toLowerCase().includes('batch1')) {
+                batches.push("Batch 1")
+            } else if (t.toLowerCase().includes('batch2')) {
+                batches.push("Batch 2")
+            } else if (t.toLowerCase().includes('lept')) {
+                types.push("LEPT")
+            }
+        }
+    })
 
     const traverse = (node) => {
         if (targets.includes(node.id)) {
@@ -374,22 +396,11 @@ function parseTargets(targets, tree = [], masterData = null) {
 
     tree.forEach(traverse)
 
-    // Legacy fallback check if targets contains legacy strings like "batch1" or raw names
-    if (batches.length === 0 && targets.some(t => typeof t === 'string' && t.includes('batch1'))) {
-        batches.push("Batch 1")
-    }
-    if (batches.length === 0 && targets.some(t => typeof t === 'string' && t.includes('batch2'))) {
-        batches.push("Batch 2")
-    }
-    if (types.length === 0 && targets.some(t => typeof t === 'string' && t.toLowerCase().includes('lept'))) {
-        types.push("LEPT")
-    }
-
     return {
         batch: batches.length > 0 ? Array.from(new Set(batches)).join(", ") : "All",
         type: types.length > 0 ? Array.from(new Set(types)).join(", ") : "All",
         course: courses.length > 0 
-            ? (courses.length > 2 ? `${courses.length} Spec.` : Array.from(new Set(courses)).join(", ")) 
+            ? (courses.length > 2 ? `${courses.length} Courses` : Array.from(new Set(courses)).join(", ")) 
             : "All"
     }
 }
@@ -438,7 +449,8 @@ export default function MockExamsPage() {
         title: "",
         description: "",
         examCode: "",
-        targetCourses: [],
+        targetCourses: ["all"],
+        targetBatches: ["all"],
         unlockDate: "",
         status: "Locked"
     })
@@ -565,10 +577,27 @@ export default function MockExamsPage() {
                 : "/api/admin/mock-exams"
             const method = editingExam ? "PUT" : "POST"
 
+            // Construct combined targets list for storage
+            const courses = Array.isArray(formData.targetCourses) ? formData.targetCourses : [formData.targetCourses]
+            const batches = Array.isArray(formData.targetBatches) ? formData.targetBatches : [formData.targetBatches]
+            
+            const combinedTargets = []
+            if (!courses.includes("all") && courses.length > 0) {
+                courses.forEach(c => combinedTargets.push(`course_${c}`))
+            }
+            if (!batches.includes("all") && batches.length > 0) {
+                batches.forEach(b => combinedTargets.push(`batch_${b}`))
+            }
+
+            const payload = {
+                ...formData,
+                targetCourses: combinedTargets.length === 0 ? ["all"] : combinedTargets
+            }
+
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             })
 
             if (res.ok) {
@@ -654,11 +683,43 @@ export default function MockExamsPage() {
                 }
             }
 
+            // Parse targets to separate courses and batches
+            let rawTargets = Array.isArray(exam.targets) 
+                ? exam.targets 
+                : (typeof exam.targets === 'string' ? JSON.parse(exam.targets || '[]') : [])
+            
+            let loadedCourses = []
+            let loadedBatches = []
+
+            if (rawTargets.length === 0 || rawTargets.includes("all")) {
+                loadedCourses = ["all"]
+                loadedBatches = ["all"]
+            } else {
+                // Separate rawTargets into courses and batches based on masterData or entity patterns
+                rawTargets.forEach(t => {
+                    if (typeof t === 'string' && t.startsWith("course_")) {
+                        loadedCourses.push(t.replace("course_", ""))
+                    } else if (typeof t === 'string' && t.startsWith("batch_")) {
+                        loadedBatches.push(t.replace("batch_", ""))
+                    } else {
+                        // Check if it matches an exam name or a batch name
+                        const isExam = masterData.examinations.some(e => e.name.toLowerCase() === String(t).toLowerCase() || String(e.id) === String(t))
+                        const isBatch = masterData.batches.some(b => b.name.toLowerCase() === String(t).toLowerCase() || String(b.id) === String(t))
+                        if (isExam) loadedCourses.push(t)
+                        else if (isBatch) loadedBatches.push(t)
+                        else loadedCourses.push(t)
+                    }
+                })
+                if (loadedCourses.length === 0) loadedCourses = ["all"]
+                if (loadedBatches.length === 0) loadedBatches = ["all"]
+            }
+
             setFormData({
                 title: exam.title,
                 description: exam.description || "",
                 examCode: exam.exam_code,
-                targetCourses: Array.isArray(exam.targets) ? exam.targets : (typeof exam.targets === 'string' ? JSON.parse(exam.targets || '[]') : []),
+                targetCourses: loadedCourses,
+                targetBatches: loadedBatches,
                 startDate: sDate,
                 startTime: sTime,
                 timeLimitMinutes: settings.timeLimitMinutes ?? 0,
@@ -671,7 +732,8 @@ export default function MockExamsPage() {
                 title: "",
                 description: "",
                 examCode: "",
-                targetCourses: [],
+                targetCourses: ["all"],
+                targetBatches: ["all"],
                 startDate: "",
                 startTime: "",
                 timeLimitMinutes: 0,
@@ -954,16 +1016,29 @@ export default function MockExamsPage() {
                                 />
                             </div>
 
-                            {/* Target Courses multi-select */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1">
-                                    Target Courses / Batch:
-                                </label>
-                                <CourseMultiSelect
-                                    selected={formData.targetCourses}
-                                    onChange={ids => setFormData({ ...formData, targetCourses: Array.from(ids) })}
-                                    tree={courseTree}
-                                />
+                            {/* Separate Target Course and Target Batch Multi-Select Combo Boxes */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <MultiSelectDropdown
+                                        label="Target Course:"
+                                        placeholder="All Courses"
+                                        options={masterData.examinations}
+                                        selectedValues={formData.targetCourses}
+                                        onChange={(vals) => setFormData({ ...formData, targetCourses: vals })}
+                                    />
+                                </div>
+                                <div>
+                                    <MultiSelectDropdown
+                                        label="Target Batch:"
+                                        placeholder="All Batches"
+                                        options={masterData.batches.map(b => ({
+                                            id: b.id,
+                                            name: b.target_year ? `${b.name} (${b.target_year})` : b.name
+                                        }))}
+                                        selectedValues={formData.targetBatches}
+                                        onChange={(vals) => setFormData({ ...formData, targetBatches: vals })}
+                                    />
+                                </div>
                             </div>
 
                             {/* ACCESS & SCHEDULE */}

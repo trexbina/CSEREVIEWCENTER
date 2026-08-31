@@ -38,7 +38,17 @@ export async function GET() {
       return NextResponse.json({ exams: [], message: "You are not assigned to a batch yet." })
     }
 
-    // Get mock exams targeting this batch (or general ones)
+    // Get batch name and exam name for matching
+    const batchRes = await pool.query("SELECT name FROM batches WHERE id = $1", [batch_id])
+    const batchName = batchRes.rows[0]?.name || ""
+
+    let examName = ""
+    if (exam_id) {
+      const examRes = await pool.query("SELECT name FROM examinations WHERE id = $1", [exam_id])
+      examName = examRes.rows[0]?.name || ""
+    }
+
+    // Get mock exams targeting this batch/course (or general ones)
     const { rows: exams } = await pool.query(`
       SELECT me.id, me.exam_code, me.title, me.description, me.questions, me.unlock_date, me.status,
              (SELECT COUNT(*) FROM jsonb_array_elements(
@@ -53,16 +63,21 @@ export async function GET() {
       WHERE (
         EXISTS (
           SELECT 1 
-          FROM jsonb_array_elements(CASE WHEN jsonb_typeof(me.targets::jsonb) = 'array' THEN me.targets::jsonb ELSE '[]'::jsonb END) t
-          WHERE (t->>'batch_id')::int = $2 OR (t->>'batchId')::int = $2
+          FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(me.targets::jsonb) = 'array' THEN me.targets::jsonb ELSE '[]'::jsonb END) t
+          WHERE t = 'all'
+             OR t = 'batch_' || $2::text
+             OR t = 'batch_' || $3::text
+             OR t = 'course_' || $4::text
+             OR t ILIKE '%' || $3 || '%'
         )
         OR me.targets IS NULL
         OR jsonb_typeof(me.targets::jsonb) != 'array'
         OR jsonb_array_length(me.targets::jsonb) = 0
+        OR me.targets::text ILIKE '%all%'
       )
         AND me.status = 'active'
       ORDER BY me.created_at DESC
-    `, [session.userId, batch_id])
+    `, [session.userId, batch_id, batchName, examName])
 
     // If no targeted exams, return all active exams for demo/learning
     if (exams.length === 0) {

@@ -13,6 +13,19 @@ export async function GET(request, props) {
             return NextResponse.json({ error: "Invalid file id" }, { status: 400 })
         }
 
+        // Check client cache ETag
+        const ifNoneMatch = request.headers.get("if-none-match")
+        const etag = `"file-${fileId}"`
+        if (ifNoneMatch === etag) {
+            return new Response(null, {
+                status: 304,
+                headers: {
+                    "ETag": etag,
+                    "Cache-Control": "public, max-age=31536000, immutable",
+                }
+            })
+        }
+
         let result
         try {
             result = await pool.query(
@@ -31,14 +44,15 @@ export async function GET(request, props) {
         }
 
         const row = result.rows[0]
-        const filename = row.filename || "document.pdf"
-        const contentType = row.content_type || "application/pdf"
+        const filename = row.filename || "image.png"
+        const contentType = row.content_type || "image/png"
 
         return new Response(row.data, {
             headers: {
                 "Content-Type": contentType,
                 "Content-Disposition": `inline; filename="${filename}"`,
-                "Cache-Control": "private, max-age=300",
+                "Cache-Control": "public, max-age=31536000, immutable",
+                "ETag": etag,
             },
         })
     } catch (err) {

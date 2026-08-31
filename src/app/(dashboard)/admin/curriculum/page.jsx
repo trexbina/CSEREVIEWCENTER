@@ -844,11 +844,13 @@ export default function CurriculumManagerPage() {
                                                 className={`group cursor-pointer relative flex aspect-square w-full flex-col overflow-hidden rounded-xl bg-white border shadow-2xs transition-all hover:shadow-sm ${isInactive ? 'border-gray-200/40' : 'border-gray-100 hover:border-gray-200/80'}`}
                                             >
                                                 {/* Image Background */}
-                                                <div className="absolute inset-0">
+                                                <div className="absolute inset-0 bg-gray-100 dark:bg-white/5">
                                                     <img
                                                         src={sub.image_url || "/images/default-subcategory.png"}
                                                         alt={sub.name}
-                                                        className="absolute inset-0 h-full w-full object-cover"
+                                                        loading="lazy"
+                                                        decoding="async"
+                                                        className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
                                                     />
                                                     {isInactive && <div className="absolute inset-0 bg-black/10" />}
                                                 </div>
@@ -1059,7 +1061,9 @@ export default function CurriculumManagerPage() {
                                                         <img
                                                             src={subject.image_url || "/images/default-subject.png"}
                                                             alt={subject.title}
-                                                            className="absolute inset-0 h-full w-full object-cover rounded-xl"
+                                                            loading="lazy"
+                                                            decoding="async"
+                                                            className="absolute inset-0 h-full w-full object-cover rounded-xl transition-opacity duration-300"
                                                         />
                                                     </div>
 

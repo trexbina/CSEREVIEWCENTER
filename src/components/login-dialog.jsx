@@ -16,7 +16,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-const ROLE_HOME = { student: "/student", teacher: "/teacher", admin: "/admin" }
+const ROLE_HOME = { 
+  student: "/student", 
+  teacher: "/teacher", 
+  admin: "/admin",
+  super_admin: "/admin",
+  academic_admin: "/admin",
+  registrar: "/admin",
+}
 
 /* ------------------------------------------------------------------ */
 /*  Login form inner content                                           */

@@ -6,6 +6,15 @@ const urls = [
 ];
 
 async function updateAdminUser() {
+  // ============================================
+  // EDIT YOUR DESIRED ADMIN DETAILS HERE:
+  // ============================================
+  const newEmail = 'admin@peak.edu.ph';     // <-- Change email here
+  const newFullName = 'Yosra Dianalan';    // <-- Change full name here
+  const newFirstName = 'Yosra';           // <-- Change first name here
+  const newLastName = 'Dianalan';          // <-- Change last name here
+  // ============================================
+
   for (const url of urls) {
     try {
       const isRemote = url.includes('prisma.io');
@@ -13,12 +22,6 @@ async function updateAdminUser() {
         connectionString: url.replace(/[?&]sslmode=[^&]*/gi, ''),
         ssl: isRemote ? { rejectUnauthorized: false } : false
       });
-
-      // Set new values here:
-      const newEmail = 'admin@peak.edu.ph';
-      const newFullName = 'Yosra Dianalan';
-      const newFirstName = 'Yosra';
-      const newLastName = 'Dianalan';
 
       const res = await pool.query(`
         UPDATE users 
@@ -28,7 +31,9 @@ async function updateAdminUser() {
             last_name = $4,
             role = 'super_admin',
             job_role_description = 'Super Administrator'
-        WHERE email = 'admin@peak.edu.ph' OR email = $1 OR role IN ('admin', 'super_admin')
+        WHERE email = 'admin@peak.edu.ph' 
+           OR email = $1 
+           OR role IN ('admin', 'super_admin')
         RETURNING id, name, email, role, job_role_description;
       `, [newEmail, newFullName, newFirstName, newLastName]);
 

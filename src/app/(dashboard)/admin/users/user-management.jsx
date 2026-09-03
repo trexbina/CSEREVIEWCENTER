@@ -1071,7 +1071,12 @@ export function UserTable({ users, currentUserId }) {
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
     return users.filter((u) => {
-      const matchesRole = roleFilter === "ALL" ? true : u.role === roleFilter
+      const matchesRole =
+        roleFilter === "ALL"
+          ? true
+          : roleFilter === "admin"
+          ? (u.role === "admin" || u.role === "super_admin" || u.role === "academic_admin" || u.role === "registrar")
+          : u.role === roleFilter
       const fullName = (u.name || "").toLowerCase()
       const matchesSearch =
         !q ||

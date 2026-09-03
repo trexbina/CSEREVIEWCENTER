@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { moveToTrash } from "@/lib/trash"
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 
@@ -153,6 +154,22 @@ export async function DELETE(request, { params }) {
         if (!session) return NextResponse.json({ error: "Forbidden." }, { status: 403 })
 
         const { examId } = await params
+
+        const examRes = await pool.query("SELECT * FROM mock_exams WHERE id = $1", [examId])
+        if (examRes.rows.length > 0) {
+            const ex = examRes.rows[0]
+            await moveToTrash({
+                entity_type: "MOCK_EXAM",
+                original_id: ex.id,
+                item_name: ex.title || ex.exam_code,
+                description: `Code: ${ex.exam_code} • Status: ${ex.status}`,
+                original_location: "/admin/mock-exams",
+                payload: ex,
+                deleted_by: session.userId,
+                deleted_by_name: session.name || session.email || null,
+            })
+        }
+
         const { rowCount } = await pool.query(
             "DELETE FROM mock_exams WHERE id = $1",
             [examId]

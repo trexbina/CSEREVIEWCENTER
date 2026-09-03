@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { saveUploadedFile } from "@/lib/storage"
+import { moveToTrash } from "@/lib/trash"
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 
@@ -147,6 +148,21 @@ export async function DELETE(request) {
         const id = searchParams.get("id")
         if (!id) {
             return NextResponse.json({ error: "Subcategory id is required." }, { status: 400 })
+        }
+
+        const subRes = await pool.query("SELECT * FROM subcategories WHERE id = $1", [id])
+        if (subRes.rows.length > 0) {
+            const sub = subRes.rows[0]
+            await moveToTrash({
+                entity_type: "CURRICULUM_SUBCATEGORY",
+                original_id: sub.id,
+                item_name: sub.name,
+                description: sub.description || `Category ID: ${sub.category_id}`,
+                original_location: "/admin/curriculum",
+                payload: sub,
+                deleted_by: session.userId,
+                deleted_by_name: session.name || session.email || null,
+            })
         }
 
         const { rowCount } = await pool.query(

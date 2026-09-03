@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { ADMIN_ROLES } from "@/lib/auth"
+import { moveToTrash } from "@/lib/trash"
 
 async function ensurePreRegistrationsTable() {
   await pool.query(`
@@ -322,9 +323,29 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "No valid Application ID(s) provided." }, { status: 400 })
     }
 
+    const appsToTrash = await pool.query(
+      "SELECT * FROM pre_registrations WHERE id = ANY($1::int[])",
+      [idsToDelete]
+    )
+
+    for (const app of appsToTrash.rows) {
+      const applicantName = [app.first_name, app.middle_name, app.last_name, app.suffix].filter(Boolean).join(" ")
+      await moveToTrash({
+        entity_type: "PRE_REGISTRATION",
+        original_id: app.id,
+        item_name: applicantName || app.email || "Pre-Registration Applicant",
+        description: `Target: ${app.target_exam || "Exam"} • ${app.email || ""}`,
+        original_location: "/admin/users?tab=pre-registrations",
+        payload: app,
+        deleted_by: session.userId,
+        deleted_by_name: session.name || session.email || null,
+      })
+    }
+
     await pool.query("DELETE FROM pre_registrations WHERE id = ANY($1::int[])", [idsToDelete])
 
     revalidatePath("/admin/users")
+    revalidatePath("/admin/trash")
 
     return NextResponse.json({ ok: true, deletedCount: idsToDelete.length })
   } catch (err) {

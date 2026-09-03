@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { ADMIN_ROLES } from "@/lib/auth"
+import { moveToTrash } from "@/lib/trash"
 
 export async function POST(req) {
   try {
@@ -79,6 +80,20 @@ export async function POST(req) {
         }
       }
       if (action === "DELETE") {
+        const batchRes = await pool.query("SELECT * FROM batches WHERE id = $1", [parseInt(payload.id)])
+        if (batchRes.rows.length > 0) {
+          const b = batchRes.rows[0]
+          await moveToTrash({
+            entity_type: "MASTER_DATA_BATCH",
+            original_id: b.id,
+            item_name: b.name,
+            description: `Target Year: ${b.target_year || "—"} • Status: ${b.status || "active"}`,
+            original_location: "/admin/master-data",
+            payload: b,
+            deleted_by: session.userId,
+            deleted_by_name: session.name || session.email || null,
+          })
+        }
         await pool.query("DELETE FROM batches WHERE id = $1", [parseInt(payload.id)])
         return NextResponse.json({ success: true })
       }
@@ -95,6 +110,20 @@ export async function POST(req) {
         return NextResponse.json({ success: true })
       }
       if (action === "DELETE") {
+        const schoolRes = await pool.query("SELECT * FROM schools WHERE id = $1", [parseInt(payload.id)])
+        if (schoolRes.rows.length > 0) {
+          const s = schoolRes.rows[0]
+          await moveToTrash({
+            entity_type: "MASTER_DATA_SCHOOL",
+            original_id: s.id,
+            item_name: s.name,
+            description: s.address || "Institution",
+            original_location: "/admin/master-data",
+            payload: s,
+            deleted_by: session.userId,
+            deleted_by_name: session.name || session.email || null,
+          })
+        }
         await pool.query("DELETE FROM schools WHERE id = $1", [parseInt(payload.id)])
         return NextResponse.json({ success: true })
       }
@@ -111,6 +140,20 @@ export async function POST(req) {
         return NextResponse.json({ success: true })
       }
       if (action === "DELETE") {
+        const courseRes = await pool.query("SELECT * FROM academic_courses WHERE id = $1", [parseInt(payload.id)])
+        if (courseRes.rows.length > 0) {
+          const c = courseRes.rows[0]
+          await moveToTrash({
+            entity_type: "MASTER_DATA_COURSE",
+            original_id: c.id,
+            item_name: c.name,
+            description: "Academic Course",
+            original_location: "/admin/master-data",
+            payload: c,
+            deleted_by: session.userId,
+            deleted_by_name: session.name || session.email || null,
+          })
+        }
         await pool.query("DELETE FROM academic_courses WHERE id = $1", [parseInt(payload.id)])
         return NextResponse.json({ success: true })
       }
@@ -150,6 +193,20 @@ export async function POST(req) {
         return NextResponse.json({ success: true })
       }
       if (action === "DELETE") {
+        const gbRes = await pool.query("SELECT * FROM gradebooks WHERE id = $1", [parseInt(payload.id)])
+        if (gbRes.rows.length > 0) {
+          const g = gbRes.rows[0]
+          await moveToTrash({
+            entity_type: "MASTER_DATA_GRADEBOOK",
+            original_id: g.id,
+            item_name: g.name || g.code,
+            description: `Code: ${g.code || "—"} • Status: ${g.status || "ACTIVE"}`,
+            original_location: "/admin/master-data",
+            payload: g,
+            deleted_by: session.userId,
+            deleted_by_name: session.name || session.email || null,
+          })
+        }
         await pool.query("DELETE FROM gradebooks WHERE id = $1", [parseInt(payload.id)])
         return NextResponse.json({ success: true })
       }

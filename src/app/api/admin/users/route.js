@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { moveToTrash } from "@/lib/trash"
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 const VALID_ROLES = ["student", "teacher", ...ADMIN_ROLES]
@@ -168,6 +169,25 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "Cannot delete yourself." }, { status: 400 })
     }
 
+    // Fetch user records before deletion so they can be saved to trash
+    const usersToTrash = await pool.query(
+      "SELECT * FROM users WHERE id = ANY($1::int[])",
+      [validIdsToDelete]
+    )
+
+    for (const u of usersToTrash.rows) {
+      await moveToTrash({
+        entity_type: "USER",
+        original_id: u.id,
+        item_name: u.name || `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+        description: `Role: ${u.role} • ${u.email}`,
+        original_location: "/admin/users",
+        payload: u,
+        deleted_by: session.userId,
+        deleted_by_name: session.name || session.email || null,
+      })
+    }
+
     const { rowCount } = await pool.query(
       "DELETE FROM users WHERE id = ANY($1::int[])",
       [validIdsToDelete]
@@ -179,6 +199,7 @@ export async function DELETE(request) {
 
     revalidatePath("/admin/users")
     revalidatePath("/admin/users/all")
+    revalidatePath("/admin/trash")
 
     return NextResponse.json({ ok: true, deletedCount: rowCount })
   } catch (err) {

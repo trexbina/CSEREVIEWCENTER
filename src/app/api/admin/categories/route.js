@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { moveToTrash } from "@/lib/trash"
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 
@@ -117,6 +118,21 @@ export async function DELETE(request) {
         const id = searchParams.get("id")
         if (!id) {
             return NextResponse.json({ error: "Category id is required." }, { status: 400 })
+        }
+
+        const catRes = await pool.query("SELECT * FROM categories WHERE id = $1", [id])
+        if (catRes.rows.length > 0) {
+            const cat = catRes.rows[0]
+            await moveToTrash({
+                entity_type: "CURRICULUM_CATEGORY",
+                original_id: cat.id,
+                item_name: cat.name,
+                description: cat.description || `Target Course: ${cat.target_course || "all"}`,
+                original_location: "/admin/curriculum",
+                payload: cat,
+                deleted_by: session.userId,
+                deleted_by_name: session.name || session.email || null,
+            })
         }
 
         const { rowCount } = await pool.query(

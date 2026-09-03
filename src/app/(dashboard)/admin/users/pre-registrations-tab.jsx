@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Check, X, Eye, Trash, Pencil } from "lucide-react"
+import { Search, Check, Minus, X, Eye, Trash, Pencil } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -361,18 +361,8 @@ export function PreRegistrationsTab() {
             </div>
           </div>
 
-          {/* Right Action buttons: Deselect All & Delete Selected */}
+          {/* Right Action buttons: Delete Selected */}
           <div className="flex items-center gap-2">
-            {filtered.length > 0 && (
-              <button
-                type="button"
-                onClick={handleToggleAll}
-                className="px-3.5 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer"
-              >
-                {isAllSelected ? "Deselect All" : `Select All (${filtered.length})`}
-              </button>
-            )}
-
             {selectedIds.length > 0 && (
               <button
                 type="button"
@@ -383,9 +373,10 @@ export function PreRegistrationsTab() {
                   })
                   setDeleteModalOpen(true)
                 }}
-                className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/30 hover:bg-rose-100 transition-all shadow-2xs cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/30 hover:bg-rose-100 transition-all shadow-2xs cursor-pointer animate-in fade-in zoom-in-95 duration-150"
               >
-                Delete Selected ({selectedIds.length})
+                <Trash className="h-3.5 w-3.5" />
+                <span>Delete Selected ({selectedIds.length})</span>
               </button>
             )}
           </div>
@@ -398,18 +389,20 @@ export function PreRegistrationsTab() {
               <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
                 <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
                   <th className="w-12 px-5 py-3.5 text-center" scope="col">
-                    <input
-                      type="checkbox"
-                      checked={isAllSelected}
-                      ref={(input) => {
-                        if (input) {
-                          input.indeterminate = !isAllSelected && isSomeSelected
-                        }
-                      }}
-                      onChange={handleToggleAll}
-                      className="h-4 w-4 rounded border-black/15 cursor-pointer accent-[#E9C46A] align-middle"
-                      aria-label="Select all pre-registrations"
-                    />
+                    <div
+                      onClick={filtered.length > 0 ? handleToggleAll : undefined}
+                      className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
+                        isAllSelected
+                          ? "bg-[#3B3B3B] dark:bg-white border-[#3B3B3B] dark:border-white text-white dark:text-gray-900 shadow-xs"
+                          : isSomeSelected
+                          ? "bg-[#3B3B3B]/10 dark:bg-white/20 border-[#3B3B3B]/40 dark:border-white/40 text-[#3B3B3B] dark:text-white"
+                          : "border-black/20 dark:border-white/20 bg-white/50 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
+                      } ${filtered.length === 0 ? "opacity-30 cursor-not-allowed" : ""}`}
+                      title={isAllSelected ? "Deselect All" : "Select All"}
+                    >
+                      {isAllSelected && <Check className="size-3 stroke-[2.5]" />}
+                      {!isAllSelected && isSomeSelected && <Minus className="size-3 stroke-[2.5]" />}
+                    </div>
                   </th>
                   <th className="px-5 py-3.5 min-w-[150px]" scope="col">Applicant</th>
                   <th className="px-5 py-3.5 min-w-[180px]" scope="col">Contact</th>
@@ -430,7 +423,9 @@ export function PreRegistrationsTab() {
                 ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-sm font-medium text-[#696969]">
-                      No pre-registration applications found.
+                      {search || statusFilter !== "ALL"
+                        ? "No pre-registrations match your filters."
+                        : "No pre-registration submissions yet."}
                     </td>
                   </tr>
                 ) : (
@@ -443,17 +438,21 @@ export function PreRegistrationsTab() {
                       <tr
                         key={app.id}
                         className={`transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${
-                          isSelected ? "bg-[#F2F2F2]/50 dark:bg-white/5" : ""
+                          isSelected ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""
                         }`}
                       >
                         <td className="w-12 px-5 py-4 text-center align-middle">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleRow(app.id)}
-                            className="h-4 w-4 rounded border-black/15 cursor-pointer accent-[#E9C46A] align-middle"
-                            aria-label={`Select ${fullName}`}
-                          />
+                          <div
+                            onClick={() => handleToggleRow(app.id)}
+                            className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
+                              isSelected
+                                ? "bg-[#3B3B3B] dark:bg-white border-[#3B3B3B] dark:border-white text-white dark:text-gray-900 shadow-xs"
+                                : "border-black/20 dark:border-white/20 bg-white/60 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
+                            }`}
+                            title={`Select ${fullName}`}
+                          >
+                            {isSelected && <Check className="size-3 stroke-[2.5]" />}
+                          </div>
                         </td>
                         <td className="px-5 py-4 align-middle">
                           <div className="space-y-1">

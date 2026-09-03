@@ -14,7 +14,7 @@ import Link from "next/link"
 import {
   Pencil, Trash, BookOpen, Plus, X, Save,
   Search, ArrowUpDown, ArrowUp, ArrowDown, ChevronRight,
-  User, GraduationCap, Shield,
+  User, GraduationCap, Shield, Check, Minus,
 } from "lucide-react"
 
 // ui component helpers
@@ -834,23 +834,14 @@ export function UserSearchTable({ users, currentUserId }) {
         </div>
 
         <div className="flex items-center gap-2">
-          {selectableUsers.length > 0 && (
-            <button
-              type="button"
-              onClick={handleToggleAll}
-              className="px-3.5 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer"
-            >
-              {isAllSelected ? "Deselect All" : `Select All (${selectableUsers.length})`}
-            </button>
-          )}
-
           {selectedIds.length > 0 && (
             <button
               type="button"
               onClick={() => setConfirmDeleteOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/30 hover:bg-rose-100 transition-all shadow-2xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/30 hover:bg-rose-100 transition-all shadow-2xs cursor-pointer animate-in fade-in zoom-in-95 duration-150"
             >
-              Delete Selected ({selectedIds.length})
+              <Trash className="h-3.5 w-3.5" />
+              <span>Delete Selected ({selectedIds.length})</span>
             </button>
           )}
         </div>
@@ -862,17 +853,20 @@ export function UserSearchTable({ users, currentUserId }) {
             <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
               <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
                 <th className="w-12 px-4 text-center" scope="col">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    ref={(input) => {
-                      if (input) input.indeterminate = isSomeSelected && !isAllSelected
-                    }}
-                    onChange={handleToggleAll}
-                    disabled={selectableUsers.length === 0}
-                    className="h-4 w-4 rounded border-black/15 cursor-pointer accent-[#E9C46A] align-middle"
+                  <div
+                    onClick={selectableUsers.length > 0 ? handleToggleAll : undefined}
+                    className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
+                      isAllSelected
+                        ? "bg-[#3B3B3B] dark:bg-white border-[#3B3B3B] dark:border-white text-white dark:text-gray-900 shadow-xs"
+                        : isSomeSelected
+                        ? "bg-[#3B3B3B]/10 dark:bg-white/20 border-[#3B3B3B]/40 dark:border-white/40 text-[#3B3B3B] dark:text-white"
+                        : "border-black/20 dark:border-white/20 bg-white/50 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
+                    } ${selectableUsers.length === 0 ? "opacity-30 cursor-not-allowed" : ""}`}
                     title={isAllSelected ? "Deselect All" : "Select All"}
-                  />
+                  >
+                    {isAllSelected && <Check className="size-3 stroke-[2.5]" />}
+                    {!isAllSelected && isSomeSelected && <Minus className="size-3 stroke-[2.5]" />}
+                  </div>
                 </th>
                 <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
@@ -884,7 +878,7 @@ export function UserSearchTable({ users, currentUserId }) {
                   <SortButton label="Role" field="role" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
                 <th className="px-4 py-2.5" scope="col">
-                  <SortButton label="Joined" field="created_at" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortButton label="Joined" field="created_at" sortField={sortDir === "asc" ? sortField : "created_at"} sortDir={sortDir} onSort={handleSort} />
                 </th>
                 <th className="px-4 py-2.5 text-right pr-6" scope="col">Actions</th>
               </tr>
@@ -893,7 +887,7 @@ export function UserSearchTable({ users, currentUserId }) {
               {isDebouncing ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <tr className="h-13" key={`skel-${i}`}>
-                    <td className="px-4 text-center"><div className="h-4 w-4 animate-pulse rounded bg-muted mx-auto" /></td>
+                    <td className="px-4 text-center"><div className="h-4.5 w-4.5 animate-pulse rounded bg-muted mx-auto" /></td>
                     <td className="px-4"><div className="h-4 w-28 animate-pulse rounded bg-muted" /></td>
                     <td className="px-4"><div className="h-4 w-40 animate-pulse rounded bg-muted" /></td>
                     <td className="px-4"><div className="h-5 w-16 animate-pulse rounded-full bg-muted" /></td>
@@ -912,16 +906,21 @@ export function UserSearchTable({ users, currentUserId }) {
                   const isCurrentAdmin = user.id === currentUserId
                   const isChecked = selectedIds.includes(user.id)
                   return (
-                    <tr className={`h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${isChecked ? "bg-[#F2F2F2]/50 dark:bg-white/5" : ""}`} key={user.id}>
+                    <tr className={`h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${isChecked ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""}`} key={user.id}>
                       <td className="px-4 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          disabled={isCurrentAdmin}
-                          onChange={() => handleToggleUser(user.id)}
-                          className="h-4 w-4 rounded border-black/15 cursor-pointer accent-[#E9C46A] align-middle disabled:opacity-30 disabled:cursor-not-allowed"
+                        <div
+                          onClick={() => {
+                            if (!isCurrentAdmin) handleToggleUser(user.id)
+                          }}
+                          className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
+                            isChecked
+                              ? "bg-[#3B3B3B] dark:bg-white border-[#3B3B3B] dark:border-white text-white dark:text-gray-900 shadow-xs"
+                              : "border-black/20 dark:border-white/20 bg-white/60 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
+                          } ${isCurrentAdmin ? "opacity-30 cursor-not-allowed" : ""}`}
                           title={isCurrentAdmin ? "Cannot select yourself" : `Select ${user.name}`}
-                        />
+                        >
+                          {isChecked && <Check className="size-3 stroke-[2.5]" />}
+                        </div>
                       </td>
                       <td className="px-4 font-semibold">
                         <Link href={`/admin/users/${user.id}`} className="text-[#2563EB] hover:text-[#1D4ED8] dark:text-[#60A5FA] dark:hover:text-[#93C5FD] hover:underline transition-colors">
@@ -1148,25 +1147,16 @@ export function UserTable({ users, currentUserId }) {
           </div>
         </div>
 
-        {/* Right Action buttons: Select All & Delete Selected */}
+        {/* Right Action buttons: Delete Selected */}
         <div className="flex items-center gap-2">
-          {selectableUsers.length > 0 && (
-            <button
-              type="button"
-              onClick={handleToggleAll}
-              className="px-3.5 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer"
-            >
-              {isAllSelected ? "Deselect All" : `Select All (${selectableUsers.length})`}
-            </button>
-          )}
-
           {selectedIds.length > 0 && (
             <button
               type="button"
               onClick={() => setConfirmDeleteOpen(true)}
-              className="px-3.5 h-9 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-200 dark:border-rose-900/30 transition-all shadow-2xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/30 hover:bg-rose-100 transition-all shadow-2xs cursor-pointer animate-in fade-in zoom-in-95 duration-150"
             >
-              Delete Selected ({selectedIds.length})
+              <Trash className="h-3.5 w-3.5" />
+              <span>Delete Selected ({selectedIds.length})</span>
             </button>
           )}
         </div>
@@ -1179,17 +1169,20 @@ export function UserTable({ users, currentUserId }) {
             <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
               <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
                 <th className="w-12 px-4 text-center" scope="col">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    ref={(input) => {
-                      if (input) input.indeterminate = isSomeSelected && !isAllSelected
-                    }}
-                    onChange={handleToggleAll}
-                    disabled={selectableUsers.length === 0}
-                    className="h-4 w-4 rounded border-black/15 cursor-pointer accent-[#E9C46A] align-middle"
+                  <div
+                    onClick={selectableUsers.length > 0 ? handleToggleAll : undefined}
+                    className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
+                      isAllSelected
+                        ? "bg-[#3B3B3B] dark:bg-white border-[#3B3B3B] dark:border-white text-white dark:text-gray-900 shadow-xs"
+                        : isSomeSelected
+                        ? "bg-[#3B3B3B]/10 dark:bg-white/20 border-[#3B3B3B]/40 dark:border-white/40 text-[#3B3B3B] dark:text-white"
+                        : "border-black/20 dark:border-white/20 bg-white/50 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
+                    } ${selectableUsers.length === 0 ? "opacity-30 cursor-not-allowed" : ""}`}
                     title={isAllSelected ? "Deselect All" : "Select All"}
-                  />
+                  >
+                    {isAllSelected && <Check className="size-3 stroke-[2.5]" />}
+                    {!isAllSelected && isSomeSelected && <Minus className="size-3 stroke-[2.5]" />}
+                  </div>
                 </th>
                 <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
@@ -1234,18 +1227,23 @@ export function UserTable({ users, currentUserId }) {
                     <tr
                       key={user.id}
                       className={`h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${
-                        isChecked ? "bg-[#F2F2F2]/50 dark:bg-white/5" : ""
+                        isChecked ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""
                       }`}
                     >
                       <td className="px-4 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          disabled={isCurrentAdmin}
-                          onChange={() => handleToggleUser(user.id)}
-                          className="h-4 w-4 rounded border-black/15 cursor-pointer accent-[#E9C46A] align-middle disabled:opacity-30 disabled:cursor-not-allowed"
+                        <div
+                          onClick={() => {
+                            if (!isCurrentAdmin) handleToggleUser(user.id)
+                          }}
+                          className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
+                            isChecked
+                              ? "bg-[#3B3B3B] dark:bg-white border-[#3B3B3B] dark:border-white text-white dark:text-gray-900 shadow-xs"
+                              : "border-black/20 dark:border-white/20 bg-white/60 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
+                          } ${isCurrentAdmin ? "opacity-30 cursor-not-allowed" : ""}`}
                           title={isCurrentAdmin ? "Cannot select yourself" : `Select ${user.name}`}
-                        />
+                        >
+                          {isChecked && <Check className="size-3 stroke-[2.5]" />}
+                        </div>
                       </td>
                       <td className="px-4 font-semibold">
                         <Link

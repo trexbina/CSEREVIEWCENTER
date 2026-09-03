@@ -216,63 +216,46 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
       .trim()
 
     try {
-      // First update base login info and optional password
-      const basePayload = {
+      const payload = {
+        userId: user.id,
         name: fullName,
         email,
         role,
-      }
-      if (newPassword?.trim()) {
-        basePayload.password = newPassword.trim()
+        password: newPassword?.trim() ? newPassword.trim() : undefined,
+        first_name: firstName || null,
+        middle_name: middleName || null,
+        last_name: lastName || null,
+        suffix: suffix || null,
+        birthday: birthday || null,
+        gender: gender || null,
+        phone: phone || null,
+        address: address || null,
+        city: city || null,
+        province: province || null,
+        zip_code: zipCode || null,
+        school_id: schoolId ? parseInt(schoolId) : null,
+        academic_course_id: academicCourseId ? parseInt(academicCourseId) : null,
+        year_graduated: yearGraduated || null,
+        highest_education: highestEducation || null,
+        exam_id: role !== "admin" && examId ? parseInt(examId) : null,
+        batch_id: role !== "admin" && batchId ? parseInt(batchId) : null,
+        program_id: role !== "admin" && programId ? parseInt(programId) : null,
+        major_id: role !== "admin" && majorId ? parseInt(majorId) : null,
+        avatar_url: avatarUrl || null,
       }
 
-      const resBase = await fetch(`/api/admin/users?id=${user.id}`, {
+      const res = await fetch("/api/user/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(basePayload)
+        body: JSON.stringify(payload)
       })
 
-      if (!resBase.ok) {
-        const errData = await resBase.json()
-        throw new Error(errData.error || "Failed to update account details.")
-      }
-
-      // Then update profile metadata details using a custom endpoint or extended update
-      // Since the base API doesn't update metadata, let's write a route to handle full updates
-      const resFull = await fetch(`/api/admin/users/profile-update`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: user.id,
-          first_name: firstName || null,
-          middle_name: middleName || null,
-          last_name: lastName || null,
-          suffix: suffix || null,
-          birthday: birthday || null,
-          gender: gender || null,
-          phone: phone || null,
-          address: address || null,
-          city: city || null,
-          province: province || null,
-          zip_code: zipCode || null,
-          school_id: schoolId ? parseInt(schoolId) : null,
-          academic_course_id: academicCourseId ? parseInt(academicCourseId) : null,
-          year_graduated: yearGraduated || null,
-          highest_education: highestEducation || null,
-          exam_id: role !== "admin" && examId ? parseInt(examId) : null,
-          batch_id: role !== "admin" && batchId ? parseInt(batchId) : null,
-          program_id: role !== "admin" && programId ? parseInt(programId) : null,
-          major_id: role !== "admin" && majorId ? parseInt(majorId) : null,
-          avatar_url: avatarUrl || null,
-        })
-      })
-
-      if (!resFull.ok) {
-        const errData = await resFull.json()
+      if (!res.ok) {
+        const errData = await res.json()
         throw new Error(errData.error || "Failed to update profile details.")
       }
 
-      const updated = await resFull.json()
+      const updated = await res.json()
       setUser(updated.user)
       setIsEditing(false)
       router.refresh()
@@ -336,6 +319,18 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
             <p className="text-xs text-muted-foreground font-medium pt-0.5">
               Logins: {user.login_count || 1} · Last login: {formatActivityTime(user.last_login_at || user.created_at)}
             </p>
+
+            {/* Minimal Edit Profile button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#3B3B3B] dark:text-gray-200 hover:text-black dark:hover:text-white bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 rounded-xl border border-black/5 dark:border-white/10 transition-all cursor-pointer shadow-2xs active:scale-95"
+              >
+                <Edit className="size-3.5" />
+                <span>Edit Profile</span>
+              </button>
+            </div>
           </div>
         </div>
 

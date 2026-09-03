@@ -1244,6 +1244,7 @@ export function UserTable({ users, currentUserId }) {
               ) : (
                 sorted.map((user) => {
                   const isCurrentAdmin = user.id === currentUserId
+                  const isChecked = selectedIds.includes(user.id)
                   const isStudent = user.role === "student"
                   const courseName = isStudent ? (user.academic_course_name || user.course || "—") : "—"
                   const programName = isStudent ? (user.program_name || "—") : "—"

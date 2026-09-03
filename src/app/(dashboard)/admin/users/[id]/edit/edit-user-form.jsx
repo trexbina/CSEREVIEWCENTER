@@ -719,33 +719,56 @@ export default function EditUserForm({ initialUser }) {
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-sm font-semibold text-[#696969]">User Role *</Label>
-                            <Select value={role} onValueChange={(val) => {
-                                setRole(val);
-                                if (val === "admin" || val === "super_admin" || val === "academic_admin" || val === "registrar") {
-                                    setExamId("");
-                                    setProgramId("");
-                                    setMajorId("");
-                                    setBatchId("");
-                                } else if (val === "teacher") {
-                                    setBatchId("");
-                                    setJobRoleDescription("");
-                                } else {
-                                    setJobRoleDescription("");
-                                }
-                            }}>
+                            <Select 
+                                value={
+                                    role === "super_admin" || role === "academic_admin" || role === "registrar" || role === "admin"
+                                        ? "admin_group"
+                                        : role
+                                } 
+                                onValueChange={(val) => {
+                                    if (val === "admin_group") {
+                                        setRole("super_admin");
+                                        setExamId("");
+                                        setProgramId("");
+                                        setMajorId("");
+                                        setBatchId("");
+                                    } else {
+                                        setRole(val);
+                                        setJobRoleDescription("");
+                                        if (val === "teacher") {
+                                            setBatchId("");
+                                        }
+                                    }
+                                }}
+                            >
                                 <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue /></SelectTrigger>
                                 <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                     <SelectItem value="student">Student</SelectItem>
                                     <SelectItem value="teacher">Teacher (Instructor)</SelectItem>
-                                    <SelectItem value="super_admin">Super Admin (System Owner)</SelectItem>
-                                    <SelectItem value="academic_admin">Academic Coordinator (Curriculum & Exams)</SelectItem>
-                                    <SelectItem value="registrar">Registrar (Students & Admissions)</SelectItem>
+                                    <SelectItem value="admin_group">Administrator</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {(role === "super_admin" || role === "academic_admin" || role === "registrar" || role === "admin") && (
+                            <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-150">
+                                <Label className="text-sm font-semibold text-[#696969]">Admin Role *</Label>
+                                <Select 
+                                    value={role === "admin" ? "super_admin" : role} 
+                                    onValueChange={(val) => setRole(val)}
+                                >
+                                    <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue /></SelectTrigger>
+                                    <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                                        <SelectItem value="super_admin">Super Admin (System Owner)</SelectItem>
+                                        <SelectItem value="academic_admin">Academic Coordinator (Curriculum & Exams)</SelectItem>
+                                        <SelectItem value="registrar">Registrar (Students & Admissions)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                         
                         {(role === "admin" || role === "super_admin" || role === "academic_admin" || role === "registrar") && (
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-150">
                                 <Label htmlFor="job-role" className="text-sm font-semibold text-[#696969]">Job Role / Title *</Label>
                                 <input 
                                     id="job-role" 

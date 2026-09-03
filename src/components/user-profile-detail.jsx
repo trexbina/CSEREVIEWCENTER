@@ -6,7 +6,7 @@ import Link from "next/link"
 import {
   Calendar, MapPin, GraduationCap, Phone, Mail, User,
   Edit, BarChart3, Clock, ArrowLeft, Loader2, Save, X, BookOpen, AlertCircle,
-  Key, Lock, Eye, EyeOff, ChevronDown, ChevronUp
+  Key, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Shield
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -32,6 +32,7 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Edit fields
   const [firstName, setFirstName] = useState(user.first_name || "")
@@ -41,12 +42,14 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
   const [birthday, setBirthday] = useState(user.birthday ? new Date(user.birthday).toISOString().split('T')[0] : "")
   const [gender, setGender] = useState(user.gender || "")
   const [phone, setPhone] = useState(user.phone || "")
+  const [personalEmail, setPersonalEmail] = useState(user.personal_email || "")
   const [address, setAddress] = useState(user.address || "")
   const [city, setCity] = useState(user.city || "")
   const [province, setProvince] = useState(user.province || "")
   const [zipCode, setZipCode] = useState(user.zip_code || "")
   const [email, setEmail] = useState(user.email || "")
   const [role, setRole] = useState(user.role || "student")
+  const [jobRoleDescription, setJobRoleDescription] = useState(user.job_role_description || "")
 
   const [highestEducation, setHighestEducation] = useState(user.highest_education || "")
   const [schoolId, setSchoolId] = useState(user.school_id ? user.school_id.toString() : "")
@@ -229,18 +232,20 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
         birthday: birthday || null,
         gender: gender || null,
         phone: phone || null,
+        personal_email: personalEmail || null,
         address: address || null,
         city: city || null,
         province: province || null,
         zip_code: zipCode || null,
-        school_id: schoolId ? parseInt(schoolId) : null,
-        academic_course_id: academicCourseId ? parseInt(academicCourseId) : null,
+        school_id: schoolId && schoolId !== "none" ? parseInt(schoolId) : null,
+        academic_course_id: academicCourseId && academicCourseId !== "none" ? parseInt(academicCourseId) : null,
         year_graduated: yearGraduated || null,
-        highest_education: highestEducation || null,
-        exam_id: role !== "admin" && examId ? parseInt(examId) : null,
-        batch_id: role !== "admin" && batchId ? parseInt(batchId) : null,
-        program_id: role !== "admin" && programId ? parseInt(programId) : null,
-        major_id: role !== "admin" && majorId ? parseInt(majorId) : null,
+        highest_education: highestEducation && highestEducation !== "none" ? highestEducation : null,
+        exam_id: !["admin", "super_admin", "academic_admin", "registrar"].includes(role) && examId && examId !== "none" ? parseInt(examId) : null,
+        batch_id: !["admin", "super_admin", "academic_admin", "registrar"].includes(role) && batchId && batchId !== "none" ? parseInt(batchId) : null,
+        program_id: !["admin", "super_admin", "academic_admin", "registrar"].includes(role) && programId && programId !== "none" ? parseInt(programId) : null,
+        major_id: !["admin", "super_admin", "academic_admin", "registrar"].includes(role) && majorId && majorId !== "none" ? parseInt(majorId) : null,
+        job_role_description: ["admin", "super_admin", "academic_admin", "registrar"].includes(role) ? jobRoleDescription : null,
         avatar_url: avatarUrl || null,
       }
 
@@ -689,134 +694,64 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
         )}
       </div>
 
-      {/* Advanced Edit Modal */}
+      {/* Advanced Edit Modal Styled like Edit User Form */}
       {isEditing && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-slate-950 rounded-2xl border border-border w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col my-8">
+          <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl border border-black/10 dark:border-white/10 w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col my-8 animate-in fade-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="border-b border-border px-6 py-4 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
-              <div className="flex items-center gap-2">
-                <Edit className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Edit User Profile</h3>
+            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4 flex items-center justify-between bg-white dark:bg-[#1E1E1E]">
+              <div>
+                <h2 className="text-lg font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  Edit Profile
+                </h2>
+                <p className="text-xs text-[#696969]">
+                  Update your personal details, credentials, and account settings.
+                </p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsEditing(false)}
-                className="rounded-full p-1 hover:bg-slate-200 dark:hover:bg-slate-800 text-muted-foreground hover:text-foreground transition-all"
+                className="rounded-xl p-1.5 hover:bg-black/5 dark:hover:bg-white/10 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-all cursor-pointer"
               >
-                <X className="h-5 w-5" />
+                <X className="size-5" />
               </button>
             </div>
 
-            {/* Scrollable Form */}
-            <form onSubmit={handleEditSubmit} className="flex-1 overflow-y-auto p-6 max-h-[70vh] space-y-6 bg-white dark:bg-slate-950">
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleEditSubmit} className="flex-1 overflow-y-auto p-6 max-h-[75vh] space-y-6 bg-white dark:bg-[#1E1E1E]">
               {error && (
-                <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-3 text-sm text-destructive flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  {error}
+                <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive font-medium flex items-center gap-2">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <span>{error}</span>
                 </div>
               )}
 
-              {/* ═══ Account Security & Password ═══ */}
-              <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
-                <div className="flex items-center justify-between border-b border-primary/20 pb-2">
-                  <div className="flex items-center gap-2">
-                    <Key className="h-4 w-4 text-primary" />
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-primary">
-                      Account Password & Role
-                    </h4>
-                  </div>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Original password is encrypted & hidden
-                  </span>
+              {/* ═══ Personal Information ═══ */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-2.5 pt-1">
+                  <User className="size-4.5 text-[#696969]" />
+                  <h3 className="text-base font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
+                    Personal Information
+                  </h3>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="edit-email" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Email Address</Label>
-                    <Input id="edit-email" type="email" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Account Role</Label>
-                    <Select value={role} onValueChange={setRole}>
-                      <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"><SelectValue placeholder="Select Role" /></SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-950 border border-border">
-                        <SelectItem value="student">Student</SelectItem>
-                        <SelectItem value="teacher">Teacher</SelectItem>
-                        <SelectItem value="admin">Administrator</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* New Password */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="edit-new-password" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center justify-between">
-                      <span>Set New Password</span>
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="text-[10px] text-primary font-semibold hover:underline flex items-center gap-1"
-                      >
-                        {showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                        {showPassword ? "Hide" : "Show"}
-                      </button>
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="edit-new-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Leave blank to keep unchanged"
-                        className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800 pr-10"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                      />
-                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">Min. 6 characters. Leave empty if no change.</p>
-                  </div>
-
-                  {/* Confirm New Password */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="edit-confirm-password" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Confirm New Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="edit-confirm-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Confirm new password"
-                        disabled={!newPassword}
-                        className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800 pr-10 disabled:opacity-50"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                      />
-                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ═══ Personal Details ═══ */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 border-b border-border pb-1">
-                  <User className="h-4 w-4" /> Personal Details
-                </h4>
-
-                {/* Avatar Edit Upload */}
-                <div className="flex flex-col sm:flex-row items-center gap-5 pb-4 border-b border-border/50">
-                  <div className="relative h-20 w-20 rounded-full bg-slate-100 dark:bg-slate-900 border-2 border-solid border-border flex items-center justify-center overflow-hidden">
+                {/* Avatar Upload */}
+                <div className="flex items-center gap-4 py-1">
+                  <div className="relative size-16 rounded-full bg-white dark:bg-white/10 border border-black/10 dark:border-white/15 flex items-center justify-center overflow-hidden shadow-2xs shrink-0">
                     {avatarUrl ? (
                       <img src={avatarUrl} alt="Avatar Preview" className="h-full w-full object-cover" />
                     ) : (
-                      <User className="h-8 w-8 text-muted-foreground" />
+                      <User className="size-7 text-[#696969]" />
                     )}
                     {uploadingAvatar && (
                       <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        <span className="size-4 animate-spin rounded-full border-2 border-[#E9C46A] border-t-transparent" />
                       </div>
                     )}
                   </div>
-                  <div className="space-y-1 text-center sm:text-left">
-                    <Label htmlFor="edit-avatar-file" className="cursor-pointer inline-flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground hover:bg-secondary/80 transition-colors">
-                      Change Photo
+                  <div className="space-y-1">
+                    <Label htmlFor="edit-avatar-file" className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-white dark:bg-white/10 px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-[#3B3B3B] dark:text-white hover:bg-black/5 dark:hover:bg-white/15 border border-black/5 dark:border-white/10 transition-all shadow-2xs">
+                      Upload Photo
                     </Label>
                     <input
                       id="edit-avatar-file"
@@ -825,39 +760,74 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                       className="hidden"
                       onChange={handleAvatarUpload}
                     />
-                    <p className="text-[10px] text-muted-foreground">JPG, PNG or WEBP. Max size 2MB.</p>
+                    <p className="text-xs text-[#696969]">JPG, PNG or WEBP (Max 2MB)</p>
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="edit-first-name" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">First Name</Label>
-                    <Input id="edit-first-name" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                    <Label htmlFor="edit-first-name" className="text-sm font-semibold text-[#696969]">First Name *</Label>
+                    <input
+                      id="edit-first-name"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Juan"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="edit-middle-name" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Middle Name</Label>
-                    <Input id="edit-middle-name" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800" value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
+                    <Label htmlFor="edit-middle-name" className="text-sm font-semibold text-[#696969]">Middle Name</Label>
+                    <input
+                      id="edit-middle-name"
+                      value={middleName}
+                      onChange={(e) => setMiddleName(e.target.value)}
+                      placeholder="Santos"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="edit-last-name" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Last Name</Label>
-                    <Input id="edit-last-name" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                    <Label htmlFor="edit-last-name" className="text-sm font-semibold text-[#696969]">Last Name *</Label>
+                    <input
+                      id="edit-last-name"
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Dela Cruz"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="edit-suffix" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Suffix</Label>
-                    <Input id="edit-suffix" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800" value={suffix} onChange={(e) => setSuffix(e.target.value)} />
+                    <Label htmlFor="edit-suffix" className="text-sm font-semibold text-[#696969]">Suffix</Label>
+                    <input
+                      id="edit-suffix"
+                      value={suffix}
+                      onChange={(e) => setSuffix(e.target.value)}
+                      placeholder="Jr., III"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                    />
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="edit-birthday" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Birthday</Label>
-                    <Input id="edit-birthday" type="date" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
+                    <Label htmlFor="edit-birthday" className="text-sm font-semibold text-[#696969]">Birthday</Label>
+                    <input
+                      id="edit-birthday"
+                      type="date"
+                      value={birthday}
+                      onChange={(e) => setBirthday(e.target.value)}
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Gender</Label>
-                    <Select value={gender} onValueChange={setGender}>
-                      <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"><SelectValue placeholder="Select Gender" /></SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-950 border border-border">
+                    <Label className="text-sm font-semibold text-[#696969]">Gender</Label>
+                    <Select value={gender || "none"} onValueChange={(val) => setGender(val === "none" ? "" : val)}>
+                      <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs">
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                        <SelectItem value="none">None</SelectItem>
                         <SelectItem value="male">Male</SelectItem>
                         <SelectItem value="female">Female</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
@@ -866,56 +836,93 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="edit-phone" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Phone Number</Label>
-                    <Input id="edit-phone" type="tel" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                    <Label htmlFor="edit-phone" className="text-sm font-semibold text-[#696969]">Phone Number</Label>
+                    <input
+                      id="edit-phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+63 9XX XXX XXXX"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-personal-email" className="text-sm font-semibold text-[#696969]">Personal Email</Label>
+                    <input
+                      id="edit-personal-email"
+                      type="email"
+                      value={personalEmail}
+                      onChange={(e) => setPersonalEmail(e.target.value)}
+                      placeholder="personal@gmail.com"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                    />
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="sm:col-span-3 space-y-1.5">
-                    <Label htmlFor="edit-address" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Street Address</Label>
-                    <Input id="edit-address" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800" value={address} onChange={(e) => setAddress(e.target.value)} />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label htmlFor="edit-address" className="text-sm font-semibold text-[#696969]">Street Address</Label>
+                    <input
+                      id="edit-address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="123 Main St., Barangay Example"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="edit-city" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">City / Municipality</Label>
-                    <Input id="edit-city" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800" value={city} onChange={(e) => setCity(e.target.value)} />
+                    <Label htmlFor="edit-city" className="text-sm font-semibold text-[#696969]">City / Municipality</Label>
+                    <input
+                      id="edit-city"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="Quezon City"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                    />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="edit-province" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Province</Label>
-                    <Input id="edit-province" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800" value={province} onChange={(e) => setProvince(e.target.value)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="edit-zip" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">ZIP Code</Label>
-                    <Input id="edit-zip" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800" value={zipCode} onChange={(e) => setZipCode(e.target.value)} />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="edit-province" className="text-sm font-semibold text-[#696969]">Province</Label>
+                      <input
+                        id="edit-province"
+                        value={province}
+                        onChange={(e) => setProvince(e.target.value)}
+                        placeholder="Metro Manila"
+                        className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="edit-zip" className="text-sm font-semibold text-[#696969]">ZIP Code</Label>
+                      <input
+                        id="edit-zip"
+                        value={zipCode}
+                        onChange={(e) => setZipCode(e.target.value)}
+                        placeholder="1100"
+                        className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              </section>
 
               {/* ═══ Education Background ═══ */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-1">
-                  Education Background
-                </h4>
+              <section className="space-y-4 pt-6 border-t border-black/5 dark:border-white/10">
+                <div className="flex items-center gap-2.5 pt-1">
+                  <GraduationCap className="size-4.5 text-[#696969]" />
+                  <h3 className="text-base font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
+                    Education Background
+                  </h3>
+                </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Highest Education</Label>
-                    <Select value={highestEducation} onValueChange={setHighestEducation}>
-                      <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"><SelectValue placeholder="Select Level" /></SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-950 border border-border">
-                        <SelectItem value="high_school">High School</SelectItem>
-                        <SelectItem value="vocational">Vocational / Technical</SelectItem>
-                        <SelectItem value="bachelor">Bachelor's Degree</SelectItem>
-                        <SelectItem value="master">Master's Degree</SelectItem>
-                        <SelectItem value="doctorate">Doctorate</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">School / University</Label>
-                    <Select value={schoolId} onValueChange={setSchoolId}>
-                      <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"><SelectValue placeholder="Select School" /></SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-950 border border-border">
+                    <Label className="text-sm font-semibold text-[#696969]">School / University</Label>
+                    <Select value={schoolId || "none"} onValueChange={(val) => setSchoolId(val === "none" ? "" : val)}>
+                      <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs">
+                        <SelectValue placeholder="Select School" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                        <SelectItem value="none">None</SelectItem>
                         {dropdownData.schools.map(s => (
                           <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
                         ))}
@@ -923,10 +930,31 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Course / Program</Label>
-                    <Select value={academicCourseId} onValueChange={setAcademicCourseId}>
-                      <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"><SelectValue placeholder="Select Course" /></SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-950 border border-border">
+                    <Label className="text-sm font-semibold text-[#696969]">Highest Education</Label>
+                    <Select value={highestEducation || "none"} onValueChange={(val) => setHighestEducation(val === "none" ? "" : val)}>
+                      <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs">
+                        <SelectValue placeholder="Select Education" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="High School">High School</SelectItem>
+                        <SelectItem value="Senior High School">Senior High School</SelectItem>
+                        <SelectItem value="Vocational / Associate">Vocational / Associate</SelectItem>
+                        <SelectItem value="College Undergraduate">College Undergraduate</SelectItem>
+                        <SelectItem value="Bachelor's Degree">Bachelor&apos;s Degree</SelectItem>
+                        <SelectItem value="Master's Degree">Master&apos;s Degree</SelectItem>
+                        <SelectItem value="Doctorate Degree">Doctorate Degree</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-semibold text-[#696969]">Course / Program</Label>
+                    <Select value={academicCourseId || "none"} onValueChange={(val) => setAcademicCourseId(val === "none" ? "" : val)}>
+                      <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs">
+                        <SelectValue placeholder="Select Course" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                        <SelectItem value="none">None</SelectItem>
                         {dropdownData.academic_courses.map(c => (
                           <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
                         ))}
@@ -934,50 +962,69 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="edit-year-grad" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Year Graduated</Label>
-                    <Input id="edit-year-grad" type="number" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800" value={yearGraduated} onChange={(e) => setYearGraduated(e.target.value)} />
+                    <Label htmlFor="edit-year-grad" className="text-sm font-semibold text-[#696969]">Year Graduated</Label>
+                    <input
+                      id="edit-year-grad"
+                      type="number"
+                      min="1950"
+                      max="2099"
+                      value={yearGraduated}
+                      onChange={(e) => setYearGraduated(e.target.value)}
+                      placeholder="2024"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                    />
                   </div>
                 </div>
-              </div>
+              </section>
 
               {/* ═══ Academic Targets (Teacher & Students) ═══ */}
               {role === "teacher" && (
-                <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-1">
-                    Teaching Assignment
-                  </h4>
-
-                  <div className="grid gap-4 sm:grid-cols-1">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Assigned Examination (e.g. LEPT)</Label>
-                      <Select value={examId} onValueChange={(val) => { setExamId(val); setProgramId(""); setMajorId(""); }}>
-                        <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"><SelectValue placeholder="Select Exam" /></SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-950 border border-border">
-                          {dropdownData.examinations.map(e => (
-                            <SelectItem key={e.id} value={e.id.toString()}>{e.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        Teachers will see curriculum modules, categories, and competencies associated with this examination.
-                      </p>
-                    </div>
+                <section className="space-y-4 pt-6 border-t border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-2.5 pt-1">
+                    <BookOpen className="size-4.5 text-[#696969]" />
+                    <h3 className="text-base font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
+                      Teaching Assignment
+                    </h3>
                   </div>
-                </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-semibold text-[#696969]">Assigned Examination (e.g. LEPT)</Label>
+                    <Select value={examId || "none"} onValueChange={(val) => { setExamId(val === "none" ? "" : val); setProgramId(""); setMajorId(""); }}>
+                      <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs">
+                        <SelectValue placeholder="Select Exam" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                        <SelectItem value="none">None</SelectItem>
+                        {dropdownData.examinations.map(e => (
+                          <SelectItem key={e.id} value={e.id.toString()}>{e.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-[#696969]">
+                      Curriculum modules and categories will correspond to this examination.
+                    </p>
+                  </div>
+                </section>
               )}
 
               {role === "student" && (
-                <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-1">
-                    Academic Details
-                  </h4>
+                <section className="space-y-4 pt-6 border-t border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-2.5 pt-1">
+                    <BookOpen className="size-4.5 text-[#696969]" />
+                    <h3 className="text-base font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
+                      Academic Details
+                    </h3>
+                  </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Target Examination</Label>
-                      <Select value={examId} onValueChange={(val) => { setExamId(val); setProgramId(""); setMajorId(""); }}>
-                        <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"><SelectValue placeholder="Select Exam" /></SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-950 border border-border">
+                      <Label className="text-sm font-semibold text-[#696969]">Target Examination</Label>
+                      <Select value={examId || "none"} onValueChange={(val) => { setExamId(val === "none" ? "" : val); setProgramId(""); setMajorId(""); }}>
+                        <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs">
+                          <SelectValue placeholder="Select Exam" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                          <SelectItem value="none">None</SelectItem>
                           {dropdownData.examinations.map(e => (
                             <SelectItem key={e.id} value={e.id.toString()}>{e.name}</SelectItem>
                           ))}
@@ -986,14 +1033,17 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Batch / Review Year</Label>
-                      <Select value={batchId} onValueChange={setBatchId}>
-                        <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"><SelectValue placeholder="Select Batch" /></SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-950 border border-border">
+                      <Label className="text-sm font-semibold text-[#696969]">Batch / Review Year</Label>
+                      <Select value={batchId || "none"} onValueChange={(val) => setBatchId(val === "none" ? "" : val)}>
+                        <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs">
+                          <SelectValue placeholder="Select Batch" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                          <SelectItem value="none">None</SelectItem>
                           {dropdownData.batches
                             .filter(b => !examId || b.exam_id.toString() === examId)
                             .map(b => (
-                              <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
+                              <SelectItem key={b.id} value={b.id.toString()}>{b.name} ({b.target_year})</SelectItem>
                             ))}
                         </SelectContent>
                       </Select>
@@ -1001,10 +1051,13 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
 
                     {examId && dropdownData.programs?.some(p => p.exam_id.toString() === examId) && (
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Program</Label>
-                        <Select value={programId} onValueChange={(val) => { setProgramId(val); setMajorId(""); }}>
-                          <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"><SelectValue placeholder="Select Program" /></SelectTrigger>
-                          <SelectContent className="bg-white dark:bg-slate-950 border border-border">
+                        <Label className="text-sm font-semibold text-[#696969]">Course / Program</Label>
+                        <Select value={programId || "none"} onValueChange={(val) => { setProgramId(val === "none" ? "" : val); setMajorId(""); }}>
+                          <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs">
+                            <SelectValue placeholder="Select Program" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                            <SelectItem value="none">None</SelectItem>
                             {dropdownData.programs
                               .filter(p => p.exam_id.toString() === examId)
                               .map(p => (
@@ -1017,10 +1070,13 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
 
                     {programId && dropdownData.majors?.some(m => m.program_id.toString() === programId) && (
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Specialization / Major</Label>
-                        <Select value={majorId} onValueChange={setMajorId}>
-                          <SelectTrigger className="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"><SelectValue placeholder="Select Major" /></SelectTrigger>
-                          <SelectContent className="bg-white dark:bg-slate-950 border border-border">
+                        <Label className="text-sm font-semibold text-[#696969]">Specialization / Major</Label>
+                        <Select value={majorId || "none"} onValueChange={(val) => setMajorId(val === "none" ? "" : val)}>
+                          <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs">
+                            <SelectValue placeholder="Select Major" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                            <SelectItem value="none">None</SelectItem>
                             {dropdownData.majors
                               .filter(m => m.program_id.toString() === programId)
                               .map(m => (
@@ -1031,27 +1087,127 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                       </div>
                     )}
                   </div>
-                </div>
+                </section>
               )}
+
+              {["admin", "super_admin", "academic_admin", "registrar"].includes(role) && (
+                <section className="space-y-4 pt-6 border-t border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-2.5 pt-1">
+                    <User className="size-4.5 text-[#696969]" />
+                    <h3 className="text-base font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
+                      Administrator Details
+                    </h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-job-desc" className="text-sm font-semibold text-[#696969]">Job Role / Description</Label>
+                    <input
+                      id="edit-job-desc"
+                      value={jobRoleDescription}
+                      onChange={(e) => setJobRoleDescription(e.target.value)}
+                      placeholder="e.g. Lead System Administrator & Technical Coordinator"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                    />
+                  </div>
+                </section>
+              )}
+
+              {/* ═══ Account Details ═══ */}
+              <section className="space-y-4 pt-6 border-t border-black/5 dark:border-white/10">
+                <div className="flex items-center gap-2.5 pt-1">
+                  <Shield className="size-4.5 text-[#696969]" />
+                  <h3 className="text-base font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
+                    Account Details
+                  </h3>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label htmlFor="account-login-email" className="text-sm font-semibold text-[#696969]">Account Login Email *</Label>
+                    <input
+                      id="account-login-email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="user@peak.edu.ph"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                    />
+                    <p className="text-xs text-[#696969]">This email is used to log into the PEAK Review System.</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-new-password" className="text-sm font-semibold text-[#696969]">New Password (Optional)</Label>
+                    <div className="relative">
+                      <input
+                        id="edit-new-password"
+                        type={showPassword ? "text" : "password"}
+                        minLength={6}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Leave blank to keep current password"
+                        className="w-full h-10.5 pl-3.5 pr-10 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer p-0.5"
+                        title={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-confirm-password" className="text-sm font-semibold text-[#696969]">Confirm New Password</Label>
+                    <div className="relative">
+                      <input
+                        id="edit-confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        minLength={6}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Leave blank to keep current password"
+                        className="w-full h-10.5 pl-3.5 pr-10 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer p-0.5"
+                        title={showConfirmPassword ? "Hide password" : "Show password"}
+                      >
+                        {showConfirmPassword ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
             </form>
 
-            {/* Footer */}
-            <div className="border-t border-border px-6 py-4 flex items-center justify-end gap-3 bg-slate-50 dark:bg-slate-900/50">
-              <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+            {/* Footer Actions matching Edit User Form */}
+            <div className="border-t border-black/5 dark:border-white/10 px-6 py-4 flex items-center justify-end gap-2.5 bg-white dark:bg-[#1E1E1E]">
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer"
+              >
                 Cancel
-              </Button>
-              <Button type="button" onClick={handleEditSubmit} disabled={saving} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
+              </button>
+              <button
+                type="button"
+                onClick={handleEditSubmit}
+                disabled={saving}
+                className="flex items-center gap-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+              >
                 {saving ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
                     Saving…
                   </>
                 ) : (
-                  <>
-                    Save Changes
-                  </>
+                  "Save Changes"
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         </div>

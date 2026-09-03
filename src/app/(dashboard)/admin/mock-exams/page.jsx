@@ -32,6 +32,7 @@ import MultiSelectDropdown from "@/components/ui/MultiSelectDropdown"
 
 // confirmation modal popup for delete actions
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
+import { toast } from "@/components/ui/toast"
 
 // sorting button component for table headers
 function SortButton({ label, field, sortField, sortDir, onSort }) {
@@ -603,6 +604,7 @@ export default function MockExamsPage() {
             if (res.ok) {
                 const data = await res.json()
                 setIsModalOpen(false)
+                toast(editingExam ? "Successfully updated mock exam." : "Successfully created mock exam.")
                 setEditingExam(null)
                 
                 if (method === "POST") {
@@ -613,11 +615,11 @@ export default function MockExamsPage() {
                 }
             } else {
                 const errData = await res.json()
-                alert(errData.error || "Failed to save mock exam.")
+                toast(errData.error || "Failed to save mock exam.")
             }
         } catch (err) {
             console.error(err)
-            alert("An error occurred while saving the exam.")
+            toast("An error occurred while saving the exam.")
         } finally {
             setSaving(false)
         }
@@ -645,8 +647,9 @@ export default function MockExamsPage() {
                     })
                     if (res.ok) {
                         setExams(prev => prev.filter(e => e.id !== exam.id))
+                        toast("Successfully moved mock exam to trash.")
                     } else {
-                        alert("Failed to delete exam.")
+                        toast("Failed to delete exam.")
                     }
                 } catch (err) {
                     console.error(err)

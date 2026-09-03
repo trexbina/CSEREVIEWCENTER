@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { toast } from "@/components/ui/toast"
 import {
     Select,
     SelectContent,
@@ -439,6 +440,7 @@ export default function AddUserPage() {
                 return
             }
 
+            toast("Successfully created user account.")
             router.push("/admin/users")
             router.refresh()
         } catch (err) {

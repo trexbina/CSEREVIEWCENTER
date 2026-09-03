@@ -27,6 +27,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog"
+import { toast } from "@/components/ui/toast"
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 
 export function PreRegistrationsTab() {
@@ -307,10 +308,14 @@ export function PreRegistrationsTab() {
         setDeleteModalOpen(false)
         setDeleteTarget(null)
         loadApplications()
+        toast("Successfully moved pre-registration(s) to trash.")
         router.refresh()
+      } else {
+        toast("Failed to delete pre-registration.")
       }
     } catch (err) {
       console.error("Delete failed:", err)
+      toast("Network error occurred while deleting.")
     } finally {
       setDeleteLoading(false)
     }

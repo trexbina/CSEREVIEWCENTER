@@ -19,6 +19,7 @@ import MultiSelectDropdown from "@/components/ui/MultiSelectDropdown"
 
 // this is the popup that asks if you really want to delete something
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
+import { toast } from "@/components/ui/toast"
 
 // this is the main screen for managing categories subcategories and subjects
 export default function CurriculumManagerPage() {
@@ -362,9 +363,11 @@ export default function CurriculumManagerPage() {
             if (catModalMode === "add") {
                 setCategories((prev) => [...prev, data.category])
                 if (!selectedCategory) setSelectedCategory(data.category)
+                toast("Successfully created category.")
             } else {
                 setCategories((prev) => prev.map(c => c.id === catModalData.id ? data.category : c))
                 if (selectedCategory?.id === catModalData.id) setSelectedCategory(data.category)
+                toast("Successfully updated category.")
             }
             setIsCatModalOpen(false)
         } catch (err) { showError(err.message) } finally { setSaving(false) }
@@ -381,6 +384,7 @@ export default function CurriculumManagerPage() {
                 setSelectedSubcategory(null)
                 setSubcategories([])
             }
+            toast("Successfully moved category to trash.")
         } catch (err) { showError(err.message) }
     }
 
@@ -437,8 +441,13 @@ export default function CurriculumManagerPage() {
             if (!res.ok) throw new Error((await res.json()).error || `Failed to ${subModalMode} subcategory`)
             const data = await res.json()
 
-            if (subModalMode === "add") setSubcategories((prev) => [...prev, data.subcategory])
-            else setSubcategories((prev) => prev.map(s => s.id === subModalData.id ? data.subcategory : s))
+            if (subModalMode === "add") {
+                setSubcategories((prev) => [...prev, data.subcategory])
+                toast("Successfully created subcategory.")
+            } else {
+                setSubcategories((prev) => prev.map(s => s.id === subModalData.id ? data.subcategory : s))
+                toast("Successfully updated subcategory.")
+            }
 
             setIsSubModalOpen(false)
         } catch (err) { showError(err.message) } finally { setSaving(false) }
@@ -451,6 +460,7 @@ export default function CurriculumManagerPage() {
             if (!res.ok) throw new Error("Failed to delete subcategory")
             setSubcategories((prev) => prev.filter((s) => s.id !== subId))
             if (selectedSubcategory?.id === subId) setSelectedSubcategory(null)
+            toast("Successfully moved subcategory to trash.")
         } catch (err) { showError(err.message) }
     }
 
@@ -536,8 +546,13 @@ export default function CurriculumManagerPage() {
             if (!res.ok) throw new Error((await res.json()).error || `Failed to ${subjectModalMode} subject`)
             const data = await res.json()
 
-            if (subjectModalMode === "add") setSubjects((prev) => [data.subject, ...prev])
-            else setSubjects((prev) => prev.map(s => s.id === subjectModalData.id ? data.subject : s))
+            if (subjectModalMode === "add") {
+                setSubjects((prev) => [data.subject, ...prev])
+                toast("Successfully created subject.")
+            } else {
+                setSubjects((prev) => prev.map(s => s.id === subjectModalData.id ? data.subject : s))
+                toast("Successfully updated subject.")
+            }
 
             setIsSubjectModalOpen(false)
         } catch (err) { showError(err.message) } finally { setSaving(false) }
@@ -552,6 +567,7 @@ export default function CurriculumManagerPage() {
                 throw new Error(errData.error || "Failed to delete subject")
             }
             setSubjects((prev) => prev.filter((s) => s.id !== subId))
+            toast("Successfully moved subject to trash.")
         } catch (err) { showError(err.message) }
     }
 

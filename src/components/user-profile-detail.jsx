@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { toast } from "@/components/ui/toast"
 
 export function UserProfileDetail({ initialUser, showBackBtn = true }) {
   const router = useRouter()
@@ -263,6 +264,7 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
       const updated = await res.json()
       setUser(updated.user)
       setIsEditing(false)
+      toast("Successfully updated profile details.")
       router.refresh()
     } catch (err) {
       setError(err.message || "Network error. Please try again.")

@@ -44,6 +44,7 @@ import GradebookView from "./GradebookView"
 
 // modal dialog to confirm deleting items
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
+import { toast } from "@/components/ui/toast"
 
 // --- Helper Functions & External Subcomponents (defined outside parent to prevent losing input focus) ---
 const getStatusStyle = (status) => {
@@ -443,12 +444,15 @@ export default function MasterDataBuilderPage() {
     try {
       if (isSchoolEdit) {
         await apiCall("UPDATE", "SCHOOL", { id: schoolForm.id, name: schoolForm.name, address: schoolForm.address });
+        toast("Successfully updated institution.");
       } else {
         await apiCall("ADD", "SCHOOL", { name: schoolForm.name, address: schoolForm.address });
+        toast("Successfully added institution.");
       }
       await fetchData();
     } catch (err) {
       console.error(err);
+      toast("An error occurred while saving institution.");
     }
     setIsSchoolDialogOpen(false)
   }
@@ -499,38 +503,49 @@ export default function MasterDataBuilderPage() {
     try {
       if (actionType === "ADD_EXAM") {
         await apiCall("ADD", "EXAM", { name: value })
+        toast("Successfully created examination.")
       }
       else if (actionType === "ADD_PROGRAM") {
         await apiCall("ADD", "PROGRAM", { examId: targetParams.examId, name: value })
+        toast("Successfully created program.")
       }
       else if (actionType === "ADD_MAJOR") {
         await apiCall("ADD", "MAJOR", { programId: targetParams.programId, name: value })
+        toast("Successfully created major.")
       }
       else if (actionType === "RENAME_EXAM") {
         await apiCall("RENAME", "EXAM", { id: targetParams.examId, name: value })
+        toast("Successfully renamed examination.")
       }
       else if (actionType === "RENAME_PROGRAM") {
         await apiCall("RENAME", "PROGRAM", { id: targetParams.programId, name: value })
+        toast("Successfully renamed program.")
       }
       else if (actionType === "RENAME_MAJOR") {
         await apiCall("RENAME", "MAJOR", { id: targetParams.majorId, name: value })
+        toast("Successfully renamed major.")
       }
       else if (actionType === "ADD_SCHOOL") {
         await apiCall("ADD", "SCHOOL", { name: value })
+        toast("Successfully added institution.")
       }
       else if (actionType === "RENAME_SCHOOL") {
         await apiCall("RENAME", "SCHOOL", { id: targetParams.id, name: value })
+        toast("Successfully renamed institution.")
       }
       else if (actionType === "ADD_COURSE") {
         await apiCall("ADD", "COURSE", { name: value })
+        toast("Successfully added course.")
       }
       else if (actionType === "RENAME_COURSE") {
         await apiCall("RENAME", "COURSE", { id: targetParams.id, name: value })
+        toast("Successfully renamed course.")
       }
 
       await fetchData(); // Refresh all state natively from backend
     } catch (e) {
       console.error(e)
+      toast("An error occurred while saving.")
     }
 
     closePrompt();
@@ -548,6 +563,7 @@ export default function MasterDataBuilderPage() {
       async () => {
         await apiCall("DELETE", "EXAM", { id: examId });
         await fetchData();
+        toast("Successfully moved examination to trash.");
       }
     )
   }
@@ -559,6 +575,7 @@ export default function MasterDataBuilderPage() {
       async () => {
         await apiCall("DELETE", "PROGRAM", { id: programId });
         await fetchData();
+        toast("Successfully deleted course.");
       }
     )
   }
@@ -570,6 +587,7 @@ export default function MasterDataBuilderPage() {
       async () => {
         await apiCall("DELETE", "MAJOR", { id: majorId });
         await fetchData();
+        toast("Successfully deleted specialization.");
       }
     )
   }
@@ -602,12 +620,15 @@ export default function MasterDataBuilderPage() {
     try {
       if (isBatchEdit) {
         await apiCall("UPDATE", "BATCH", { id: batchForm.id, name: newName, target_year: parseInt(batchForm.year), exam_id: batchForm.examId, status: batchForm.status });
+        toast("Successfully updated batch.");
       } else {
         await apiCall("ADD", "BATCH", { name: newName, target_year: parseInt(batchForm.year), exam_id: batchForm.examId, status: batchForm.status });
+        toast("Successfully created batch.");
       }
       await fetchData();
     } catch (err) {
       console.error(err);
+      toast("An error occurred while saving batch.");
     }
     setIsBatchDialogOpen(false)
   }
@@ -620,8 +641,10 @@ export default function MasterDataBuilderPage() {
         try {
           await apiCall("DELETE", "BATCH", { id: batchId });
           await fetchData();
+          toast("Successfully moved batch to trash.");
         } catch (e) {
           console.error("Failed to delete", e);
+          toast("Failed to delete batch.");
         }
       }
     )

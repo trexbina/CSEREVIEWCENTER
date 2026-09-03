@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FontProvider } from "@/components/font-provider";
+import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,7 +34,9 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange
         >
           <FontProvider>
-            {children}
+            <ToastProvider>
+              {children}
+            </ToastProvider>
           </FontProvider>
         </ThemeProvider>
         <Script src="https://cdn.lordicon.com/lordicon.js" strategy="lazyOnload" />

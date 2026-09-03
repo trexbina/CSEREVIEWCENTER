@@ -17,6 +17,7 @@ import {
   RefreshCw,
 } from "lucide-react"
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
+import { toast } from "@/components/ui/toast"
 
 const SOURCE_FILTERS = [
   { id: "ALL", label: "All Items" },
@@ -35,11 +36,8 @@ export function TrashClient() {
   const [search, setSearch] = useState("")
   const [selectedIds, setSelectedIds] = useState([])
 
-  // Action states
   const [actionLoading, setActionLoading] = useState(false)
   const [confirmModalOpen, setConfirmModalOpen] = useState(false)
-  const [modalMode, setModalMode] = useState("purge") // 'purge'
-  const [feedbackMsg, setFeedbackMsg] = useState(null)
 
   const fetchItems = async () => {
     setLoading(true)
@@ -103,7 +101,6 @@ export function TrashClient() {
   const handleRecover = async (targetIds = selectedIds) => {
     if (targetIds.length === 0) return
     setActionLoading(true)
-    setFeedbackMsg(null)
     try {
       const res = await fetch("/api/admin/trash", {
         method: "POST",
@@ -115,27 +112,15 @@ export function TrashClient() {
         setSelectedIds((prev) => prev.filter((id) => !targetIds.includes(id)))
         await fetchItems()
         if (data.errors && data.errors.length > 0) {
-          setFeedbackMsg({
-            type: "warning",
-            text: `Recovered ${data.restoredCount || 0} item(s). Some items could not be restored: ${data.errors.join("; ")}`,
-          })
+          toast(`Recovered ${data.restoredCount || 0} item(s). Some items could not be restored.`)
         } else {
-          setFeedbackMsg({
-            type: "success",
-            text: `Successfully recovered ${data.restoredCount || targetIds.length} item(s) to their original location.`,
-          })
+          toast(`Successfully recovered ${data.restoredCount || targetIds.length} item(s).`)
         }
       } else {
-        setFeedbackMsg({
-          type: "error",
-          text: data.error || "Failed to recover selected items.",
-        })
+        toast(data.error || "Failed to recover selected items.")
       }
     } catch {
-      setFeedbackMsg({
-        type: "error",
-        text: "Network error occurred while recovering items.",
-      })
+      toast("Network error occurred while recovering items.")
     } finally {
       setActionLoading(false)
     }
@@ -156,21 +141,12 @@ export function TrashClient() {
         setSelectedIds([])
         setConfirmModalOpen(false)
         await fetchItems()
-        setFeedbackMsg({
-          type: "success",
-          text: `Permanently deleted ${data.deletedCount || selectedIds.length} item(s).`,
-        })
+        toast(`Successfully deleted ${data.deletedCount || selectedIds.length} item(s).`)
       } else {
-        setFeedbackMsg({
-          type: "error",
-          text: data.error || "Failed to permanently delete items.",
-        })
+        toast(data.error || "Failed to permanently delete items.")
       }
     } catch {
-      setFeedbackMsg({
-        type: "error",
-        text: "Network error occurred while deleting items.",
-      })
+      toast("Network error occurred while deleting items.")
     } finally {
       setActionLoading(false)
     }
@@ -206,26 +182,6 @@ export function TrashClient() {
 
   return (
     <div className="space-y-5 w-full">
-      {/* Feedback banner */}
-      {feedbackMsg && (
-        <div
-          className={`px-4 py-3 rounded-xl text-xs font-medium border flex items-center justify-between transition-all ${
-            feedbackMsg.type === "success"
-              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-              : feedbackMsg.type === "warning"
-              ? "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400"
-              : "bg-destructive/10 border-destructive/20 text-destructive"
-          }`}
-        >
-          <span>{feedbackMsg.text}</span>
-          <button
-            onClick={() => setFeedbackMsg(null)}
-            className="text-xs font-semibold underline opacity-70 hover:opacity-100 ml-4 cursor-pointer"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
 
       {/* Top Filter Tabs & Selection Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">

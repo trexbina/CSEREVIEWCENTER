@@ -20,6 +20,7 @@ import {
 // ui component helpers
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { toast } from "@/components/ui/toast"
 import {
   Tooltip,
   TooltipContent,
@@ -72,14 +73,15 @@ export function DeleteUserButton({ userId, userName }) {
       const data = await res.json()
 
       if (!res.ok) {
-        alert(data.error || "Failed to delete user.")
+        toast(data.error || "Failed to delete user.")
         setLoading(false)
         return
       }
 
+      toast("Successfully moved user to trash.")
       router.refresh()
     } catch {
-      alert("Network error.")
+      toast("Network error occurred.")
       setLoading(false)
     } finally {
       setIsConfirmOpen(false)
@@ -281,6 +283,7 @@ export function EditUserDialog({ open, onOpenChange, user }) {
         return
       }
 
+      toast("Successfully updated user details.")
       onOpenChange(false)
       router.refresh()
     } catch {
@@ -809,15 +812,16 @@ export function UserSearchTable({ users, currentUserId }) {
       })
       const data = await res.json()
       if (!res.ok) {
-        alert(data.error || "Failed to delete selected users.")
+        toast(data.error || "Failed to delete selected users.")
         setBulkDeleteLoading(false)
         return
       }
       setSelectedIds([])
       setConfirmDeleteOpen(false)
+      toast(`Successfully moved ${data.deletedCount || selectedIds.length} user(s) to trash.`)
       router.refresh()
     } catch {
-      alert("Network error. Please try again.")
+      toast("Network error. Please try again.")
     } finally {
       setBulkDeleteLoading(false)
     }
@@ -1135,15 +1139,16 @@ export function UserTable({ users, currentUserId }) {
       })
       const data = await res.json()
       if (!res.ok) {
-        alert(data.error || "Failed to delete selected users.")
+        toast(data.error || "Failed to delete selected users.")
         setBulkDeleteLoading(false)
         return
       }
       setSelectedIds([])
       setConfirmDeleteOpen(false)
+      toast(`Successfully moved ${data.deletedCount || selectedIds.length} user(s) to trash.`)
       router.refresh()
     } catch {
-      alert("Network error. Please try again.")
+      toast("Network error. Please try again.")
     } finally {
       setBulkDeleteLoading(false)
     }

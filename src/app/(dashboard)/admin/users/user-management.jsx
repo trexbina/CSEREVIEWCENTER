@@ -936,39 +936,39 @@ export function UserSearchTable({ users, currentUserId }) {
                         </Link>
                       </td>
                       <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal">{user.email}</td>
-                      <td className="px-4">
+                      <td className="px-4 text-sm">
                         {(() => {
                           const r = user.role
                           if (r === "super_admin" || r === "admin") {
                             return (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/30">
+                              <span className="font-semibold text-[#3B3B3B] dark:text-gray-200">
                                 Super Admin
                               </span>
                             )
                           }
                           if (r === "academic_admin") {
                             return (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-amber-50 dark:bg-amber-950/40 text-[#B8860B] dark:text-[#E9C46A] border border-amber-200/50 dark:border-amber-800/30">
+                              <span className="font-semibold text-[#3B3B3B] dark:text-gray-200">
                                 Academic Coord.
                               </span>
                             )
                           }
                           if (r === "registrar") {
                             return (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/30">
+                              <span className="font-semibold text-[#3B3B3B] dark:text-gray-200">
                                 Registrar
                               </span>
                             )
                           }
                           if (r === "teacher") {
                             return (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/30">
+                              <span className="font-semibold text-[#696969] dark:text-gray-300">
                                 Instructor
                               </span>
                             )
                           }
                           return (
-                            <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize bg-black/5 dark:bg-white/10 text-[#3B3B3B] dark:text-white">
+                            <span className="font-medium capitalize text-[#696969] dark:text-gray-300">
                               {r}
                             </span>
                           )
@@ -1287,39 +1287,39 @@ export function UserTable({ users, currentUserId }) {
                       </td>
                       <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{programName}</td>
                       <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{majorName}</td>
-                      <td className="px-4">
+                      <td className="px-4 text-sm">
                         {(() => {
                           const r = user.role
                           if (r === "super_admin" || r === "admin") {
                             return (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/30">
+                              <span className="font-semibold text-[#3B3B3B] dark:text-gray-200">
                                 Super Admin
                               </span>
                             )
                           }
                           if (r === "academic_admin") {
                             return (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-amber-50 dark:bg-amber-950/40 text-[#B8860B] dark:text-[#E9C46A] border border-amber-200/50 dark:border-amber-800/30">
+                              <span className="font-semibold text-[#3B3B3B] dark:text-gray-200">
                                 Academic Coord.
                               </span>
                             )
                           }
                           if (r === "registrar") {
                             return (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/30">
+                              <span className="font-semibold text-[#3B3B3B] dark:text-gray-200">
                                 Registrar
                               </span>
                             )
                           }
                           if (r === "teacher") {
                             return (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/30">
+                              <span className="font-semibold text-[#696969] dark:text-gray-300">
                                 Instructor
                               </span>
                             )
                           }
                           return (
-                            <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize bg-black/5 dark:bg-white/10 text-[#3B3B3B] dark:text-white">
+                            <span className="font-medium capitalize text-[#696969] dark:text-gray-300">
                               {r}
                             </span>
                           )

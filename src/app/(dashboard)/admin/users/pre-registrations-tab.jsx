@@ -388,22 +388,7 @@ export function PreRegistrationsTab() {
             <table className="w-full text-left border-collapse" aria-label="Pre-registrations list">
               <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
                 <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
-                  <th className="w-12 px-5 py-3.5 text-center" scope="col">
-                    <div
-                      onClick={filtered.length > 0 ? handleToggleAll : undefined}
-                      className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
-                        isAllSelected
-                          ? "bg-[#3B3B3B] dark:bg-white border-[#3B3B3B] dark:border-white text-white dark:text-gray-900 shadow-xs"
-                          : isSomeSelected
-                          ? "bg-[#3B3B3B]/10 dark:bg-white/20 border-[#3B3B3B]/40 dark:border-white/40 text-[#3B3B3B] dark:text-white"
-                          : "border-black/20 dark:border-white/20 bg-white/50 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
-                      } ${filtered.length === 0 ? "opacity-30 cursor-not-allowed" : ""}`}
-                      title={isAllSelected ? "Deselect All" : "Select All"}
-                    >
-                      {isAllSelected && <Check className="size-3 stroke-[2.5]" />}
-                      {!isAllSelected && isSomeSelected && <Minus className="size-3 stroke-[2.5]" />}
-                    </div>
-                  </th>
+                  <th className="w-12 px-5 py-3.5 text-center" scope="col"></th>
                   <th className="px-5 py-3.5 min-w-[150px]" scope="col">Applicant</th>
                   <th className="px-5 py-3.5 min-w-[180px]" scope="col">Contact</th>
                   <th className="px-5 py-3.5 min-w-[200px]" scope="col">Target Review</th>

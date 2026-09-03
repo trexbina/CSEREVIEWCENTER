@@ -1244,10 +1244,10 @@ export function UserTable({ users, currentUserId }) {
               ) : (
                 sorted.map((user) => {
                   const isCurrentAdmin = user.id === currentUserId
-                  const isChecked = selectedIds.includes(user.id)
-                  const courseName = user.academic_course_name || user.course || "—"
-                  const programName = user.program_name || "—"
-                  const majorName = user.major_name || "—"
+                  const isStudent = user.role === "student"
+                  const courseName = isStudent ? (user.academic_course_name || user.course || "—") : "—"
+                  const programName = isStudent ? (user.program_name || "—") : "—"
+                  const majorName = isStudent ? (user.major_name || "—") : "—"
 
                   return (
                     <tr
@@ -1280,13 +1280,17 @@ export function UserTable({ users, currentUserId }) {
                         </Link>
                       </td>
                       <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal">{user.email}</td>
-                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal max-w-[200px]" title={courseName !== "—" ? courseName : undefined}>
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal max-w-[200px]" title={isStudent && courseName !== "—" ? courseName : undefined}>
                         <span className="block truncate">
-                          {courseName}
+                          {isStudent ? courseName : ""}
                         </span>
                       </td>
-                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{programName}</td>
-                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{majorName}</td>
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">
+                        {isStudent ? programName : ""}
+                      </td>
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">
+                        {isStudent ? majorName : ""}
+                      </td>
                       <td className="px-4 text-sm">
                         {(() => {
                           const r = user.role

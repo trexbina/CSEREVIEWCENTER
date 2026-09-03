@@ -144,7 +144,11 @@ export function DashboardHeader({ role }) {
     }
   }
 
-  const profileUrl = role === "student" ? "/student/profile" : role === "teacher" ? "/teacher/profile" : "/admin/settings"
+  const profileUrl = role === "student" 
+    ? "/student/profile" 
+    : role === "teacher" 
+    ? "/teacher/profile" 
+    : "/admin/profile"
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 px-4 lg:px-8 transition-all">

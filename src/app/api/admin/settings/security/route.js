@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { ADMIN_ROLES } from "@/lib/auth"
 
 async function ensureTables() {
   await pool.query(`
@@ -36,7 +37,7 @@ async function ensureTables() {
 export async function GET() {
   try {
     const session = await getSession()
-    if (session?.role !== "admin") {
+    if (!session || !ADMIN_ROLES.includes(session.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -130,7 +131,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const session = await getSession()
-    if (session?.role !== "admin") {
+    if (!session || !ADMIN_ROLES.includes(session.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 

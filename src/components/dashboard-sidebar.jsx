@@ -174,8 +174,9 @@ export function DashboardSidebar({ role }) {
 
 
     function isActive(href) {
+        if (href === "/admin") return pathname === "/admin"
         if (href === `/${role}`) return pathname === href
-        return pathname.startsWith(href)
+        return pathname === href || pathname.startsWith(href + "/")
     }
 
     /* ------------------------------------------------------------------ */

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { ADMIN_ROLES } from "@/lib/auth"
 
 async function ensurePreRegistrationsTable() {
   await pool.query(`
@@ -43,7 +44,7 @@ async function ensurePreRegistrationsTable() {
 export async function GET() {
   try {
     const session = await getSession()
-    if (session?.role !== "admin") {
+    if (!session || !ADMIN_ROLES.includes(session.role)) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 
@@ -81,7 +82,7 @@ export async function GET() {
 export async function PATCH(request) {
   try {
     const session = await getSession()
-    if (session?.role !== "admin") {
+    if (!session || !ADMIN_ROLES.includes(session.role)) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 
@@ -296,7 +297,7 @@ export async function PATCH(request) {
 export async function DELETE(request) {
   try {
     const session = await getSession()
-    if (session?.role !== "admin") {
+    if (!session || !ADMIN_ROLES.includes(session.role)) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 

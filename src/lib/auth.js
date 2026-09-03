@@ -39,6 +39,8 @@ export const SESSION_COOKIE_OPTIONS = {
   maxAge: 60 * 60 * 24 * 7, // 7 days — matches JWT expiry
 }
 
+export const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
+
 /** Role → home page mapping. */
 export const ROLE_HOME = {
   student: "/student",

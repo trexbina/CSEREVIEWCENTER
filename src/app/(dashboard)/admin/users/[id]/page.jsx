@@ -1,5 +1,6 @@
 // helper to check if admin is logged in
 import { getSession } from "@/lib/auth-session"
+import { ADMIN_ROLES } from "@/lib/auth"
 
 // database connection helper
 import pool from "@/lib/db"
@@ -49,7 +50,7 @@ async function getUserDetail(userId) {
 export default async function UserProfilePage({ params }) {
   // ensure user is logged in as admin
   const session = await getSession()
-  if (session?.role !== "admin") {
+  if (!session?.role || !ADMIN_ROLES.includes(session.role)) {
     redirect("/login")
   }
 

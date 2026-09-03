@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth-session"
+import { ADMIN_ROLES } from "@/lib/auth"
 import pool from "@/lib/db"
 import { put } from "@vercel/blob"
 
@@ -8,7 +9,7 @@ const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES || 50 * 1024 * 1024
 
 async function adminGuard() {
     const session = await getSession()
-    if (session?.role !== "admin") return null
+    if (!session || !ADMIN_ROLES.includes(session.role)) return null
     return session
 }
 

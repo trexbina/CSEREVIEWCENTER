@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { ADMIN_ROLES } from "@/lib/auth"
 
 export async function GET() {
   try {
     const session = await getSession()
-    if (session?.role !== "admin") {
+    if (!session || !ADMIN_ROLES.includes(session.role)) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 

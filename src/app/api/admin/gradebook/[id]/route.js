@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { ADMIN_ROLES } from "@/lib/auth"
 
 // GET /api/admin/gradebook/[id] — fetch full gradebook data with students & scores
 export async function GET(req, { params }) {
   try {
     const session = await getSession()
-    if (session?.role !== "admin" && session?.role !== "teacher") {
+    if (!session || (!ADMIN_ROLES.includes(session.role) && session.role !== "teacher")) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 
@@ -181,7 +182,7 @@ export async function GET(req, { params }) {
 export async function PUT(req, { params }) {
   try {
     const session = await getSession()
-    if (session?.role !== "admin" && session?.role !== "teacher") {
+    if (!session || (!ADMIN_ROLES.includes(session.role) && session.role !== "teacher")) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { ADMIN_ROLES } from "@/lib/auth"
 
 // ── helpers ──────────────────────────────────────────────
 async function ensureTable() {
@@ -21,7 +22,7 @@ async function ensureTable() {
 
 async function adminGuard() {
     const session = await getSession()
-    if (session?.role !== "admin") return null
+    if (!session || !ADMIN_ROLES.includes(session.role)) return null
     return session
 }
 

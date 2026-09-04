@@ -20,16 +20,18 @@ export async function GET(request) {
     const batchFilter = searchParams.get("batch_id") || ""
     const studentFilter = searchParams.get("student_id") || ""
 
-    // 1. Fetch Master Data for filter dropdowns
-    const [schoolsRes, majorsRes, batchesRes] = await Promise.all([
+    // 1. Fetch Master Data and Mock Exams for filters and analytics
+    const [schoolsRes, majorsRes, batchesRes, mockExamsRes] = await Promise.all([
       pool.query("SELECT id, name FROM schools ORDER BY name ASC").catch(() => ({ rows: [] })),
       pool.query("SELECT id, name FROM majors ORDER BY name ASC").catch(() => ({ rows: [] })),
       pool.query("SELECT id, name FROM batches ORDER BY name ASC").catch(() => ({ rows: [] })),
+      pool.query("SELECT id, exam_code, title FROM mock_exams ORDER BY created_at ASC").catch(() => ({ rows: [] })),
     ])
 
     const schoolsList = schoolsRes.rows || []
     const majorsList = majorsRes.rows || []
     const batchesList = batchesRes.rows || []
+    const mockExamsList = mockExamsRes.rows || []
 
     // 2. Fetch User & Mock Exam Score Data
     let whereClauses = ["u.role = 'student'"]
@@ -242,12 +244,90 @@ export async function GET(request) {
       { attempt: "Attempt 4 (Final Mock)", genEd: 85.0, profEd: 82.4, specialization: 87.1, overallAvg: 84.8 },
     ]
 
+    // 8. Calculate Mock Exam Pass Rates (Both Combined and Per-Exam Breakdown)
+    // Map rawScoreRows by mock_exam_id
+    const examStatsMap = {}
+    let overallPassedAttempts = 0
+    let overallTotalAttempts = 0
+
+    rawScoreRows.forEach((row) => {
+      if (row.mock_exam_id !== null) {
+        const examId = String(row.mock_exam_id)
+        if (!examStatsMap[examId]) {
+          examStatsMap[examId] = {
+            id: row.mock_exam_id,
+            title: row.exam_title || `Mock Exam #${row.mock_exam_id}`,
+            totalTakers: 0,
+            passedCount: 0,
+            failedCount: 0,
+            totalPctSum: 0,
+          }
+        }
+
+        const pct = parseFloat(row.percentage) || 0
+        const isPassed = pct >= 75
+        examStatsMap[examId].totalTakers += 1
+        examStatsMap[examId].totalPctSum += pct
+        if (isPassed) {
+          examStatsMap[examId].passedCount += 1
+          overallPassedAttempts += 1
+        } else {
+          examStatsMap[examId].failedCount += 1
+        }
+        overallTotalAttempts += 1
+      }
+    })
+
+    // Prepare overall combined stats
+    const combinedPassRate = overallTotalAttempts > 0 
+      ? Math.round((overallPassedAttempts / overallTotalAttempts) * 1000) / 10 
+      : (overallPassRate || 0)
+    const combinedFailRate = Math.max(0, Math.round((100 - combinedPassRate) * 10) / 10)
+
+    // Build per-exam list
+    const perExamList = mockExamsList.map((me) => {
+      const stats = examStatsMap[String(me.id)] || {
+        totalTakers: 0,
+        passedCount: 0,
+        failedCount: 0,
+        totalPctSum: 0,
+      }
+      const passRate = stats.totalTakers > 0 ? Math.round((stats.passedCount / stats.totalTakers) * 1000) / 10 : 0
+      const failRate = stats.totalTakers > 0 ? Math.max(0, Math.round((100 - passRate) * 10) / 10) : 0
+      const averageScore = stats.totalTakers > 0 ? Math.round((stats.totalPctSum / stats.totalTakers) * 10) / 10 : 0
+
+      return {
+        id: me.id,
+        exam_code: me.exam_code,
+        title: me.title,
+        totalTakers: stats.totalTakers,
+        passedCount: stats.passedCount,
+        failedCount: stats.failedCount,
+        passRate,
+        failRate,
+        averageScore,
+      }
+    })
+
+    const mockExamPassersData = {
+      overall: {
+        totalAttempts: overallTotalAttempts,
+        passedCount: overallPassedAttempts,
+        failedCount: Math.max(0, overallTotalAttempts - overallPassedAttempts),
+        passRate: combinedPassRate,
+        failRate: combinedFailRate,
+        averageScore: overallMeanScore,
+      },
+      perExam: perExamList,
+    }
+
     return NextResponse.json({
       success: true,
       filters: {
         schools: schoolsList,
         majors: majorsList,
         batches: batchesList,
+        mockExams: mockExamsList,
       },
       kpis: {
         totalStudents,
@@ -263,6 +343,7 @@ export async function GET(request) {
         completionRate: selectedStudent ? selectedStudent.completionRate : 100,
         attemptCount: selectedStudent ? selectedStudent.attemptCount : 4,
       },
+      mockExamPassersData,
       scoreDistribution,
       institutionalAnalytics: {
         schoolLeaderboard,

@@ -61,7 +61,140 @@ export async function GET(request) {
     query += " ORDER BY deleted_at DESC"
 
     const { rows } = await pool.query(query, values)
-    return NextResponse.json({ items: rows })
+
+    // ── Group cascading child items under parent items ──
+    // When a parent (e.g. Category, Examination, Batch, Program) was deleted,
+    // its child items were also saved to trash with _parent_* identifiers.
+    // If the parent is present in trash, nest children under it in `children: []`.
+    // If a subcategory was deleted independently without its parent category in trash,
+    // that subcategory acts as a root item and nests its child subjects.
+    
+    // 1. Separate by entity types for easy parent-child lookup
+    const catMap = new Map()       // id or original_id -> item
+    const examMap = new Map()      // id or original_id -> item
+    const subcatMap = new Map()    // id or original_id -> item
+    const progMap = new Map()      // id or original_id -> item
+    const batchMap = new Map()     // id or original_id -> item
+
+    for (const item of rows) {
+      item.children = []
+      const origId = item.original_id ? String(item.original_id) : null
+      const payloadId = item.payload?.id ? String(item.payload.id) : null
+
+      if (item.entity_type === "CURRICULUM_CATEGORY") {
+        if (origId) catMap.set(origId, item)
+        if (payloadId) catMap.set(payloadId, item)
+        if (item.item_name) catMap.set(item.item_name.trim().toLowerCase(), item)
+      } else if (item.entity_type === "MASTER_DATA_EXAM") {
+        if (origId) examMap.set(origId, item)
+        if (payloadId) examMap.set(payloadId, item)
+        if (item.item_name) examMap.set(item.item_name.trim().toLowerCase(), item)
+      } else if (item.entity_type === "CURRICULUM_SUBCATEGORY") {
+        if (origId) subcatMap.set(origId, item)
+        if (payloadId) subcatMap.set(payloadId, item)
+      } else if (item.entity_type === "MASTER_DATA_PROGRAM") {
+        if (origId) progMap.set(origId, item)
+        if (payloadId) progMap.set(payloadId, item)
+      } else if (item.entity_type === "MASTER_DATA_BATCH") {
+        if (origId) batchMap.set(origId, item)
+        if (payloadId) batchMap.set(payloadId, item)
+      }
+    }
+
+    const rootItems = []
+    const claimedChildIds = new Set()
+
+    for (const item of rows) {
+      const p = item.payload || {}
+      let parent = null
+
+      // Check Curriculum hierarchy
+      if (item.entity_type === "CURRICULUM_SUBCATEGORY") {
+        const pCatId = p._parent_category_id ? String(p._parent_category_id) : p.category_id ? String(p.category_id) : null
+        const pCatName = p._parent_category_name ? p._parent_category_name.trim().toLowerCase() : null
+        if (pCatId && catMap.has(pCatId)) {
+          parent = catMap.get(pCatId)
+        } else if (pCatName && catMap.has(pCatName)) {
+          parent = catMap.get(pCatName)
+        }
+      } else if (item.entity_type === "CURRICULUM_SUBJECT") {
+        // Priority 1: Parent category if present in trash
+        const pCatId = p._parent_category_id ? String(p._parent_category_id) : p.category_id ? String(p.category_id) : null
+        const pCatName = p._parent_category_name ? p._parent_category_name.trim().toLowerCase() : (p.category ? p.category.trim().toLowerCase() : null)
+        if (pCatId && catMap.has(pCatId)) {
+          parent = catMap.get(pCatId)
+        } else if (pCatName && catMap.has(pCatName)) {
+          parent = catMap.get(pCatName)
+        } else {
+          // Priority 2: Parent subcategory if present in trash
+          const pSubId = p._parent_subcategory_id ? String(p._parent_subcategory_id) : p.subcategory_id ? String(p.subcategory_id) : null
+          if (pSubId && subcatMap.has(pSubId)) {
+            parent = subcatMap.get(pSubId)
+          }
+        }
+      } 
+      // Check Master Data hierarchy
+      else if (item.entity_type === "MASTER_DATA_PROGRAM") {
+        const pExamId = p._parent_exam_id ? String(p._parent_exam_id) : p.exam_id ? String(p.exam_id) : null
+        const pExamName = p._parent_exam_name ? p._parent_exam_name.trim().toLowerCase() : null
+        if (pExamId && examMap.has(pExamId)) {
+          parent = examMap.get(pExamId)
+        } else if (pExamName && examMap.has(pExamName)) {
+          parent = examMap.get(pExamName)
+        }
+      } else if (item.entity_type === "MASTER_DATA_MAJOR") {
+        // If parent Exam is in trash, nest under Exam
+        const pExamId = p._parent_exam_id ? String(p._parent_exam_id) : null
+        const pExamName = p._parent_exam_name ? p._parent_exam_name.trim().toLowerCase() : null
+        if (pExamId && examMap.has(pExamId)) {
+          parent = examMap.get(pExamId)
+        } else if (pExamName && examMap.has(pExamName)) {
+          parent = examMap.get(pExamName)
+        } else {
+          // Otherwise check parent Program
+          const pProgId = p._parent_program_id ? String(p._parent_program_id) : p.program_id ? String(p.program_id) : null
+          if (pProgId && progMap.has(pProgId)) {
+            parent = progMap.get(pProgId)
+          }
+        }
+      } else if (item.entity_type === "MASTER_DATA_BATCH") {
+        const pExamId = p._parent_exam_id ? String(p._parent_exam_id) : p.exam_id ? String(p.exam_id) : null
+        const pExamName = p._parent_exam_name ? p._parent_exam_name.trim().toLowerCase() : null
+        if (pExamId && examMap.has(pExamId)) {
+          parent = examMap.get(pExamId)
+        } else if (pExamName && examMap.has(pExamName)) {
+          parent = examMap.get(pExamName)
+        }
+      } else if (item.entity_type === "MASTER_DATA_GRADEBOOK") {
+        const pExamId = p._parent_exam_id ? String(p._parent_exam_id) : p.exam_id ? String(p.exam_id) : null
+        const pExamName = p._parent_exam_name ? p._parent_exam_name.trim().toLowerCase() : null
+        if (pExamId && examMap.has(pExamId)) {
+          parent = examMap.get(pExamId)
+        } else if (pExamName && examMap.has(pExamName)) {
+          parent = examMap.get(pExamName)
+        } else {
+          const pBatchId = p._parent_batch_id ? String(p._parent_batch_id) : p.batch_id ? String(p.batch_id) : null
+          if (pBatchId && batchMap.has(pBatchId)) {
+            parent = batchMap.get(pBatchId)
+          }
+        }
+      }
+
+      // If item has a parent in trash (and isn't pointing to itself), nest it
+      if (parent && parent.id !== item.id) {
+        parent.children.push(item)
+        claimedChildIds.add(item.id)
+      }
+    }
+
+    // Keep only items that are not claimed children of another trash item
+    for (const item of rows) {
+      if (!claimedChildIds.has(item.id)) {
+        rootItems.push(item)
+      }
+    }
+
+    return NextResponse.json({ items: rootItems })
   } catch (err) {
     console.error("[GET /api/admin/trash] error:", err)
     return NextResponse.json({ error: "Internal server error." }, { status: 500 })
@@ -799,9 +932,95 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "Item ID(s) required." }, { status: 400 })
     }
 
+    // Find target items to determine if any are parent entities whose children should also be purged
+    const { rows: targets } = await pool.query(
+      "SELECT * FROM trash_items WHERE id = ANY($1::int[])",
+      [targetIds]
+    )
+
+    const allIdsToDelete = new Set(targetIds)
+
+    for (const item of targets) {
+      const p = item.payload || {}
+      const origId = item.original_id ? String(item.original_id) : null
+      const payloadId = p.id ? String(p.id) : null
+
+      if (item.entity_type === "CURRICULUM_CATEGORY") {
+        const childRes = await pool.query(
+          `SELECT id FROM trash_items 
+           WHERE (entity_type IN ('CURRICULUM_SUBCATEGORY', 'CURRICULUM_SUBJECT'))
+             AND (
+               payload->>'category_id' = $1
+               OR payload->>'_parent_category_id' = $1
+               OR payload->>'category_id' = $2
+               OR payload->>'_parent_category_id' = $2
+               OR LOWER(payload->>'_parent_category_name') = LOWER($3)
+               OR LOWER(payload->>'category') = LOWER($3)
+             )`,
+          [origId || "-999", payloadId || "-999", item.item_name || ""]
+        )
+        childRes.rows.forEach(r => allIdsToDelete.add(r.id))
+      } else if (item.entity_type === "CURRICULUM_SUBCATEGORY") {
+        const childRes = await pool.query(
+          `SELECT id FROM trash_items 
+           WHERE entity_type = 'CURRICULUM_SUBJECT'
+             AND (
+               payload->>'subcategory_id' = $1
+               OR payload->>'_parent_subcategory_id' = $1
+               OR payload->>'subcategory_id' = $2
+               OR payload->>'_parent_subcategory_id' = $2
+             )`,
+          [origId || "-999", payloadId || "-999"]
+        )
+        childRes.rows.forEach(r => allIdsToDelete.add(r.id))
+      } else if (item.entity_type === "MASTER_DATA_EXAM") {
+        const childRes = await pool.query(
+          `SELECT id FROM trash_items 
+           WHERE entity_type IN ('MASTER_DATA_PROGRAM', 'MASTER_DATA_MAJOR', 'MASTER_DATA_BATCH', 'MASTER_DATA_GRADEBOOK')
+             AND (
+               payload->>'exam_id' = $1
+               OR payload->>'_parent_exam_id' = $1
+               OR payload->>'exam_id' = $2
+               OR payload->>'_parent_exam_id' = $2
+               OR LOWER(payload->>'_parent_exam_name') = LOWER($3)
+             )`,
+          [origId || "-999", payloadId || "-999", item.item_name || ""]
+        )
+        childRes.rows.forEach(r => allIdsToDelete.add(r.id))
+      } else if (item.entity_type === "MASTER_DATA_PROGRAM") {
+        const childRes = await pool.query(
+          `SELECT id FROM trash_items 
+           WHERE entity_type = 'MASTER_DATA_MAJOR'
+             AND (
+               payload->>'program_id' = $1
+               OR payload->>'_parent_program_id' = $1
+               OR payload->>'program_id' = $2
+               OR payload->>'_parent_program_id' = $2
+               OR LOWER(payload->>'_parent_program_name') = LOWER($3)
+             )`,
+          [origId || "-999", payloadId || "-999", item.item_name || ""]
+        )
+        childRes.rows.forEach(r => allIdsToDelete.add(r.id))
+      } else if (item.entity_type === "MASTER_DATA_BATCH") {
+        const childRes = await pool.query(
+          `SELECT id FROM trash_items 
+           WHERE entity_type = 'MASTER_DATA_GRADEBOOK'
+             AND (
+               payload->>'batch_id' = $1
+               OR payload->>'_parent_batch_id' = $1
+               OR payload->>'batch_id' = $2
+               OR payload->>'_parent_batch_id' = $2
+             )`,
+          [origId || "-999", payloadId || "-999"]
+        )
+        childRes.rows.forEach(r => allIdsToDelete.add(r.id))
+      }
+    }
+
+    const deleteArray = Array.from(allIdsToDelete)
     const { rowCount } = await pool.query(
       "DELETE FROM trash_items WHERE id = ANY($1::int[])",
-      [targetIds]
+      [deleteArray]
     )
 
     revalidatePath("/admin/trash")

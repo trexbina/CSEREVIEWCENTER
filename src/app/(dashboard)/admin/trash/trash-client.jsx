@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import {
   Trash2,
@@ -15,6 +15,8 @@ import {
   Layers,
   Archive,
   RefreshCw,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react"
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 import { toast } from "@/components/ui/toast"
@@ -35,9 +37,22 @@ export function TrashClient() {
   const [activeFilter, setActiveFilter] = useState("ALL")
   const [search, setSearch] = useState("")
   const [selectedIds, setSelectedIds] = useState([])
+  const [expandedIds, setExpandedIds] = useState(new Set())
 
   const [actionLoading, setActionLoading] = useState(false)
   const [confirmModalOpen, setConfirmModalOpen] = useState(false)
+
+  const toggleExpand = (id) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
 
   const fetchItems = async () => {
     setLoading(true)
@@ -327,106 +342,187 @@ export function TrashClient() {
                 {filteredItems.map((item) => {
                   const isChecked = selectedIds.includes(item.id)
                   const { label, origin } = getEntityDisplay(item.entity_type)
+                  const hasChildren = Array.isArray(item.children) && item.children.length > 0
+                  const isExpanded = expandedIds.has(item.id)
 
                   return (
-                    <tr
-                      key={item.id}
-                      className={`h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${
-                        isChecked ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""
-                      }`}
-                    >
-                      {/* Checkbox */}
-                      <td className="px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleItem(item.id)}
-                          className={`size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer mx-auto ${
-                            isChecked
-                              ? "bg-[#E9C46A] border-[#E9C46A] text-white"
-                              : "border-black/20 dark:border-white/20 hover:border-black/40 dark:hover:border-white/40"
-                          }`}
-                          aria-label={`Select item ${item.item_name}`}
-                        >
-                          {isChecked && <Check className="size-3 stroke-[3]" />}
-                        </button>
-                      </td>
-
-                      {/* Item Name */}
-                      <td className="px-4 py-3">
-                        <div className="font-semibold text-xs text-[#3B3B3B] dark:text-gray-100">
-                          {item.item_name || "—"}
-                        </div>
-                        {item.description && (
-                          <div className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5 line-clamp-1">
-                            {item.description}
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Source / Category (minimal text, no pill badge) */}
-                      <td className="px-4 py-3 text-xs text-[#696969] dark:text-gray-300">
-                        <span className="font-medium text-[#3B3B3B] dark:text-gray-200">{label}</span>
-                        <span className="text-[#696969] dark:text-gray-400 ml-1.5">• {origin}</span>
-                      </td>
-
-                      {/* Details / Location */}
-                      <td className="px-4 py-3 text-xs text-[#696969] dark:text-gray-400">
-                        {item.original_location ? (
-                          <span className="font-mono text-[11px] opacity-75">{item.original_location}</span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-
-                      {/* Deleted Date & Actor */}
-                      <td className="px-4 py-3 text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap">
-                        <div>
-                          {item.deleted_at
-                            ? new Date(item.deleted_at).toLocaleDateString(undefined, {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })
-                            : "—"}
-                        </div>
-                        {item.deleted_by_name && (
-                          <div className="text-[10px] opacity-65 mt-0.5">
-                            by {item.deleted_by_name}
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Individual Actions */}
-                      <td className="px-4 py-3 text-right pr-6 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5">
-                          {/* Recover */}
+                    <React.Fragment key={item.id}>
+                      <tr
+                        className={`h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${
+                          isChecked ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""
+                        }`}
+                      >
+                        {/* Checkbox */}
+                        <td className="px-4 text-center">
                           <button
                             type="button"
-                            onClick={() => handleRecover([item.id])}
-                            disabled={actionLoading}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 hover:bg-black/[0.03] dark:hover:bg-white/[0.08] border border-black/10 dark:border-white/15 rounded-lg transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                            title="Restore item"
+                            onClick={() => handleToggleItem(item.id)}
+                            className={`size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer mx-auto ${
+                              isChecked
+                                ? "bg-[#E9C46A] border-[#E9C46A] text-white"
+                                : "border-black/20 dark:border-white/20 hover:border-black/40 dark:hover:border-white/40"
+                            }`}
+                            aria-label={`Select item ${item.item_name}`}
                           >
-                            <RotateCcw className="size-3" />
-                            <span>Recover</span>
+                            {isChecked && <Check className="size-3 stroke-[3]" />}
                           </button>
+                        </td>
 
-                          {/* Delete permanently */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedIds([item.id])
-                              setConfirmModalOpen(true)
-                            }}
-                            disabled={actionLoading}
-                            className="inline-flex items-center justify-center p-1.5 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-transparent hover:border-rose-200/50 rounded-lg transition-all cursor-pointer disabled:opacity-50"
-                            title="Delete permanently"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                        {/* Item Name */}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            {hasChildren && (
+                              <button
+                                type="button"
+                                onClick={() => toggleExpand(item.id)}
+                                className="flex items-center justify-center size-6 rounded-md text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer shrink-0"
+                                title={isExpanded ? "Hide contents" : "Show contents"}
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="size-4" />
+                                ) : (
+                                  <ChevronRight className="size-4" />
+                                )}
+                              </button>
+                            )}
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-xs text-[#3B3B3B] dark:text-gray-100">
+                                  {item.item_name || "—"}
+                                </span>
+                                {hasChildren && (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleExpand(item.id)}
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#E9C46A]/15 text-[#B08924] dark:text-[#F4A261] border border-[#E9C46A]/30 hover:bg-[#E9C46A]/25 transition-colors cursor-pointer"
+                                  >
+                                    <span>{item.children.length} {item.children.length === 1 ? "content" : "contents"}</span>
+                                    {isExpanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+                                  </button>
+                                )}
+                              </div>
+                              {item.description && (
+                                <div className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5 line-clamp-1">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Source / Category (minimal text, no pill badge) */}
+                        <td className="px-4 py-3 text-xs text-[#696969] dark:text-gray-300">
+                          <span className="font-medium text-[#3B3B3B] dark:text-gray-200">{label}</span>
+                          <span className="text-[#696969] dark:text-gray-400 ml-1.5">• {origin}</span>
+                        </td>
+
+                        {/* Details / Location */}
+                        <td className="px-4 py-3 text-xs text-[#696969] dark:text-gray-400">
+                          {item.original_location ? (
+                            <span className="font-mono text-[11px] opacity-75">{item.original_location}</span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+
+                        {/* Deleted Date & Actor */}
+                        <td className="px-4 py-3 text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap">
+                          <div>
+                            {item.deleted_at
+                              ? new Date(item.deleted_at).toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })
+                              : "—"}
+                          </div>
+                          {item.deleted_by_name && (
+                            <div className="text-[10px] opacity-65 mt-0.5">
+                              by {item.deleted_by_name}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Individual Actions */}
+                        <td className="px-4 py-3 text-right pr-6 whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1.5">
+                            {/* Recover */}
+                            <button
+                              type="button"
+                              onClick={() => handleRecover([item.id])}
+                              disabled={actionLoading}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 hover:bg-black/[0.03] dark:hover:bg-white/[0.08] border border-black/10 dark:border-white/15 rounded-lg transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                              title="Restore item"
+                            >
+                              <RotateCcw className="size-3" />
+                              <span>Recover</span>
+                            </button>
+
+                            {/* Delete permanently */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedIds([item.id])
+                                setConfirmModalOpen(true)
+                              }}
+                              disabled={actionLoading}
+                              className="inline-flex items-center justify-center p-1.5 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-transparent hover:border-rose-200/50 rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                              title="Delete permanently"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Dropdown for Nested Cascading Content */}
+                      {hasChildren && isExpanded && (
+                        <tr className="bg-black/[0.015] dark:bg-white/[0.015]">
+                          <td colSpan={6} className="px-6 py-3.5 pl-14">
+                            <div className="rounded-xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-black/20 p-3.5 shadow-2xs">
+                              <div className="flex items-center justify-between pb-2 mb-2 border-b border-black/5 dark:border-white/5">
+                                <div className="text-[11px] font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+                                  Contained Items ({item.children.length})
+                                </div>
+                                <div className="text-[11px] italic text-[#696969]/80 dark:text-gray-400/80">
+                                  Restored or permanently deleted together with this {label}
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                {item.children.map((child) => {
+                                  const childInfo = getEntityDisplay(child.entity_type)
+                                  return (
+                                    <div
+                                      key={child.id}
+                                      className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.03] dark:border-white/[0.05]"
+                                    >
+                                      <div className="min-w-0 pr-4">
+                                        <div className="font-medium text-[#3B3B3B] dark:text-gray-200 truncate">
+                                          {child.item_name || "—"}
+                                        </div>
+                                        {child.description && (
+                                          <div className="text-[11px] text-[#696969] dark:text-gray-400 truncate mt-0.5">
+                                            {child.description}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="shrink-0 flex items-center gap-3">
+                                        <span className="text-[11px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 font-medium">
+                                          {childInfo.label}
+                                        </span>
+                                        <span className="text-[10px] text-[#696969]/70 dark:text-gray-500 italic">
+                                          Linked item
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   )
                 })}
               </tbody>

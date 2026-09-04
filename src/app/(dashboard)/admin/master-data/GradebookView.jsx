@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 // confirmation modal popup for delete actions
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
+import { toast } from "@/components/ui/toast"
 
 // helper function to turn batches exams programs and majors into an organized tree structure
 function buildCourseTreeFromMasterData({ batches = [], examinations = [], programs = [], majors = [] }) {
@@ -1099,6 +1100,7 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
       async () => {
         await apiCall("DELETE", "GRADEBOOK", { id })
         await fetchData()
+        toast("Successfully moved gradebook to trash.")
       }
     )
   }

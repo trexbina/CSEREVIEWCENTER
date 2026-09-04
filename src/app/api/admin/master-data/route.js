@@ -24,7 +24,135 @@ export async function POST(req) {
         return NextResponse.json({ success: true })
       }
       if (action === "DELETE") {
-        await pool.query("DELETE FROM examinations WHERE id = $1", [parseInt(payload.id)])
+        const examId = parseInt(payload.id)
+        const examRes = await pool.query("SELECT * FROM examinations WHERE id = $1", [examId])
+        if (examRes.rows.length > 0) {
+          const exam = examRes.rows[0]
+
+          // 1. Move exam to trash
+          await moveToTrash({
+            entity_type: "MASTER_DATA_EXAM",
+            original_id: exam.id,
+            item_name: exam.name,
+            description: "Examination Board / Branch",
+            original_location: "/admin/master-data",
+            payload: exam,
+            deleted_by: session.userId,
+            deleted_by_name: session.name || session.email || null,
+          })
+
+          // 2. Find and move all child programs (courses)
+          const progRes = await pool.query("SELECT * FROM programs WHERE exam_id = $1", [examId])
+          const progIds = progRes.rows.map(p => p.id)
+
+          for (const prog of progRes.rows) {
+            await moveToTrash({
+              entity_type: "MASTER_DATA_PROGRAM",
+              original_id: prog.id,
+              item_name: prog.name,
+              description: `Course • Exam: ${exam.name}`,
+              original_location: "/admin/master-data",
+              payload: {
+                ...prog,
+                _parent_exam_id: exam.id,
+                _parent_exam_name: exam.name,
+              },
+              deleted_by: session.userId,
+              deleted_by_name: session.name || session.email || null,
+            })
+          }
+
+          // 3. Find and move all child majors (specializations) under these programs
+          if (progIds.length > 0) {
+            const majorRes = await pool.query(
+              "SELECT * FROM majors WHERE program_id = ANY($1::int[])",
+              [progIds]
+            )
+            for (const maj of majorRes.rows) {
+              const parentProg = progRes.rows.find(p => p.id === maj.program_id)
+              await moveToTrash({
+                entity_type: "MASTER_DATA_MAJOR",
+                original_id: maj.id,
+                item_name: maj.name,
+                description: `Specialization • Course: ${parentProg?.name || maj.program_id}`,
+                original_location: "/admin/master-data",
+                payload: {
+                  ...maj,
+                  _parent_program_id: maj.program_id,
+                  _parent_program_name: parentProg?.name || null,
+                  _parent_exam_id: exam.id,
+                  _parent_exam_name: exam.name,
+                },
+                deleted_by: session.userId,
+                deleted_by_name: session.name || session.email || null,
+              })
+            }
+          }
+
+          // 4. Find and move all child batches under this exam
+          const batchRes = await pool.query("SELECT * FROM batches WHERE exam_id = $1", [examId])
+          const batchIds = batchRes.rows.map(b => b.id)
+
+          for (const b of batchRes.rows) {
+            await moveToTrash({
+              entity_type: "MASTER_DATA_BATCH",
+              original_id: b.id,
+              item_name: b.name,
+              description: `Target Year: ${b.target_year || "—"} • Exam: ${exam.name}`,
+              original_location: "/admin/master-data",
+              payload: {
+                ...b,
+                _parent_exam_id: exam.id,
+                _parent_exam_name: exam.name,
+              },
+              deleted_by: session.userId,
+              deleted_by_name: session.name || session.email || null,
+            })
+          }
+
+          // 5. Find and move all gradebooks linked to this exam or its batches
+          let gbQuery = "SELECT * FROM gradebooks WHERE exam_id = $1"
+          let gbParams = [examId]
+          if (batchIds.length > 0) {
+            gbQuery += " OR batch_id = ANY($2::int[])"
+            gbParams.push(batchIds)
+          }
+          const gbRes = await pool.query(gbQuery, gbParams)
+          for (const g of gbRes.rows) {
+            await moveToTrash({
+              entity_type: "MASTER_DATA_GRADEBOOK",
+              original_id: g.id,
+              item_name: g.name || g.code,
+              description: `Code: ${g.code || "—"} • Exam: ${exam.name}`,
+              original_location: "/admin/master-data",
+              payload: {
+                ...g,
+                _parent_exam_id: exam.id,
+                _parent_exam_name: exam.name,
+                _parent_batch_id: g.batch_id,
+              },
+              deleted_by: session.userId,
+              deleted_by_name: session.name || session.email || null,
+            })
+          }
+
+          // Clean up child tables explicitly before deleting exam
+          if (batchIds.length > 0) {
+            await pool.query("DELETE FROM gradebooks WHERE exam_id = $1 OR batch_id = ANY($2::int[])", [examId, batchIds])
+            await pool.query("DELETE FROM mock_exam_targets WHERE batch_id = ANY($1::int[])", [batchIds])
+            await pool.query("DELETE FROM batches WHERE id = ANY($1::int[])", [batchIds])
+          } else {
+            await pool.query("DELETE FROM gradebooks WHERE exam_id = $1", [examId])
+          }
+
+          if (progIds.length > 0) {
+            await pool.query("DELETE FROM majors WHERE program_id = ANY($1::int[])", [progIds])
+            await pool.query("DELETE FROM mock_exam_targets WHERE program_id = ANY($1::int[])", [progIds])
+            await pool.query("DELETE FROM programs WHERE id = ANY($1::int[])", [progIds])
+          }
+        }
+
+        await pool.query("DELETE FROM examinations WHERE id = $1", [examId])
         return NextResponse.json({ success: true })
       }
     }
@@ -40,7 +168,60 @@ export async function POST(req) {
         return NextResponse.json({ success: true })
       }
       if (action === "DELETE") {
-        await pool.query("DELETE FROM programs WHERE id = $1", [parseInt(payload.id)])
+        const programId = parseInt(payload.id)
+        const progRes = await pool.query("SELECT * FROM programs WHERE id = $1", [programId])
+        if (progRes.rows.length > 0) {
+          const prog = progRes.rows[0]
+
+          // Fetch parent exam name for reference if available
+          let examName = null
+          if (prog.exam_id) {
+            const eRes = await pool.query("SELECT name FROM examinations WHERE id = $1", [prog.exam_id])
+            if (eRes.rows.length > 0) examName = eRes.rows[0].name
+          }
+
+          // 1. Move program to trash
+          await moveToTrash({
+            entity_type: "MASTER_DATA_PROGRAM",
+            original_id: prog.id,
+            item_name: prog.name,
+            description: examName ? `Course • Exam: ${examName}` : "Course",
+            original_location: "/admin/master-data",
+            payload: {
+              ...prog,
+              _parent_exam_id: prog.exam_id,
+              _parent_exam_name: examName,
+            },
+            deleted_by: session.userId,
+            deleted_by_name: session.name || session.email || null,
+          })
+
+          // 2. Move child majors to trash
+          const majorRes = await pool.query("SELECT * FROM majors WHERE program_id = $1", [programId])
+          for (const maj of majorRes.rows) {
+            await moveToTrash({
+              entity_type: "MASTER_DATA_MAJOR",
+              original_id: maj.id,
+              item_name: maj.name,
+              description: `Specialization • Course: ${prog.name}`,
+              original_location: "/admin/master-data",
+              payload: {
+                ...maj,
+                _parent_program_id: prog.id,
+                _parent_program_name: prog.name,
+                _parent_exam_id: prog.exam_id,
+                _parent_exam_name: examName,
+              },
+              deleted_by: session.userId,
+              deleted_by_name: session.name || session.email || null,
+            })
+          }
+          // Clean up child majors before deleting program
+          await pool.query("DELETE FROM majors WHERE program_id = $1", [programId])
+          await pool.query("DELETE FROM mock_exam_targets WHERE program_id = $1", [programId])
+        }
+
+        await pool.query("DELETE FROM programs WHERE id = $1", [programId])
         return NextResponse.json({ success: true })
       }
     }
@@ -56,7 +237,31 @@ export async function POST(req) {
         return NextResponse.json({ success: true })
       }
       if (action === "DELETE") {
-        await pool.query("DELETE FROM majors WHERE id = $1", [parseInt(payload.id)])
+        const majorId = parseInt(payload.id)
+        const majorRes = await pool.query("SELECT * FROM majors WHERE id = $1", [majorId])
+        if (majorRes.rows.length > 0) {
+          const maj = majorRes.rows[0]
+          let progName = null
+          if (maj.program_id) {
+            const pRes = await pool.query("SELECT name FROM programs WHERE id = $1", [maj.program_id])
+            if (pRes.rows.length > 0) progName = pRes.rows[0].name
+          }
+          await moveToTrash({
+            entity_type: "MASTER_DATA_MAJOR",
+            original_id: maj.id,
+            item_name: maj.name,
+            description: progName ? `Specialization • Course: ${progName}` : "Specialization",
+            original_location: "/admin/master-data",
+            payload: {
+              ...maj,
+              _parent_program_id: maj.program_id,
+              _parent_program_name: progName,
+            },
+            deleted_by: session.userId,
+            deleted_by_name: session.name || session.email || null,
+          })
+        }
+        await pool.query("DELETE FROM majors WHERE id = $1", [majorId])
         return NextResponse.json({ success: true })
       }
     }
@@ -80,9 +285,12 @@ export async function POST(req) {
         }
       }
       if (action === "DELETE") {
-        const batchRes = await pool.query("SELECT * FROM batches WHERE id = $1", [parseInt(payload.id)])
+        const batchId = parseInt(payload.id)
+        const batchRes = await pool.query("SELECT * FROM batches WHERE id = $1", [batchId])
         if (batchRes.rows.length > 0) {
           const b = batchRes.rows[0]
+
+          // 1. Move batch to trash
           await moveToTrash({
             entity_type: "MASTER_DATA_BATCH",
             original_id: b.id,
@@ -93,8 +301,30 @@ export async function POST(req) {
             deleted_by: session.userId,
             deleted_by_name: session.name || session.email || null,
           })
+
+          // 2. Cascade child gradebooks to trash
+          const gbRes = await pool.query("SELECT * FROM gradebooks WHERE batch_id = $1", [batchId])
+          for (const g of gbRes.rows) {
+            await moveToTrash({
+              entity_type: "MASTER_DATA_GRADEBOOK",
+              original_id: g.id,
+              item_name: g.name || g.code,
+              description: `Code: ${g.code || "—"} • Batch: ${b.name}`,
+              original_location: "/admin/master-data",
+              payload: {
+                ...g,
+                _parent_batch_id: b.id,
+                _parent_batch_name: b.name,
+              },
+              deleted_by: session.userId,
+              deleted_by_name: session.name || session.email || null,
+            })
+          }
+          // Clean up child gradebooks and mock exam targets before deleting batch
+          await pool.query("DELETE FROM gradebooks WHERE batch_id = $1", [batchId])
+          await pool.query("DELETE FROM mock_exam_targets WHERE batch_id = $1", [batchId])
         }
-        await pool.query("DELETE FROM batches WHERE id = $1", [parseInt(payload.id)])
+        await pool.query("DELETE FROM batches WHERE id = $1", [batchId])
         return NextResponse.json({ success: true })
       }
     }

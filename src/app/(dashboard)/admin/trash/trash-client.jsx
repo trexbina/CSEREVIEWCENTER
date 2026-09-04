@@ -167,6 +167,12 @@ export function TrashClient() {
         return { label: "Subject", origin: "Curriculum" }
       case "MOCK_EXAM":
         return { label: "Mock Exam", origin: "Mock Exams" }
+      case "MASTER_DATA_EXAM":
+        return { label: "Examination", origin: "Master Data" }
+      case "MASTER_DATA_PROGRAM":
+        return { label: "Course / Program", origin: "Master Data" }
+      case "MASTER_DATA_MAJOR":
+        return { label: "Specialization", origin: "Master Data" }
       case "MASTER_DATA_BATCH":
         return { label: "Batch", origin: "Master Data" }
       case "MASTER_DATA_SCHOOL":

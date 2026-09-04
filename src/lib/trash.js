@@ -1,6 +1,4 @@
-import { NextResponse } from "next/server"
-import pool from "@/lib/db"
-import { getSession } from "@/lib/auth-session"
+import pool from "./db.js"
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 

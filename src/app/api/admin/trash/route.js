@@ -41,7 +41,7 @@ export async function GET(request) {
       } else if (type === "MOCK_EXAMS") {
         conditions.push(`entity_type = 'MOCK_EXAM'`)
       } else if (type === "MASTER_DATA") {
-        conditions.push(`entity_type IN ('MASTER_DATA_BATCH', 'MASTER_DATA_SCHOOL', 'MASTER_DATA_COURSE', 'MASTER_DATA_GRADEBOOK')`)
+        conditions.push(`entity_type IN ('MASTER_DATA_EXAM', 'MASTER_DATA_PROGRAM', 'MASTER_DATA_MAJOR', 'MASTER_DATA_BATCH', 'MASTER_DATA_SCHOOL', 'MASTER_DATA_COURSE', 'MASTER_DATA_GRADEBOOK')`)
       } else {
         conditions.push(`entity_type = $${pIdx++}`)
         values.push(type)
@@ -358,28 +358,380 @@ export async function POST(request) {
             ]
           )
           restoredIds.push(item.id)
-        } else if (item.entity_type === "MASTER_DATA_BATCH") {
-          await pool.query(
-            `INSERT INTO batches (name, target_year, status, exam_id) VALUES ($1, $2, $3, $4)`,
-            [p.name, p.target_year, p.status || 'active', p.exam_id]
-          )
+        } else if (item.entity_type === "MASTER_DATA_EXAM") {
+          let examId = null
+          const checkExam = await pool.query("SELECT id FROM examinations WHERE LOWER(name) = LOWER($1)", [p.name])
+          if (checkExam.rows.length > 0) {
+            examId = checkExam.rows[0].id
+          } else {
+            const insExam = await pool.query(
+              `INSERT INTO examinations (name, created_at, updated_at) VALUES ($1, $2, NOW()) RETURNING id`,
+              [p.name, p.created_at || new Date()]
+            )
+            examId = insExam.rows[0].id
+          }
           restoredIds.push(item.id)
-        } else if (item.entity_type === "MASTER_DATA_SCHOOL") {
-          await pool.query(
-            `INSERT INTO schools (name, address) VALUES ($1, $2)`,
-            [p.name, p.address]
+
+          // ── Cascade Recover Child Programs ──
+          const childProgs = await pool.query(
+            `SELECT * FROM trash_items
+             WHERE entity_type = 'MASTER_DATA_PROGRAM'
+               AND (
+                 payload->>'exam_id' = $1
+                 OR payload->>'_parent_exam_id' = $1
+                 OR LOWER(payload->>'_parent_exam_name') = LOWER($2)
+               )`,
+            [String(p.id || item.original_id), p.name]
           )
+
+          const progIdMap = {} // old program ID -> new program ID
+          for (const progItem of childProgs.rows) {
+            const pp = progItem.payload
+            let progId = null
+            const checkProg = await pool.query(
+              "SELECT id FROM programs WHERE exam_id = $1 AND LOWER(name) = LOWER($2)",
+              [examId, pp.name]
+            )
+            if (checkProg.rows.length > 0) {
+              progId = checkProg.rows[0].id
+            } else {
+              const insProg = await pool.query(
+                `INSERT INTO programs (exam_id, name, created_at) VALUES ($1, $2, $3) RETURNING id`,
+                [examId, pp.name, pp.created_at || new Date()]
+              )
+              progId = insProg.rows[0].id
+            }
+            if (pp.id) progIdMap[String(pp.id)] = progId
+            if (progItem.original_id) progIdMap[String(progItem.original_id)] = progId
+            restoredIds.push(progItem.id)
+          }
+
+          // ── Cascade Recover Child Majors ──
+          const childMajors = await pool.query(
+            `SELECT * FROM trash_items
+             WHERE entity_type = 'MASTER_DATA_MAJOR'
+               AND (
+                 payload->>'_parent_exam_id' = $1
+                 OR LOWER(payload->>'_parent_exam_name') = LOWER($2)
+                 OR payload->>'program_id' = ANY($3::text[])
+                 OR payload->>'_parent_program_id' = ANY($3::text[])
+               )`,
+            [
+              String(p.id || item.original_id),
+              p.name,
+              Object.keys(progIdMap).length > 0 ? Object.keys(progIdMap) : ["-999"]
+            ]
+          )
+
+          for (const majItem of childMajors.rows) {
+            const mp = majItem.payload
+            const mappedProgId = mp.program_id && progIdMap[String(mp.program_id)]
+              ? progIdMap[String(mp.program_id)]
+              : mp._parent_program_id && progIdMap[String(mp._parent_program_id)]
+              ? progIdMap[String(mp._parent_program_id)]
+              : null
+
+            // If we have a valid program to attach to, or resolve by name
+            let targetProgId = mappedProgId
+            if (!targetProgId && mp._parent_program_name) {
+              const findP = await pool.query(
+                "SELECT id FROM programs WHERE exam_id = $1 AND LOWER(name) = LOWER($2)",
+                [examId, mp._parent_program_name]
+              )
+              if (findP.rows.length > 0) targetProgId = findP.rows[0].id
+            }
+
+            if (targetProgId) {
+              const checkMaj = await pool.query(
+                "SELECT id FROM majors WHERE program_id = $1 AND LOWER(name) = LOWER($2)",
+                [targetProgId, mp.name]
+              )
+              if (checkMaj.rows.length === 0) {
+                await pool.query(
+                  `INSERT INTO majors (program_id, name, created_at) VALUES ($1, $2, $3)`,
+                  [targetProgId, mp.name, mp.created_at || new Date()]
+                )
+              }
+            }
+            restoredIds.push(majItem.id)
+          }
+
+          // ── Cascade Recover Child Batches ──
+          const childBatches = await pool.query(
+            `SELECT * FROM trash_items
+             WHERE entity_type = 'MASTER_DATA_BATCH'
+               AND (
+                 payload->>'exam_id' = $1
+                 OR payload->>'_parent_exam_id' = $1
+                 OR LOWER(payload->>'_parent_exam_name') = LOWER($2)
+               )`,
+            [String(p.id || item.original_id), p.name]
+          )
+
+          const batchIdMap = {} // old batch ID -> new batch ID
+          for (const batchItem of childBatches.rows) {
+            const bp = batchItem.payload
+            let batchId = null
+            const checkBatch = await pool.query(
+              "SELECT id FROM batches WHERE exam_id = $1 AND LOWER(name) = LOWER($2) AND target_year = $3",
+              [examId, bp.name, bp.target_year]
+            )
+            if (checkBatch.rows.length > 0) {
+              batchId = checkBatch.rows[0].id
+            } else {
+              const insBatch = await pool.query(
+                `INSERT INTO batches (name, target_year, status, exam_id, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id`,
+                [bp.name, bp.target_year, bp.status || 'active', examId, bp.created_at || new Date()]
+              )
+              batchId = insBatch.rows[0].id
+            }
+            if (bp.id) batchIdMap[String(bp.id)] = batchId
+            if (batchItem.original_id) batchIdMap[String(batchItem.original_id)] = batchId
+            restoredIds.push(batchItem.id)
+          }
+
+          // ── Cascade Recover Child Gradebooks ──
+          const childGbs = await pool.query(
+            `SELECT * FROM trash_items
+             WHERE entity_type = 'MASTER_DATA_GRADEBOOK'
+               AND (
+                 payload->>'exam_id' = $1
+                 OR payload->>'_parent_exam_id' = $1
+                 OR payload->>'batch_id' = ANY($2::text[])
+                 OR payload->>'_parent_batch_id' = ANY($2::text[])
+               )`,
+            [
+              String(p.id || item.original_id),
+              Object.keys(batchIdMap).length > 0 ? Object.keys(batchIdMap) : ["-999"]
+            ]
+          )
+
+          for (const gbItem of childGbs.rows) {
+            const gp = gbItem.payload
+            const mappedBatchId = gp.batch_id && batchIdMap[String(gp.batch_id)]
+              ? batchIdMap[String(gp.batch_id)]
+              : gp._parent_batch_id && batchIdMap[String(gp._parent_batch_id)]
+              ? batchIdMap[String(gp._parent_batch_id)]
+              : null
+
+            let targetBatchId = mappedBatchId
+            if (!targetBatchId) {
+              // Try finding any batch under this exam
+              const anyB = await pool.query("SELECT id FROM batches WHERE exam_id = $1 LIMIT 1", [examId])
+              if (anyB.rows.length > 0) targetBatchId = anyB.rows[0].id
+            }
+
+            if (targetBatchId) {
+              const checkCode = await pool.query("SELECT id FROM gradebooks WHERE UPPER(code) = UPPER($1)", [gp.code])
+              if (checkCode.rows.length === 0) {
+                await pool.query(
+                  `INSERT INTO gradebooks (name, code, batch_id, exam_id, status, targets, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+                  [gp.name, gp.code, targetBatchId, examId, gp.status || 'ACTIVE', JSON.stringify(gp.targets || []), gp.created_at || new Date()]
+                )
+              }
+            }
+            restoredIds.push(gbItem.id)
+          }
+        } else if (item.entity_type === "MASTER_DATA_PROGRAM") {
+          let examId = p.exam_id
+          if (p._parent_exam_name) {
+            const eRes = await pool.query("SELECT id FROM examinations WHERE LOWER(name) = LOWER($1)", [p._parent_exam_name])
+            if (eRes.rows.length > 0) examId = eRes.rows[0].id
+          }
+
+          if (!examId) {
+            // Pick first examination if exam_id is missing/invalid
+            const firstExam = await pool.query("SELECT id FROM examinations ORDER BY id ASC LIMIT 1")
+            if (firstExam.rows.length > 0) examId = firstExam.rows[0].id
+          }
+
+          if (!examId) {
+            errors.push(`Cannot restore course "${p.name}": parent examination not found.`)
+            continue
+          }
+
+          let progId = null
+          const checkProg = await pool.query(
+            "SELECT id FROM programs WHERE exam_id = $1 AND LOWER(name) = LOWER($2)",
+            [examId, p.name]
+          )
+          if (checkProg.rows.length > 0) {
+            progId = checkProg.rows[0].id
+          } else {
+            const insProg = await pool.query(
+              `INSERT INTO programs (exam_id, name, created_at) VALUES ($1, $2, $3) RETURNING id`,
+              [examId, p.name, p.created_at || new Date()]
+            )
+            progId = insProg.rows[0].id
+          }
+          restoredIds.push(item.id)
+
+          // ── Cascade Recover Child Majors ──
+          const childMajors = await pool.query(
+            `SELECT * FROM trash_items
+             WHERE entity_type = 'MASTER_DATA_MAJOR'
+               AND (
+                 payload->>'program_id' = $1
+                 OR payload->>'_parent_program_id' = $1
+                 OR (payload->>'program_id' = $2 OR payload->>'_parent_program_id' = $2)
+                 OR LOWER(payload->>'_parent_program_name') = LOWER($3)
+               )`,
+            [String(p.id || item.original_id), String(progId), p.name]
+          )
+
+          for (const majItem of childMajors.rows) {
+            const mp = majItem.payload
+            const checkMaj = await pool.query(
+              "SELECT id FROM majors WHERE program_id = $1 AND LOWER(name) = LOWER($2)",
+              [progId, mp.name]
+            )
+            if (checkMaj.rows.length === 0) {
+              await pool.query(
+                `INSERT INTO majors (program_id, name, created_at) VALUES ($1, $2, $3)`,
+                [progId, mp.name, mp.created_at || new Date()]
+              )
+            }
+            restoredIds.push(majItem.id)
+          }
+        } else if (item.entity_type === "MASTER_DATA_MAJOR") {
+          let progId = p.program_id
+          if (p._parent_program_name) {
+            const pRes = await pool.query("SELECT id FROM programs WHERE LOWER(name) = LOWER($1)", [p._parent_program_name])
+            if (pRes.rows.length > 0) progId = pRes.rows[0].id
+          }
+
+          if (!progId) {
+            const anyProg = await pool.query("SELECT id FROM programs ORDER BY id ASC LIMIT 1")
+            if (anyProg.rows.length > 0) progId = anyProg.rows[0].id
+          }
+
+          if (!progId) {
+            errors.push(`Cannot restore specialization "${p.name}": parent course not found.`)
+            continue
+          }
+
+          const checkMaj = await pool.query(
+            "SELECT id FROM majors WHERE program_id = $1 AND LOWER(name) = LOWER($2)",
+            [progId, p.name]
+          )
+          if (checkMaj.rows.length === 0) {
+            await pool.query(
+              `INSERT INTO majors (program_id, name, created_at) VALUES ($1, $2, $3)`,
+              [progId, p.name, p.created_at || new Date()]
+            )
+          }
+          restoredIds.push(item.id)
+        } else if (item.entity_type === "MASTER_DATA_BATCH") {
+          let examId = p.exam_id
+          if (p._parent_exam_name) {
+            const eRes = await pool.query("SELECT id FROM examinations WHERE LOWER(name) = LOWER($1)", [p._parent_exam_name])
+            if (eRes.rows.length > 0) examId = eRes.rows[0].id
+          }
+
+          if (!examId) {
+            const anyExam = await pool.query("SELECT id FROM examinations ORDER BY id ASC LIMIT 1")
+            if (anyExam.rows.length > 0) examId = anyExam.rows[0].id
+          }
+
+          if (!examId) {
+            errors.push(`Cannot restore batch "${p.name}": parent examination not found.`)
+            continue
+          }
+
+          let batchId = null
+          const checkBatch = await pool.query(
+            "SELECT id FROM batches WHERE exam_id = $1 AND LOWER(name) = LOWER($2) AND target_year = $3",
+            [examId, p.name, p.target_year]
+          )
+          if (checkBatch.rows.length > 0) {
+            batchId = checkBatch.rows[0].id
+          } else {
+            const insBatch = await pool.query(
+              `INSERT INTO batches (name, target_year, status, exam_id, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id`,
+              [p.name, p.target_year, p.status || 'active', examId, p.created_at || new Date()]
+            )
+            batchId = insBatch.rows[0].id
+          }
+          restoredIds.push(item.id)
+
+          // ── Cascade Recover Gradebooks linked to this Batch ──
+          const childGbs = await pool.query(
+            `SELECT * FROM trash_items
+             WHERE entity_type = 'MASTER_DATA_GRADEBOOK'
+               AND (
+                 payload->>'batch_id' = $1
+                 OR payload->>'_parent_batch_id' = $1
+                 OR payload->>'batch_id' = $2
+                 OR payload->>'_parent_batch_id' = $2
+                 OR LOWER(payload->>'_parent_batch_name') = LOWER($3)
+               )`,
+            [String(p.id || item.original_id), String(batchId), p.name]
+          )
+
+          for (const gbItem of childGbs.rows) {
+            const gp = gbItem.payload
+            const checkCode = await pool.query("SELECT id FROM gradebooks WHERE UPPER(code) = UPPER($1)", [gp.code])
+            if (checkCode.rows.length === 0) {
+              await pool.query(
+                `INSERT INTO gradebooks (name, code, batch_id, exam_id, status, targets, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+                [gp.name, gp.code, batchId, examId, gp.status || 'ACTIVE', JSON.stringify(gp.targets || []), gp.created_at || new Date()]
+              )
+            }
+            restoredIds.push(gbItem.id)
+          }
+        } else if (item.entity_type === "MASTER_DATA_SCHOOL") {
+          const checkSchool = await pool.query("SELECT id FROM schools WHERE LOWER(name) = LOWER($1)", [p.name])
+          if (checkSchool.rows.length === 0) {
+            await pool.query(
+              `INSERT INTO schools (name, address, created_at, updated_at) VALUES ($1, $2, $3, NOW())`,
+              [p.name, p.address || null, p.created_at || new Date()]
+            )
+          }
           restoredIds.push(item.id)
         } else if (item.entity_type === "MASTER_DATA_COURSE") {
-          await pool.query(
-            `INSERT INTO academic_courses (name) VALUES ($1)`,
-            [p.name]
-          )
+          const checkCourse = await pool.query("SELECT id FROM academic_courses WHERE LOWER(name) = LOWER($1)", [p.name])
+          if (checkCourse.rows.length === 0) {
+            await pool.query(
+              `INSERT INTO academic_courses (name, created_at, updated_at) VALUES ($1, $2, NOW())`,
+              [p.name, p.created_at || new Date()]
+            )
+          }
           restoredIds.push(item.id)
         } else if (item.entity_type === "MASTER_DATA_GRADEBOOK") {
+          const checkCode = await pool.query("SELECT id FROM gradebooks WHERE UPPER(code) = UPPER($1)", [p.code])
+          if (checkCode.rows.length > 0) {
+            errors.push(`Cannot restore gradebook "${p.name || p.code}": code "${p.code}" already exists.`)
+            continue
+          }
+
+          let batchId = p.batch_id
+          let examId = p.exam_id
+
+          // If batch doesn't exist, resolve by exam or default
+          const bCheck = await pool.query("SELECT id, exam_id FROM batches WHERE id = $1", [batchId])
+          if (bCheck.rows.length > 0) {
+            examId = bCheck.rows[0].exam_id
+          } else {
+            const anyBatch = await pool.query("SELECT id, exam_id FROM batches ORDER BY id ASC LIMIT 1")
+            if (anyBatch.rows.length > 0) {
+              batchId = anyBatch.rows[0].id
+              examId = anyBatch.rows[0].exam_id
+            }
+          }
+
+          if (!batchId || !examId) {
+            errors.push(`Cannot restore gradebook "${p.name || p.code}": valid batch or exam not found.`)
+            continue
+          }
+
           await pool.query(
-            `INSERT INTO gradebooks (name, code, batch_id, exam_id, status, targets) VALUES ($1, $2, $3, $4, $5, $6)`,
-            [p.name, p.code, p.batch_id, p.exam_id, p.status || 'ACTIVE', JSON.stringify(p.targets || [])]
+            `INSERT INTO gradebooks (name, code, batch_id, exam_id, status, targets, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+            [p.name, p.code, batchId, examId, p.status || 'ACTIVE', JSON.stringify(p.targets || []), p.created_at || new Date()]
           )
           restoredIds.push(item.id)
         }

@@ -575,7 +575,7 @@ export default function MasterDataBuilderPage() {
       async () => {
         await apiCall("DELETE", "PROGRAM", { id: programId });
         await fetchData();
-        toast("Successfully deleted course.");
+        toast("Successfully moved course to trash.");
       }
     )
   }
@@ -587,7 +587,7 @@ export default function MasterDataBuilderPage() {
       async () => {
         await apiCall("DELETE", "MAJOR", { id: majorId });
         await fetchData();
-        toast("Successfully deleted specialization.");
+        toast("Successfully moved specialization to trash.");
       }
     )
   }
@@ -1303,7 +1303,7 @@ export default function MasterDataBuilderPage() {
                             <TableCell className="text-muted-foreground">{school.address || <span className="opacity-50 italic">No Address Configured</span>}</TableCell>
                             <TableCell className="text-right flex justify-end gap-2">
                               <SettingsBtn onClick={() => handleOpenEditSchool(school)} />
-                              <DeleteBtn onClick={() => triggerDelete("Delete School", `Are you sure you want to delete "${school.name}"?`, async () => { await apiCall("DELETE", "SCHOOL", { id: school.id }); await fetchData(); })} />
+                              <DeleteBtn onClick={() => triggerDelete("Delete School", `Are you sure you want to delete "${school.name}"?`, async () => { await apiCall("DELETE", "SCHOOL", { id: school.id }); await fetchData(); toast("Successfully moved institution to trash."); })} />
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1360,7 +1360,7 @@ export default function MasterDataBuilderPage() {
                             <TableCell className="font-bold text-foreground">{course.name}</TableCell>
                             <TableCell className="text-right flex justify-end gap-2">
                               <SettingsBtn onClick={() => openPrompt("Rename Course", "RENAME_COURSE", { id: course.id }, "Course Name", course.name)} />
-                              <DeleteBtn onClick={() => triggerDelete("Delete Academic Course", `Are you sure you want to delete "${course.name}"?`, async () => { await apiCall("DELETE", "COURSE", { id: course.id }); await fetchData(); })} />
+                              <DeleteBtn onClick={() => triggerDelete("Delete Academic Course", `Are you sure you want to delete "${course.name}"?`, async () => { await apiCall("DELETE", "COURSE", { id: course.id }); await fetchData(); toast("Successfully moved course to trash."); })} />
                             </TableCell>
                           </TableRow>
                         ))}

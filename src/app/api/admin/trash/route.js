@@ -162,25 +162,161 @@ export async function POST(request) {
           )
           restoredIds.push(item.id)
         } else if (item.entity_type === "CURRICULUM_CATEGORY") {
+          let categoryId = null
           const checkCat = await pool.query("SELECT id FROM categories WHERE LOWER(name) = LOWER($1)", [p.name])
           if (checkCat.rows.length > 0) {
-            errors.push(`Cannot restore category "${p.name}": category name already exists.`)
-            continue
+            // If category already exists, we will reuse its ID so child records can still be recovered
+            categoryId = checkCat.rows[0].id
+          } else {
+            const insCat = await pool.query(
+              `INSERT INTO categories (name, description, has_subcategories, target_course, target_program, target_major, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+               RETURNING id`,
+              [p.name, p.description, p.has_subcategories !== false, p.target_course || 'all', p.target_program || 'all', p.target_major || 'all', p.created_at || new Date()]
+            )
+            categoryId = insCat.rows[0].id
+          }
+          restoredIds.push(item.id)
+
+          // ── Cascade Recover Children: Subcategories and Subjects ────────
+          // 1. Recover any child subcategories in trash associated with this category
+          const childSubs = await pool.query(
+            `SELECT * FROM trash_items 
+             WHERE entity_type = 'CURRICULUM_SUBCATEGORY'
+               AND (
+                 payload->>'category_id' = $1
+                 OR payload->>'_parent_category_id' = $1
+                 OR LOWER(payload->>'_parent_category_name') = LOWER($2)
+               )`,
+            [String(p.id || item.original_id), p.name]
+          )
+
+          const subIdMap = {} // old sub ID -> new sub ID
+
+          for (const subItem of childSubs.rows) {
+            const sp = subItem.payload
+            let subId = null
+            // Check if subcategory already exists under this category
+            const checkSub = await pool.query(
+              "SELECT id FROM subcategories WHERE category_id = $1 AND LOWER(name) = LOWER($2)",
+              [categoryId, sp.name]
+            )
+            if (checkSub.rows.length > 0) {
+              subId = checkSub.rows[0].id
+            } else {
+              const insSub = await pool.query(
+                `INSERT INTO subcategories (name, description, status, category_id, image_url, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, NOW())
+                 RETURNING id`,
+                [sp.name, sp.description, sp.status || 'active', categoryId, sp.image_url, sp.created_at || new Date()]
+              )
+              subId = insSub.rows[0].id
+            }
+
+            if (sp.id) subIdMap[String(sp.id)] = subId
+            if (subItem.original_id) subIdMap[String(subItem.original_id)] = subId
+            restoredIds.push(subItem.id)
           }
 
-          await pool.query(
-            `INSERT INTO categories (name, description, has_subcategories, target_course, target_program, target_major, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
-            [p.name, p.description, p.has_subcategories !== false, p.target_course || 'all', p.target_program || 'all', p.target_major || 'all', p.created_at || new Date()]
+          // 2. Recover any child subjects in trash associated with this category or its subcategories
+          const childSubjs = await pool.query(
+            `SELECT * FROM trash_items 
+             WHERE entity_type = 'CURRICULUM_SUBJECT'
+               AND (
+                 payload->>'category_id' = $1
+                 OR payload->>'_parent_category_id' = $1
+                 OR LOWER(payload->>'category') = LOWER($2)
+                 OR LOWER(payload->>'_parent_category_name') = LOWER($2)
+                 OR payload->>'subcategory_id' = ANY($3::text[])
+                 OR payload->>'_parent_subcategory_id' = ANY($3::text[])
+               )`,
+            [
+              String(p.id || item.original_id),
+              p.name,
+              Object.keys(subIdMap).length > 0 ? Object.keys(subIdMap) : ["-999"]
+            ]
           )
-          restoredIds.push(item.id)
+
+          for (const subjItem of childSubjs.rows) {
+            const sjp = subjItem.payload
+            // Determine the re-mapped subcategory_id if available
+            const mappedSubId = sjp.subcategory_id && subIdMap[String(sjp.subcategory_id)]
+              ? subIdMap[String(sjp.subcategory_id)]
+              : sjp._parent_subcategory_id && subIdMap[String(sjp._parent_subcategory_id)]
+              ? subIdMap[String(sjp._parent_subcategory_id)]
+              : sjp.subcategory_id || null
+
+            // Check if code already exists
+            const checkCode = await pool.query("SELECT id FROM subjects WHERE UPPER(code) = UPPER($1)", [sjp.code])
+            if (checkCode.rows.length === 0) {
+              await pool.query(
+                `INSERT INTO subjects (title, code, description, category, category_id, subcategory_id, image_url, status, unlock_date, topics, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+                [
+                  sjp.title, sjp.code, sjp.description, p.name, categoryId, mappedSubId, sjp.image_url,
+                  sjp.status || 'active', sjp.unlock_date, JSON.stringify(sjp.topics || []), sjp.created_at || new Date()
+                ]
+              )
+            }
+            restoredIds.push(subjItem.id)
+          }
         } else if (item.entity_type === "CURRICULUM_SUBCATEGORY") {
-          await pool.query(
-            `INSERT INTO subcategories (name, description, status, category_id, image_url, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-            [p.name, p.description, p.status || 'active', p.category_id, p.image_url, p.created_at || new Date()]
+          let categoryId = p.category_id
+
+          // Check if parent category exists, or if we need to resolve it by name
+          if (p._parent_category_name) {
+            const parentCat = await pool.query("SELECT id FROM categories WHERE LOWER(name) = LOWER($1)", [p._parent_category_name])
+            if (parentCat.rows.length > 0) {
+              categoryId = parentCat.rows[0].id
+            }
+          }
+
+          let subId = null
+          const checkSub = await pool.query(
+            "SELECT id FROM subcategories WHERE category_id = $1 AND LOWER(name) = LOWER($2)",
+            [categoryId, p.name]
           )
+          if (checkSub.rows.length > 0) {
+            subId = checkSub.rows[0].id
+          } else {
+            const insSub = await pool.query(
+              `INSERT INTO subcategories (name, description, status, category_id, image_url, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, NOW())
+               RETURNING id`,
+              [p.name, p.description, p.status || 'active', categoryId, p.image_url, p.created_at || new Date()]
+            )
+            subId = insSub.rows[0].id
+          }
           restoredIds.push(item.id)
+
+          // ── Cascade Recover Subjects under this subcategory ────────
+          const childSubjs = await pool.query(
+            `SELECT * FROM trash_items 
+             WHERE entity_type = 'CURRICULUM_SUBJECT'
+               AND (
+                 payload->>'subcategory_id' = $1
+                 OR payload->>'_parent_subcategory_id' = $1
+                 OR payload->>'subcategory_id' = $2
+                 OR payload->>'_parent_subcategory_id' = $2
+               )`,
+            [String(p.id || item.original_id), String(subId)]
+          )
+
+          for (const subjItem of childSubjs.rows) {
+            const sjp = subjItem.payload
+            const checkCode = await pool.query("SELECT id FROM subjects WHERE UPPER(code) = UPPER($1)", [sjp.code])
+            if (checkCode.rows.length === 0) {
+              await pool.query(
+                `INSERT INTO subjects (title, code, description, category, category_id, subcategory_id, image_url, status, unlock_date, topics, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+                [
+                  sjp.title, sjp.code, sjp.description, sjp.category, categoryId, subId, sjp.image_url,
+                  sjp.status || 'active', sjp.unlock_date, JSON.stringify(sjp.topics || []), sjp.created_at || new Date()
+                ]
+              )
+            }
+            restoredIds.push(subjItem.id)
+          }
         } else if (item.entity_type === "CURRICULUM_SUBJECT") {
           const checkCode = await pool.query("SELECT id FROM subjects WHERE UPPER(code) = UPPER($1)", [p.code])
           if (checkCode.rows.length > 0) {
@@ -188,11 +324,20 @@ export async function POST(request) {
             continue
           }
 
+          // Resolve category_id if missing but category name exists
+          let categoryId = p.category_id || null
+          if (!categoryId && p.category) {
+            const catRes = await pool.query("SELECT id FROM categories WHERE LOWER(name) = LOWER($1)", [p.category])
+            if (catRes.rows.length > 0) {
+              categoryId = catRes.rows[0].id
+            }
+          }
+
           await pool.query(
-            `INSERT INTO subjects (title, code, description, category, subcategory_id, image_url, status, unlock_date, topics, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())`,
+            `INSERT INTO subjects (title, code, description, category, category_id, subcategory_id, image_url, status, unlock_date, topics, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
             [
-              p.title, p.code, p.description, p.category, p.subcategory_id, p.image_url,
+              p.title, p.code, p.description, p.category, categoryId, p.subcategory_id, p.image_url,
               p.status || 'active', p.unlock_date, JSON.stringify(p.topics || []), p.created_at || new Date()
             ]
           )

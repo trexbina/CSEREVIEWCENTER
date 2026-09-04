@@ -163,7 +163,30 @@ export async function DELETE(request) {
                 deleted_by: session.userId,
                 deleted_by_name: session.name || session.email || null,
             })
+
+            // Find all subjects belonging to this subcategory
+            const subjRes = await pool.query("SELECT * FROM subjects WHERE subcategory_id = $1", [id])
+            for (const subj of subjRes.rows) {
+                await moveToTrash({
+                    entity_type: "CURRICULUM_SUBJECT",
+                    original_id: subj.id,
+                    item_name: subj.title || subj.code,
+                    description: `Code: ${subj.code} • Subcategory: ${sub.name}`,
+                    original_location: "/admin/curriculum",
+                    payload: {
+                        ...subj,
+                        _parent_subcategory_id: sub.id,
+                        _parent_subcategory_name: sub.name,
+                        _parent_category_id: sub.category_id,
+                    },
+                    deleted_by: session.userId,
+                    deleted_by_name: session.name || session.email || null,
+                })
+            }
         }
+
+        // Clean up linked subjects before deleting subcategory
+        await pool.query("DELETE FROM subjects WHERE subcategory_id = $1", [id])
 
         const { rowCount } = await pool.query(
             "DELETE FROM subcategories WHERE id = $1",

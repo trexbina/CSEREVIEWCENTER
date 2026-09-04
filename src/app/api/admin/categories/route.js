@@ -133,8 +133,74 @@ export async function DELETE(request) {
                 deleted_by: session.userId,
                 deleted_by_name: session.name || session.email || null,
             })
+
+            // Find all subcategories belonging to this category
+            const subRes = await pool.query("SELECT * FROM subcategories WHERE category_id = $1", [id])
+            const subIds = subRes.rows.map((s) => s.id)
+
+            // Save child subcategories to trash
+            for (const sub of subRes.rows) {
+                await moveToTrash({
+                    entity_type: "CURRICULUM_SUBCATEGORY",
+                    original_id: sub.id,
+                    item_name: sub.name,
+                    description: sub.description || `Category: ${cat.name}`,
+                    original_location: "/admin/curriculum",
+                    payload: {
+                        ...sub,
+                        _parent_category_id: cat.id,
+                        _parent_category_name: cat.name,
+                    },
+                    deleted_by: session.userId,
+                    deleted_by_name: session.name || session.email || null,
+                })
+            }
+
+            // Find all subjects belonging directly to category or through its subcategories
+            let subjQuery = "SELECT * FROM subjects WHERE category_id = $1 OR LOWER(category) = LOWER($2)"
+            let subjParams = [id, cat.name]
+            if (subIds.length > 0) {
+                subjQuery += " OR subcategory_id = ANY($3::int[])"
+                subjParams.push(subIds)
+            }
+            const subjRes = await pool.query(subjQuery, subjParams)
+
+            // Save child subjects to trash
+            for (const subj of subjRes.rows) {
+                await moveToTrash({
+                    entity_type: "CURRICULUM_SUBJECT",
+                    original_id: subj.id,
+                    item_name: subj.title || subj.code,
+                    description: `Code: ${subj.code} • Category: ${cat.name}`,
+                    original_location: "/admin/curriculum",
+                    payload: {
+                        ...subj,
+                        _parent_category_id: cat.id,
+                        _parent_category_name: cat.name,
+                    },
+                    deleted_by: session.userId,
+                    deleted_by_name: session.name || session.email || null,
+                })
+            }
         }
 
+        // Clean up linked records before deleting category
+        // 1. Delete subjects linked to this category or its subcategories
+        const childSubs = await pool.query("SELECT id FROM subcategories WHERE category_id = $1", [id])
+        const childSubIds = childSubs.rows.map((s) => s.id)
+        if (childSubIds.length > 0) {
+            await pool.query(
+                "DELETE FROM subjects WHERE category_id = $1 OR subcategory_id = ANY($2::int[])",
+                [id, childSubIds]
+            )
+        } else {
+            await pool.query("DELETE FROM subjects WHERE category_id = $1", [id])
+        }
+
+        // 2. Delete subcategories
+        await pool.query("DELETE FROM subcategories WHERE category_id = $1", [id])
+
+        // 3. Delete category
         const { rowCount } = await pool.query(
             "DELETE FROM categories WHERE id = $1",
             [id]

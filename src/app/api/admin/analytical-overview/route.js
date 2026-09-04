@@ -205,13 +205,23 @@ export async function GET(request) {
       return {
         schoolName: sch.schoolName,
         studentCount: sch.studentCount,
+        passedCount: sch.passedCount,
         avgScore,
         passRate,
         topMajorCount: sch.majorsRepresented.size,
       }
     })
 
-    schoolLeaderboard.sort((a, b) => b.avgScore - a.avgScore)
+    // Rank schools primarily by number of students with good progress (passed/proficient), then by passing rate & avgScore
+    schoolLeaderboard.sort((a, b) => {
+      if (b.passedCount !== a.passedCount) {
+        return b.passedCount - a.passedCount
+      }
+      if (b.passRate !== a.passRate) {
+        return b.passRate - a.passRate
+      }
+      return b.avgScore - a.avgScore
+    })
 
     // 7. System Category Mean Comparison
     const totalPassedStudents = studentList.filter((s) => s.passed).length

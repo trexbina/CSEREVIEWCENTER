@@ -3,6 +3,7 @@ import pool from "@/lib/db"
 
 // helper to check if admin is logged in
 import { getSession } from "@/lib/auth-session"
+import { ADMIN_ROLES } from "@/lib/auth"
 
 // helper to send user to another page
 import { redirect } from "next/navigation"
@@ -14,7 +15,7 @@ import SubjectBuilderClient from "@/components/subject-builder-client"
 export default async function SubjectContentPage({ params }) {
     // check if user is logged in as admin
     const session = await getSession()
-    if (!session || session.role !== "admin") redirect("/login")
+    if (!session || !ADMIN_ROLES.includes(session.role)) redirect("/login")
 
     // find the admin username from the database
     const userResult = await pool.query(

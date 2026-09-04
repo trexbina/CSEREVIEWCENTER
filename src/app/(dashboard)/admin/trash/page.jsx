@@ -1,4 +1,5 @@
 import { getSession } from "@/lib/auth-session"
+import { ADMIN_ROLES } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { TrashClient } from "./trash-client"
 
@@ -12,7 +13,7 @@ export const revalidate = 0
 
 export default async function AdminTrashPage() {
   const session = await getSession()
-  if (session?.role !== "admin" && session?.role !== "super_admin") {
+  if (!session || !ADMIN_ROLES.includes(session?.role)) {
     redirect("/login")
   }
 

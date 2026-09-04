@@ -165,8 +165,24 @@ export async function DELETE(request) {
             }
             const subjRes = await pool.query(subjQuery, subjParams)
 
-            // Save child subjects to trash
+            // Save child subjects to trash with their modules and contents
             for (const subj of subjRes.rows) {
+                // Fetch modules and lessons/contents for this subject
+                const mRes = await pool.query(
+                    "SELECT * FROM subject_modules WHERE subject_id = $1 ORDER BY order_index ASC, id ASC",
+                    [subj.id]
+                )
+                const subjectModules = mRes.rows
+                let subjectContents = []
+                if (subjectModules.length > 0) {
+                    const mIds = subjectModules.map((m) => m.id)
+                    const cRes = await pool.query(
+                        "SELECT * FROM subject_contents WHERE module_id = ANY($1::int[]) ORDER BY order_index ASC, id ASC",
+                        [mIds]
+                    )
+                    subjectContents = cRes.rows
+                }
+
                 await moveToTrash({
                     entity_type: "CURRICULUM_SUBJECT",
                     original_id: subj.id,
@@ -177,6 +193,8 @@ export async function DELETE(request) {
                         ...subj,
                         _parent_category_id: cat.id,
                         _parent_category_name: cat.name,
+                        _modules: subjectModules,
+                        _contents: subjectContents,
                     },
                     deleted_by: session.userId,
                     deleted_by_name: session.name || session.email || null,
@@ -185,16 +203,56 @@ export async function DELETE(request) {
         }
 
         // Clean up linked records before deleting category
-        // 1. Delete subjects linked to this category or its subcategories
+        // 1. Delete subjects and their contents/modules linked to this category or its subcategories
         const childSubs = await pool.query("SELECT id FROM subcategories WHERE category_id = $1", [id])
         const childSubIds = childSubs.rows.map((s) => s.id)
+        let subjIdsToDelete = []
         if (childSubIds.length > 0) {
-            await pool.query(
-                "DELETE FROM subjects WHERE category_id = $1 OR subcategory_id = ANY($2::int[])",
+            const findSubjs = await pool.query(
+                "SELECT id FROM subjects WHERE category_id = $1 OR subcategory_id = ANY($2::int[])",
                 [id, childSubIds]
             )
+            subjIdsToDelete = findSubjs.rows.map((s) => s.id)
         } else {
-            await pool.query("DELETE FROM subjects WHERE category_id = $1", [id])
+            const findSubjs = await pool.query("SELECT id FROM subjects WHERE category_id = $1", [id])
+            subjIdsToDelete = findSubjs.rows.map((s) => s.id)
+        }
+
+        if (subjIdsToDelete.length > 0) {
+            const modRes = await pool.query(
+                "SELECT id FROM subject_modules WHERE subject_id = ANY($1::int[])",
+                [subjIdsToDelete]
+            )
+            const modIds = modRes.rows.map((m) => m.id)
+            if (modIds.length > 0) {
+                const conRes = await pool.query(
+                    "SELECT id FROM subject_contents WHERE module_id = ANY($1::int[])",
+                    [modIds]
+                )
+                const conIds = conRes.rows.map((c) => c.id)
+                if (conIds.length > 0) {
+                    await pool.query(
+                        "DELETE FROM student_quiz_submissions WHERE content_id = ANY($1::int[])",
+                        [conIds]
+                    )
+                    await pool.query(
+                        "DELETE FROM subject_contents WHERE id = ANY($1::int[])",
+                        [conIds]
+                    )
+                }
+                await pool.query(
+                    "DELETE FROM subject_modules WHERE id = ANY($1::int[])",
+                    [modIds]
+                )
+            }
+            await pool.query(
+                "DELETE FROM student_subjects WHERE subject_id = ANY($1::int[])",
+                [subjIdsToDelete]
+            )
+            await pool.query(
+                "DELETE FROM subjects WHERE id = ANY($1::int[])",
+                [subjIdsToDelete]
+            )
         }
 
         // 2. Delete subcategories

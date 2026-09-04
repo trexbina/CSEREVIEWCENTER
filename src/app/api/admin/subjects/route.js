@@ -256,13 +256,33 @@ export async function DELETE(request) {
         const subjRes = await client.query("SELECT * FROM subjects WHERE id = $1", [id])
         if (subjRes.rows.length > 0) {
             const subj = subjRes.rows[0]
+            // Fetch modules and contents for this subject
+            const mRes = await client.query(
+                "SELECT * FROM subject_modules WHERE subject_id = $1 ORDER BY order_index ASC, id ASC",
+                [subj.id]
+            )
+            const subjectModules = mRes.rows
+            let subjectContents = []
+            if (subjectModules.length > 0) {
+                const mIds = subjectModules.map((m) => m.id)
+                const cRes = await client.query(
+                    "SELECT * FROM subject_contents WHERE module_id = ANY($1::int[]) ORDER BY order_index ASC, id ASC",
+                    [mIds]
+                )
+                subjectContents = cRes.rows
+            }
+
             await moveToTrash({
                 entity_type: "CURRICULUM_SUBJECT",
                 original_id: subj.id,
                 item_name: subj.title || subj.code,
                 description: `Code: ${subj.code} • Category: ${subj.category || "General"}`,
                 original_location: "/admin/curriculum",
-                payload: subj,
+                payload: {
+                    ...subj,
+                    _modules: subjectModules,
+                    _contents: subjectContents,
+                },
                 deleted_by: session.userId,
                 deleted_by_name: session.name || session.email || null,
             })

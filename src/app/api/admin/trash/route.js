@@ -380,17 +380,60 @@ export async function POST(request) {
               : sjp.subcategory_id || null
 
             // Check if code already exists
+            let newSubjId = null
             const checkCode = await pool.query("SELECT id FROM subjects WHERE UPPER(code) = UPPER($1)", [sjp.code])
             if (checkCode.rows.length === 0) {
-              await pool.query(
+              const insSubj = await pool.query(
                 `INSERT INTO subjects (title, code, description, category, category_id, subcategory_id, image_url, status, unlock_date, topics, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+                 RETURNING id`,
                 [
                   sjp.title, sjp.code, sjp.description, p.name, categoryId, mappedSubId, sjp.image_url,
                   sjp.status || 'active', sjp.unlock_date, JSON.stringify(sjp.topics || []), sjp.created_at || new Date()
                 ]
               )
+              newSubjId = insSubj.rows[0].id
+            } else {
+              newSubjId = checkCode.rows[0].id
             }
+
+            // Restore subject modules and lessons/contents if stored in payload
+            if (newSubjId && Array.isArray(sjp._modules) && sjp._modules.length > 0) {
+              const modIdMap = {} // old module ID -> new module ID
+              for (const mod of sjp._modules) {
+                const insMod = await pool.query(
+                  `INSERT INTO subject_modules (subject_id, title, order_index, created_at)
+                   VALUES ($1, $2, $3, $4)
+                   RETURNING id`,
+                  [newSubjId, mod.title, mod.order_index || 0, mod.created_at || new Date()]
+                )
+                modIdMap[String(mod.id)] = insMod.rows[0].id
+              }
+
+              if (Array.isArray(sjp._contents) && sjp._contents.length > 0) {
+                for (const con of sjp._contents) {
+                  const targetModId = modIdMap[String(con.module_id)]
+                  if (targetModId) {
+                    await pool.query(
+                      `INSERT INTO subject_contents (module_id, subject_code, title, lesson_type, contentbuilder_id, pdf_files, quiz_content, order_index, created_at, updated_at)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
+                      [
+                        targetModId,
+                        con.subject_code || sjp.code,
+                        con.title,
+                        con.lesson_type || 'module',
+                        con.contentbuilder_id || null,
+                        JSON.stringify(con.pdf_files || []),
+                        con.quiz_content || null,
+                        con.order_index || 0,
+                        con.created_at || new Date()
+                      ]
+                    )
+                  }
+                }
+              }
+            }
+
             restoredIds.push(subjItem.id)
           }
         } else if (item.entity_type === "CURRICULUM_SUBCATEGORY") {
@@ -437,17 +480,60 @@ export async function POST(request) {
 
           for (const subjItem of childSubjs.rows) {
             const sjp = subjItem.payload
+            let newSubjId = null
             const checkCode = await pool.query("SELECT id FROM subjects WHERE UPPER(code) = UPPER($1)", [sjp.code])
             if (checkCode.rows.length === 0) {
-              await pool.query(
+              const insSubj = await pool.query(
                 `INSERT INTO subjects (title, code, description, category, category_id, subcategory_id, image_url, status, unlock_date, topics, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+                 RETURNING id`,
                 [
                   sjp.title, sjp.code, sjp.description, sjp.category, categoryId, subId, sjp.image_url,
                   sjp.status || 'active', sjp.unlock_date, JSON.stringify(sjp.topics || []), sjp.created_at || new Date()
                 ]
               )
+              newSubjId = insSubj.rows[0].id
+            } else {
+              newSubjId = checkCode.rows[0].id
             }
+
+            // Restore subject modules and lessons/contents if stored in payload
+            if (newSubjId && Array.isArray(sjp._modules) && sjp._modules.length > 0) {
+              const modIdMap = {} // old module ID -> new module ID
+              for (const mod of sjp._modules) {
+                const insMod = await pool.query(
+                  `INSERT INTO subject_modules (subject_id, title, order_index, created_at)
+                   VALUES ($1, $2, $3, $4)
+                   RETURNING id`,
+                  [newSubjId, mod.title, mod.order_index || 0, mod.created_at || new Date()]
+                )
+                modIdMap[String(mod.id)] = insMod.rows[0].id
+              }
+
+              if (Array.isArray(sjp._contents) && sjp._contents.length > 0) {
+                for (const con of sjp._contents) {
+                  const targetModId = modIdMap[String(con.module_id)]
+                  if (targetModId) {
+                    await pool.query(
+                      `INSERT INTO subject_contents (module_id, subject_code, title, lesson_type, contentbuilder_id, pdf_files, quiz_content, order_index, created_at, updated_at)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
+                      [
+                        targetModId,
+                        con.subject_code || sjp.code,
+                        con.title,
+                        con.lesson_type || 'module',
+                        con.contentbuilder_id || null,
+                        JSON.stringify(con.pdf_files || []),
+                        con.quiz_content || null,
+                        con.order_index || 0,
+                        con.created_at || new Date()
+                      ]
+                    )
+                  }
+                }
+              }
+            }
+
             restoredIds.push(subjItem.id)
           }
         } else if (item.entity_type === "CURRICULUM_SUBJECT") {
@@ -466,14 +552,54 @@ export async function POST(request) {
             }
           }
 
-          await pool.query(
+          const insSubj = await pool.query(
             `INSERT INTO subjects (title, code, description, category, category_id, subcategory_id, image_url, status, unlock_date, topics, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+             RETURNING id`,
             [
               p.title, p.code, p.description, p.category, categoryId, p.subcategory_id, p.image_url,
               p.status || 'active', p.unlock_date, JSON.stringify(p.topics || []), p.created_at || new Date()
             ]
           )
+          const newSubjId = insSubj.rows[0].id
+
+          // Restore subject modules and lessons/contents if stored in payload
+          if (newSubjId && Array.isArray(p._modules) && p._modules.length > 0) {
+            const modIdMap = {} // old module ID -> new module ID
+            for (const mod of p._modules) {
+              const insMod = await pool.query(
+                `INSERT INTO subject_modules (subject_id, title, order_index, created_at)
+                 VALUES ($1, $2, $3, $4)
+                 RETURNING id`,
+                [newSubjId, mod.title, mod.order_index || 0, mod.created_at || new Date()]
+              )
+              modIdMap[String(mod.id)] = insMod.rows[0].id
+            }
+
+            if (Array.isArray(p._contents) && p._contents.length > 0) {
+              for (const con of p._contents) {
+                const targetModId = modIdMap[String(con.module_id)]
+                if (targetModId) {
+                  await pool.query(
+                    `INSERT INTO subject_contents (module_id, subject_code, title, lesson_type, contentbuilder_id, pdf_files, quiz_content, order_index, created_at, updated_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
+                    [
+                      targetModId,
+                      con.subject_code || p.code,
+                      con.title,
+                      con.lesson_type || 'module',
+                      con.contentbuilder_id || null,
+                      JSON.stringify(con.pdf_files || []),
+                      con.quiz_content || null,
+                      con.order_index || 0,
+                      con.created_at || new Date()
+                    ]
+                  )
+                }
+              }
+            }
+          }
+
           restoredIds.push(item.id)
         } else if (item.entity_type === "MOCK_EXAM") {
           const checkCode = await pool.query("SELECT id FROM mock_exams WHERE UPPER(exam_code) = UPPER($1)", [p.exam_code])

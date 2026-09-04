@@ -167,6 +167,22 @@ export async function DELETE(request) {
             // Find all subjects belonging to this subcategory
             const subjRes = await pool.query("SELECT * FROM subjects WHERE subcategory_id = $1", [id])
             for (const subj of subjRes.rows) {
+                // Fetch modules and lessons/contents for this subject
+                const mRes = await pool.query(
+                    "SELECT * FROM subject_modules WHERE subject_id = $1 ORDER BY order_index ASC, id ASC",
+                    [subj.id]
+                )
+                const subjectModules = mRes.rows
+                let subjectContents = []
+                if (subjectModules.length > 0) {
+                    const mIds = subjectModules.map((m) => m.id)
+                    const cRes = await pool.query(
+                        "SELECT * FROM subject_contents WHERE module_id = ANY($1::int[]) ORDER BY order_index ASC, id ASC",
+                        [mIds]
+                    )
+                    subjectContents = cRes.rows
+                }
+
                 await moveToTrash({
                     entity_type: "CURRICULUM_SUBJECT",
                     original_id: subj.id,
@@ -178,6 +194,8 @@ export async function DELETE(request) {
                         _parent_subcategory_id: sub.id,
                         _parent_subcategory_name: sub.name,
                         _parent_category_id: sub.category_id,
+                        _modules: subjectModules,
+                        _contents: subjectContents,
                     },
                     deleted_by: session.userId,
                     deleted_by_name: session.name || session.email || null,
@@ -185,8 +203,42 @@ export async function DELETE(request) {
             }
         }
 
-        // Clean up linked subjects before deleting subcategory
-        await pool.query("DELETE FROM subjects WHERE subcategory_id = $1", [id])
+        // Clean up linked subjects, modules, and contents before deleting subcategory
+        const findSubjs = await pool.query("SELECT id FROM subjects WHERE subcategory_id = $1", [id])
+        const subjIds = findSubjs.rows.map((s) => s.id)
+        if (subjIds.length > 0) {
+            const modRes = await pool.query(
+                "SELECT id FROM subject_modules WHERE subject_id = ANY($1::int[])",
+                [subjIds]
+            )
+            const modIds = modRes.rows.map((m) => m.id)
+            if (modIds.length > 0) {
+                const conRes = await pool.query(
+                    "SELECT id FROM subject_contents WHERE module_id = ANY($1::int[])",
+                    [modIds]
+                )
+                const conIds = conRes.rows.map((c) => c.id)
+                if (conIds.length > 0) {
+                    await pool.query(
+                        "DELETE FROM student_quiz_submissions WHERE content_id = ANY($1::int[])",
+                        [conIds]
+                    )
+                    await pool.query(
+                        "DELETE FROM subject_contents WHERE id = ANY($1::int[])",
+                        [conIds]
+                    )
+                }
+                await pool.query(
+                    "DELETE FROM subject_modules WHERE id = ANY($1::int[])",
+                    [modIds]
+                )
+            }
+            await pool.query(
+                "DELETE FROM student_subjects WHERE subject_id = ANY($1::int[])",
+                [subjIds]
+            )
+            await pool.query("DELETE FROM subjects WHERE subcategory_id = $1", [id])
+        }
 
         const { rowCount } = await pool.query(
             "DELETE FROM subcategories WHERE id = $1",

@@ -2,6 +2,18 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { Search, RefreshCw, ArrowUpDown } from "lucide-react"
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts"
 
 export default function AnalyticalOverviewPage() {
   const [activeTab, setActiveTab] = useState("students") // "students" | "schools"
@@ -501,7 +513,7 @@ export default function AnalyticalOverviewPage() {
           </div>
         </div>
 
-        {/* Graphical Summary Cards & Visual Progress Bar */}
+        {/* Graphical Summary Cards & Visual Charts */}
         <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 sm:p-6 shadow-2xs space-y-6">
           {/* Selected Exam Title & Stats Metrics */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-black/5 dark:border-white/5">
@@ -516,7 +528,7 @@ export default function AnalyticalOverviewPage() {
               </div>
             </div>
 
-            {/* Metrics */}
+            {/* Key Metrics */}
             <div className="flex items-center gap-6 sm:gap-8 flex-wrap text-xs">
               <div>
                 <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Total Attempts</span>
@@ -545,76 +557,145 @@ export default function AnalyticalOverviewPage() {
             </div>
           </div>
 
-          {/* Minimal Visual Ratio Bar (Passed vs Below Passing) */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs text-[#696969] dark:text-gray-400">
-              <div className="flex items-center gap-2">
-                <span className="size-2 rounded-full bg-[#3B3B3B] dark:bg-white" />
-                <span>Passed: <strong className="text-[#3B3B3B] dark:text-white font-semibold">{passersData.passRate}%</strong> ({passersData.passedCount} takers)</span>
+          {/* Graphical Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            {/* Donut Chart: Pass vs Below Benchmark */}
+            <div className={`flex flex-col items-center justify-center p-4 rounded-xl border border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01] ${comparisonBarData.length > 0 && selectedExamId === "ALL" ? "lg:col-span-5" : "lg:col-span-12"}`}>
+              <div className="text-xs font-semibold text-[#3B3B3B] dark:text-white mb-2 text-center">
+                Pass / Below 75% Ratio
               </div>
-              <div className="flex items-center gap-2">
-                <span className="size-2 rounded-full bg-black/20 dark:bg-white/30" />
-                <span>Below 75%: <strong className="text-[#3B3B3B] dark:text-white font-semibold">{passersData.failRate}%</strong> ({passersData.failedCount} takers)</span>
-              </div>
-            </div>
 
-            {/* Segmented neutral progress bar */}
-            <div className="w-full h-3 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden flex">
-              <div
-                style={{ width: `${Math.min(100, Math.max(0, passersData.passRate))}%` }}
-                className="h-full bg-[#3B3B3B] dark:bg-white transition-all duration-500 ease-out"
-                title={`Passed: ${passersData.passRate}%`}
-              />
-              <div
-                style={{ width: `${Math.min(100, Math.max(0, passersData.failRate))}%` }}
-                className="h-full bg-black/20 dark:bg-white/30 transition-all duration-500 ease-out"
-                title={`Below 75%: ${passersData.failRate}%`}
-              />
-            </div>
-          </div>
-
-          {/* Side-by-side Exam Breakdown Comparison (if multiple exams exist) */}
-          {comparisonBarData.length > 0 && selectedExamId === "ALL" && (
-            <div className="pt-4 border-t border-black/5 dark:border-white/5 space-y-3">
-              <div className="text-xs font-semibold text-[#3B3B3B] dark:text-white">
-                Exam-by-Exam Passing Breakdown
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {comparisonBarData.map((item, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => {
-                      const examObj = mockExamOptions.find((m) => m.exam_code === item.name || m.title === item.fullName)
-                      if (examObj) setSelectedExamId(String(examObj.id))
-                    }}
-                    className="p-3 rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] hover:bg-black/[0.03] dark:hover:bg-white/[0.05] transition-all cursor-pointer space-y-2"
-                  >
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-[#3B3B3B] dark:text-gray-200 truncate pr-2" title={item.fullName}>
-                        {item.fullName || item.name}
-                      </span>
-                      <span className="font-semibold text-xs text-[#3B3B3B] dark:text-white whitespace-nowrap">
-                        {item.passRate}%
-                      </span>
-                    </div>
-
-                    {/* Small Bar */}
-                    <div className="w-full h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden flex">
-                      <div
-                        style={{ width: `${item.passRate}%` }}
-                        className="h-full bg-[#3B3B3B] dark:bg-white"
+              {passersData.totalTakers === 0 ? (
+                <div className="h-[200px] flex items-center justify-center text-xs text-[#696969] dark:text-gray-400">
+                  No mock exam attempts recorded yet.
+                </div>
+              ) : (
+                <div className="relative w-full max-w-[240px] h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: "Passed (>= 75%)", value: passersData.passedCount || 0 },
+                          { name: "Below 75%", value: passersData.failedCount || 0 },
+                        ]}
+                        innerRadius={55}
+                        outerRadius={80}
+                        paddingAngle={3}
+                        dataKey="value"
+                        stroke="transparent"
+                      >
+                        <Cell fill="#3B3B3B" className="dark:fill-white transition-all" />
+                        <Cell fill="#D1D5DB" className="dark:fill-white/20 transition-all" />
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "var(--card, #ffffff)",
+                          border: "1px solid rgba(0,0,0,0.1)",
+                          borderRadius: "10px",
+                          fontSize: "12px",
+                        }}
                       />
-                    </div>
+                    </PieChart>
+                  </ResponsiveContainer>
 
-                    <div className="flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
-                      <span>{item.passedCount} / {item.totalTakers} passed</span>
-                      <span>Avg: {item.avgScore}%</span>
-                    </div>
+                  {/* Center percentage label */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                      {passersData.passRate}%
+                    </span>
+                    <span className="text-[10px] text-[#696969] dark:text-gray-400">
+                      Pass Rate
+                    </span>
                   </div>
-                ))}
+                </div>
+              )}
+
+              {/* Legend */}
+              <div className="flex items-center justify-center gap-6 mt-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="size-2.5 rounded-full bg-[#3B3B3B] dark:bg-white" />
+                  <span className="text-[#696969] dark:text-gray-400">
+                    Passed: <strong className="text-[#3B3B3B] dark:text-white font-semibold">{passersData.passedCount}</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="size-2.5 rounded-full bg-gray-300 dark:bg-white/25" />
+                  <span className="text-[#696969] dark:text-gray-400">
+                    Below 75%: <strong className="text-[#3B3B3B] dark:text-white font-semibold">{passersData.failedCount}</strong>
+                  </span>
+                </div>
               </div>
             </div>
-          )}
+
+            {/* Comparative Bar Chart across Mock Exams (shown when All is selected) */}
+            {comparisonBarData.length > 0 && selectedExamId === "ALL" && (
+              <div className="lg:col-span-7 flex flex-col p-4 rounded-xl border border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01]">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-semibold text-[#3B3B3B] dark:text-white">
+                    Passing Rate by Mock Examination (%)
+                  </div>
+                  <span className="text-[11px] text-[#696969] dark:text-gray-400">
+                    Benchmark: 75%
+                  </span>
+                </div>
+
+                <div className="w-full h-[210px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={comparisonBarData}
+                      margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="rgba(0,0,0,0.05)"
+                        className="dark:stroke-white/10"
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 11, fill: "#696969" }}
+                        axisLine={false}
+                        tickLine={false}
+                        interval={0}
+                        angle={-15}
+                        textAnchor="end"
+                      />
+                      <YAxis
+                        domain={[0, 100]}
+                        ticks={[0, 25, 50, 75, 100]}
+                        tick={{ fontSize: 11, fill: "#696969" }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        formatter={(value) => [`${value}%`, "Passing Rate"]}
+                        labelFormatter={(name, items) => {
+                          const item = items?.[0]?.payload
+                          return item?.fullName || name
+                        }}
+                        contentStyle={{
+                          backgroundColor: "var(--card, #ffffff)",
+                          border: "1px solid rgba(0,0,0,0.1)",
+                          borderRadius: "10px",
+                          fontSize: "12px",
+                        }}
+                      />
+                      <Bar
+                        dataKey="passRate"
+                        fill="#3B3B3B"
+                        className="dark:fill-white cursor-pointer"
+                        radius={[4, 4, 0, 0]}
+                        onClick={(entry) => {
+                          const examObj = mockExamOptions.find((m) => m.exam_code === entry.name || m.title === entry.fullName)
+                          if (examObj) setSelectedExamId(String(examObj.id))
+                        }}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

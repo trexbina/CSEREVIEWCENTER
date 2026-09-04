@@ -25,7 +25,7 @@ const ROLE_HOME = {
 }
 
 const DEFAULT_HOME = "/student"
-const LOGIN_PATH   = "/login"
+const LOGIN_PATH   = "/?login=1"
 
 /** Clear the session cookie on a response. */
 function clearSessionCookie(response) {

@@ -14,7 +14,7 @@ export const revalidate = 0
 export default async function AdminTrashPage() {
   const session = await getSession()
   if (!session || !ADMIN_ROLES.includes(session?.role)) {
-    redirect("/login")
+    redirect("/?login=1")
   }
 
   return (

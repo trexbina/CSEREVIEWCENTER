@@ -2,15 +2,16 @@ import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 
-// Ensure student_answers & attempts_count columns exist in mock_exam_scores
+// Ensure student_answers & attempts_count columns and unique constraint exist in mock_exam_scores
 async function ensureStudentAnswersColumn() {
   try {
     await pool.query(`
       ALTER TABLE mock_exam_scores ADD COLUMN IF NOT EXISTS student_answers JSONB DEFAULT '{}'::jsonb;
       ALTER TABLE mock_exam_scores ADD COLUMN IF NOT EXISTS attempts_count INTEGER DEFAULT 1;
+      CREATE UNIQUE INDEX IF NOT EXISTS mock_exam_scores_student_mock_exam_unique ON mock_exam_scores (student_id, mock_exam_id);
     `)
   } catch (e) {
-    // column already exists or table issue
+    // column/index already exists or table issue
   }
 }
 

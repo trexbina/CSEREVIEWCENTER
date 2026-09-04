@@ -40,12 +40,12 @@ async function getUserDetail(userId) {
 export default async function ProfilePage() {
   const session = await getSession()
   if (!session?.userId) {
-    redirect("/login")
+    redirect("/?login=1")
   }
 
   const user = await getUserDetail(session.userId)
   if (!user) {
-    redirect("/login")
+    redirect("/?login=1")
   }
 
   return (

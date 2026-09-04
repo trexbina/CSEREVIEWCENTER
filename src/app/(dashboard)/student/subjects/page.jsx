@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { Loader2, Lock, ArrowLeft, BookOpen, ChevronDown, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react"
+import { Loader2, Lock, ArrowLeft, ArrowRight, BookOpen, ChevronDown, ChevronLeft, ChevronRight, ArrowUpDown, Award, CheckCircle2 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 export default function StudentSubjectsPage() {
@@ -107,6 +107,18 @@ export default function StudentSubjectsPage() {
                 setSubjects(loadedSubjects)
                 setSelectedCategory(matchedCat)
                 setSelectedSubcategory(matchedSub)
+
+                // Log curriculum page visit activity
+                fetch("/api/student/activities", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        activityType: "curriculum_view",
+                        title: "Visited Curriculum Page",
+                        details: "Accessed subjects and curriculum review modules",
+                        status: "info"
+                    })
+                }).catch(() => {})
             } catch (err) {
                 setError(err.message)
             } finally {
@@ -551,23 +563,141 @@ export default function StudentSubjectsPage() {
                                                         </div>
 
                                                         {/* Content Area */}
-                                                        <div className="flex-1 flex flex-col justify-between py-0.5">
+                                                        <div className="flex-1 flex flex-col justify-between py-0.5 min-w-0">
                                                             <div>
-                                                                <h3 className="text-base font-bold text-[#4d4d4d] uppercase mb-1 flex items-center gap-2">
-                                                                    <span>{subject.title}</span>
-                                                                    {isLocked && (
-                                                                        <span className="text-[9px] text-blue-600 font-bold bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                                                            (Unlocks {new Date(subject.unlock_date).toLocaleDateString([], { month: 'short', day: 'numeric'})})
-                                                                        </span>
-                                                                    )}
-                                                                </h3>
-                                                                <p className="text-[#8c8c8c] text-xs leading-relaxed mb-2 line-clamp-2">
-                                                                    {subject.description || "No description provided."}
-                                                                </p>
+                                                                {/* Top Header Row: Title & Top-Right Circular Indicators */}
+                                                                <div className="flex items-start justify-between gap-4 mb-1.5">
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <h3 className="text-base font-bold text-[#4d4d4d] uppercase flex items-center gap-2 flex-wrap">
+                                                                            <span>{subject.title}</span>
+                                                                            {isLocked && (
+                                                                                <span className="text-[9px] text-blue-600 font-bold bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                                                    (Unlocks {new Date(subject.unlock_date).toLocaleDateString([], { month: 'short', day: 'numeric'})})
+                                                                                </span>
+                                                                            )}
+                                                                        </h3>
+                                                                        <p className="text-[#8c8c8c] text-xs leading-relaxed mt-1 line-clamp-2">
+                                                                            {subject.description || "No description provided."}
+                                                                        </p>
+                                                                    </div>
+
+                                                                    {/* Top-Right Circular Indicators Container */}
+                                                                    <div className="flex items-center gap-4 shrink-0 pt-0.5">
+                                                                        {/* Circular Progress Indicator */}
+                                                                        {(() => {
+                                                                            const pct = Math.min(100, Math.max(0, subject.progressPct ?? 0))
+                                                                            const radius = 15
+                                                                            const circumference = 2 * Math.PI * radius
+                                                                            const strokeDashoffset = circumference - (pct / 100) * circumference
+                                                                            const strokeColor = pct >= 100 
+                                                                                ? "#10B981" 
+                                                                                : pct >= 60 
+                                                                                ? "#F59E0B" 
+                                                                                : pct > 0 
+                                                                                ? "#4B5563" 
+                                                                                : "#E5E7EB"
+
+                                                                            return (
+                                                                                <div className="flex items-center gap-2.5" title={`Progress: ${pct}% (${subject.openedLessons ?? 0} of ${subject.totalLessons ?? 0} lessons opened)`}>
+                                                                                    <div className="relative size-10 flex items-center justify-center shrink-0">
+                                                                                        <svg className="size-full -rotate-90" viewBox="0 0 36 36">
+                                                                                            <circle
+                                                                                                cx="18"
+                                                                                                cy="18"
+                                                                                                r={radius}
+                                                                                                stroke="#F3F4F6"
+                                                                                                strokeWidth="3"
+                                                                                                fill="transparent"
+                                                                                            />
+                                                                                            <circle
+                                                                                                cx="18"
+                                                                                                cy="18"
+                                                                                                r={radius}
+                                                                                                stroke={strokeColor}
+                                                                                                strokeWidth="3"
+                                                                                                strokeDasharray={circumference}
+                                                                                                strokeDashoffset={strokeDashoffset}
+                                                                                                strokeLinecap="round"
+                                                                                                fill="transparent"
+                                                                                                className="transition-all duration-700 ease-out"
+                                                                                            />
+                                                                                        </svg>
+                                                                                        <span className="absolute text-[9px] font-bold text-gray-700">
+                                                                                            {pct}%
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <div className="hidden sm:block text-left">
+                                                                                        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block leading-none">
+                                                                                            Progress
+                                                                                        </span>
+                                                                                        <span className="text-[9px] text-gray-400 block mt-1 leading-none">
+                                                                                            {subject.openedLessons ?? 0}/{subject.totalLessons ?? 0} lessons
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )
+                                                                        })()}
+
+                                                                        {/* Circular Mastery Indicator */}
+                                                                        {(() => {
+                                                                            const pct = Math.min(100, Math.max(0, subject.masteryPct ?? 0))
+                                                                            const radius = 15
+                                                                            const circumference = 2 * Math.PI * radius
+                                                                            const strokeDashoffset = circumference - (pct / 100) * circumference
+                                                                            const strokeColor = pct >= 80 
+                                                                                ? "#10B981" 
+                                                                                : pct >= 60 
+                                                                                ? "#F59E0B" 
+                                                                                : pct > 0 
+                                                                                ? "#4B5563" 
+                                                                                : "#E5E7EB"
+
+                                                                            return (
+                                                                                <div className="flex items-center gap-2.5" title={`Mastery: ${pct}% (${pct >= 75 ? "Proficient" : pct > 0 ? "Developing" : "Not assessed"})`}>
+                                                                                    <div className="relative size-10 flex items-center justify-center shrink-0">
+                                                                                        <svg className="size-full -rotate-90" viewBox="0 0 36 36">
+                                                                                            <circle
+                                                                                                cx="18"
+                                                                                                cy="18"
+                                                                                                r={radius}
+                                                                                                stroke="#F3F4F6"
+                                                                                                strokeWidth="3"
+                                                                                                fill="transparent"
+                                                                                            />
+                                                                                            <circle
+                                                                                                cx="18"
+                                                                                                cy="18"
+                                                                                                r={radius}
+                                                                                                stroke={strokeColor}
+                                                                                                strokeWidth="3"
+                                                                                                strokeDasharray={circumference}
+                                                                                                strokeDashoffset={strokeDashoffset}
+                                                                                                strokeLinecap="round"
+                                                                                                fill="transparent"
+                                                                                                className="transition-all duration-700 ease-out"
+                                                                                            />
+                                                                                        </svg>
+                                                                                        <span className="absolute text-[9px] font-bold text-gray-700">
+                                                                                            {pct}%
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <div className="hidden sm:block text-left">
+                                                                                        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block leading-none">
+                                                                                            Mastery
+                                                                                        </span>
+                                                                                        <span className="text-[9px] text-gray-400 block mt-1 leading-none">
+                                                                                            {pct >= 75 ? "Proficient" : pct > 0 ? "Developing" : "Not assessed"}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )
+                                                                        })()}
+                                                                    </div>
+                                                                </div>
                                                             </div>
 
                                                             {/* Metadata and View Content */}
-                                                            <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-2">
+                                                            <div className="flex items-center justify-between mt-2">
                                                                 <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
                                                                     <span className="bg-gray-100 text-gray-600 border border-gray-200/60 px-2.5 py-0.5 rounded-md font-semibold">
                                                                         {subject.code || "SUBJ"}
@@ -575,12 +705,13 @@ export default function StudentSubjectsPage() {
                                                                 </div>
 
                                                                 {isLocked ? (
-                                                                    <button disabled className="shrink-0 bg-gray-100 text-gray-400 px-3.5 py-1.5 rounded-lg font-bold text-xs border border-gray-200 flex items-center gap-1.5">
+                                                                    <button disabled className="shrink-0 bg-gray-50 text-gray-400 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-150 flex items-center gap-1.5 cursor-not-allowed">
                                                                         <Lock className="w-3 h-3" /> Locked
                                                                     </button>
                                                                 ) : (
-                                                                    <button className="shrink-0 bg-gray-800 hover:bg-gray-900 text-white font-bold px-4 py-1.5 text-xs rounded-lg transition-colors shadow-2xs uppercase tracking-wider">
-                                                                        View Content
+                                                                    <button className="group/btn inline-flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-gray-950 px-2.5 py-1 rounded-lg hover:bg-gray-100/80 transition-all cursor-pointer">
+                                                                        <span>Open Subject</span>
+                                                                        <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
                                                                     </button>
                                                                 )}
                                                             </div>

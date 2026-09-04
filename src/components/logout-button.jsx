@@ -10,8 +10,20 @@ export function LogoutButton({ iconOnly = false, className = "" }) {
     if (loggingOut) return
     setLoggingOut(true)
 
-    // Server-side redirect guarantees cookie clear + navigation happen together.
-    window.location.assign("/api/auth/logout?redirect=/")
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { "Cache-Control": "no-cache" },
+      })
+    } catch (err) {
+      console.error("Logout request failed:", err)
+    }
+
+    // Explicitly delete cookie on client side as well
+    document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0"
+
+    // Hard replace navigation to root (landing page)
+    window.location.replace("/")
   }
 
   return (

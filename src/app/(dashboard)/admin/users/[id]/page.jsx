@@ -51,7 +51,7 @@ export default async function UserProfilePage({ params }) {
   // ensure user is logged in as admin
   const session = await getSession()
   if (!session?.role || !ADMIN_ROLES.includes(session.role)) {
-    redirect("/login")
+    redirect("/?login=1")
   }
 
   // get user id from url params

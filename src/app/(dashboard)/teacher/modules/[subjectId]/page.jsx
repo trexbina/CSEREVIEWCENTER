@@ -6,7 +6,7 @@ import SubjectBuilderClient from "@/components/subject-builder-client"
 export default async function TeacherSubjectContentPage({ params }) {
     const session = await getSession()
     if (!session || (session.role !== "teacher" && session.role !== "admin")) {
-        redirect("/login")
+        redirect("/?login=1")
     }
 
     const userResult = await pool.query(

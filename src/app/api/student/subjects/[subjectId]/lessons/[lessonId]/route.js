@@ -41,6 +41,20 @@ export async function GET(request, props) {
             lesson_type: rows[0].normalized_lesson_type || rows[0].lesson_type || "module",
         }
 
+        // Asynchronously log lesson open for progress tracking if student
+        if (session.role === "student") {
+            const rawTitle = rows[0].title || "Lesson"
+            pool.query(
+                `INSERT INTO student_activities (student_id, activity_type, title, details, status, created_at)
+                 VALUES ($1, 'lesson_open', $2, $3, 'info', NOW())`,
+                [
+                    session.userId,
+                    `Opened Lesson: ${rawTitle}`,
+                    `LessonID: ${lessonId} | SubjectID: ${subjectId} | Type: ${lesson.lesson_type}`
+                ]
+            ).catch(err => console.error("Error logging lesson_open activity:", err))
+        }
+
         return NextResponse.json({ lesson })
     } catch (err) {
         console.error("[student/lesson GET]", err)

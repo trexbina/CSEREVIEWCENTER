@@ -81,6 +81,8 @@ const sidebarJsonMap = {
     FileText: "/icons/sidebar/curriculum.json",
     PencilLine: "/icons/sidebar/exam.json",
     Layers: "/icons/sidebar/layers.json",
+    Calendar: "/icons/sidebar/calendar.json",
+    Star: "/icons/sidebar/myprogress.json",
     BarChart3: "/icons/sidebar/analytics.json",
     Settings: "/icons/sidebar/settings.json",
     Trash: "/icons/sidebar/trash.json",

@@ -19,18 +19,21 @@ export async function GET(request) {
     const majorFilter = searchParams.get("major_id") || ""
     const batchFilter = searchParams.get("batch_id") || ""
     const studentFilter = searchParams.get("student_id") || ""
+    const examFilter = searchParams.get("exam_id") || ""
 
-    // 1. Fetch Master Data and Mock Exams for filters and analytics
-    const [schoolsRes, majorsRes, batchesRes, mockExamsRes] = await Promise.all([
+    // 1. Fetch Master Data, Examinations, and Mock Exams for filters and analytics
+    const [schoolsRes, majorsRes, batchesRes, examinationsRes, mockExamsRes] = await Promise.all([
       pool.query("SELECT id, name FROM schools ORDER BY name ASC").catch(() => ({ rows: [] })),
       pool.query("SELECT id, name FROM majors ORDER BY name ASC").catch(() => ({ rows: [] })),
       pool.query("SELECT id, name FROM batches ORDER BY name ASC").catch(() => ({ rows: [] })),
+      pool.query("SELECT id, name FROM examinations WHERE name NOT ILIKE 'TEST_%' ORDER BY name ASC").catch(() => ({ rows: [] })),
       pool.query("SELECT id, exam_code, title FROM mock_exams ORDER BY created_at ASC").catch(() => ({ rows: [] })),
     ])
 
     const schoolsList = schoolsRes.rows || []
     const majorsList = majorsRes.rows || []
     const batchesList = batchesRes.rows || []
+    const examinationsList = examinationsRes.rows || []
     const mockExamsList = mockExamsRes.rows || []
 
     // 2. Fetch User & Mock Exam Score Data
@@ -53,6 +56,11 @@ export async function GET(request) {
       queryParams.push(batchFilter)
       paramIndex += 1
     }
+    if (examFilter) {
+      whereClauses.push(`u.exam_id = $${paramIndex}`)
+      queryParams.push(examFilter)
+      paramIndex += 1
+    }
 
     const whereString = whereClauses.length > 0 ? "WHERE " + whereClauses.join(" AND ") : ""
 
@@ -61,6 +69,8 @@ export async function GET(request) {
         u.id AS student_id,
         u.name AS student_name,
         u.email,
+        u.exam_id,
+        COALESCE(e.name, 'General Examination') AS examination_name,
         COALESCE(s.name, u.school, 'Unassigned School') AS school_name,
         COALESCE(m.name, 'General Major') AS major_name,
         b.name AS batch_name,
@@ -71,6 +81,7 @@ export async function GET(request) {
         CASE WHEN mes.max_score > 0 THEN ROUND((mes.score::numeric / mes.max_score::numeric) * 100, 2) ELSE 0 END AS percentage,
         mes.completed_at
       FROM users u
+      LEFT JOIN examinations e ON u.exam_id = e.id
       LEFT JOIN schools s ON u.school_id = s.id
       LEFT JOIN majors m ON u.major_id = m.id
       LEFT JOIN batches b ON u.batch_id = b.id
@@ -97,6 +108,8 @@ export async function GET(request) {
           id: sId,
           name: row.student_name,
           email: row.email,
+          examId: row.exam_id,
+          examination: row.examination_name,
           school: row.school_name,
           major: row.major_name,
           batch: row.batch_name || "Active Batch",
@@ -120,6 +133,8 @@ export async function GET(request) {
         id: st.id,
         name: st.name,
         email: st.email,
+        examId: st.examId,
+        examination: st.examination,
         school: st.school,
         major: st.major,
         batch: st.batch,
@@ -133,11 +148,17 @@ export async function GET(request) {
     // If database has 0 students, provide fallback structure for clean UI display
     if (studentList.length === 0) {
       studentList = [
-        { id: 101, name: "Maria Santos", email: "maria.santos@up.edu.ph", school: "University of the Philippines", major: "Secondary Education - Math", batch: "Batch 2026", avgScore: 88.5, attemptCount: 4, completionRate: 100, passed: true },
-        { id: 102, name: "Juan Dela Cruz", email: "juan.delacruz@ateneo.edu", school: "Ateneo de Manila University", major: "Elementary Education", batch: "Batch 2026", avgScore: 82.0, attemptCount: 3, completionRate: 75, passed: true },
-        { id: 103, name: "Angela Reyes", email: "angela.reyes@dlsu.edu.ph", school: "De La Salle University", major: "Secondary Education - English", batch: "Batch 2026", avgScore: 79.4, attemptCount: 4, completionRate: 100, passed: true },
-        { id: 104, name: "Carlos Mendoza", email: "carlos.m@ust.edu.ph", school: "University of Santo Tomas", major: "Secondary Education - Science", batch: "Batch 2026", avgScore: 74.2, attemptCount: 2, completionRate: 50, passed: false },
-        { id: 105, name: "Patricia Gomez", email: "patricia.g@pup.edu.ph", school: "Polytechnic University of the Philippines", major: "Elementary Education", batch: "Batch 2026", avgScore: 91.2, attemptCount: 4, completionRate: 100, passed: true },
+        { id: 101, name: "Maria Santos", email: "maria.santos@up.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "University of the Philippines", major: "Secondary Education - Math", batch: "Batch 2026", avgScore: 88.5, attemptCount: 4, completionRate: 100, passed: true },
+        { id: 102, name: "Juan Dela Cruz", email: "juan.delacruz@ateneo.edu", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "Ateneo de Manila University", major: "Elementary Education", batch: "Batch 2026", avgScore: 82.0, attemptCount: 3, completionRate: 75, passed: true },
+        { id: 103, name: "Angela Reyes", email: "angela.reyes@dlsu.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "De La Salle University", major: "Secondary Education - English", batch: "Batch 2026", avgScore: 79.4, attemptCount: 4, completionRate: 100, passed: true },
+        { id: 104, name: "Carlos Mendoza", email: "carlos.m@ust.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "University of Santo Tomas", major: "Secondary Education - Science", batch: "Batch 2026", avgScore: 74.2, attemptCount: 2, completionRate: 50, passed: false },
+        { id: 105, name: "Patricia Gomez", email: "patricia.g@pup.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "Polytechnic University of the Philippines", major: "Elementary Education", batch: "Batch 2026", avgScore: 91.2, attemptCount: 4, completionRate: 100, passed: true },
+        { id: 106, name: "Joshua Aquino", email: "joshua.aquino@ust.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "University of Santo Tomas", major: "Elementary Education", batch: "Batch 2026", avgScore: 61.5, attemptCount: 3, completionRate: 75, passed: false },
+        { id: 107, name: "Beatriz Fernandez", email: "b.fernandez@feulept.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "Far Eastern University", major: "Secondary Education - English", batch: "Batch 2026", avgScore: 54.0, attemptCount: 2, completionRate: 50, passed: false },
+        { id: 108, name: "Kevin Ramos", email: "kevin.ramos@pup.edu.ph", examId: 17, examination: "Philippine Nurses Licensure Examination (PNLE)", school: "Polytechnic University of the Philippines", major: "Nursing Practice", batch: "Batch 2026", avgScore: 58.8, attemptCount: 4, completionRate: 100, passed: false },
+        { id: 109, name: "Sarah Alcantara", email: "sarah.alcantara@feu.edu.ph", examId: 17, examination: "Philippine Nurses Licensure Examination (PNLE)", school: "Far Eastern University", major: "Nursing Practice", batch: "Batch 2026", avgScore: 84.6, attemptCount: 4, completionRate: 100, passed: true },
+        { id: 110, name: "David Lim", email: "david.lim@dlsu.edu.ph", examId: 18, examination: "Civil Service Examination (CSE)", school: "De La Salle University", major: "Public Administration", batch: "Batch 2026", avgScore: 64.2, attemptCount: 2, completionRate: 50, passed: false },
+        { id: 111, name: "Hannah Tan", email: "hannah.tan@up.edu.ph", examId: 18, examination: "Civil Service Examination (CSE)", school: "University of the Philippines", major: "Public Administration", batch: "Batch 2026", avgScore: 89.0, attemptCount: 4, completionRate: 100, passed: true },
       ]
     }
 
@@ -321,12 +342,51 @@ export async function GET(request) {
       perExam: perExamList,
     }
 
+    // ── Curriculum / Subjects Engagement Tracking ─────────────────
+    // Track how many active students have opened/engaged with curriculum subjects
+    const [curriculumUsageRes, totalActiveSubjectsRes] = await Promise.all([
+      pool.query(`
+        SELECT 
+          COUNT(DISTINCT sa.student_id) as engaged_students,
+          COUNT(sa.id) as total_opens,
+          MAX(sa.created_at) as last_opened_at
+        FROM student_activities sa
+        JOIN users u ON sa.student_id = u.id
+        WHERE u.role = 'student' 
+          AND (sa.activity_type IN ('curriculum_view', 'module_complete', 'quiz_complete', 'quiz_retry') 
+               OR sa.title ILIKE '%Opened Subject%' 
+               OR sa.title ILIKE '%Study Module%'
+               OR sa.title ILIKE '%Quiz%')
+      `).catch(() => ({ rows: [{ engaged_students: 0, total_opens: 0, last_opened_at: null }] })),
+      pool.query(`SELECT COUNT(*) as total_subjects FROM subjects WHERE status = 'active'`).catch(() => ({ rows: [{ total_subjects: 0 }] }))
+    ])
+
+    const engagedStudentsCount = parseInt(curriculumUsageRes.rows[0]?.engaged_students || "0", 10)
+    const totalCurriculumOpens = parseInt(curriculumUsageRes.rows[0]?.total_opens || "0", 10)
+    const lastCurriculumOpenAt = curriculumUsageRes.rows[0]?.last_opened_at || null
+    const totalActiveSubjects = parseInt(totalActiveSubjectsRes.rows[0]?.total_subjects || "0", 10)
+
+    // Calculate the percentage of students actively using the curriculum
+    const curriculumEngagementRate = totalStudents > 0 
+      ? Math.min(100, Math.round((engagedStudentsCount / totalStudents) * 1000) / 10)
+      : 0
+
+    const curriculumAnalytics = {
+      engagementRate: curriculumEngagementRate,
+      engagedStudents: engagedStudentsCount,
+      totalStudents,
+      totalOpens: totalCurriculumOpens,
+      totalSubjects: totalActiveSubjects,
+      lastOpenedAt: lastCurriculumOpenAt,
+    }
+
     return NextResponse.json({
       success: true,
       filters: {
         schools: schoolsList,
         majors: majorsList,
         batches: batchesList,
+        examinations: examinationsList,
         mockExams: mockExamsList,
       },
       kpis: {
@@ -344,6 +404,7 @@ export async function GET(request) {
         attemptCount: selectedStudent ? selectedStudent.attemptCount : 4,
       },
       mockExamPassersData,
+      curriculumAnalytics,
       scoreDistribution,
       institutionalAnalytics: {
         schoolLeaderboard,

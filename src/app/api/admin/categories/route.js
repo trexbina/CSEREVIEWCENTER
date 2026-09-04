@@ -209,12 +209,15 @@ export async function DELETE(request) {
         let subjIdsToDelete = []
         if (childSubIds.length > 0) {
             const findSubjs = await pool.query(
-                "SELECT id FROM subjects WHERE category_id = $1 OR subcategory_id = ANY($2::int[])",
-                [id, childSubIds]
+                "SELECT id FROM subjects WHERE category_id = $1 OR LOWER(category) = LOWER($2) OR subcategory_id = ANY($3::int[])",
+                [id, catRes.rows[0]?.name || "", childSubIds]
             )
             subjIdsToDelete = findSubjs.rows.map((s) => s.id)
         } else {
-            const findSubjs = await pool.query("SELECT id FROM subjects WHERE category_id = $1", [id])
+            const findSubjs = await pool.query(
+                "SELECT id FROM subjects WHERE category_id = $1 OR LOWER(category) = LOWER($2)",
+                [id, catRes.rows[0]?.name || ""]
+            )
             subjIdsToDelete = findSubjs.rows.map((s) => s.id)
         }
 

@@ -15,7 +15,7 @@ import SubjectBuilderClient from "@/components/subject-builder-client"
 export default async function SubjectContentPage({ params }) {
     // check if user is logged in as admin
     const session = await getSession()
-    if (!session || !ADMIN_ROLES.includes(session.role)) redirect("/login")
+    if (!session || !ADMIN_ROLES.includes(session.role)) redirect("/?login=1")
 
     // find the admin username from the database
     const userResult = await pool.query(

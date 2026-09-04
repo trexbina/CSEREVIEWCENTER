@@ -41,12 +41,12 @@ async function getUserDetail(userId) {
 export default async function AdminProfilePage() {
   const session = await getSession()
   if (!session?.userId || !ADMIN_ROLES.includes(session.role)) {
-    redirect("/login")
+    redirect("/?login=1")
   }
 
   const user = await getUserDetail(session.userId)
   if (!user) {
-    redirect("/login")
+    redirect("/?login=1")
   }
 
   return (

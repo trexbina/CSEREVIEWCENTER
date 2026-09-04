@@ -203,8 +203,27 @@ export async function DELETE(request, props) {
         if (!id || !type) return NextResponse.json({ error: "Missing type or id" }, { status: 400 })
 
         if (type === "module") {
+            const contents = await pool.query(
+                "SELECT id FROM subject_contents WHERE module_id = $1",
+                [id]
+            )
+            const contentIds = contents.rows.map(r => r.id)
+            if (contentIds.length > 0) {
+                await pool.query(
+                    "DELETE FROM student_quiz_submissions WHERE content_id = ANY($1::int[])",
+                    [contentIds]
+                )
+                await pool.query(
+                    "DELETE FROM subject_contents WHERE id = ANY($1::int[])",
+                    [contentIds]
+                )
+            }
             await pool.query("DELETE FROM subject_modules WHERE id = $1", [id])
         } else if (type === "lesson") {
+            await pool.query(
+                "DELETE FROM student_quiz_submissions WHERE content_id = $1",
+                [id]
+            )
             await pool.query("DELETE FROM subject_contents WHERE id = $1", [id])
         } else {
             return NextResponse.json({ error: "Invalid type" }, { status: 400 })

@@ -12,7 +12,7 @@ export async function GET() {
 
     const studentId = session.userId
 
-    // 1. Fetch only subject contents where lesson_type is explicitly 'quiz'
+    // 1. Fetch only active subject contents where lesson_type is explicitly 'quiz'
     const contentsRes = await pool.query(`
       SELECT 
         sc.id,
@@ -25,9 +25,10 @@ export async function GET() {
         sub.title as subject_title,
         sub.category as subject_category
       FROM subject_contents sc
-      LEFT JOIN subject_modules sm ON sm.id = sc.module_id
-      LEFT JOIN subjects sub ON sub.id = sm.subject_id
+      INNER JOIN subject_modules sm ON sm.id = sc.module_id
+      INNER JOIN subjects sub ON sub.id = sm.subject_id
       WHERE LOWER(COALESCE(sc.lesson_type, '')) = 'quiz'
+        AND sub.status = 'active'
       ORDER BY sc.created_at DESC
     `)
 
@@ -115,7 +116,10 @@ export async function GET() {
       })
     }
 
-    return NextResponse.json({ assignments: items })
+    return NextResponse.json(
+      { assignments: items },
+      { headers: { "Cache-Control": "no-store, max-age=0" } }
+    )
   } catch (err) {
     console.error("[GET /api/student/assignments]", err)
     return NextResponse.json({ error: "Internal server error." }, { status: 500 })

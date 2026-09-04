@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2, Eye, EyeOff } from "lucide-react"
 
@@ -169,11 +169,16 @@ function LoginFormInner() {
   )
 }
 
-/* ------------------------------------------------------------------ */
-/*  Main Exported Component                                            */
-/* ------------------------------------------------------------------ */
-export function LoginDialog({ children, defaultOpen = false }) {
-  const [open, setOpen] = useState(defaultOpen)
+function LoginDialogInner({ children, defaultOpen = false }) {
+  const searchParams = useSearchParams()
+  const shouldOpenFromQuery = searchParams?.get("login") === "1"
+  const [open, setOpen] = useState(defaultOpen || shouldOpenFromQuery)
+
+  useEffect(() => {
+    if (shouldOpenFromQuery) {
+      setOpen(true)
+    }
+  }, [shouldOpenFromQuery])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -181,10 +186,17 @@ export function LoginDialog({ children, defaultOpen = false }) {
         {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[400px] p-6 bg-card border border-border/80 shadow-2xl rounded-2xl">
-        <Suspense fallback={<div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-[#E9C46A]" /></div>}>
-          <LoginFormInner />
-        </Suspense>
+        <LoginFormInner />
       </DialogContent>
     </Dialog>
   )
 }
+
+export function LoginDialog(props) {
+  return (
+    <Suspense fallback={props.children ? <>{props.children}</> : null}>
+      <LoginDialogInner {...props} />
+    </Suspense>
+  )
+}
+

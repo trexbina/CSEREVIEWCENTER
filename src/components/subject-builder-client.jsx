@@ -1557,7 +1557,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                                                     <button
                                                         onClick={saveModuleBlocks}
                                                         disabled={saving || fetching}
-                                                        className="px-4 py-1.5 rounded-lg bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white font-bold text-xs transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
+                                                        className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
                                                     >
                                                         {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
                                                         <span>Save Changes</span>

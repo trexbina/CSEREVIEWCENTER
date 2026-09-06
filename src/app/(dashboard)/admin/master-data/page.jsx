@@ -176,7 +176,7 @@ const SchoolDialog = ({ isOpen, schoolForm, setSchoolForm, onSubmit, onCancel, i
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
-            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">{isEdit ? "Save Changes" : "Add School"}</button>
+            <button type="submit" className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer">{isEdit ? "Save Changes" : "Add School"}</button>
           </div>
         </form>
       </div>
@@ -245,7 +245,7 @@ const BatchDialog = ({ isOpen, batchForm, setBatchForm, onSubmit, onCancel, tree
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
-            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">{isEdit ? "Save Changes" : "Create Batch"}</button>
+            <button type="submit" className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer">{isEdit ? "Save Changes" : "Create Batch"}</button>
           </div>
         </form>
       </div>

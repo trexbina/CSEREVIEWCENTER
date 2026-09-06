@@ -1139,19 +1139,10 @@ export default function MockExamsPage() {
                                 <button
                                     type="submit"
                                     disabled={saving || !formData.title.trim() || !formData.examCode.trim()}
-                                    className="rounded-lg px-5 py-2 text-xs font-bold text-white bg-[#E9C46A] hover:bg-[#dfb550] transition-colors disabled:opacity-50 shadow-sm uppercase tracking-wide cursor-pointer flex items-center gap-1.5"
+                                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
                                 >
-                                    {saving ? (
-                                         <>
-                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                            <span>Saving...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Save className="h-3.5 w-3.5" />
-                                            <span>{editingExam ? "Save Changes" : "Save Exam"}</span>
-                                        </>
-                                    )}
+                                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+                                    <span>{saving ? "Saving..." : (editingExam ? "Save Changes" : "Save Exam")}</span>
                                 </button>
                             </div>
                         </form>

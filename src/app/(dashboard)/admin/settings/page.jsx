@@ -494,10 +494,10 @@ export default function SystemSettingsPage() {
                                 <button
                                     type="submit"
                                     disabled={saving}
-                                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#E9C46A] hover:bg-[#dfb550] px-4 h-8.5 text-xs font-bold text-slate-950 transition-opacity duration-200 hover:opacity-90 shadow-2xs cursor-pointer"
+                                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
                                 >
-                                    {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                                    Save Changes
+                                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+                                    <span>Save Changes</span>
                                 </button>
                             </div>
                         </form>

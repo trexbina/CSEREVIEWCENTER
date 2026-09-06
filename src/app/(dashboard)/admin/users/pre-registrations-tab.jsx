@@ -1039,9 +1039,16 @@ export function PreRegistrationsTab() {
                     type="button"
                     disabled={actionLoading}
                     onClick={handleSaveEdit}
-                    className="px-4 h-9 rounded-xl text-xs font-bold uppercase tracking-wide text-white bg-[#E9C46A] hover:bg-[#dfb550] transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
                   >
-                    {actionLoading ? "Saving…" : "Save Changes"}
+                    {actionLoading ? (
+                      <>
+                        <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent mr-1.5" />
+                        Saving…
+                      </>
+                    ) : (
+                      <span>Save Changes</span>
+                    )}
                   </button>
                 </div>
               ) : selectedApp.status === "PENDING" ? (

@@ -646,16 +646,18 @@ export function EditUserDialog({ open, onOpenChange, user }) {
             <DialogClose asChild>
               <Button type="button" variant="outline">Cancel</Button>
             </DialogClose>
-            <Button type="submit" disabled={saving} className="gap-2">
+            <Button
+              type="submit"
+              disabled={saving}
+              className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer h-auto border-0"
+            >
               {saving ? (
                 <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent mr-1.5" />
                   Updating…
                 </>
               ) : (
-                <>
-                  Save Changes
-                </>
+                <span>Save Changes</span>
               )}
             </Button>
           </DialogFooter>

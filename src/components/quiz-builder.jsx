@@ -1178,30 +1178,24 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                 type="button"
                                                 disabled={uploadingPdf}
                                                 onClick={() => pdfInputRef.current?.click()}
-                                                className={`w-full border border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50/80 rounded-xl transition-all cursor-pointer disabled:opacity-50 ${
+                                                className={`w-full border border-gray-200 hover:border-gray-300 hover:bg-gray-50/80 rounded-xl transition-all cursor-pointer disabled:opacity-50 ${
                                                     allReferencePdfs.length > 0
-                                                        ? "p-3 flex items-center justify-center gap-2 text-gray-500"
-                                                        : "p-4 flex flex-col items-center justify-center gap-2 text-gray-500"
+                                                        ? "p-3 flex items-center justify-center text-gray-500"
+                                                        : "p-4 flex flex-col items-center justify-center gap-1 text-gray-500"
                                                 }`}
                                             >
                                                 {uploadingPdf ? (
-                                                    <>
+                                                    <div className="flex items-center justify-center gap-2">
                                                         <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
                                                         <span className="text-xs font-medium text-gray-600">Uploading PDF document...</span>
-                                                    </>
+                                                    </div>
                                                 ) : allReferencePdfs.length > 0 ? (
-                                                    <>
-                                                        <FileText className="h-4 w-4 text-gray-400" />
-                                                        <span className="text-xs font-semibold text-gray-700">Click to upload another PDF</span>
-                                                    </>
+                                                    <span className="text-xs font-semibold text-gray-700">Click to upload another PDF</span>
                                                 ) : (
-                                                    <>
-                                                        <FileText className="h-5 w-5 text-gray-400" />
-                                                        <div className="text-center">
-                                                            <span className="text-xs font-semibold text-gray-700">Click to upload reference PDF</span>
-                                                            <span className="block text-[11px] text-gray-400 mt-0.5">Supports multiple PDFs up to 50MB</span>
-                                                        </div>
-                                                    </>
+                                                    <div className="text-center">
+                                                        <span className="text-xs font-semibold text-gray-700">Click to upload reference PDF</span>
+                                                        <span className="block text-[11px] text-gray-400 mt-0.5">Supports multiple PDFs up to 50MB</span>
+                                                    </div>
                                                 )}
                                             </button>
                                         </div>

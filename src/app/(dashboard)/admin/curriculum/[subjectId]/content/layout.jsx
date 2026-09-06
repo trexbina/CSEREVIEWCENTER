@@ -591,7 +591,7 @@ export default function SubjectContentLayout({ children }) {
                                                         <FileText className="h-3.5 w-3.5 text-gray-400" /> PDF Builder
                                                     </button>
                                                     <button onClick={() => setNewLessonType('quiz')} className="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
-                                                        <HelpCircle className="h-3.5 w-3.5 text-gray-400" /> Quiz Builder
+                                                        <HelpCircle className="h-3.5 w-3.5 text-gray-400" /> Quiz/Assignment Builder
                                                     </button>
                                                 </div>
                                             ) : (

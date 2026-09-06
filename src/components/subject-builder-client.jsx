@@ -41,7 +41,7 @@ const QuizBuilder = dynamic(() => import("@/components/quiz-builder"), {
     ssr: false,
     loading: () => (
         <div className="absolute inset-0 flex items-center justify-center bg-white text-gray-500 text-sm font-medium">
-            Loading Quiz Builder...
+            Loading Quiz/Assignment Builder...
         </div>
     )
 })

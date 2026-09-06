@@ -947,8 +947,16 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                         min={0}
                                                         max={360}
                                                         placeholder="0 (Unlimited)"
-                                                        value={quizSettings.timeLimitMinutes || ""}
-                                                        onChange={(e) => setQuizSettings({ ...quizSettings, timeLimitMinutes: Math.max(0, Number(e.target.value)) })}
+                                                        value={quizSettings.timeLimitMinutes === 0 || quizSettings.timeLimitMinutes === "" ? "" : quizSettings.timeLimitMinutes}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value
+                                                            setQuizSettings({ ...quizSettings, timeLimitMinutes: val === "" ? "" : Math.max(0, Number(val)) })
+                                                        }}
+                                                        onBlur={() => {
+                                                            if (quizSettings.timeLimitMinutes === "") {
+                                                                setQuizSettings(prev => ({ ...prev, timeLimitMinutes: 0 }))
+                                                            }
+                                                        }}
                                                         className="w-full bg-gray-50/60 border border-gray-200/80 rounded-xl px-3 py-2 text-gray-800 text-sm outline-none focus:bg-white focus:border-gray-400 transition-all"
                                                     />
                                                     <span className="text-xs text-gray-400">Set to 0 for unlimited duration.</span>
@@ -961,8 +969,16 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                         min={0}
                                                         max={10}
                                                         placeholder="0 (No retries)"
-                                                        value={quizSettings.maxRetries ?? 0}
-                                                        onChange={(e) => setQuizSettings({ ...quizSettings, maxRetries: Math.max(0, Number(e.target.value)) })}
+                                                        value={quizSettings.maxRetries === 0 || quizSettings.maxRetries === "" ? "" : quizSettings.maxRetries}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value
+                                                            setQuizSettings({ ...quizSettings, maxRetries: val === "" ? "" : Math.max(0, Number(val)) })
+                                                        }}
+                                                        onBlur={() => {
+                                                            if (quizSettings.maxRetries === "") {
+                                                                setQuizSettings(prev => ({ ...prev, maxRetries: 0 }))
+                                                            }
+                                                        }}
                                                         className="w-full bg-gray-50/60 border border-gray-200/80 rounded-xl px-3 py-2 text-gray-800 text-sm outline-none focus:bg-white focus:border-gray-400 transition-all"
                                                     />
                                                     <span className="text-xs text-gray-400">0 = single attempt only.</span>
@@ -1360,8 +1376,16 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                         type="number" 
                                                         min={1} 
                                                         max={100} 
-                                                        value={block.points !== undefined ? block.points : 1}
-                                                        onChange={(e) => updateQuestionPoints(block.id, Number(e.target.value))}
+                                                        value={block.points === "" ? "" : (block.points !== undefined ? block.points : 1)}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value
+                                                            updateQuestionPoints(block.id, val === "" ? "" : Math.max(1, Number(val)))
+                                                        }}
+                                                        onBlur={() => {
+                                                            if (block.points === "" || block.points === undefined) {
+                                                                updateQuestionPoints(block.id, 1)
+                                                            }
+                                                        }}
                                                         className="w-8 border-b border-gray-200 text-center text-gray-700 font-medium outline-none focus:border-gray-400 bg-transparent py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     />
                                                 </div>

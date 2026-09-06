@@ -1084,8 +1084,16 @@ export default function MockExamsPage() {
                                         min={0}
                                         max={360}
                                         placeholder="0 (Unlimited)"
-                                        value={formData.timeLimitMinutes === 0 ? "" : (formData.timeLimitMinutes || "")}
-                                        onChange={(e) => setFormData({ ...formData, timeLimitMinutes: Math.max(0, Number(e.target.value)) })}
+                                        value={formData.timeLimitMinutes === 0 || formData.timeLimitMinutes === "" ? "" : formData.timeLimitMinutes}
+                                        onChange={(e) => {
+                                            const val = e.target.value
+                                            setFormData({ ...formData, timeLimitMinutes: val === "" ? "" : Math.max(0, Number(val)) })
+                                        }}
+                                        onBlur={() => {
+                                            if (formData.timeLimitMinutes === "") {
+                                                setFormData(prev => ({ ...prev, timeLimitMinutes: 0 }))
+                                            }
+                                        }}
                                         className="w-full h-10 rounded-xl border border-gray-200 px-3 text-sm focus:outline-none focus:border-gray-400 font-medium text-gray-800"
                                     />
                                     <span className="text-xs font-normal text-gray-400">
@@ -1101,8 +1109,16 @@ export default function MockExamsPage() {
                                         min={0}
                                         max={10}
                                         placeholder="0"
-                                        value={formData.maxRetries ?? 0}
-                                        onChange={(e) => setFormData({ ...formData, maxRetries: Math.max(0, Number(e.target.value)) })}
+                                        value={formData.maxRetries === 0 || formData.maxRetries === "" ? "" : formData.maxRetries}
+                                        onChange={(e) => {
+                                            const val = e.target.value
+                                            setFormData({ ...formData, maxRetries: val === "" ? "" : Math.max(0, Number(val)) })
+                                        }}
+                                        onBlur={() => {
+                                            if (formData.maxRetries === "") {
+                                                setFormData(prev => ({ ...prev, maxRetries: 0 }))
+                                            }
+                                        }}
                                         className="w-full h-10 rounded-xl border border-gray-200 px-3 text-sm focus:outline-none focus:border-gray-400 font-medium text-gray-800"
                                     />
                                     <span className="text-xs font-normal text-gray-400">

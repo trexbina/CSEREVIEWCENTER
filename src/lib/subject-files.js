@@ -47,11 +47,18 @@ export function extractSubjectFiles(modules) {
                         blocks.forEach((block, bIdx) => {
                             if (!block) return
                             const blockType = String(block.type || "").toLowerCase()
-                            const blockUrl = block.content || block.url || block.src
+
+                            // Skip text, paragraph, heading, list, or non-media content blocks
+                            if (blockType === "text" || blockType === "paragraph" || blockType === "heading" || blockType === "quote" || blockType === "code") {
+                                if (Array.isArray(block.children)) scanBlocks(block.children)
+                                return
+                            }
+
+                            const blockUrl = block.url || block.src || (["image", "video", "pdf"].includes(blockType) ? block.content : null)
 
                             if (typeof blockUrl === "string" && blockUrl.trim() && !seenUrls.has(blockUrl)) {
                                 const detectedType = detectFileType(blockUrl, blockType)
-                                if (detectedType) {
+                                if (detectedType === "pdf" || detectedType === "image" || detectedType === "video") {
                                     seenUrls.add(blockUrl)
                                     files.push({
                                         id: `block-${lesson.id}-${block.id || bIdx}`,
@@ -127,7 +134,7 @@ export function extractSubjectFiles(modules) {
         })
     })
 
-    return files
+    return files.filter(f => f && (f.type === "pdf" || f.type === "image" || f.type === "video"))
 }
 
 export function extractFilename(url) {
@@ -146,21 +153,15 @@ export function detectFileType(url = "", blockType = "") {
     const lowerUrl = String(url || "").toLowerCase()
     const lowerType = String(blockType || "").toLowerCase()
 
-    if (lowerType === "image" || /\.(png|jpe?g|webp|gif|svg|bmp|ico)$/i.test(lowerUrl)) {
+    if (lowerType === "image" || /\.(png|jpe?g|webp|gif|svg|bmp|ico)(\?.*)?$/i.test(lowerUrl) || lowerUrl.includes("/image")) {
         return "image"
     }
-    if (lowerType === "video" || /\.(mp4|webm|ogg|mov|mkv)$/i.test(lowerUrl)) {
+    if (lowerType === "video" || /\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i.test(lowerUrl) || lowerUrl.includes("/video")) {
         return "video"
     }
-    if (lowerType === "pdf" || /\.pdf$/i.test(lowerUrl)) {
+    if (lowerType === "pdf" || /\.pdf(\?.*)?$/i.test(lowerUrl) || lowerUrl.includes("/pdf")) {
         return "pdf"
     }
-    if (lowerType === "audio" || /\.(mp3|wav|ogg|m4a|aac)$/i.test(lowerUrl)) {
-        return "audio"
-    }
-    // If it's an uploaded file from /api/files, check patterns
-    if (lowerUrl.includes("/image") || lowerUrl.includes("image")) return "image"
-    if (lowerUrl.includes("/video") || lowerUrl.includes("video")) return "video"
-    if (lowerUrl.includes("/pdf") || lowerUrl.includes("pdf")) return "pdf"
-    return lowerType || "file"
+
+    return null
 }

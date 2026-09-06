@@ -151,17 +151,22 @@ export default function StudentSubjectLayout({ children }) {
             `}>
 
                 {/* School Branding / Header */}
-                <div className="p-6 pb-4 flex flex-row items-center justify-between border-b border-gray-200">
-                    <div className="flex flex-col items-start">
+                <div className="px-5 py-4 flex items-center justify-between border-b border-gray-200">
+                    <div className="flex items-center gap-3 select-none">
                         <img
                             src="/landingpageassets/logo.png"
-                            alt="Peak Excellence"
-                            className="h-10 md:h-12 w-auto object-contain mb-1"
+                            alt="Peak Excellence Review Center"
+                            className="size-10 shrink-0 object-contain"
                             onError={(e) => { e.target.style.display = 'none' }}
                         />
-                        <h2 className="text-[13px] md:text-[15px] font-extrabold tracking-widest text-[#4d4d4d] uppercase font-sans">
-                            PEAK EXCELLENCE
-                        </h2>
+                        <div className="flex flex-col leading-tight select-none">
+                            <span className="text-[15px] font-black tracking-wider text-[#3B3B3B] dark:text-white uppercase font-sans">
+                                PEAK
+                            </span>
+                            <span className="text-[12px] font-semibold tracking-wide text-[#696969] dark:text-gray-400 font-sans -mt-0.5">
+                                Excellence
+                            </span>
+                        </div>
                     </div>
                     {/* Close button for mobile */}
                     <button

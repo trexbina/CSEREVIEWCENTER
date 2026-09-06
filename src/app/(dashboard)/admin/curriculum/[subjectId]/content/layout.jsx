@@ -339,46 +339,22 @@ export default function SubjectContentLayout({ children }) {
                 ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 md:shadow-none'}
             `}>
 
-                {/* sidebar header with back button and school logo */}
-                <div className="p-6 pb-4 flex items-center justify-between border-b border-gray-200">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => {
-                                if (subjectInfo) {
-                                    if (subjectInfo.category_id && subjectInfo.subcategory_id) {
-                                        if (typeof window !== "undefined") {
-                                            sessionStorage.setItem("admin_curriculum_cat_id", String(subjectInfo.category_id))
-                                            sessionStorage.setItem("admin_curriculum_sub_id", String(subjectInfo.subcategory_id))
-                                        }
-                                        router.push(`/admin/curriculum?cat=${subjectInfo.category_id}&sub=${subjectInfo.subcategory_id}`)
-                                        return
-                                    }
-                                    if (subjectInfo.category_id) {
-                                        if (typeof window !== "undefined") {
-                                            sessionStorage.setItem("admin_curriculum_cat_id", String(subjectInfo.category_id))
-                                            sessionStorage.removeItem("admin_curriculum_sub_id")
-                                        }
-                                        router.push(`/admin/curriculum?cat=${subjectInfo.category_id}`)
-                                        return
-                                    }
-                                }
-                                router.push('/admin/curriculum')
-                            }}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200/50 bg-gray-100 text-gray-600 transition-all hover:bg-gray-200 hover:text-gray-900 shadow-sm shrink-0 cursor-pointer"
-                            title="Back to Subjects"
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <div className="flex flex-col items-start gap-1">
-                            <img
-                                src="/landingpageassets/logo.png"
-                                alt="Peak Excellence"
-                                className="h-10 md:h-12 w-auto object-contain"
-                                onError={(e) => { e.target.style.display = 'none' }}
-                            />
-                            <h2 className="text-xs md:text-sm font-extrabold tracking-widest text-[#4d4d4d] uppercase font-sans mt-2">
-                                PEAK EXCELLENCE
-                            </h2>
+                {/* sidebar header with school logo */}
+                <div className="px-5 py-4 flex items-center justify-between border-b border-gray-200">
+                    <div className="flex items-center gap-3 select-none">
+                        <img
+                            src="/landingpageassets/logo.png"
+                            alt="Peak Excellence Review Center"
+                            className="size-10 shrink-0 object-contain"
+                            onError={(e) => { e.target.style.display = 'none' }}
+                        />
+                        <div className="flex flex-col leading-tight select-none">
+                            <span className="text-[15px] font-black tracking-wider text-[#3B3B3B] dark:text-white uppercase font-sans">
+                                PEAK
+                            </span>
+                            <span className="text-[12px] font-semibold tracking-wide text-[#696969] dark:text-gray-400 font-sans -mt-0.5">
+                                Excellence
+                            </span>
                         </div>
                     </div>
                     {/* close sidebar button for mobile screens */}
@@ -390,18 +366,46 @@ export default function SubjectContentLayout({ children }) {
                     </button>
                 </div>
 
-                {/* tabs for switching between modules and files */}
-                <div className="p-4 border-b border-gray-200 flex items-center">
-                    <div className="flex bg-gray-100/80 rounded-xl p-1 flex-1 border border-gray-200/40">
+                {/* back button beside modules and files tabs */}
+                <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
+                    <button
+                        onClick={() => {
+                            if (subjectInfo) {
+                                if (subjectInfo.category_id && subjectInfo.subcategory_id) {
+                                    if (typeof window !== "undefined") {
+                                        sessionStorage.setItem("admin_curriculum_cat_id", String(subjectInfo.category_id))
+                                        sessionStorage.setItem("admin_curriculum_sub_id", String(subjectInfo.subcategory_id))
+                                    }
+                                    router.push(`/admin/curriculum?cat=${subjectInfo.category_id}&sub=${subjectInfo.subcategory_id}`)
+                                    return
+                                }
+                                if (subjectInfo.category_id) {
+                                    if (typeof window !== "undefined") {
+                                        sessionStorage.setItem("admin_curriculum_cat_id", String(subjectInfo.category_id))
+                                        sessionStorage.removeItem("admin_curriculum_sub_id")
+                                    }
+                                    router.push(`/admin/curriculum?cat=${subjectInfo.category_id}`)
+                                    return
+                                }
+                            }
+                            router.push('/admin/curriculum')
+                        }}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200/50 bg-gray-100 text-gray-600 transition-all hover:bg-gray-200 hover:text-gray-900 shadow-sm shrink-0 cursor-pointer"
+                        title="Back to Subjects"
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                    </button>
+
+                    <div className="flex bg-gray-100/80 rounded-xl p-0.5 flex-1 border border-gray-200/40">
                         <button
                             onClick={() => setActiveTab("modules")}
-                            className={`flex-1 py-1.5 text-[13px] rounded-lg transition-all ${activeTab === "modules" ? "bg-white text-gray-700 font-semibold shadow-2xs" : "text-gray-400 hover:text-gray-600 font-medium"}`}
+                            className={`flex-1 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${activeTab === "modules" ? "bg-white text-gray-700 font-semibold shadow-2xs" : "text-gray-400 hover:text-gray-600 font-medium"}`}
                         >
                             Modules
                         </button>
                         <button
                             onClick={() => setActiveTab("files")}
-                            className={`flex-1 py-1.5 text-[13px] rounded-lg transition-all ${activeTab === "files" ? "bg-white text-gray-700 font-semibold shadow-2xs" : "text-gray-400 hover:text-gray-600 font-medium"}`}
+                            className={`flex-1 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${activeTab === "files" ? "bg-white text-gray-700 font-semibold shadow-2xs" : "text-gray-400 hover:text-gray-600 font-medium"}`}
                         >
                             Files
                         </button>

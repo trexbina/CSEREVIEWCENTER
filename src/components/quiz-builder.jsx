@@ -106,19 +106,19 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     const isPastDeadline = effectiveIsStudent && !internalPreview && endDateTime && endDateTime < now && !isSubmitted
     const isQuizLocked = isTooEarly || isPastDeadline
 
-    // Start timer only after quiz is started
+    // Start timer only after quiz is started (only for real student side)
     useEffect(() => {
-        if (!effectiveIsStudent || isSubmitted || fetching || isQuizLocked || !effectiveQuizStarted) return
+        if (!isStudent || onToggleViewMode || internalPreview || isSubmitted || fetching || isQuizLocked || !effectiveQuizStarted) return
         if (quizSettings.timeLimitMinutes && quizSettings.timeLimitMinutes > 0) {
             if (timeRemaining === null) {
                 setTimeRemaining(quizSettings.timeLimitMinutes * 60)
             }
         }
-    }, [effectiveIsStudent, quizSettings.timeLimitMinutes, isSubmitted, fetching, isQuizLocked, effectiveQuizStarted, timeRemaining])
+    }, [isStudent, onToggleViewMode, internalPreview, quizSettings.timeLimitMinutes, isSubmitted, fetching, isQuizLocked, effectiveQuizStarted, timeRemaining])
 
-    // Decrement timer
+    // Decrement timer (only for real student side)
     useEffect(() => {
-        if (!effectiveIsStudent || isSubmitted || timeRemaining === null || timeRemaining <= 0 || isQuizLocked || !effectiveQuizStarted) return
+        if (!isStudent || onToggleViewMode || internalPreview || isSubmitted || timeRemaining === null || timeRemaining <= 0 || isQuizLocked || !effectiveQuizStarted) return
 
         const interval = setInterval(() => {
             setTimeRemaining(prev => {
@@ -138,7 +138,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         }, 1000)
 
         return () => clearInterval(interval)
-    }, [effectiveIsStudent, isSubmitted, timeRemaining, isQuizLocked, effectiveQuizStarted])
+    }, [isStudent, onToggleViewMode, internalPreview, isSubmitted, timeRemaining, isQuizLocked, effectiveQuizStarted])
 
     function formatTime(seconds) {
         if (seconds === null || seconds < 0) return "00:00"
@@ -695,9 +695,9 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                 )}
                             </div>
 
-                            {/* Right side: Timer (when active) OR Score / Attempts summary (when submitted) */}
+                            {/* Right side: Timer (when active - only for real student side) OR Score / Attempts summary (when submitted) */}
                             <div className="flex items-center gap-3">
-                                {quizSettings.timeLimitMinutes > 0 && effectiveQuizStarted && !isSubmitted && !isQuizLocked && (
+                                {isStudent && !onToggleViewMode && !internalPreview && quizSettings.timeLimitMinutes > 0 && effectiveQuizStarted && !isSubmitted && !isQuizLocked && (
                                     <div className="bg-white border border-gray-200/80 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-2xs">
                                         <Clock className={`h-4 w-4 ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-500 animate-pulse' : 'text-[#E9C46A]'}`} />
                                         <span className={`font-mono font-bold text-sm tracking-tight ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-600 animate-pulse' : 'text-gray-800'}`}>

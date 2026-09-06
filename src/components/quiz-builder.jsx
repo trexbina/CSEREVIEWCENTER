@@ -169,6 +169,44 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         }
     }, [lessonId, examId, isStudent, subjectId])
 
+    function normalizeQuestions(loadedQuestions) {
+        if (!Array.isArray(loadedQuestions)) return []
+        return loadedQuestions.map(q => {
+            if (q.type !== "question") return q
+
+            const isTwoOptions = q.options?.length === 2
+            const isTrueFalseTexts = isTwoOptions &&
+                q.options.some(o => o.text?.trim().toLowerCase() === "true") &&
+                q.options.some(o => o.text?.trim().toLowerCase() === "false")
+
+            // If it has True/False options but questionType says Multiple Choice, correct options to Multiple Choice defaults
+            if (q.questionType === "Multiple Choice" && isTrueFalseTexts) {
+                return {
+                    ...q,
+                    options: [
+                        { id: Date.now() + "1", text: "Option 1" },
+                        { id: Date.now() + "2", text: "Option 2" },
+                        { id: Date.now() + "3", text: "Option 3" },
+                        { id: Date.now() + "4", text: "Option 4" }
+                    ]
+                }
+            }
+
+            // If questionType is True or False, ensure options are exactly True and False
+            if (q.questionType === "True or False" && !isTrueFalseTexts) {
+                return {
+                    ...q,
+                    options: [
+                        { id: Date.now() + "1", text: "True" },
+                        { id: Date.now() + "2", text: "False" }
+                    ]
+                }
+            }
+
+            return q
+        })
+    }
+
     async function fetchExamData() {
         setFetching(true)
         setIsQuizStarted(false)
@@ -188,7 +226,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                             try { parsed = JSON.parse(parsed) } catch (e) { parsed = [] }
                         }
                         if (parsed && !Array.isArray(parsed) && parsed.questions) {
-                            setQuestions(parsed.questions)
+                            setQuestions(normalizeQuestions(parsed.questions))
                             if (parsed.settings) {
                                 setQuizSettings(prev => ({
                                     ...prev,
@@ -198,7 +236,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                 }))
                             }
                         } else {
-                            setQuestions(Array.isArray(parsed) ? parsed : [])
+                            setQuestions(normalizeQuestions(Array.isArray(parsed) ? parsed : []))
                         }
                     }
                 }
@@ -229,7 +267,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                             : lesson.quiz_content
 
                         if (parsed && !Array.isArray(parsed) && parsed.questions) {
-                            setQuestions(parsed.questions)
+                            setQuestions(normalizeQuestions(parsed.questions))
                             if (parsed.settings) {
                                 setQuizSettings(prev => ({
                                     ...prev,
@@ -239,7 +277,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                 }))
                             }
                         } else {
-                            setQuestions(Array.isArray(parsed) ? parsed : [])
+                            setQuestions(normalizeQuestions(Array.isArray(parsed) ? parsed : []))
                         }
                     } catch (e) {
                         console.error("Failed to parse quiz content")
@@ -383,6 +421,18 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                         { id: Date.now() + "1", text: "True" },
                         { id: Date.now() + "2", text: "False" }
                     ]
+                } else if (questionType === "Multiple Choice") {
+                    const isTrueFalseOptions = q.options?.length === 2 && 
+                        q.options.some(o => o.text?.toLowerCase() === "true") && 
+                        q.options.some(o => o.text?.toLowerCase() === "false")
+                    if (!q.options || q.options.length === 0 || isTrueFalseOptions) {
+                        newData.options = [
+                            { id: Date.now() + "1", text: "Option 1" },
+                            { id: Date.now() + "2", text: "Option 2" },
+                            { id: Date.now() + "3", text: "Option 3" },
+                            { id: Date.now() + "4", text: "Option 4" }
+                        ]
+                    }
                 }
                 return newData
             }

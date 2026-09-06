@@ -1394,13 +1394,13 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                         )}
 
                         {questions.length === 0 && !effectiveIsStudent && (
-                            <div className="flex flex-col items-center justify-center text-center py-20 px-4">
+                            <div className="flex flex-col items-center justify-center text-center min-h-[460px] py-16 px-4">
                                 <div className="h-12 w-12 rounded-2xl bg-gray-100/80 flex items-center justify-center mb-3 text-gray-400">
                                     <HelpCircle className="h-6 w-6" />
                                 </div>
                                 <h3 className="text-sm font-bold text-gray-700 mb-1">No questions added yet</h3>
                                 <p className="text-xs text-gray-400 max-w-xs">
-                                    Click "+ ADD QUESTION" above to start building your {examId ? "mock exam" : "quiz"}.
+                                    Click "Add Question" above to start building your {examId ? "mock exam" : "quiz"}.
                                 </p>
                             </div>
                         )}

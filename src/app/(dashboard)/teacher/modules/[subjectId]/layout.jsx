@@ -134,7 +134,7 @@ export default function TeacherSubjectLayout({ children }) {
             {/* Subject Sidebar */}
             <div className={`
                 absolute md:static inset-y-0 left-0 z-40 
-                w-80 shrink-0 border-r border-gray-200 bg-white flex flex-col h-full overflow-hidden transition-transform duration-300 ease-in-out
+                w-80 shrink-0 border-r border-black/5 dark:border-white/10 bg-[#F2F2F2] dark:bg-[#14161b] flex flex-col h-full overflow-hidden transition-transform duration-300 ease-in-out
                 ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 md:shadow-[2px_0_8px_rgba(0,0,0,0.015)]'}
             `}>
 

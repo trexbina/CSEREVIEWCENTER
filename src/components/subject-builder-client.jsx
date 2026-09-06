@@ -354,14 +354,24 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                     )
                     setResolvedLessonType(nextLessonType)
 
-                    if (nextLessonType === "pdf" && normalizedPdfFiles.length > 0) {
-                        setPdfFiles(normalizedPdfFiles)
-                        setActivePdf(normalizedPdfFiles[0]?.url || null)
-                    } else if (nextLessonType === "module" && lesson.quiz_content) {
-                        try {
-                            setBlocks(JSON.parse(lesson.quiz_content))
-                        } catch (e) {
-                            console.error("Failed to parse blocks")
+                    if (nextLessonType === "pdf") {
+                        if (normalizedPdfFiles.length > 0) {
+                            setPdfFiles(normalizedPdfFiles)
+                            setActivePdf(normalizedPdfFiles[0]?.url || null)
+                        } else {
+                            setPdfFiles([])
+                            setActivePdf(null)
+                        }
+                    } else if (nextLessonType === "module") {
+                        if (lesson?.quiz_content) {
+                            try {
+                                setBlocks(JSON.parse(lesson.quiz_content))
+                            } catch (e) {
+                                console.error("Failed to parse blocks")
+                                setBlocks([])
+                            }
+                        } else {
+                            setBlocks([])
                         }
                     }
                 }
@@ -1622,6 +1632,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                             {/* ── QUIZ BUILDER CANVAS ── */}
                             {resolvedLessonType === "quiz" && (
                                 <QuizBuilder 
+                                    key={lessonId}
                                     lessonId={lessonId} 
                                     subjectId={subject.id} 
                                     isStudent={viewMode === "student"} 

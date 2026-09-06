@@ -120,6 +120,9 @@ export default function SubjectContentLayout({ children }) {
                 setAddingLessonToModule(null)
                 setNewLessonType(null)
                 setNewLessonTitle("")
+                if (data?.lesson?.id) {
+                    router.replace(`/admin/curriculum/${subjectId}/content?lessonId=${data.lesson.id}&type=${data.lesson.lesson_type || 'module'}`)
+                }
             }
         } catch (error) {
             console.error(error)

@@ -15,7 +15,7 @@ export default function MockExamBuilderPage({ params }) {
     // display the quiz builder component
     return (
         <div className="w-full min-h-full">
-            <QuizBuilder examId={examId} />
+            <QuizBuilder key={examId} examId={examId} />
         </div>
     )
 }

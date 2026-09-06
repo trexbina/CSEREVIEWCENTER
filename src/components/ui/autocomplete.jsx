@@ -19,7 +19,7 @@ function AutocompletePopup({
     <AutocompletePrimitive.Popup
       data-slot="autocomplete-popup"
       className={cn(
-        "w-(--anchor-width) max-h-[min(var(--available-height),23rem)] max-w-(--available-width) overflow-y-auto scroll-pt-2 scroll-pb-2 overscroll-contain rounded-md bg-popover text-popover-foreground shadow-md outline-1 outline-border dark:shadow-none",
+        "w-(--anchor-width) max-h-[min(var(--available-height),23rem)] max-w-(--available-width) overflow-y-auto scroll-pt-2 scroll-pb-2 overscroll-contain rounded-xl bg-white text-gray-800 shadow-sm border border-gray-200/80 font-sans dark:bg-card dark:text-card-foreground dark:border-white/10",
         className
       )}
       {...props} />

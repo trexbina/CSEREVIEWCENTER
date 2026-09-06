@@ -157,6 +157,28 @@
     transition: background-color 5000s ease-in-out 0s;
     caret-color: hsl(var(--foreground));
   }
+
+  /* Universal select, option, and combobox styling */
+  select {
+    font-family: inherit;
+    color: inherit;
+  }
+
+  select option,
+  select optgroup {
+    background-color: #ffffff !important;
+    color: #374151 !important;
+    font-family: inherit !important;
+    padding: 6px 10px;
+  }
+
+  .dark select option,
+  .dark select optgroup,
+  [data-theme='dark'] select option,
+  [data-theme='dark'] select optgroup {
+    background-color: #262626 !important;
+    color: #f3f4f6 !important;
+  }
 }
 
 /* ═══ MDC Data Table — theme-aware overrides ═══ */

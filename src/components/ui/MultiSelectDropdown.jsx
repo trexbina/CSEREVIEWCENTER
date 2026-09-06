@@ -101,7 +101,7 @@ export default function MultiSelectDropdown({
 
             {/* Dropdown Menu */}
             {isOpen && (
-                <div className="absolute z-50 mt-1 left-0 right-0 w-full min-w-[200px] max-w-[280px] bg-white rounded-xl shadow-xl border border-gray-100 p-2 animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute z-50 mt-1 left-0 right-0 w-full min-w-[200px] max-w-[280px] bg-white rounded-xl shadow-sm border border-gray-200/80 p-2 font-sans animate-in fade-in zoom-in-95 duration-150">
                     {/* Search inside dropdown if many options */}
                     {options.length > 5 && (
                         <div className="mb-2">

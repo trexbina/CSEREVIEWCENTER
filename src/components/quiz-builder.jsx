@@ -42,6 +42,8 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     const [isQuizStarted, setIsQuizStarted] = useState(false)
     const [internalPreview, setInternalPreview] = useState(false)
     const effectiveIsStudent = isStudent || internalPreview
+    // When switching to student view from admin/teacher side, go straight to quiz view (start display is only for real student side)
+    const effectiveQuizStarted = !onToggleViewMode && !internalPreview ? isQuizStarted : true
 
     const [quizSettings, setQuizSettings] = useState({
         fontFamily: "'Inter', sans-serif",
@@ -84,10 +86,10 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     }
 
     useEffect(() => {
-        if (effectiveIsStudent && isQuizStarted && !startTimeRef.current) {
+        if (effectiveIsStudent && effectiveQuizStarted && !startTimeRef.current) {
             startTimeRef.current = Date.now()
         }
-    }, [effectiveIsStudent, isQuizStarted])
+    }, [effectiveIsStudent, effectiveQuizStarted])
 
     // Helper to parse combined date and time
     const getFullDateTime = (dateStr, timeStr, defaultTime) => {
@@ -106,17 +108,17 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
     // Start timer only after quiz is started
     useEffect(() => {
-        if (!effectiveIsStudent || isSubmitted || fetching || isQuizLocked || !isQuizStarted) return
+        if (!effectiveIsStudent || isSubmitted || fetching || isQuizLocked || !effectiveQuizStarted) return
         if (quizSettings.timeLimitMinutes && quizSettings.timeLimitMinutes > 0) {
             if (timeRemaining === null) {
                 setTimeRemaining(quizSettings.timeLimitMinutes * 60)
             }
         }
-    }, [effectiveIsStudent, quizSettings.timeLimitMinutes, isSubmitted, fetching, isQuizLocked, isQuizStarted, timeRemaining])
+    }, [effectiveIsStudent, quizSettings.timeLimitMinutes, isSubmitted, fetching, isQuizLocked, effectiveQuizStarted, timeRemaining])
 
     // Decrement timer
     useEffect(() => {
-        if (!effectiveIsStudent || isSubmitted || timeRemaining === null || timeRemaining <= 0 || isQuizLocked || !isQuizStarted) return
+        if (!effectiveIsStudent || isSubmitted || timeRemaining === null || timeRemaining <= 0 || isQuizLocked || !effectiveQuizStarted) return
 
         const interval = setInterval(() => {
             setTimeRemaining(prev => {
@@ -136,7 +138,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         }, 1000)
 
         return () => clearInterval(interval)
-    }, [effectiveIsStudent, isSubmitted, timeRemaining, isQuizLocked, isQuizStarted])
+    }, [effectiveIsStudent, isSubmitted, timeRemaining, isQuizLocked, effectiveQuizStarted])
 
     function formatTime(seconds) {
         if (seconds === null || seconds < 0) return "00:00"
@@ -695,7 +697,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
                             {/* Right side: Timer (when active) OR Score / Attempts summary (when submitted) */}
                             <div className="flex items-center gap-3">
-                                {quizSettings.timeLimitMinutes > 0 && isQuizStarted && !isSubmitted && !isQuizLocked && (
+                                {quizSettings.timeLimitMinutes > 0 && effectiveQuizStarted && !isSubmitted && !isQuizLocked && (
                                     <div className="bg-white border border-gray-200/80 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-2xs">
                                         <Clock className={`h-4 w-4 ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-500 animate-pulse' : 'text-[#E9C46A]'}`} />
                                         <span className={`font-mono font-bold text-sm tracking-tight ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-600 animate-pulse' : 'text-gray-800'}`}>
@@ -1008,7 +1010,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                 )}
 
                 {/* Blocks Container or Start Quiz Card */}
-                {effectiveIsStudent && !isSubmitted && !isQuizStarted && !isQuizLocked ? (
+                {effectiveIsStudent && !isSubmitted && !effectiveQuizStarted && !isQuizLocked ? (
                     <div className="flex flex-col items-center justify-center min-h-[50vh] py-12 px-4 animate-in fade-in duration-200">
                         <div className="w-full max-w-md mx-auto space-y-6">
                             {/* Header Info */}
@@ -1486,7 +1488,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
             </div>
 
             {/* Right Sidebar - Questions Tracker (Hidden when locked/not available yet or not started) */}
-            {!isTooEarly && !((effectiveIsStudent && isPastDeadline && !isSubmitted)) && (!effectiveIsStudent || isSubmitted || isQuizStarted) && (
+            {!isTooEarly && !((effectiveIsStudent && isPastDeadline && !isSubmitted)) && (!effectiveIsStudent || isSubmitted || effectiveQuizStarted) && (
                 <div className="w-full lg:w-[300px] shrink-0 sticky top-6 self-start font-sans z-10">
                     <div className="bg-white border border-gray-200/70 rounded-2xl h-[560px] flex flex-col overflow-hidden">
                         {/* Header */}

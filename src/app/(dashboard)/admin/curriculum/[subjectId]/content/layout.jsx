@@ -155,6 +155,11 @@ export default function SubjectContentLayout({ children }) {
                             ...m,
                             lessons: m.lessons.map(l => l.id === id ? { ...l, title: editTitle } : l)
                         })))
+                        if (typeof window !== "undefined") {
+                            window.dispatchEvent(new CustomEvent("peak_lesson_title_updated", {
+                                detail: { lessonId: id, title: editTitle }
+                            }))
+                        }
                     }
                 }
             } catch (error) {
@@ -322,7 +327,7 @@ export default function SubjectContentLayout({ children }) {
             {/* left sidebar with module and lesson navigation */}
             <div className={`
                 absolute md:static inset-y-0 left-0 z-50 
-                w-80 shrink-0 border-r border-black/5 dark:border-white/10 bg-[#F2F2F2] dark:bg-[#14161b] flex flex-col h-full overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-transform duration-300 ease-in-out
+                w-80 shrink-0 border-r border-gray-200 bg-white flex flex-col h-full overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-transform duration-300 ease-in-out
                 ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 md:shadow-none'}
             `}>
 

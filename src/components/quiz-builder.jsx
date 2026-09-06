@@ -162,6 +162,18 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     }, [])
 
     useEffect(() => {
+        const handleTitleUpdate = (e) => {
+            if (e.detail && e.detail.lessonId && String(e.detail.lessonId) === String(lessonId)) {
+                if (e.detail.title) {
+                    setLessonTitle(e.detail.title)
+                }
+            }
+        }
+        window.addEventListener("peak_lesson_title_updated", handleTitleUpdate)
+        return () => window.removeEventListener("peak_lesson_title_updated", handleTitleUpdate)
+    }, [lessonId])
+
+    useEffect(() => {
         if (examId) {
             fetchExamData()
         } else if (lessonId) {
@@ -1119,7 +1131,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                             : null;
 
                         return (
-                        <div key={block.id} className="relative">
+                        <div key={block.id} className="relative group/card">
                             <div 
                                 id={`question-block-${block.id}`}
                                 draggable={!effectiveIsStudent}
@@ -1127,7 +1139,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                 onDragOver={(e) => handleDragOver(e, index)}
                                 onDrop={(e) => handleDrop(e, index)}
                                 onDragEnd={handleDragEnd}
-                                className={`relative group transition-all ${effectiveIsStudent ? 'py-3' : 'bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-xs'} ${dragOverBlockIndex === index && dragBlockIndex !== index ? 'border-gray-400 border-t-2' : ''}`}
+                                className={`relative group transition-all ${effectiveIsStudent ? 'py-3' : 'bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs'} ${dragOverBlockIndex === index && dragBlockIndex !== index ? 'border-gray-400 border-t-2' : ''}`}
                             >
                             
                             {!effectiveIsStudent && (
@@ -1159,7 +1171,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                             </span>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-2 border-b border-gray-200/80 focus-within:border-gray-400 transition-colors pb-1">
+                                        <div className="flex items-center gap-2 border-b border-gray-200/80 focus-within:border-gray-400 transition-colors pb-1 group/prompt">
                                             <span className="font-medium text-gray-400 whitespace-nowrap select-none text-sm" style={{ fontSize: `${quizSettings.fontSize}px` }}>
                                                 {questionNumber}.
                                             </span>
@@ -1171,7 +1183,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                 style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize}px` }}
                                                 className="flex-1 bg-transparent py-1 outline-none text-gray-800 font-medium placeholder-gray-400 text-sm"
                                             />
-                                            <label className="p-1 cursor-pointer hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-colors" title="Upload Image">
+                                            <label className="p-1 cursor-pointer hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-all opacity-0 group-hover/prompt:opacity-100 group-hover:opacity-100" title="Upload Image">
                                                 <ImageIcon className="h-4 w-4" />
                                                 <input 
                                                     type="file" 
@@ -1251,8 +1263,8 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                     optionBg = "bg-blue-50/40 rounded-md"
                                                     optionText = "text-blue-900 font-medium"
                                                 } else if (!effectiveIsStudent && option.isCorrect) {
-                                                    circleClass = "border-green-500 bg-green-500 text-white"
-                                                    innerCircle = true
+                                                    circleClass = "border-emerald-500 bg-emerald-500 text-white"
+                                                    innerCircle = false
                                                 } else if (!effectiveIsStudent) {
                                                     circleClass = "border-gray-300 bg-white hover:border-[#E9C46A]"
                                                 }
@@ -1293,7 +1305,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                                 e.stopPropagation()
                                                                 removeOption(block.id, option.id)
                                                             }}
-                                                            className="text-gray-400 hover:text-gray-700 p-1 rounded-md transition-colors cursor-pointer"
+                                                            className="text-gray-400 hover:text-gray-700 p-1 rounded-md transition-all opacity-0 group-hover/opt:opacity-100 cursor-pointer"
                                                             title="Remove option"
                                                         >
                                                             <Trash className="h-3.5 w-3.5" />
@@ -1393,7 +1405,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                                 updateQuestionPoints(block.id, 1)
                                                             }
                                                         }}
-                                                        className="w-8 border-b border-gray-200 text-center text-gray-700 font-medium outline-none focus:border-gray-400 bg-transparent py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                        className="w-7 h-7 bg-white border border-gray-200 rounded-md text-center text-gray-700 font-medium text-xs outline-none focus:border-gray-400 shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     />
                                                 </div>
                                             </div>
@@ -1492,7 +1504,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                             <div className="flex justify-center -mt-3 mb-3 z-10 relative">
                                 <button
                                     onClick={() => addQuestionAfter(index)}
-                                    className="h-7 w-7 bg-white border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50 rounded-full shadow-2xs flex items-center justify-center transition-all cursor-pointer"
+                                    className="h-7 w-7 bg-white border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50 rounded-full shadow-2xs flex items-center justify-center transition-all opacity-0 group-hover/card:opacity-100 cursor-pointer"
                                     title="Add Question Below"
                                 >
                                     <Plus className="h-4 w-4" />
@@ -1530,7 +1542,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                             </span>
                         </div>
                         {/* List */}
-                        <div className="p-3 flex-1 overflow-y-auto space-y-1.5 bg-white text-xs">
+                        <div className="p-3 flex-1 overflow-y-auto space-y-1.5 bg-white text-sm">
                             {questions.filter(q => q.type === 'question').map((q, i) => {
                                 const realIndex = questions.findIndex(item => item.id === q.id);
                                 return (
@@ -1548,16 +1560,16 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                     className={`p-2.5 bg-white border border-gray-200/70 hover:border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50/80 transition-all cursor-pointer ${dragOverBlockIndex === realIndex && dragBlockIndex !== realIndex ? 'border-gray-400 border-t-2 translate-y-0.5' : ''}`}
                                 >
                                     <div className="flex items-start gap-2">
-                                        {!effectiveIsStudent && <GripVertical className="h-3.5 w-3.5 shrink-0 text-gray-300 hover:text-gray-500 mt-0.5" />}
+                                        {!effectiveIsStudent && <GripVertical className="h-4 w-4 shrink-0 text-gray-300 hover:text-gray-500 mt-0.5" />}
                                         <div className="flex-1 min-w-0 flex items-baseline">
-                                            <span className="font-semibold mr-1.5 text-gray-400 whitespace-nowrap text-xs">{i + 1}.</span> 
-                                            <span className="line-clamp-2 font-normal text-gray-700 leading-snug">{q.text || "Empty question..."}</span>
+                                            <span className="font-semibold mr-1.5 text-gray-400 whitespace-nowrap text-sm">{i + 1}.</span> 
+                                            <span className="line-clamp-2 font-normal text-gray-700 leading-snug text-sm">{q.text || "Empty question..."}</span>
                                         </div>
                                     </div>
                                 </div>
                             )})}
                             {questions.filter(q => q.type === 'question').length === 0 && (
-                                <div className="text-center text-gray-400 py-16 font-medium text-xs">
+                                <div className="text-center text-gray-400 py-16 font-medium text-sm">
                                     No questions yet.
                                 </div>
                             )}

@@ -387,15 +387,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 0.625rem;
-  margin-top: 0.5rem;
-  border-top: 1px solid hsl(var(--border));
   opacity: 0;
   max-height: 0;
   overflow: hidden;
   margin-top: 0;
   padding-top: 0;
-  border-top: 0px solid transparent;
+  border-top: none;
   transition: opacity 0.25s ease 0.05s, max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.3s ease, padding-top 0.3s ease;
   flex-shrink: 0;
 }
@@ -405,7 +402,7 @@
   max-height: 50px;
   margin-top: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px solid hsl(var(--border));
+  border-top: none;
 }
 
 /* ═══ PDF Viewer Crisp Canvas Rendering ═══ */

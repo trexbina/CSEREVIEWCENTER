@@ -52,7 +52,8 @@ export async function GET() {
                 ) AS latest_updated_at,
                 COALESCE(m.modules_count, 0)::int AS modules_count,
                 COALESCE(l.lessons_count, 0)::int AS lessons_count,
-                COALESCE(q.quizzes_count, 0)::int AS quizzes_count
+                COALESCE(q.quizzes_count, 0)::int AS quizzes_count,
+                COALESCE(a.assignments_count, 0)::int AS assignments_count
             FROM subjects s
             LEFT JOIN (
                 SELECT subject_id, COUNT(*) AS modules_count 
@@ -70,9 +71,16 @@ export async function GET() {
                 SELECT sm.subject_id, COUNT(sc.id) AS quizzes_count 
                 FROM subject_modules sm
                 JOIN subject_contents sc ON sm.id = sc.module_id
-                WHERE sc.lesson_type = 'quiz'
+                WHERE sc.lesson_type = 'quiz' AND (sc.quiz_content NOT LIKE '%"isAssignment":true%' OR sc.quiz_content IS NULL)
                 GROUP BY sm.subject_id
             ) q ON s.id = q.subject_id
+            LEFT JOIN (
+                SELECT sm.subject_id, COUNT(sc.id) AS assignments_count 
+                FROM subject_modules sm
+                JOIN subject_contents sc ON sm.id = sc.module_id
+                WHERE sc.lesson_type = 'quiz' AND sc.quiz_content LIKE '%"isAssignment":true%'
+                GROUP BY sm.subject_id
+            ) a ON s.id = a.subject_id
             LEFT JOIN (
                 SELECT sm.subject_id, MAX(sc.updated_at) AS max_updated
                 FROM subject_modules sm

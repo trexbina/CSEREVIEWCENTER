@@ -1099,6 +1099,7 @@ export default function CurriculumManagerPage() {
                                                 const modulesCount = subject.modules_count ?? 0
                                                 const lessonsCount = subject.lessons_count ?? 0
                                                 const quizzesCount = subject.quizzes_count ?? 0
+                                                const assignmentsCount = subject.assignments_count ?? 0
 
                                                 return (
                                                     <div key={subject.id} className="transition-colors">
@@ -1204,6 +1205,10 @@ export default function CurriculumManagerPage() {
                                                                             <div className="flex items-center gap-1.5">
                                                                                 <span className="font-semibold uppercase tracking-wider text-[11px]">Quizzes:</span>
                                                                                 <strong className="text-[#3B3B3B] dark:text-white font-bold text-[14px]">{quizzesCount}</strong>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className="font-semibold uppercase tracking-wider text-[11px]">Assignments:</span>
+                                                                                <strong className="text-[#3B3B3B] dark:text-white font-bold text-[14px]">{assignmentsCount}</strong>
                                                                             </div>
                                                                             <div className="flex items-center gap-1.5">
                                                                                 <span className="font-semibold uppercase tracking-wider text-[11px]">Status:</span>

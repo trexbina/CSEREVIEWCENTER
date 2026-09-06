@@ -390,13 +390,13 @@ export default function SubjectContentLayout({ children }) {
                     <div className="flex bg-gray-100/80 rounded-xl p-1 flex-1 border border-gray-200/40">
                         <button
                             onClick={() => setActiveTab("modules")}
-                            className={`flex-1 py-1.5 text-xs rounded-lg transition-all ${activeTab === "modules" ? "bg-white text-gray-600 font-semibold shadow-2xs" : "text-gray-400 hover:text-gray-600 font-medium"}`}
+                            className={`flex-1 py-1.5 text-[13px] rounded-lg transition-all ${activeTab === "modules" ? "bg-white text-gray-700 font-semibold shadow-2xs" : "text-gray-400 hover:text-gray-600 font-medium"}`}
                         >
                             Modules
                         </button>
                         <button
                             onClick={() => setActiveTab("files")}
-                            className={`flex-1 py-1.5 text-xs rounded-lg transition-all ${activeTab === "files" ? "bg-white text-gray-600 font-semibold shadow-2xs" : "text-gray-400 hover:text-gray-600 font-medium"}`}
+                            className={`flex-1 py-1.5 text-[13px] rounded-lg transition-all ${activeTab === "files" ? "bg-white text-gray-700 font-semibold shadow-2xs" : "text-gray-400 hover:text-gray-600 font-medium"}`}
                         >
                             Files
                         </button>
@@ -427,15 +427,15 @@ export default function SubjectContentLayout({ children }) {
                                         <div className="flex-1 flex items-center gap-2 mr-2">
                                             <input
                                                 type="text"
-                                                value={editTitle}
+                                                 value={editTitle}
                                                 onChange={e => setEditTitle(e.target.value)}
                                                 onKeyDown={e => e.key === "Enter" && handleEdit("module", module.id, module.title)}
                                                 autoFocus
-                                                className="w-full text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-lg px-2.5 py-1 outline-none focus:border-gray-400"
+                                                className="w-full text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg px-2.5 py-1 outline-none focus:border-gray-400"
                                             />
                                         </div>
                                     ) : (
-                                        <h3 className="text-[13px] font-medium text-gray-600 flex-1 ml-1 leading-snug break-words pr-2" title={module.title}>
+                                        <h3 className="text-sm font-semibold text-gray-700 flex-1 ml-1 leading-snug break-words pr-2" title={module.title}>
                                             {module.title}
                                         </h3>
                                     )}
@@ -460,7 +460,7 @@ export default function SubjectContentLayout({ children }) {
                             </div>
 
                             <div className="space-y-2">
-                                <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider pl-1">
+                                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pl-1">
                                     LESSONS
                                 </p>
 
@@ -509,13 +509,13 @@ export default function SubjectContentLayout({ children }) {
                                                             onKeyDown={e => e.key === "Enter" && handleEdit("lesson", lesson.id, lesson.title)}
                                                             autoFocus
                                                             onClick={(e) => e.stopPropagation()}
-                                                            className="w-full text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md px-2 py-1 outline-none focus:border-gray-400"
+                                                            className="w-full text-[13.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-md px-2 py-1 outline-none focus:border-gray-400"
                                                         />
                                                     </div>
                                                 ) : (
                                                     <p
-                                                        className={`text-xs transition-colors flex-1 line-clamp-2 pr-2 ${
-                                                            isSelected ? 'text-gray-600 font-medium' : 'text-gray-400 font-normal group-hover:text-gray-600'
+                                                        className={`text-[13.5px] transition-colors flex-1 line-clamp-2 pr-2 ${
+                                                            isSelected ? 'text-gray-700 font-medium' : 'text-gray-500 font-normal group-hover:text-gray-700'
                                                         }`}
                                                         title={lesson.title}
                                                     >

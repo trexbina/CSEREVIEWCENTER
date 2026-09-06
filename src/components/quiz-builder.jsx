@@ -1784,9 +1784,9 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
             {/* Right Sidebar - Questions Tracker (Hidden when locked/not available yet or not started) */}
             {!isTooEarly && !((effectiveIsStudent && isPastDeadline && !isSubmitted)) && (!effectiveIsStudent || isSubmitted || effectiveQuizStarted) && (
                 <div className="w-full lg:w-[300px] shrink-0 sticky top-6 self-start font-sans z-10">
-                    <div className="bg-white border border-gray-200/70 rounded-2xl h-[560px] flex flex-col overflow-hidden">
+                    <div className="bg-white border border-gray-200/70 rounded-2xl h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
                         {/* Header */}
-                        <div className="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between bg-white">
+                        <div className="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
                             <h3 className="text-xs font-semibold tracking-wider uppercase text-gray-500">Questions</h3>
                             <span className="bg-gray-100/80 border border-gray-200/60 text-gray-600 px-2 py-0.5 rounded-full text-[11px] font-medium">
                                 {questions.filter(q => q.type === 'question').length}

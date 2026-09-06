@@ -63,6 +63,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     const [saving, setSaving] = useState(false)
     const [dragBlockIndex, setDragBlockIndex] = useState(null)
     const [dragOverBlockIndex, setDragOverBlockIndex] = useState(null)
+    const [draggableBlockIndex, setDraggableBlockIndex] = useState(null)
     const [isQuizStarted, setIsQuizStarted] = useState(false)
     const [studentAnswers, setStudentAnswers] = useState({})
     const [isSubmitted, setIsSubmitted] = useState(false)
@@ -761,6 +762,13 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     }
 
     function handleDragStart(e, index) {
+        // Only allow dragging when initiated from the drag handle
+        const isHandle = e.target && (e.target.closest('[data-drag-handle="true"]') || e.target.getAttribute('data-drag-handle') === 'true')
+        const isInteractive = e.target && e.target.closest('input, textarea, button, select, [contenteditable="true"]')
+        if (!isHandle || isInteractive) {
+            e.preventDefault()
+            return
+        }
         setDragBlockIndex(index)
         e.dataTransfer.setData("text/plain", index)
         e.dataTransfer.effectAllowed = "move"
@@ -785,11 +793,13 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         setQuestions(newQuestions)
         setDragBlockIndex(null)
         setDragOverBlockIndex(null)
+        setDraggableBlockIndex(null)
     }
 
     function handleDragEnd() {
         setDragBlockIndex(null)
         setDragOverBlockIndex(null)
+        setDraggableBlockIndex(null)
     }
 
     if (fetching) {
@@ -1421,7 +1431,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                 <div key={block.id} className="relative group/card">
                                     <div
                                         id={`question-block-${block.id}`}
-                                        draggable={!effectiveIsStudent}
+                                        draggable={!effectiveIsStudent && draggableBlockIndex === index}
                                         onDragStart={(e) => handleDragStart(e, index)}
                                         onDragOver={(e) => handleDragOver(e, index)}
                                         onDrop={(e) => handleDrop(e, index)}
@@ -1431,8 +1441,16 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
                                         {!effectiveIsStudent && (
                                             <>
-                                                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors">
-                                                    <GripVertical className="h-3.5 w-3.5" />
+                                                <div
+                                                    data-drag-handle="true"
+                                                    onMouseDown={() => setDraggableBlockIndex(index)}
+                                                    onMouseUp={() => setDraggableBlockIndex(null)}
+                                                    onMouseLeave={() => {
+                                                        if (dragBlockIndex === null) setDraggableBlockIndex(null)
+                                                    }}
+                                                    className="absolute top-2.5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors p-1 select-none"
+                                                >
+                                                    <GripVertical className="h-3.5 w-3.5 pointer-events-none" />
                                                 </div>
                                                 <button
                                                     onClick={() => removeBlock(block.id)}

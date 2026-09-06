@@ -245,19 +245,23 @@ export default function StudentSubjectLayout({ children }) {
                                 </p>
                             </div>
                         ) : (
-                            <div className="space-y-2">
+                            <div className="divide-y divide-gray-100">
                                 {subjectFiles.map((file) => (
                                     <div
                                         key={file.id}
-                                        onClick={() => {
-                                            setViewingFile(file)
-                                            setIsSidebarOpen(false)
-                                        }}
-                                        className="p-3 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50/80 hover:border-gray-300 transition-all cursor-pointer shadow-2xs group flex flex-col gap-1.5"
+                                        className="py-2.5 first:pt-1 last:pb-1 flex flex-col gap-1 text-left"
                                     >
-                                        <span className="text-[13.5px] font-medium text-gray-800 group-hover:text-gray-900 transition-colors line-clamp-1" title={file.name}>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setViewingFile(file)
+                                                setIsSidebarOpen(false)
+                                            }}
+                                            className="text-blue-600 hover:text-blue-700 underline text-[13px] font-medium cursor-pointer transition-colors text-left line-clamp-1 block w-full p-0"
+                                            title={file.name}
+                                        >
                                             {file.name}
-                                        </span>
+                                        </button>
                                         <div className="flex items-center justify-between gap-2 text-[11px] text-gray-400">
                                             <span className="truncate" title={file.source}>
                                                 From: {file.source}

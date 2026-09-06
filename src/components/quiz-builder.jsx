@@ -97,6 +97,57 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     const pdfInputRef = useRef(null)
     const pdfListRef = useRef(null)
     const settingsModalBodyRef = useRef(null)
+    const initialDataRef = useRef(null)
+
+    // Check if there are unsaved changes
+    const isDirty = !effectiveIsStudent && (() => {
+        try {
+            const currentData = JSON.stringify({
+                title: lessonTitle || "",
+                settings: quizSettings || {},
+                questions: questions || []
+            })
+            if (initialDataRef.current !== null) {
+                return currentData !== initialDataRef.current
+            }
+            // If initial data hasn't finished setting yet, but questions or title have been entered, mark dirty
+            return questions.length > 0
+        } catch {
+            return false
+        }
+    })()
+
+    // Expose dirty state to window and handle beforeunload (browser close/refresh/back)
+    if (typeof window !== "undefined") {
+        window.__peak_has_unsaved_quiz = isDirty
+        window.__peak_is_quiz_dirty = () => isDirty
+    }
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            window.__peak_has_unsaved_quiz = isDirty
+            window.__peak_is_quiz_dirty = () => isDirty
+        }
+        const handleBeforeUnload = (e) => {
+            if (isDirty) {
+                e.preventDefault()
+                e.returnValue = ""
+            }
+        }
+        window.addEventListener("beforeunload", handleBeforeUnload)
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload)
+        }
+    }, [isDirty])
+
+    useEffect(() => {
+        return () => {
+            if (typeof window !== "undefined") {
+                window.__peak_has_unsaved_quiz = false
+                delete window.__peak_is_quiz_dirty
+            }
+        }
+    }, [])
 
     useEffect(() => {
         fetch("/api/security/settings")
@@ -145,7 +196,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     // Availability checks for student
     const now = new Date()
     const startDateTime = getFullDateTime(quizSettings.startDate, quizSettings.startTime, "00:00")
-    const endDateTime = (quizSettings.isAssignment && quizSettings.endDate) ? getFullDateTime(quizSettings.endDate, quizSettings.endTime, "23:59") : null
+    const endDateTime = quizSettings.endDate ? getFullDateTime(quizSettings.endDate, quizSettings.endTime, "23:59") : null
     const isTooEarly = effectiveIsStudent && !internalPreview && startDateTime && startDateTime > now
     const isPastDeadline = effectiveIsStudent && !internalPreview && endDateTime && endDateTime < now && !isSubmitted
     const isQuizLocked = isTooEarly || isPastDeadline
@@ -277,6 +328,11 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                         setQuestions([])
                         setQuizSettings(DEFAULT_QUIZ_SETTINGS)
                     }
+                    initialDataRef.current = JSON.stringify({
+                        title: exam.title || lessonTitle || "",
+                        settings: parsed?.settings ? { ...DEFAULT_QUIZ_SETTINGS, ...parsed.settings } : DEFAULT_QUIZ_SETTINGS,
+                        questions: (parsed && !Array.isArray(parsed) && parsed.questions) ? (parsed.questions || []) : (Array.isArray(parsed) ? parsed : [])
+                    })
                 }
             }
         } catch (err) {
@@ -304,6 +360,8 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
             const res = await fetch(endpoint, { cache: "no-store" })
             if (res.ok) {
                 const { lesson } = await res.json()
+                let initialLoadedQuestions = []
+                let initialLoadedSettings = DEFAULT_QUIZ_SETTINGS
                 if (lesson?.title) setLessonTitle(lesson.title)
                 if (lesson?.quiz_content) {
                     try {
@@ -312,24 +370,27 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                             : lesson.quiz_content
 
                         if (parsed && !Array.isArray(parsed) && parsed.questions) {
-                            setQuestions(parsed.questions || [])
+                            initialLoadedQuestions = parsed.questions || []
+                            setQuestions(initialLoadedQuestions)
                             if (parsed.settings) {
                                 const rawList = Array.isArray(parsed.settings.referencePdfs)
                                     ? parsed.settings.referencePdfs
                                     : (parsed.settings.referencePdf?.url ? [parsed.settings.referencePdf] : [])
-                                setQuizSettings({
+                                initialLoadedSettings = {
                                     ...DEFAULT_QUIZ_SETTINGS,
                                     ...parsed.settings,
                                     referencePdfs: rawList,
                                     referencePdf: rawList[0] || null,
                                     maxRetries: Number(parsed.settings.maxRetries ?? 0),
                                     timeLimitMinutes: Number(parsed.settings.timeLimitMinutes ?? 0)
-                                })
+                                }
+                                setQuizSettings(initialLoadedSettings)
                             } else {
                                 setQuizSettings(DEFAULT_QUIZ_SETTINGS)
                             }
                         } else {
-                            setQuestions(Array.isArray(parsed) ? parsed : [])
+                            initialLoadedQuestions = Array.isArray(parsed) ? parsed : []
+                            setQuestions(initialLoadedQuestions)
                             setQuizSettings(DEFAULT_QUIZ_SETTINGS)
                         }
                     } catch (e) {
@@ -341,6 +402,12 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                     setQuestions([])
                     setQuizSettings(DEFAULT_QUIZ_SETTINGS)
                 }
+
+                initialDataRef.current = JSON.stringify({
+                    title: lesson?.title || lessonTitle || "",
+                    settings: initialLoadedSettings,
+                    questions: initialLoadedQuestions
+                })
             }
 
             // If student, check for existing saved submission
@@ -399,6 +466,18 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                 })
                 if (!res.ok) throw new Error("Save failed")
             }
+
+            // Snapshot clean state on save
+            initialDataRef.current = JSON.stringify({
+                title: lessonTitle || "",
+                settings: quizSettings || {},
+                questions: questions || []
+            })
+            if (typeof window !== "undefined") {
+                window.__peak_has_unsaved_quiz = false
+                window.__peak_is_quiz_dirty = () => false
+            }
+
             if (!isSilent) {
                 toast.success("Successfully saved changes!")
             }
@@ -1101,31 +1180,29 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                 </div>
                                             </div>
 
-                                            {/* End Date and End Time (shown when isAssignment is true) */}
-                                            {quizSettings.isAssignment && (
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-4 pt-4 border-t border-dashed border-gray-200 animate-in fade-in duration-150">
-                                                    {/* End Date */}
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <label className="font-semibold text-gray-600 text-xs">End Date (Deadline)</label>
-                                                        <MinimalDatePicker
-                                                            value={quizSettings.endDate}
-                                                            onChange={(dateStr) => setQuizSettings({ ...quizSettings, endDate: dateStr })}
-                                                            placeholder="Select due date..."
-                                                            popoverPosition="bottom"
-                                                        />
-                                                    </div>
-
-                                                    {/* End Time */}
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <label className="font-semibold text-gray-600 text-xs">End Time</label>
-                                                        <MinimalTimePicker
-                                                            value={quizSettings.endTime || ""}
-                                                            onChange={(timeStr) => setQuizSettings({ ...quizSettings, endTime: timeStr })}
-                                                            size="compact"
-                                                        />
-                                                    </div>
+                                            {/* End Date (Deadline) and End Time */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-4 pt-4 border-t border-dashed border-gray-200">
+                                                {/* End Date */}
+                                                <div className="flex flex-col gap-1.5">
+                                                    <label className="font-semibold text-gray-600 text-xs">Deadline (End Date)</label>
+                                                    <MinimalDatePicker
+                                                        value={quizSettings.endDate}
+                                                        onChange={(dateStr) => setQuizSettings({ ...quizSettings, endDate: dateStr })}
+                                                        placeholder="Select deadline date..."
+                                                        popoverPosition="bottom"
+                                                    />
                                                 </div>
-                                            )}
+
+                                                {/* End Time */}
+                                                <div className="flex flex-col gap-1.5">
+                                                    <label className="font-semibold text-gray-600 text-xs">Deadline Time</label>
+                                                    <MinimalTimePicker
+                                                        value={quizSettings.endTime || ""}
+                                                        onChange={(timeStr) => setQuizSettings({ ...quizSettings, endTime: timeStr })}
+                                                        size="compact"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div className="border-t border-gray-100 pt-5">
@@ -1281,7 +1358,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
                         {isPastDeadline && (
                             <div className="inline-block max-w-xl bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-xs text-rose-800 shadow-2xs">
-                                <span className="font-semibold">Assignment Deadline Passed:</span> This assignment closed on <span className="font-medium">{endDateTime ? endDateTime.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : ''}</span>.
+                                <span className="font-semibold">{examId ? "Exam Deadline Passed:" : quizSettings.isAssignment ? "Assignment Deadline Passed:" : "Quiz Deadline Passed:"}</span> This {examId ? "exam" : quizSettings.isAssignment ? "assignment" : "quiz"} closed on <span className="font-medium">{endDateTime ? endDateTime.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : ''}</span>.
                             </div>
                         )}
 
@@ -1325,7 +1402,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                         {Number(quizSettings.maxRetries || 0) > 0 ? `${Number(quizSettings.maxRetries) + 1} attempts (${quizSettings.maxRetries} retries)` : "1 attempt"}
                                     </span>
                                 </div>
-                                {quizSettings.isAssignment && endDateTime && (
+                                {endDateTime && (
                                     <div className="flex items-center justify-between py-2.5">
                                         <span className="text-gray-400 font-medium">Due Date</span>
                                         <span className="font-semibold text-gray-700">

@@ -229,6 +229,52 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
         }
     }
 
+    const initialBlocksRef = useRef(null)
+
+    // Check if there are unsaved changes in module builder
+    const isModuleDirty = !isStudent && viewMode === 'admin' && resolvedLessonType === 'module' && (() => {
+        try {
+            if (initialBlocksRef.current !== null) {
+                return JSON.stringify(blocks || []) !== initialBlocksRef.current
+            }
+            return blocks.length > 0
+        } catch {
+            return false
+        }
+    })()
+
+    // Expose dirty state to window and handle beforeunload (browser close/refresh/back)
+    if (typeof window !== "undefined") {
+        window.__peak_has_unsaved_module = isModuleDirty
+        window.__peak_is_module_dirty = () => isModuleDirty
+    }
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            window.__peak_has_unsaved_module = isModuleDirty
+            window.__peak_is_module_dirty = () => isModuleDirty
+        }
+        const handleBeforeUnload = (e) => {
+            if (isModuleDirty) {
+                e.preventDefault()
+                e.returnValue = ""
+            }
+        }
+        window.addEventListener("beforeunload", handleBeforeUnload)
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload)
+        }
+    }, [isModuleDirty])
+
+    useEffect(() => {
+        return () => {
+            if (typeof window !== "undefined") {
+                window.__peak_has_unsaved_module = false
+                delete window.__peak_is_module_dirty
+            }
+        }
+    }, [])
+
     const savedSelectionRef = useRef(null);
 
     // Save selection whenever user highlights text inside the builder
@@ -366,13 +412,17 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                     } else if (nextLessonType === "module") {
                         if (lesson?.quiz_content) {
                             try {
-                                setBlocks(JSON.parse(lesson.quiz_content))
+                                const parsed = JSON.parse(lesson.quiz_content)
+                                setBlocks(parsed)
+                                initialBlocksRef.current = JSON.stringify(parsed || [])
                             } catch (e) {
                                 console.error("Failed to parse blocks")
                                 setBlocks([])
+                                initialBlocksRef.current = JSON.stringify([])
                             }
                         } else {
                             setBlocks([])
+                            initialBlocksRef.current = JSON.stringify([])
                         }
                     }
                 }
@@ -917,6 +967,11 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                 body: JSON.stringify({ quiz_content: JSON.stringify(blocks) })
             })
             if (!res.ok) throw new Error("Save failed")
+            initialBlocksRef.current = JSON.stringify(blocks || [])
+            if (typeof window !== "undefined") {
+                window.__peak_has_unsaved_module = false
+                window.__peak_is_module_dirty = () => false
+            }
             toast.success("Changes saved successfully!")
         } catch (err) {
             console.error(err)

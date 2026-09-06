@@ -46,6 +46,35 @@ export default function SubjectContentLayout({ children }) {
     const [dragOverItem, setDragOverItem] = useState(null)
     const [deleteTarget, setDeleteTarget] = useState(null)
 
+    // Warn if unsaved changes exist before leaving or switching lessons
+    function checkUnsavedChanges() {
+        if (typeof window !== "undefined") {
+            const hasQuizChanges = typeof window.__peak_is_quiz_dirty === "function"
+                ? window.__peak_is_quiz_dirty()
+                : !!window.__peak_has_unsaved_quiz
+            const hasModuleChanges = typeof window.__peak_is_module_dirty === "function"
+                ? window.__peak_is_module_dirty()
+                : !!window.__peak_has_unsaved_module
+
+            if (hasQuizChanges || hasModuleChanges) {
+                const confirmed = window.confirm("You have unsaved changes that may not be saved. Are you sure you want to leave?")
+                if (confirmed) {
+                    window.__peak_has_unsaved_quiz = false
+                    window.__peak_has_unsaved_module = false
+                    if (typeof window.__peak_is_quiz_dirty === "function") {
+                        window.__peak_is_quiz_dirty = () => false
+                    }
+                    if (typeof window.__peak_is_module_dirty === "function") {
+                        window.__peak_is_module_dirty = () => false
+                    }
+                    return true
+                }
+                return false
+            }
+        }
+        return true
+    }
+
     // download modules and lessons when subject id is ready
     useEffect(() => {
         fetchModules()
@@ -106,6 +135,7 @@ export default function SubjectContentLayout({ children }) {
     // add a new lesson inside a module
     async function handleAddLesson(moduleId) {
         if (!newLessonTitle.trim() || !newLessonType || isSubmittingLesson) return
+        if (!checkUnsavedChanges()) return
 
         setIsSubmittingLesson(true)
         try {
@@ -370,6 +400,7 @@ export default function SubjectContentLayout({ children }) {
                 <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
                     <button
                         onClick={() => {
+                            if (!checkUnsavedChanges()) return
                             if (subjectInfo) {
                                 if (subjectInfo.category_id && subjectInfo.subcategory_id) {
                                     if (typeof window !== "undefined") {
@@ -531,6 +562,9 @@ export default function SubjectContentLayout({ children }) {
                                             onDragEnd={handleDragEnd}
                                             onClick={() => {
                                                 if (editingLessonId !== lesson.id) {
+                                                    if (searchParams.get("lessonId") !== lesson.id.toString()) {
+                                                        if (!checkUnsavedChanges()) return
+                                                    }
                                                     router.replace(`/admin/curriculum/${subjectId}/content?lessonId=${lesson.id}&type=${lesson.lesson_type || 'module'}`);
                                                     setIsSidebarOpen(false);
                                                 }

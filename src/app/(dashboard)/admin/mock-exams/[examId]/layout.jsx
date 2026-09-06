@@ -18,7 +18,8 @@ import {
     Menu, 
     X, 
     CheckCircle2, 
-    Lock 
+    Lock,
+    ChevronLeft
 } from "lucide-react"
 
 // sidebar and top bar layout for the mock exam builder screen
@@ -39,6 +40,27 @@ export default function MockExamBuilderLayout({ children, params }) {
     useEffect(() => {
         fetchExams()
     }, [])
+
+    function checkUnsavedChanges() {
+        if (typeof window !== "undefined") {
+            const hasQuizChanges = typeof window.__peak_is_quiz_dirty === "function"
+                ? window.__peak_is_quiz_dirty()
+                : !!window.__peak_has_unsaved_quiz
+
+            if (hasQuizChanges) {
+                const confirmed = window.confirm("You have unsaved changes that may not be saved. Are you sure you want to leave?")
+                if (confirmed) {
+                    window.__peak_has_unsaved_quiz = false
+                    if (typeof window.__peak_is_quiz_dirty === "function") {
+                        window.__peak_is_quiz_dirty = () => false
+                    }
+                    return true
+                }
+                return false
+            }
+        }
+        return true
+    }
 
     // fetch all mock exams from the database
     async function fetchExams() {
@@ -123,11 +145,23 @@ export default function MockExamBuilderLayout({ children, params }) {
                     </button>
                 </div>
 
-                {/* Title Action */}
-                <div className="p-4 border-b border-border flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
-                        Mock Exams
-                    </span>
+                {/* Title Action & Back Button */}
+                <div className="p-3 px-4 border-b border-border flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <button
+                            onClick={() => {
+                                if (!checkUnsavedChanges()) return
+                                router.push('/admin/mock-exams')
+                            }}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/80 bg-muted/60 text-muted-foreground transition-all hover:bg-muted hover:text-foreground shadow-2xs shrink-0 cursor-pointer"
+                            title="Back to Mock Exams List"
+                        >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
+                            Mock Exams
+                        </span>
+                    </div>
                     <span className="bg-muted border border-border text-muted-foreground px-2 py-0.5 rounded-full text-xs font-semibold font-mono">
                         {exams.length}
                     </span>
@@ -175,6 +209,7 @@ export default function MockExamBuilderLayout({ children, params }) {
                                     key={exam.id}
                                     onClick={() => {
                                         if (!isCurrentActive) {
+                                            if (!checkUnsavedChanges()) return
                                             router.replace(`/admin/mock-exams/${exam.id}`)
                                             setIsSidebarOpen(false)
                                         }

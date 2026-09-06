@@ -115,16 +115,16 @@ export default function MinimalDatePicker({ value, onChange, placeholder = "Sele
                 }`}>
                     {/* Month & Year Navigation Header */}
                     <div className="flex items-center justify-between pb-2 mb-1.5 border-b border-gray-100">
-                        <div className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#4d4d4d]">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold tracking-tight text-gray-800">
                             <span>{monthNames[month]}</span>
                             {/* Year selector dropdown */}
                             <select
                                 value={year}
                                 onChange={handleYearChange}
-                                className="bg-blue-50/80 hover:bg-blue-100 text-[#E9C46A] font-extrabold px-1 py-0.5 rounded text-xs cursor-pointer focus:outline-none transition-colors border border-blue-100"
+                                className="bg-gray-100/80 hover:bg-gray-200/70 text-gray-800 font-semibold px-1.5 py-0.5 rounded-md text-xs cursor-pointer focus:outline-none transition-colors border border-gray-200/80"
                             >
                                 {yearOptions.map(y => (
-                                    <option key={y} value={y} className="font-semibold text-gray-800 bg-white">
+                                    <option key={y} value={y} className="font-medium text-gray-800 bg-white">
                                         {y}
                                     </option>
                                 ))}
@@ -132,15 +132,17 @@ export default function MinimalDatePicker({ value, onChange, placeholder = "Sele
                         </div>
                         <div className="flex items-center gap-0.5">
                             <button
+                                type="button"
                                 onClick={handlePrevMonth}
-                                className="p-0.5 rounded hover:bg-gray-100 text-gray-500 transition-colors"
+                                className="p-1 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
                                 title="Previous Month"
                             >
                                 <ChevronLeft className="h-3.5 w-3.5" />
                             </button>
                             <button
+                                type="button"
                                 onClick={handleNextMonth}
-                                className="p-0.5 rounded hover:bg-gray-100 text-gray-500 transition-colors"
+                                className="p-1 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
                                 title="Next Month"
                             >
                                 <ChevronRight className="h-3.5 w-3.5" />
@@ -151,7 +153,7 @@ export default function MinimalDatePicker({ value, onChange, placeholder = "Sele
                     {/* Weekday Labels */}
                     <div className="grid grid-cols-7 gap-0.5 text-center mb-1">
                         {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d, i) => (
-                            <span key={i} className="text-[9px] font-bold text-gray-400 uppercase">
+                            <span key={i} className="text-[10px] font-semibold text-gray-400">
                                 {d}
                             </span>
                         ))}
@@ -161,7 +163,7 @@ export default function MinimalDatePicker({ value, onChange, placeholder = "Sele
                     <div className="grid grid-cols-7 gap-0.5 text-center">
                         {/* Empty padding days */}
                         {Array.from({ length: startDayOfWeek }).map((_, i) => (
-                            <div key={`empty-${i}`} className="h-6 w-6" />
+                            <div key={`empty-${i}`} className="h-6.5 w-6.5" />
                         ))}
 
                         {/* Month days */}
@@ -175,14 +177,15 @@ export default function MinimalDatePicker({ value, onChange, placeholder = "Sele
 
                             return (
                                 <button
+                                    type="button"
                                     key={day}
                                     onClick={() => handleSelectDay(day)}
-                                    className={`h-6 w-6 text-[11px] font-semibold rounded-md flex items-center justify-center transition-all ${
+                                    className={`h-6.5 w-6.5 text-[11px] font-medium rounded-lg flex items-center justify-center transition-all cursor-pointer ${
                                         isSelected
-                                            ? "bg-[#E9C46A] text-slate-900 shadow-2xs"
+                                            ? "bg-gray-900 text-white font-semibold shadow-xs"
                                             : isToday
-                                            ? "bg-blue-50 text-[#E9C46A] font-bold"
-                                            : "text-gray-700 hover:bg-gray-100"
+                                            ? "bg-gray-100 text-gray-900 font-semibold border border-gray-200"
+                                            : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                                     }`}
                                 >
                                     {day}
@@ -192,14 +195,16 @@ export default function MinimalDatePicker({ value, onChange, placeholder = "Sele
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-gray-100">
+                    <div className="flex items-center justify-between pt-2 mt-1.5 border-t border-gray-100">
                         <button
+                            type="button"
                             onClick={handleClear}
-                            className="text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors"
+                            className="text-xs font-medium text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
                         >
                             Clear
                         </button>
                         <button
+                            type="button"
                             onClick={() => {
                                 const today = new Date()
                                 const formattedMonth = String(today.getMonth() + 1).padStart(2, '0')
@@ -207,7 +212,7 @@ export default function MinimalDatePicker({ value, onChange, placeholder = "Sele
                                 onChange(`${today.getFullYear()}-${formattedMonth}-${formattedDay}`)
                                 setIsOpen(false)
                             }}
-                            className="text-xs font-bold text-[#E9C46A] hover:underline"
+                            className="text-xs font-semibold text-gray-900 hover:text-gray-600 transition-colors cursor-pointer"
                         >
                             Today
                         </button>

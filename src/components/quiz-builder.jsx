@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Loader2, Image as ImageIcon, Trash, Plus, ArrowRight, GripVertical, Save, HelpCircle, Clock, Calendar, AlertCircle, Settings, X, RotateCcw, Eye, PenTool, ArrowLeft, Maximize, Minimize, Play, CheckCircle2 } from "lucide-react"
 import MinimalDatePicker from "@/components/ui/MinimalDatePicker"
 import MinimalTimePicker from "@/components/ui/MinimalTimePicker"
+import { toast } from "@/components/ui/toast"
 
 const GOOGLE_FONTS_URL = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto:wght@400;500;700&family=Poppins:wght@400;500;700&family=Lato:wght@400;700&family=Montserrat:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Nunito:wght@400;600;700&family=Raleway:wght@400;500;700&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&family=Source+Sans+3:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap"
 
@@ -300,9 +301,10 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                 })
                 if (!res.ok) throw new Error("Save failed")
             }
+            toast.success("Successfully saved changes!")
         } catch (err) {
             console.error("Failed to save content", err)
-            alert("Failed to save content")
+            toast.error("Failed to save content")
         } finally {
             setSaving(false)
         }
@@ -750,24 +752,51 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
                 {/* Header Actions */}
                 {!effectiveIsStudent && (
-                    <div className="border-b border-gray-200/80 pb-4 relative flex flex-col gap-3">
-                        {/* Row 1: Title + Save Button */}
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3 min-w-0">
-                                {examId ? (
-                                    <input
-                                        type="text"
-                                        value={lessonTitle}
-                                        onChange={(e) => setLessonTitle(e.target.value)}
-                                        className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-[#E9C46A] outline-none pb-0.5"
-                                        placeholder="Mock Exam Title"
-                                    />
-                                ) : (
-                                    <h1 className="text-xl font-bold text-gray-800 tracking-tight truncate">
-                                        {lessonTitle}
-                                    </h1>
+                    <div className="border-b border-gray-200/80 pb-3 relative flex flex-col gap-2.5">
+                        {/* Row 1: Title */}
+                        <div className="flex items-center min-w-0">
+                            {examId ? (
+                                <input
+                                    type="text"
+                                    value={lessonTitle}
+                                    onChange={(e) => setLessonTitle(e.target.value)}
+                                    className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-[#E9C46A] outline-none pb-0.5"
+                                    placeholder="Mock Exam Title"
+                                />
+                            ) : (
+                                <h1 className="text-xl font-bold text-gray-800 tracking-tight truncate">
+                                    {lessonTitle}
+                                </h1>
+                            )}
+                        </div>
+
+                        {/* Row 2: Add buttons + Settings icon on Left, Fullscreen + Student View + Save Changes on Right */}
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    onClick={addQuestion}
+                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                                >
+                                    Add Question
+                                </button>
+                                <button
+                                    onClick={addTitleDescription}
+                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                                >
+                                    Add Title/Desc
+                                </button>
+                                {!examId && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowSettings(!showSettings)}
+                                        className={`p-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center justify-center ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-600 hover:text-gray-900'}`}
+                                        title="Quiz Settings"
+                                    >
+                                        <Settings className="h-4 w-4" />
+                                    </button>
                                 )}
                             </div>
+
                             <div className="flex items-center gap-2 shrink-0">
                                 <button
                                     type="button"
@@ -797,41 +826,14 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                 <button
                                     onClick={saveQuiz}
                                     disabled={saving}
-                                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
                                 >
-                                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
                                     <span>Save Changes</span>
                                 </button>
                             </div>
                         </div>
 
-                        {/* Row 2: Add buttons (Left) + Settings button (Right) */}
-                        <div className="flex items-center justify-between gap-4 flex-wrap">
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={addQuestion}
-                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
-                                >
-                                    Add Question
-                                </button>
-                                <button
-                                    onClick={addTitleDescription}
-                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
-                                >
-                                    Add Title/Desc
-                                </button>
-                            </div>
-
-                            {!examId && (
-                                <button
-                                    onClick={() => setShowSettings(!showSettings)}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-700'}`}
-                                >
-                                    <Settings className="h-3.5 w-3.5" />
-                                    <span>Settings</span>
-                                </button>
-                            )}
-                        </div>
 
                         {/* Quiz Settings Modal Popup Overlay */}
                         {showSettings && (

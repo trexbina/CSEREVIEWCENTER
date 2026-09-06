@@ -1396,10 +1396,10 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
                         {questions.length === 0 && !effectiveIsStudent && (
                             <div className="flex flex-col items-center justify-center text-center min-h-[460px] py-16 px-4">
-                                <div className="flex items-center justify-center mb-2">
+                                <div className="flex items-center justify-center mb-2 shrink-0 [&_[fill]:not([fill='none'])]:!fill-[#E9C46A] [&_[stroke]:not([stroke='none'])]:!stroke-[#E9C46A] [&_path]:!stroke-[#E9C46A]">
                                     <LordIcon
                                         src="/icons/empty-quiz.json"
-                                        size={56}
+                                        size={40}
                                         speed={0.7}
                                         delay={2500}
                                         trigger="loop"

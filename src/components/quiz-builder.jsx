@@ -1495,7 +1495,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                     </div>
                 )})}
 
-                    {effectiveIsStudent && questions.length > 0 && !isTooEarly && !isSubmitted && (
+                    {isStudent && !onToggleViewMode && !internalPreview && questions.length > 0 && !isTooEarly && !isSubmitted && (
                         <div className="pt-10 flex justify-center border-t border-gray-100 mt-10">
                             <button
                                 onClick={submitQuiz}

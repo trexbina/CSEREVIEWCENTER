@@ -1514,7 +1514,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                                         <button
                                             type="button"
                                             onClick={toggleFullscreen}
-                                            className="h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-2xs border bg-white hover:bg-gray-50 border-gray-200/80 text-gray-500 hover:text-gray-800"
+                                            className="h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer text-gray-500 hover:text-gray-800 hover:bg-gray-100"
                                             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                                         >
                                             {isFullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
@@ -1527,11 +1527,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                                                     <button
                                                         type="button"
                                                         onClick={() => setIsToolboxOpen(!isToolboxOpen)}
-                                                        className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-2xs border ${
-                                                            isToolboxOpen
-                                                                ? "bg-[#E9C46A] text-white border-[#E9C46A] hover:bg-[#dfb550]"
-                                                                : "bg-white hover:bg-gray-50 border-gray-200/80 text-gray-500 hover:text-gray-800"
-                                                        }`}
+                                                        className="h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer text-gray-500 hover:text-gray-800 hover:bg-gray-100"
                                                         title={isToolboxOpen ? "Hide Builder Toolbox" : "Show Builder Toolbox"}
                                                     >
                                                         <Wrench className="h-3.5 w-3.5 text-current" />
@@ -1697,7 +1693,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                                 onClick={() => setActiveToolCategory(category.id)}
                                 className={`px-3 py-1 rounded-full text-[11px] font-medium tracking-wide uppercase whitespace-nowrap transition-all cursor-pointer ${
                                     activeToolCategory === category.id
-                                        ? "bg-[#E9C46A] text-slate-900 shadow-2xs font-semibold"
+                                        ? "bg-[#E9C46A] text-white shadow-2xs font-semibold"
                                         : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                                 }`}
                             >
@@ -2237,8 +2233,8 @@ function DraggableTool({ icon: Icon, label, type, onDragStart, onDragEnd }) {
             onDragEnd={onDragEnd}
             className="flex flex-col items-center justify-center gap-1 min-w-[56px] cursor-grab active:cursor-grabbing transition-all group shrink-0"
         >
-            <div className="h-10 w-10 shrink-0 rounded-full border border-gray-200/90 bg-white flex items-center justify-center shadow-2xs group-hover:border-[#E9C46A]/50 group-hover:bg-blue-50/50 group-active:scale-95 transition-all">
-                <Icon className="h-4.5 w-4.5 text-gray-500 group-hover:text-[#E9C46A] transition-colors" />
+            <div className="h-10 w-10 shrink-0 rounded-full border border-gray-200/90 bg-white flex items-center justify-center shadow-2xs group-hover:border-gray-300 group-hover:bg-gray-100/70 group-active:scale-95 transition-all">
+                <Icon className="h-4.5 w-4.5 text-gray-500 group-hover:text-gray-800 transition-colors" />
             </div>
             <span className="text-[10px] font-medium text-gray-400 group-hover:text-gray-700 tracking-wide uppercase text-center truncate max-w-[64px] transition-colors">{label}</span>
         </div>

@@ -18,6 +18,7 @@ import MinimalDatePicker from "@/components/ui/MinimalDatePicker"
 import MinimalTimePicker from "@/components/ui/MinimalTimePicker"
 import { toast } from "@/components/ui/toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { LordIcon } from "@/components/ui/lord-icon"
 
 const GOOGLE_FONTS_URL = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto:wght@400;500;700&family=Poppins:wght@400;500;700&family=Lato:wght@400;700&family=Montserrat:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Nunito:wght@400;600;700&family=Raleway:wght@400;500;700&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&family=Source+Sans+3:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap"
 
@@ -1395,8 +1396,14 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
                         {questions.length === 0 && !effectiveIsStudent && (
                             <div className="flex flex-col items-center justify-center text-center min-h-[460px] py-16 px-4">
-                                <div className="h-12 w-12 rounded-2xl bg-gray-100/80 flex items-center justify-center mb-3 text-gray-400">
-                                    <HelpCircle className="h-6 w-6" />
+                                <div className="flex items-center justify-center mb-2">
+                                    <LordIcon
+                                        src="/icons/empty-quiz.json"
+                                        size={56}
+                                        speed={0.7}
+                                        delay={2500}
+                                        trigger="loop"
+                                    />
                                 </div>
                                 <h3 className="text-sm font-bold text-gray-700 mb-1">No questions added yet</h3>
                                 <p className="text-xs text-gray-400 max-w-xs">

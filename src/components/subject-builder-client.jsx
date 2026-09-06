@@ -17,6 +17,7 @@ import {
     Palette, Layers, ChevronLeft, Trash, Plus, Maximize, Minimize, BookOpen, Eye, Save, CheckCircle2, Wrench,
     MoveHorizontal, MoveVertical, MoveDiagonal, MoveDiagonal2
 } from "lucide-react"
+import { toast } from "sonner"
 import dynamic from "next/dynamic"
 import {
     AlertDialog,
@@ -916,8 +917,10 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                 body: JSON.stringify({ quiz_content: JSON.stringify(blocks) })
             })
             if (!res.ok) throw new Error("Save failed")
+            toast.success("Changes saved successfully!")
         } catch (err) {
             console.error(err)
+            toast.error("Failed to save changes.")
             showAlert("Failed to save module content.")
         } finally {
             setSaving(false)
@@ -1524,12 +1527,12 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                                                         onClick={() => setIsToolboxOpen(!isToolboxOpen)}
                                                         className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-2xs border ${
                                                             isToolboxOpen
-                                                                ? "bg-[#E9C46A] text-slate-900 border-[#E9C46A] hover:bg-[#dfb550]"
+                                                                ? "bg-[#E9C46A] text-white border-[#E9C46A] hover:bg-[#dfb550]"
                                                                 : "bg-white hover:bg-gray-50 border-gray-200/80 text-gray-500 hover:text-gray-800"
                                                         }`}
                                                         title={isToolboxOpen ? "Hide Builder Toolbox" : "Show Builder Toolbox"}
                                                     >
-                                                        <Wrench className="h-3.5 w-3.5" />
+                                                        <Wrench className="h-3.5 w-3.5 text-current" />
                                                     </button>
                                                 )}
 
@@ -1554,9 +1557,9 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                                                     <button
                                                         onClick={saveModuleBlocks}
                                                         disabled={saving || fetching}
-                                                        className="px-4 py-1.5 rounded-lg bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-slate-900 font-bold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
+                                                        className="px-4 py-1.5 rounded-lg bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white font-bold text-xs transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
                                                     >
-                                                        {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                                                        {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
                                                         <span>Save Changes</span>
                                                     </button>
                                                 )}

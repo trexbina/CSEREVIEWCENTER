@@ -1372,10 +1372,10 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                 <SelectTrigger className="h-7 border-none shadow-none bg-transparent hover:bg-gray-100/70 text-xs text-gray-500 font-medium px-2 py-0 gap-1 rounded-lg hover:text-gray-800 transition-colors focus-visible:ring-0">
                                                     <SelectValue placeholder="Multiple Choice" />
                                                 </SelectTrigger>
-                                                <SelectContent align="end" className="min-w-[140px] bg-white rounded-xl shadow-xs border border-gray-200/80 p-1">
-                                                    <SelectItem value="Multiple Choice" className="text-xs py-1.5 cursor-pointer">Multiple Choice</SelectItem>
-                                                    <SelectItem value="Short Answer" className="text-xs py-1.5 cursor-pointer">Short Answer</SelectItem>
-                                                    <SelectItem value="True or False" className="text-xs py-1.5 cursor-pointer">True or False</SelectItem>
+                                                <SelectContent align="end" className="bg-white rounded-lg shadow-xs border border-gray-200/80 p-1">
+                                                    <SelectItem value="Multiple Choice" className="text-xs py-1 px-2 cursor-pointer">Multiple Choice</SelectItem>
+                                                    <SelectItem value="Short Answer" className="text-xs py-1 px-2 cursor-pointer">Short Answer</SelectItem>
+                                                    <SelectItem value="True or False" className="text-xs py-1 px-2 cursor-pointer">True or False</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>

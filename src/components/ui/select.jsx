@@ -60,7 +60,7 @@ function SelectContent({
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
-          "relative z-50 max-h-[195px] w-[var(--radix-select-trigger-width)] min-w-[8rem] max-w-[calc(100vw-2rem)] origin-(--radix-select-content-transform-origin) overflow-hidden rounded-xl border border-gray-200/80 bg-white text-gray-800 shadow-sm dark:bg-card dark:text-card-foreground dark:border-white/10 font-sans data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
+          "relative z-50 max-h-[195px] w-auto min-w-max max-w-[calc(100vw-2rem)] origin-(--radix-select-content-transform-origin) overflow-hidden rounded-xl border border-gray-200/80 bg-white text-gray-800 shadow-xs dark:bg-card dark:text-card-foreground dark:border-white/10 font-sans data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           position === "popper" &&
             "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
           className
@@ -71,7 +71,7 @@ function SelectContent({
         {...props}>
         <SelectPrimitive.Viewport
           className={cn(
-            "p-1 max-h-[195px] w-full min-w-[var(--radix-select-trigger-width)] overflow-y-auto",
+            "p-1 max-h-[195px] w-auto min-w-max overflow-y-auto",
             position === "popper" && "h-[var(--radix-select-trigger-height)] scroll-my-1"
           )}>
           {children}
@@ -88,7 +88,7 @@ function SelectLabel({
   return (
     <SelectPrimitive.Label
       data-slot="select-label"
-      className={cn("px-2.5 py-1.5 text-xs font-semibold text-muted-foreground font-sans", className)}
+      className={cn("px-2.5 py-1 text-xs font-semibold text-muted-foreground font-sans", className)}
       {...props} />
   );
 }
@@ -102,18 +102,18 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg py-1.5 pr-8 pl-2.5 text-xs sm:text-sm font-medium font-sans outline-hidden select-none hover:bg-gray-100/80 text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:bg-white/10 focus:bg-gray-100/80 focus:text-gray-900 dark:focus:bg-white/10 dark:focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground transition-colors",
+        "relative flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg py-1 px-2.5 pr-7 text-xs font-medium font-sans outline-hidden select-none hover:bg-gray-100/80 text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:bg-white/10 focus:bg-gray-100/80 focus:text-gray-900 dark:focus:bg-white/10 dark:focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 [&_svg:not([class*='text-'])]:text-muted-foreground transition-colors",
         className
       )}
       {...props}>
       <span
         data-slot="select-item-indicator"
-        className="absolute right-2.5 flex size-4 items-center justify-center">
+        className="absolute right-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <CheckIcon className="size-4 text-primary" />
+          <CheckIcon className="size-3.5 text-primary" />
         </SelectPrimitive.ItemIndicator>
       </span>
-      <SelectPrimitive.ItemText className="truncate text-left">{children}</SelectPrimitive.ItemText>
+      <SelectPrimitive.ItemText className="whitespace-nowrap text-left">{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   );
 }

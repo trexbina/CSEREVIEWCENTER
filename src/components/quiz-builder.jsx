@@ -1102,35 +1102,24 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
                                             {quizSettings.referencePdf?.url ? (
                                                 <div className="flex items-center justify-between p-3 bg-gray-50/80 border border-gray-200/80 rounded-xl transition-all">
-                                                    <div className="flex items-center gap-3 min-w-0 pr-2">
-                                                        <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-100">
-                                                            <FileText className="h-4 w-4" />
-                                                        </div>
+                                                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                                        <FileText className="h-5 w-5 text-gray-500 shrink-0" />
                                                         <div className="min-w-0">
-                                                            <p className="text-xs font-semibold text-gray-800 truncate max-w-[260px]" title={quizSettings.referencePdf.name || "Reference Material.pdf"}>
+                                                            <p className="text-xs font-semibold text-gray-800 truncate max-w-[280px]" title={quizSettings.referencePdf.name || "Reference Material.pdf"}>
                                                                 {quizSettings.referencePdf.name || "Reference Material.pdf"}
                                                             </p>
                                                             <p className="text-[11px] text-gray-400">PDF Document</p>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-1.5 shrink-0">
-                                                        <a
-                                                            href={quizSettings.referencePdf.url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-gray-200"
-                                                            title="Preview PDF in new tab"
-                                                        >
-                                                            <ExternalLink className="h-3.5 w-3.5" />
-                                                        </a>
+                                                    <div className="flex items-center gap-1 shrink-0">
                                                         <button
                                                             type="button"
                                                             onClick={handleRemovePdf}
-                                                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100 cursor-pointer"
+                                                            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                                                             title="Remove attached PDF"
                                                         >
-                                                            <Trash className="h-3.5 w-3.5" />
+                                                            <Trash className="h-4 w-4" />
                                                         </button>
                                                     </div>
                                                 </div>
@@ -1139,18 +1128,16 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                     type="button"
                                                     disabled={uploadingPdf}
                                                     onClick={() => pdfInputRef.current?.click()}
-                                                    className="w-full border border-dashed border-gray-200 hover:border-[#E9C46A] hover:bg-amber-50/20 rounded-xl p-4 flex flex-col items-center justify-center gap-2 text-gray-500 transition-all cursor-pointer disabled:opacity-50"
+                                                    className="w-full border border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50/80 rounded-xl p-4 flex flex-col items-center justify-center gap-2 text-gray-500 transition-all cursor-pointer disabled:opacity-50"
                                                 >
                                                     {uploadingPdf ? (
                                                         <>
-                                                            <Loader2 className="h-5 w-5 animate-spin text-[#E9C46A]" />
+                                                            <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
                                                             <span className="text-xs font-medium text-gray-600">Uploading PDF document...</span>
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
-                                                                <FileText className="h-4 w-4" />
-                                                            </div>
+                                                            <FileText className="h-5 w-5 text-gray-400" />
                                                             <div className="text-center">
                                                                 <span className="text-xs font-semibold text-gray-700">Click to upload reference PDF</span>
                                                                 <span className="block text-[11px] text-gray-400 mt-0.5">Supports PDF up to 50MB</span>

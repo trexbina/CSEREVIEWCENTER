@@ -1512,8 +1512,9 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                                     <div className="flex justify-end mb-3 items-center gap-2 px-6 pt-4">
                                         {/* Fullscreen Button */}
                                         <button
+                                            type="button"
                                             onClick={toggleFullscreen}
-                                            className="h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-2xs border bg-white hover:bg-gray-50 border-gray-200/80 text-gray-500 hover:text-gray-800"
+                                            className="h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-2xs border bg-white hover:bg-gray-50 border-gray-200/80 text-gray-500 hover:text-gray-800"
                                             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                                         >
                                             {isFullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
@@ -1524,8 +1525,9 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                                                 {/* Toolbox Icon Toggle Button (Admin only) */}
                                                 {viewMode === 'admin' && (
                                                     <button
+                                                        type="button"
                                                         onClick={() => setIsToolboxOpen(!isToolboxOpen)}
-                                                        className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-2xs border ${
+                                                        className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-2xs border ${
                                                             isToolboxOpen
                                                                 ? "bg-[#E9C46A] text-white border-[#E9C46A] hover:bg-[#dfb550]"
                                                                 : "bg-white hover:bg-gray-50 border-gray-200/80 text-gray-500 hover:text-gray-800"
@@ -1537,8 +1539,9 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                                                 )}
 
                                                 <button
+                                                    type="button"
                                                     onClick={() => setViewMode(viewMode === 'admin' ? 'student' : 'admin')}
-                                                    className="px-3.5 py-1.5 rounded-lg border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
+                                                    className="px-3 py-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
                                                 >
                                                     {viewMode === 'admin' ? (
                                                         <>

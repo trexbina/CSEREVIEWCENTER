@@ -1782,20 +1782,6 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                 <p className="text-[11px] text-gray-400">PDF Reference Document</p>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                                <a
-                                    href={
-                                        quizSettings.referencePdf.url.startsWith("/api/files/")
-                                            ? `/viewer/pdf/${quizSettings.referencePdf.url.replace("/api/files/", "")}`
-                                            : quizSettings.referencePdf.url
-                                    }
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-50 flex items-center gap-1.5 transition-all shadow-2xs"
-                                    title="Open in new window / tab"
-                                >
-                                    <ExternalLink className="h-3.5 w-3.5" />
-                                    <span className="hidden sm:inline">Open in New Tab</span>
-                                </a>
                                 <button
                                     onClick={() => setShowPdfModal(false)}
                                     className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"

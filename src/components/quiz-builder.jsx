@@ -1101,7 +1101,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                 onDragOver={(e) => handleDragOver(e, index)}
                                 onDrop={(e) => handleDrop(e, index)}
                                 onDragEnd={handleDragEnd}
-                                className={`relative group transition-all ${effectiveIsStudent ? 'py-3' : 'bg-white border border-gray-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-xs'} ${dragOverBlockIndex === index && dragBlockIndex !== index ? 'border-gray-400 border-t-2' : ''}`}
+                                className={`relative group transition-all ${effectiveIsStudent ? 'py-3' : 'bg-white border border-gray-200/70 rounded-xl p-4 sm:p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:border-gray-300/80'} ${dragOverBlockIndex === index && dragBlockIndex !== index ? 'border-gray-400 border-t-2' : ''}`}
                             >
                             
                             {!effectiveIsStudent && (
@@ -1111,7 +1111,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                     </div>
                                     <button 
                                         onClick={() => removeBlock(block.id)}
-                                        className="absolute -top-3 -right-3 h-7 w-7 bg-white border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50 rounded-full shadow-2xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-20 cursor-pointer"
+                                        className="absolute top-3 right-3 p-1.5 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
                                         title="Delete Question"
                                     >
                                         <Trash className="h-3.5 w-3.5" />
@@ -1133,7 +1133,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                             </span>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-2 border-b border-gray-200/80 focus-within:border-gray-400 transition-colors pb-1">
+                                        <div className="flex items-center gap-2 border-b border-gray-100 focus-within:border-gray-300 transition-colors pb-1.5">
                                             <span className="font-medium text-gray-400 whitespace-nowrap select-none text-sm" style={{ fontSize: `${quizSettings.fontSize}px` }}>
                                                 {questionNumber}.
                                             </span>
@@ -1143,9 +1143,9 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                 onChange={(e) => updateQuestionText(block.id, e.target.value)}
                                                 placeholder="Type question prompt..."
                                                 style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize}px` }}
-                                                className="flex-1 bg-transparent py-1 outline-none text-gray-800 font-medium placeholder-gray-400 text-sm"
+                                                className="flex-1 bg-transparent py-0.5 outline-none text-gray-800 font-medium placeholder-gray-300 text-sm"
                                             />
-                                            <label className="p-1 cursor-pointer hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-colors" title="Upload Image">
+                                            <label className="p-1 cursor-pointer hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-colors shrink-0" title="Upload Image">
                                                 <ImageIcon className="h-4 w-4" />
                                                 <input 
                                                     type="file" 
@@ -1174,7 +1174,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
                                     {/* Options Area (Visible for Multiple Choice) */}
                                     {block.questionType !== "Short Answer" && (
-                                        <div className="space-y-1.5 mt-3 pl-4">
+                                        <div className="space-y-1 mt-2.5 pl-2">
                                             {block.options?.map((option, oIdx) => {
                                                 const studentSelected = (studentAnswers[block.id] || []).includes(option.id)
                                                 const hasAnswered = (studentAnswers[block.id] || []).length > 0
@@ -1183,7 +1183,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                 const retriesLeft = Math.max(0, maxRetries - (currentAttempts - 1))
                                                 const hasRetriesRemaining = maxRetries > 0 && retriesLeft > 0
                                                 
-                                                let circleClass = "border-gray-300 bg-white text-blue-600"
+                                                let circleClass = "border-gray-300 bg-white text-emerald-600"
                                                 let innerCircle = false
                                                 let optionBg = "transparent"
                                                 let optionText = "text-gray-700 font-normal"
@@ -1195,10 +1195,10 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                         optionBg = "transparent"
                                                         optionText = "text-gray-600 font-normal"
                                                     } else if (studentSelected && option.isCorrect) {
-                                                        circleClass = "border-green-500 bg-green-500 text-white"
+                                                        circleClass = "border-emerald-500 bg-emerald-500 text-white"
                                                         innerCircle = true
-                                                        optionBg = "bg-green-50/50 rounded-md"
-                                                        optionText = "text-green-800 font-medium"
+                                                        optionBg = "bg-emerald-50/50 rounded-md"
+                                                        optionText = "text-emerald-800 font-medium"
                                                     } else if (studentSelected && !option.isCorrect) {
                                                         circleClass = "border-red-500 bg-red-500 text-white"
                                                         innerCircle = true
@@ -1206,43 +1206,41 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                         optionText = "text-red-700 line-through"
                                                     } else if (option.isCorrect) {
                                                         if (hasRetriesRemaining) {
-                                                            // Hide correct answer while student still has retries remaining
                                                             circleClass = "border-gray-300 bg-white text-gray-400"
                                                             innerCircle = false
                                                             optionBg = "transparent"
                                                             optionText = "text-gray-700 font-normal"
                                                         } else {
-                                                            // Reveal correct answer when all retries are finished
-                                                            circleClass = "border-green-500 bg-green-500 text-white"
+                                                            circleClass = "border-emerald-500 bg-emerald-500 text-white"
                                                             innerCircle = true
-                                                            optionBg = "bg-green-50/50 rounded-md"
-                                                            optionText = "text-green-800 font-medium"
+                                                            optionBg = "bg-emerald-50/50 rounded-md"
+                                                            optionText = "text-emerald-800 font-medium"
                                                         }
                                                     }
                                                 } else if (effectiveIsStudent && studentSelected) {
                                                     circleClass = "border-[#E9C46A] bg-[#E9C46A] text-slate-900"
                                                     innerCircle = true
-                                                    optionBg = "bg-blue-50/40 rounded-md"
-                                                    optionText = "text-blue-900 font-medium"
+                                                    optionBg = "bg-amber-50/30 rounded-md"
+                                                    optionText = "text-gray-900 font-medium"
                                                 } else if (!effectiveIsStudent && option.isCorrect) {
-                                                    circleClass = "border-green-500 bg-green-500 text-white"
+                                                    circleClass = "border-emerald-600 bg-white text-emerald-600"
                                                     innerCircle = true
                                                 } else if (!effectiveIsStudent) {
-                                                    circleClass = "border-gray-300 bg-white hover:border-[#E9C46A]"
+                                                    circleClass = "border-gray-300 bg-white hover:border-gray-400"
                                                 }
 
                                                 return (
-                                                <div key={option.id} className={`flex items-center gap-2 group/opt py-0.5 transition-colors ${effectiveIsStudent ? `cursor-pointer ${optionBg}` : ''}`} onClick={() => effectiveIsStudent ? handleStudentOptionToggle(block.id, option.id, block.questionType) : null}>
+                                                <div key={option.id} className={`flex items-center gap-2.5 group/opt py-0.5 px-1 rounded-lg transition-colors ${effectiveIsStudent ? `cursor-pointer ${optionBg}` : 'hover:bg-gray-50/60'}`} onClick={() => effectiveIsStudent ? handleStudentOptionToggle(block.id, option.id, block.questionType) : null}>
                                                     <button
                                                         type="button"
                                                         disabled={effectiveIsStudent && isSubmitted}
                                                         onClick={(e) => {
                                                             if (!effectiveIsStudent) toggleCorrectAnswer(block.id, option.id)
                                                         }}
-                                                        title={effectiveIsStudent ? "Select answer" : "Choose correct answer"}
-                                                        className={`w-4 h-4 flex items-center justify-center rounded-full border flex-shrink-0 transition-colors ${circleClass} ${effectiveIsStudent && isSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
+                                                        title={effectiveIsStudent ? "Select answer" : "Set as correct answer"}
+                                                        className={`w-4 h-4 flex items-center justify-center rounded-full border flex-shrink-0 transition-all ${circleClass} ${effectiveIsStudent && isSubmitted ? 'cursor-default' : 'cursor-pointer active:scale-95'}`}
                                                     >
-                                                        {innerCircle && <div className="w-1.5 h-1.5 rounded-full bg-current"></div>}
+                                                        {innerCircle && <div className="w-2 h-2 rounded-full bg-emerald-600"></div>}
                                                     </button>
                                                     {effectiveIsStudent ? (
                                                         <div 
@@ -1258,7 +1256,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                             onChange={(e) => updateOptionText(block.id, option.id, e.target.value)}
                                                             readOnly={block.questionType === "True or False"}
                                                             style={{ fontFamily: quizSettings.fontFamily, fontSize: `${quizSettings.fontSize}px` }}
-                                                            className="flex-1 bg-transparent py-1 px-1.5 text-gray-700 text-xs font-normal outline-none focus:bg-gray-50/80 rounded-md transition-colors placeholder-gray-400"
+                                                            className="flex-1 bg-transparent py-1 px-1 text-gray-700 text-xs font-normal outline-none transition-colors placeholder-gray-300 focus:placeholder-transparent"
                                                         />
                                                     )}
                                                     {!effectiveIsStudent && block.questionType !== "True or False" && (
@@ -1267,7 +1265,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                                 e.stopPropagation()
                                                                 removeOption(block.id, option.id)
                                                             }}
-                                                            className="text-gray-400 hover:text-gray-700 p-1 rounded-md transition-colors cursor-pointer"
+                                                            className="text-gray-300 hover:text-gray-600 p-1 rounded transition-colors cursor-pointer opacity-0 group-hover/opt:opacity-100"
                                                             title="Remove option"
                                                         >
                                                             <Trash className="h-3.5 w-3.5" />
@@ -1276,7 +1274,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                 </div>
                                             )})}
                                             {!effectiveIsStudent && (block.questionType === "Multiple Choice" || block.questionType === "True or False") && !block.options?.some(o => o.isCorrect) && (
-                                                <p className="text-xs font-normal text-amber-500 mt-1 italic">
+                                                <p className="text-xs font-normal text-amber-500/90 mt-1 italic pl-1">
                                                     * Select a correct answer by clicking an empty circle above.
                                                 </p>
                                             )}
@@ -1341,17 +1339,17 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                     )})()}
 
                                     {!effectiveIsStudent && (
-                                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-3 mt-3 text-xs">
-                                            <div className="flex items-center gap-4">
+                                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100/80 pt-2.5 mt-2 text-xs">
+                                            <div className="flex items-center gap-3">
                                                 {block.questionType === "Multiple Choice" && (
                                                     <button 
                                                         onClick={() => addOption(block.id)}
-                                                        className="text-[#E9C46A] hover:text-[#dfb550] font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                                                        className="text-[#D4A343] hover:text-[#b3852e] font-medium transition-colors cursor-pointer"
                                                     >
                                                         Add Option
                                                     </button>
                                                 )}
-                                                <div className="flex items-center gap-1.5 text-gray-500 font-normal">
+                                                <div className="flex items-center gap-1.5 text-gray-400 text-xs">
                                                     <span>Points:</span>
                                                     <input 
                                                         type="number" 
@@ -1359,7 +1357,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                         max={100} 
                                                         value={block.points !== undefined ? block.points : 1}
                                                         onChange={(e) => updateQuestionPoints(block.id, Number(e.target.value))}
-                                                        className="w-10 border-b border-gray-200 text-center text-gray-700 font-medium outline-none focus:border-gray-400 bg-transparent py-0.5"
+                                                        className="w-9 border-b border-gray-200 text-center text-gray-700 font-medium outline-none focus:border-gray-400 bg-transparent py-0.5"
                                                     />
                                                 </div>
                                             </div>
@@ -1451,13 +1449,13 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                         </div>
 
                         {!effectiveIsStudent && (
-                            <div className="flex justify-center -mt-3 mb-3 z-10 relative">
+                            <div className="flex justify-center -my-2.5 z-10 relative">
                                 <button
                                     onClick={() => addQuestionAfter(index)}
-                                    className="h-7 w-7 bg-white border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50 rounded-full shadow-2xs flex items-center justify-center transition-all cursor-pointer"
+                                    className="h-6 w-6 bg-white border border-gray-200/80 text-gray-400 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex items-center justify-center transition-all cursor-pointer opacity-70 hover:opacity-100"
                                     title="Add Question Below"
                                 >
-                                    <Plus className="h-4 w-4" />
+                                    <Plus className="h-3.5 w-3.5" />
                                 </button>
                             </div>
                         )}

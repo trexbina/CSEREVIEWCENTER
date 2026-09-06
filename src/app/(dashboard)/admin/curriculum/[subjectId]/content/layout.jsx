@@ -2,7 +2,7 @@
 "use client"
 
 // helper functions from react to store data and run actions
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 
 // helper functions from nextjs to read the url parameters and navigate between pages
 import { useParams, useRouter, useSearchParams } from "next/navigation"
@@ -12,6 +12,8 @@ import { Loader2, ChevronLeft, Plus, FileText, Pencil, Trash, PenTool, GripVerti
 
 // confirmation modal popup before deleting a module or lesson
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
+import { extractSubjectFiles } from "@/lib/subject-files"
+import SubjectFileViewerModal from "@/components/subject-file-viewer-modal"
 
 // main sidebar and workspace layout for editing modules and lessons inside a subject
 export default function SubjectContentLayout({ children }) {
@@ -26,6 +28,9 @@ export default function SubjectContentLayout({ children }) {
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState("modules")
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+    const [viewingFile, setViewingFile] = useState(null)
+
+    const subjectFiles = useMemo(() => extractSubjectFiles(modules), [modules])
 
     // module creation state
     const [newModuleName, setNewModuleName] = useState("")
@@ -403,8 +408,51 @@ export default function SubjectContentLayout({ children }) {
                     </div>
                 </div>
 
-                {/* list of modules and their lessons */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+                {/* tab content */}
+                {activeTab === "files" ? (
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                        <div className="flex items-center justify-between pb-1">
+                            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pl-1">
+                                Files ({subjectFiles.length})
+                            </span>
+                        </div>
+
+                        {subjectFiles.length === 0 ? (
+                            <div className="py-16 text-center px-4">
+                                <p className="text-xs font-medium text-gray-500">
+                                    No files uploaded yet in this subject.
+                                </p>
+                                <p className="text-[11px] text-gray-400 mt-1">
+                                    Files uploaded to modules, lessons, or quizzes will appear here.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {subjectFiles.map((file) => (
+                                    <div
+                                        key={file.id}
+                                        onClick={() => setViewingFile(file)}
+                                        className="p-3 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50/80 hover:border-gray-300 transition-all cursor-pointer shadow-2xs group flex flex-col gap-1.5"
+                                    >
+                                        <span className="text-[13.5px] font-medium text-gray-800 group-hover:text-gray-900 transition-colors line-clamp-1" title={file.name}>
+                                            {file.name}
+                                        </span>
+                                        <div className="flex items-center justify-between gap-2 text-[11px] text-gray-400">
+                                            <span className="truncate" title={file.source}>
+                                                From: {file.source}
+                                            </span>
+                                            <span className="shrink-0 uppercase font-medium text-[10px] text-gray-400 tracking-wider">
+                                                {file.type}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* list of modules and their lessons */
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
                     {modules.map((module, idx) => (
                         <div
                             key={module.id}
@@ -696,13 +744,21 @@ export default function SubjectContentLayout({ children }) {
                             </div>
                         )}
                     </div>
-                </div>
+                    </div>
+                )}
             </div>
 
             {/* main content area showing lesson editor */}
             <div className="flex-1 overflow-y-auto bg-[#f5f5f5]">
                 {children}
             </div>
+
+            {/* popup modal to view subject file */}
+            <SubjectFileViewerModal
+                file={viewingFile}
+                onClose={() => setViewingFile(null)}
+                isStudent={false}
+            />
 
             {/* popup modal to confirm delete */}
             <ConfirmDeleteModal

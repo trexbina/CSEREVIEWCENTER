@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Loader2, ChevronLeft, Menu, X } from "lucide-react"
+import { extractSubjectFiles } from "@/lib/subject-files"
+import SubjectFileViewerModal from "@/components/subject-file-viewer-modal"
 
 function normalizeLessonType(rawType, hasPdf = false) {
     if (hasPdf) return "pdf"
@@ -45,6 +47,9 @@ export default function StudentSubjectLayout({ children }) {
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState(initialTab) // modules or files
     const [isSidebarOpen, setIsSidebarOpen] = useState(false) // responsive sidebar state
+    const [viewingFile, setViewingFile] = useState(null)
+
+    const subjectFiles = useMemo(() => extractSubjectFiles(modules), [modules])
 
     useEffect(() => {
         fetchModules()
@@ -141,7 +146,7 @@ export default function StudentSubjectLayout({ children }) {
             {/* Subject Sidebar */}
             <div className={`
                 absolute md:static inset-y-0 left-0 z-40 
-                w-80 shrink-0 border-r border-black/5 dark:border-white/10 bg-[#F2F2F2] dark:bg-[#14161b] flex flex-col h-full overflow-hidden transition-transform duration-300 ease-in-out
+                w-80 shrink-0 border-r border-gray-200 bg-white flex flex-col h-full overflow-hidden transition-transform duration-300 ease-in-out
                 ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 md:shadow-[2px_0_8px_rgba(0,0,0,0.015)]'}
             `}>
 
@@ -221,118 +226,170 @@ export default function StudentSubjectLayout({ children }) {
                     </div>
                 </div>
 
-                {/* Modules List Scrolling Area */}
-                <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 custom-scrollbar">
-                    {modules.map((module) => {
-                        // Split module title to bold the prefix (e.g. "Module 1:")
-                        const modParts = module.title.split(":")
-                        const hasModPrefix = modParts.length > 1
+                {/* Content based on activeTab */}
+                {activeTab === "files" ? (
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                        <div className="flex items-center justify-between pb-1">
+                            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider pl-1">
+                                Files ({subjectFiles.length})
+                            </span>
+                        </div>
 
-                        return (
-                            <div key={module.id} className="space-y-2 pb-4 border-b border-gray-100/80 last:border-0">
-                                {/* Module Header */}
-                                <div className="px-1.5 pt-0.5 pb-0.5">
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                                        Module
-                                    </p>
-                                    <h3 className="text-[14px] text-gray-800 tracking-tight leading-normal" title={module.title}>
-                                        {hasModPrefix ? (
-                                            <>
-                                                <span className="font-bold text-gray-800 mr-1">{modParts[0]}:</span>
-                                                <span className="text-gray-600 font-medium">{modParts.slice(1).join(":")}</span>
-                                            </>
-                                        ) : (
-                                            <span className="font-bold text-gray-800">{module.title}</span>
-                                        )}
-                                    </h3>
-                                </div>
-
-                                {/* Lessons Label & Inner List */}
-                                <div className="space-y-1 pl-1">
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider pl-2 pt-1">
-                                        Lessons
-                                    </p>
-                                    <div className="space-y-1 pl-1">
-                                    {(module.lessons || [])
-                                        .filter((lesson) => shouldShowLessonInTab(lesson, activeTab))
-                                        .map((lesson) => {
-                                            const isActive = searchParams.get("lessonId") === lesson.id.toString()
-                                            const lessonParts = lesson.title.split(":")
-                                            const hasLessonPrefix = lessonParts.length > 1
-
-                                            return (
-                                                <div
-                                                    key={lesson.id}
-                                                    onClick={() => {
-                                                        const lessonType = normalizeLessonType(lesson.lesson_type, lesson.has_pdf)
-                                                        router.replace(`/student/subjects/${subjectId}?lessonId=${lesson.id}&type=${lessonType}`)
-                                                        setIsSidebarOpen(false)
-                                                    }}
-                                                    className={`group cursor-pointer transition-colors px-2 py-1.5 rounded-lg flex items-center justify-between select-none ${
-                                                        isActive
-                                                            ? 'text-[#E9C46A]'
-                                                            : 'text-gray-500 hover:text-[#E9C46A]'
-                                                    }`}
-                                                    title={lesson.title}
-                                                >
-                                                    <div className="flex items-start gap-2.5 min-w-0">
-                                                        {isActive && (
-                                                            <span className="h-1.5 w-1.5 rounded-full bg-[#E9C46A] mt-2 shrink-0 animate-in zoom-in-50 duration-150" />
-                                                        )}
-                                                        <p className="text-[14px] leading-snug line-clamp-2 transition-colors">
-                                                            {hasLessonPrefix ? (
-                                                                <>
-                                                                    <span className={`font-semibold mr-1 transition-colors ${
-                                                                        isActive
-                                                                            ? 'text-[#E9C46A]'
-                                                                            : 'text-gray-600 group-hover:text-[#E9C46A]'
-                                                                    }`}>
-                                                                        {lessonParts[0]}:
-                                                                    </span>
-                                                                    <span className={`transition-colors ${
-                                                                        isActive
-                                                                            ? 'text-[#E9C46A] font-medium'
-                                                                            : 'text-gray-500 group-hover:text-[#E9C46A]'
-                                                                    }`}>
-                                                                        {lessonParts.slice(1).join(":")}
-                                                                    </span>
-                                                                </>
-                                                            ) : (
-                                                                <span className={`transition-colors ${
-                                                                    isActive
-                                                                        ? 'text-[#E9C46A] font-semibold'
-                                                                        : 'text-gray-500 group-hover:text-[#E9C46A]'
-                                                                }`}>
-                                                                    {lesson.title}
-                                                                </span>
-                                                            )}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
+                        {subjectFiles.length === 0 ? (
+                            <div className="py-16 text-center px-4">
+                                <p className="text-xs font-medium text-gray-500">
+                                    No files available yet in this subject.
+                                </p>
+                                <p className="text-[11px] text-gray-400 mt-1">
+                                    Files uploaded to lessons and quizzes will appear here.
+                                </p>
                             </div>
-                        )
-                    })}
-
-                    {modules.length > 0 && !modules.some((m) =>
-                        (m.lessons || []).some((lesson) => shouldShowLessonInTab(lesson, activeTab))
-                    ) && (
-                            <div className="rounded-xl border border-solid border-gray-200 p-4 text-xs text-gray-500 bg-gray-50/50">
-                                {activeTab === "files"
-                                    ? "No PDF lessons available yet."
-                                    : "No lessons available yet."}
+                        ) : (
+                            <div className="space-y-2">
+                                {subjectFiles.map((file) => (
+                                    <div
+                                        key={file.id}
+                                        onClick={() => {
+                                            setViewingFile(file)
+                                            setIsSidebarOpen(false)
+                                        }}
+                                        className="p-3 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50/80 hover:border-gray-300 transition-all cursor-pointer shadow-2xs group flex flex-col gap-1.5"
+                                    >
+                                        <span className="text-[13.5px] font-medium text-gray-800 group-hover:text-gray-900 transition-colors line-clamp-1" title={file.name}>
+                                            {file.name}
+                                        </span>
+                                        <div className="flex items-center justify-between gap-2 text-[11px] text-gray-400">
+                                            <span className="truncate" title={file.source}>
+                                                From: {file.source}
+                                            </span>
+                                            <span className="shrink-0 uppercase font-medium text-[10px] text-gray-400 tracking-wider">
+                                                {file.type}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
-                </div>
+                    </div>
+                ) : (
+                    /* Modules List Scrolling Area */
+                    <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 custom-scrollbar">
+                        {modules.map((module) => {
+                            // Split module title to bold the prefix (e.g. "Module 1:")
+                            const modParts = module.title.split(":")
+                            const hasModPrefix = modParts.length > 1
+
+                            return (
+                                <div key={module.id} className="space-y-2 pb-4 border-b border-gray-100/80 last:border-0">
+                                    {/* Module Header */}
+                                    <div className="px-1.5 pt-0.5 pb-0.5">
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                            Module
+                                        </p>
+                                        <h3 className="text-[14px] text-gray-800 tracking-tight leading-normal" title={module.title}>
+                                            {hasModPrefix ? (
+                                                <>
+                                                    <span className="font-bold text-gray-800 mr-1">{modParts[0]}:</span>
+                                                    <span className="text-gray-600 font-medium">{modParts.slice(1).join(":")}</span>
+                                                </>
+                                            ) : (
+                                                <span className="font-bold text-gray-800">{module.title}</span>
+                                            )}
+                                        </h3>
+                                    </div>
+
+                                    {/* Lessons Label & Inner List */}
+                                    <div className="space-y-1 pl-1">
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider pl-2 pt-1">
+                                            Lessons
+                                        </p>
+                                        <div className="space-y-1 pl-1">
+                                        {(module.lessons || [])
+                                            .filter((lesson) => shouldShowLessonInTab(lesson, "modules"))
+                                            .map((lesson) => {
+                                                const isActive = searchParams.get("lessonId") === lesson.id.toString()
+                                                const lessonParts = lesson.title.split(":")
+                                                const hasLessonPrefix = lessonParts.length > 1
+
+                                                return (
+                                                    <div
+                                                        key={lesson.id}
+                                                        onClick={() => {
+                                                            const lessonType = normalizeLessonType(lesson.lesson_type, lesson.has_pdf)
+                                                            router.replace(`/student/subjects/${subjectId}?lessonId=${lesson.id}&type=${lessonType}`)
+                                                            setIsSidebarOpen(false)
+                                                        }}
+                                                        className={`group cursor-pointer transition-colors px-2 py-1.5 rounded-lg flex items-center justify-between select-none ${
+                                                            isActive
+                                                                ? 'text-[#E9C46A]'
+                                                                : 'text-gray-500 hover:text-[#E9C46A]'
+                                                        }`}
+                                                        title={lesson.title}
+                                                    >
+                                                        <div className="flex items-start gap-2.5 min-w-0">
+                                                            {isActive && (
+                                                                <span className="h-1.5 w-1.5 rounded-full bg-[#E9C46A] mt-2 shrink-0 animate-in zoom-in-50 duration-150" />
+                                                            )}
+                                                            <p className="text-[14px] leading-snug line-clamp-2 transition-colors">
+                                                                {hasLessonPrefix ? (
+                                                                    <>
+                                                                        <span className={`font-semibold mr-1 transition-colors ${
+                                                                            isActive
+                                                                                ? 'text-[#E9C46A]'
+                                                                                : 'text-gray-600 group-hover:text-[#E9C46A]'
+                                                                        }`}>
+                                                                            {lessonParts[0]}:
+                                                                        </span>
+                                                                        <span className={`transition-colors ${
+                                                                            isActive
+                                                                                ? 'text-[#E9C46A] font-medium'
+                                                                                : 'text-gray-500 group-hover:text-[#E9C46A]'
+                                                                        }`}>
+                                                                            {lessonParts.slice(1).join(":")}
+                                                                        </span>
+                                                                    </>
+                                                                ) : (
+                                                                    <span className={`transition-colors ${
+                                                                        isActive
+                                                                            ? 'text-[#E9C46A] font-semibold'
+                                                                            : 'text-gray-500 group-hover:text-[#E9C46A]'
+                                                                    }`}>
+                                                                        {lesson.title}
+                                                                    </span>
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })}
+
+                        {modules.length > 0 && !modules.some((m) =>
+                            (m.lessons || []).some((lesson) => shouldShowLessonInTab(lesson, "modules"))
+                        ) && (
+                                <div className="rounded-xl border border-solid border-gray-200 p-4 text-xs text-gray-500 bg-gray-50/50">
+                                    No lessons available yet.
+                                </div>
+                            )}
+                    </div>
+                )}
             </div>
 
             {/* Main Content Area (Builder View) */}
             <div className="flex-1 overflow-y-auto bg-white flex flex-col w-full h-full relative">
                 {children}
             </div>
+
+            {/* Subject File Viewer Modal (students CANNOT download) */}
+            <SubjectFileViewerModal
+                file={viewingFile}
+                onClose={() => setViewingFile(null)}
+                isStudent={true}
+            />
 
             <style jsx global>{`
                 .custom-scrollbar {

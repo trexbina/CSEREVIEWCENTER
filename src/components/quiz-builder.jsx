@@ -345,6 +345,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     }
 
     async function saveQuiz(silent = false) {
+        const isSilent = silent === true
         if (effectiveIsStudent) return false
         setSaving(true)
         try {
@@ -366,13 +367,13 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                 })
                 if (!res.ok) throw new Error("Save failed")
             }
-            if (!silent) {
+            if (!isSilent) {
                 toast.success("Successfully saved changes!")
             }
             return true
         } catch (err) {
             console.error("Failed to save content", err)
-            if (!silent) {
+            if (!isSilent) {
                 toast.error("Failed to save content")
             }
             return false
@@ -977,7 +978,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                     <span>Student View</span>
                                 </button>
                                 <button
-                                    onClick={saveQuiz}
+                                    onClick={() => saveQuiz(false)}
                                     disabled={saving}
                                     className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
                                 >

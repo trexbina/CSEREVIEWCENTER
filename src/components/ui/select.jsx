@@ -96,23 +96,26 @@ function SelectLabel({
 function SelectItem({
   className,
   children,
+  showIndicator = false,
   ...props
 }) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg py-1 px-2.5 pr-7 text-xs font-medium font-sans outline-hidden select-none hover:bg-gray-100/80 text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:bg-white/10 focus:bg-gray-100/80 focus:text-gray-900 dark:focus:bg-white/10 dark:focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 [&_svg:not([class*='text-'])]:text-muted-foreground transition-colors",
+        "relative flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg py-1 px-2.5 text-xs font-medium font-sans outline-hidden select-none hover:bg-gray-100/80 text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:bg-white/10 focus:bg-gray-100/80 focus:text-gray-900 dark:focus:bg-white/10 dark:focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 [&_svg:not([class*='text-'])]:text-muted-foreground transition-colors",
         className
       )}
       {...props}>
-      <span
-        data-slot="select-item-indicator"
-        className="absolute right-2 flex size-3.5 items-center justify-center">
-        <SelectPrimitive.ItemIndicator>
-          <CheckIcon className="size-3.5 text-primary" />
-        </SelectPrimitive.ItemIndicator>
-      </span>
+      {showIndicator && (
+        <span
+          data-slot="select-item-indicator"
+          className="absolute right-2 flex size-3.5 items-center justify-center">
+          <SelectPrimitive.ItemIndicator>
+            <CheckIcon className="size-3.5 text-primary" />
+          </SelectPrimitive.ItemIndicator>
+        </span>
+      )}
       <SelectPrimitive.ItemText className="whitespace-nowrap text-left">{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   );

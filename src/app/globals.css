@@ -179,6 +179,17 @@
     background-color: #262626 !important;
     color: #f3f4f6 !important;
   }
+
+  /* Hide number input spinner arrows across Chrome, Safari, Edge, Firefox */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
 }
 
 /* ═══ MDC Data Table — theme-aware overrides ═══ */

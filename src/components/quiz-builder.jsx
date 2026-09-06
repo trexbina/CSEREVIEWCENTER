@@ -1360,7 +1360,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                         max={100} 
                                                         value={block.points !== undefined ? block.points : 1}
                                                         onChange={(e) => updateQuestionPoints(block.id, Number(e.target.value))}
-                                                        className="w-10 border-b border-gray-200 text-center text-gray-700 font-medium outline-none focus:border-gray-400 bg-transparent py-0.5"
+                                                        className="w-8 border-b border-gray-200 text-center text-gray-700 font-medium outline-none focus:border-gray-400 bg-transparent py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     />
                                                 </div>
                                             </div>

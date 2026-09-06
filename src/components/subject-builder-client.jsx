@@ -17,7 +17,7 @@ import {
     Palette, Layers, ChevronLeft, Trash, Plus, Maximize, Minimize, BookOpen, Eye, Save, CheckCircle2, Wrench,
     MoveHorizontal, MoveVertical, MoveDiagonal, MoveDiagonal2
 } from "lucide-react"
-import { toast } from "sonner"
+import { toast } from "@/components/ui/toast"
 import dynamic from "next/dynamic"
 import {
     AlertDialog,

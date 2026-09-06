@@ -169,7 +169,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         } else {
             setFetching(false)
         }
-    }, [lessonId, examId, isStudent, subjectId])
+    }, [lessonId, examId, subjectId])
 
     async function fetchExamData() {
         setFetching(true)
@@ -282,8 +282,8 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         }
     }
 
-    async function saveQuiz() {
-        if (effectiveIsStudent) return
+    async function saveQuiz(silent = false) {
+        if (effectiveIsStudent) return false
         setSaving(true)
         try {
             if (examId) {
@@ -304,10 +304,16 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                 })
                 if (!res.ok) throw new Error("Save failed")
             }
-            toast.success("Successfully saved changes!")
+            if (!silent) {
+                toast.success("Successfully saved changes!")
+            }
+            return true
         } catch (err) {
             console.error("Failed to save content", err)
-            toast.error("Failed to save content")
+            if (!silent) {
+                toast.error("Failed to save content")
+            }
+            return false
         } finally {
             setSaving(false)
         }
@@ -811,7 +817,8 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => {
+                                    onClick={async () => {
+                                        await saveQuiz(true)
                                         if (onToggleViewMode) {
                                             onToggleViewMode()
                                         } else {

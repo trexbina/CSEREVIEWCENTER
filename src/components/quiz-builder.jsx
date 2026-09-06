@@ -644,345 +644,347 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     }
 
     return (
-        <div className="p-6 md:p-10 max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 w-full">
-            {/* Main Content Area */}
-            <div className="flex-1 w-full space-y-6">
-
-                {/* Internal Preview Banner */}
-                {internalPreview && (
-                    <div className="bg-[#E9C46A]/10 border border-[#E9C46A]/30 rounded-2xl p-3 px-4 flex items-center justify-between shadow-2xs">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-[#E9C46A]">
-                            <Eye className="h-4 w-4" />
-                            <span>Student Preview Mode — test your questions, time limit, and scoring.</span>
-                        </div>
-                        <button
-                            onClick={() => {
-                                setInternalPreview(false)
-                                setIsSubmitted(false)
-                                setStudentAnswers({})
-                            }}
-                            className="bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all cursor-pointer"
-                        >
-                            Exit Preview
-                        </button>
+        <div className="p-6 md:p-10 max-w-7xl mx-auto flex flex-col gap-6 w-full">
+            {/* Internal Preview Banner */}
+            {internalPreview && (
+                <div className="bg-[#E9C46A]/10 border border-[#E9C46A]/30 rounded-2xl p-3 px-4 flex items-center justify-between shadow-2xs">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-[#E9C46A]">
+                        <Eye className="h-4 w-4" />
+                        <span>Student Preview Mode — test your questions, time limit, and scoring.</span>
                     </div>
-                )}
-                
-                {/* Student Header */}
-                {effectiveIsStudent && (
-                    <div className="border-b border-gray-200/80 pb-4 space-y-2">
-                        <div className="flex items-center justify-between gap-4 flex-wrap">
-                            <div className="flex items-center gap-3 flex-wrap">
-                                <h1 className="text-xl font-bold text-gray-800 tracking-tight">
-                                    {lessonTitle}
-                                </h1>
-                                {quizSettings.isAssignment && (
-                                    <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full border border-gray-200 text-xs font-medium">
-                                        Assignment
-                                    </span>
-                                )}
-                                {onToggleViewMode && (
-                                    <button
-                                        type="button"
-                                        onClick={onToggleViewMode}
-                                        className="px-3.5 py-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
-                                    >
-                                        <PenTool className="h-3.5 w-3.5 text-gray-500" />
-                                        <span>Admin View</span>
-                                    </button>
-                                )}
-                            </div>
+                    <button
+                        onClick={() => {
+                            setInternalPreview(false)
+                            setIsSubmitted(false)
+                            setStudentAnswers({})
+                        }}
+                        className="bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all cursor-pointer"
+                    >
+                        Exit Preview
+                    </button>
+                </div>
+            )}
 
-                            {/* Right side: Timer (when active) OR Score / Attempts summary (when submitted) */}
-                            <div className="flex items-center gap-3">
-                                {quizSettings.timeLimitMinutes > 0 && isQuizStarted && !isSubmitted && !isQuizLocked && (
-                                    <div className="bg-white border border-gray-200/80 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-2xs">
-                                        <Clock className={`h-4 w-4 ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-500 animate-pulse' : 'text-[#E9C46A]'}`} />
-                                        <span className={`font-mono font-bold text-sm tracking-tight ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-600 animate-pulse' : 'text-gray-800'}`}>
-                                            {formatTime(timeRemaining)}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {isSubmitted && (() => {
-                                    const maxRetries = Number(quizSettings.maxRetries || 0)
-                                    const currentAttempts = attemptsCount || 1
-                                    const retriesLeft = Math.max(0, maxRetries - (currentAttempts - 1))
-                                    
-                                    return (
-                                        <div className="flex items-center gap-3 flex-wrap">
-                                            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200/80 rounded-xl px-3.5 py-1.5 text-xs text-gray-700 font-medium">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-gray-400">Score:</span>
-                                                    <span className="font-bold text-gray-900">{earnedPoints} / {totalPoints} pts</span>
-                                                </div>
-                                                <span className="text-gray-300">|</span>
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-gray-400">Time Taken:</span>
-                                                    <span className="font-bold text-gray-900">{formatTime(timeTakenSeconds)}</span>
-                                                </div>
-                                                {maxRetries > 0 && (
-                                                    <>
-                                                        <span className="text-gray-300">|</span>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="text-gray-400">Retries:</span>
-                                                            <span className={`font-bold ${retriesLeft > 0 ? 'text-[#E9C46A]' : 'text-gray-500'}`}>
-                                                                {retriesLeft} / {maxRetries}
-                                                            </span>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-
-                                            {maxRetries > 0 && retriesLeft > 0 && (
-                                                <button
-                                                    onClick={handleRetryQuiz}
-                                                    className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-semibold px-3.5 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-                                                >
-                                                    <RotateCcw className="h-3.5 w-3.5 text-[#E9C46A]" />
-                                                    <span>Retry Quiz</span>
-                                                </button>
-                                            )}
-                                        </div>
-                                    )
-                                })()}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Header Actions */}
-                {!effectiveIsStudent && (
-                    <div className="border-b border-gray-200/80 pb-3 relative flex flex-col gap-2.5">
-                        {/* Row 1: Title */}
-                        <div className="flex items-center min-w-0">
-                            {examId ? (
-                                <input
-                                    type="text"
-                                    value={lessonTitle}
-                                    onChange={(e) => setLessonTitle(e.target.value)}
-                                    className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-[#E9C46A] outline-none pb-0.5"
-                                    placeholder="Mock Exam Title"
-                                />
-                            ) : (
-                                <h1 className="text-xl font-bold text-gray-800 tracking-tight truncate">
-                                    {lessonTitle}
-                                </h1>
+            {/* Student Header */}
+            {effectiveIsStudent && (
+                <div className="border-b border-gray-200/80 pb-4 space-y-2">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <h1 className="text-xl font-bold text-gray-800 tracking-tight">
+                                {lessonTitle}
+                            </h1>
+                            {quizSettings.isAssignment && (
+                                <span className="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full border border-gray-200 text-xs font-medium">
+                                    Assignment
+                                </span>
+                            )}
+                            {onToggleViewMode && (
+                                <button
+                                    type="button"
+                                    onClick={onToggleViewMode}
+                                    className="px-3.5 py-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
+                                >
+                                    <PenTool className="h-3.5 w-3.5 text-gray-500" />
+                                    <span>Admin View</span>
+                                </button>
                             )}
                         </div>
 
-                        {/* Row 2: Add buttons + Settings icon on Left, Fullscreen + Student View + Save Changes on Right */}
-                        <div className="flex items-center justify-between gap-3 flex-wrap">
-                            <div className="flex items-center gap-1.5">
-                                <button
-                                    onClick={addQuestion}
-                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
-                                >
-                                    Add Question
-                                </button>
-                                <button
-                                    onClick={addTitleDescription}
-                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
-                                >
-                                    Add Title/Desc
-                                </button>
-                                {!examId && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowSettings(!showSettings)}
-                                        className={`p-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center justify-center ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-600 hover:text-gray-900'}`}
-                                        title="Quiz Settings"
-                                    >
-                                        <Settings className="h-4 w-4" />
-                                    </button>
-                                )}
-                            </div>
+                        {/* Right side: Timer (when active) OR Score / Attempts summary (when submitted) */}
+                        <div className="flex items-center gap-3">
+                            {quizSettings.timeLimitMinutes > 0 && isQuizStarted && !isSubmitted && !isQuizLocked && (
+                                <div className="bg-white border border-gray-200/80 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-2xs">
+                                    <Clock className={`h-4 w-4 ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-500 animate-pulse' : 'text-[#E9C46A]'}`} />
+                                    <span className={`font-mono font-bold text-sm tracking-tight ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-600 animate-pulse' : 'text-gray-800'}`}>
+                                        {formatTime(timeRemaining)}
+                                    </span>
+                                </div>
+                            )}
 
-                            <div className="flex items-center gap-2 shrink-0">
+                            {isSubmitted && (() => {
+                                const maxRetries = Number(quizSettings.maxRetries || 0)
+                                const currentAttempts = attemptsCount || 1
+                                const retriesLeft = Math.max(0, maxRetries - (currentAttempts - 1))
+                                
+                                return (
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        <div className="flex items-center gap-3 bg-gray-50 border border-gray-200/80 rounded-xl px-3.5 py-1.5 text-xs text-gray-700 font-medium">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-gray-400">Score:</span>
+                                                <span className="font-bold text-gray-900">{earnedPoints} / {totalPoints} pts</span>
+                                            </div>
+                                            <span className="text-gray-300">|</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-gray-400">Time Taken:</span>
+                                                <span className="font-bold text-gray-900">{formatTime(timeTakenSeconds)}</span>
+                                            </div>
+                                            {maxRetries > 0 && (
+                                                <>
+                                                    <span className="text-gray-300">|</span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-gray-400">Retries:</span>
+                                                        <span className={`font-bold ${retriesLeft > 0 ? 'text-[#E9C46A]' : 'text-gray-500'}`}>
+                                                            {retriesLeft} / {maxRetries}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+
+                                        {maxRetries > 0 && retriesLeft > 0 && (
+                                            <button
+                                                onClick={handleRetryQuiz}
+                                                className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-semibold px-3.5 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                            >
+                                                <RotateCcw className="h-3.5 w-3.5 text-[#E9C46A]" />
+                                                <span>Retry Quiz</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                )
+                            })()}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Header Actions */}
+            {!effectiveIsStudent && (
+                <div className="border-b border-gray-200/80 pb-3 relative flex flex-col gap-2.5">
+                    {/* Row 1: Title */}
+                    <div className="flex items-center min-w-0">
+                        {examId ? (
+                            <input
+                                type="text"
+                                value={lessonTitle}
+                                onChange={(e) => setLessonTitle(e.target.value)}
+                                className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-[#E9C46A] outline-none pb-0.5"
+                                placeholder="Mock Exam Title"
+                            />
+                        ) : (
+                            <h1 className="text-xl font-bold text-gray-800 tracking-tight truncate">
+                                {lessonTitle}
+                            </h1>
+                        )}
+                    </div>
+
+                    {/* Row 2: Add buttons + Settings icon on Left, Fullscreen + Student View + Save Changes on Right */}
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-1.5">
+                            <button
+                                onClick={addQuestion}
+                                className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                                Add Question
+                            </button>
+                            <button
+                                onClick={addTitleDescription}
+                                className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                                Add Title/Desc
+                            </button>
+                            {!examId && (
                                 <button
                                     type="button"
-                                    onClick={toggleFullscreen}
-                                    className="p-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-800 transition-all shadow-2xs cursor-pointer flex items-center justify-center"
-                                    title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                                    onClick={() => setShowSettings(!showSettings)}
+                                    className={`p-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center justify-center ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-600 hover:text-gray-900'}`}
+                                    title="Quiz Settings"
                                 >
-                                    {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                                    <Settings className="h-4 w-4" />
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (onToggleViewMode) {
-                                            onToggleViewMode()
-                                        } else {
-                                            setInternalPreview(true)
-                                            setIsSubmitted(false)
-                                            setStudentAnswers({})
-                                            startTimeRef.current = Date.now()
-                                        }
-                                    }}
-                                    className="px-3 py-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
-                                >
-                                    <Eye className="h-3.5 w-3.5 text-gray-500" />
-                                    <span>Student View</span>
-                                </button>
-                                <button
-                                    onClick={saveQuiz}
-                                    disabled={saving}
-                                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
-                                >
-                                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
-                                    <span>Save Changes</span>
-                                </button>
-                            </div>
+                            )}
                         </div>
 
-
-                        {/* Quiz Settings Modal Popup Overlay */}
-                        {showSettings && (
-                            <div 
-                                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
-                                onClick={(e) => {
-                                    if (e.target === e.currentTarget) setShowSettings(false)
-                                }}
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                type="button"
+                                onClick={toggleFullscreen}
+                                className="p-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-800 transition-all shadow-2xs cursor-pointer flex items-center justify-center"
+                                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                             >
-                                <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xl w-full max-w-lg animate-in zoom-in-95 duration-200">
-                                    {/* Modal Header */}
-                                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-2xl">
-                                        <h3 className="font-bold text-gray-800 text-base">{examId ? "Exam Settings" : "Quiz Settings"}</h3>
-                                        <button 
-                                            onClick={() => setShowSettings(false)} 
-                                            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </button>
-                                    </div>
+                                {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (onToggleViewMode) {
+                                        onToggleViewMode()
+                                    } else {
+                                        setInternalPreview(true)
+                                        setIsSubmitted(false)
+                                        setStudentAnswers({})
+                                        startTimeRef.current = Date.now()
+                                    }
+                                }}
+                                className="px-3 py-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
+                            >
+                                <Eye className="h-3.5 w-3.5 text-gray-500" />
+                                <span>Student View</span>
+                            </button>
+                            <button
+                                onClick={saveQuiz}
+                                disabled={saving}
+                                className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
+                            >
+                                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+                                <span>Save Changes</span>
+                            </button>
+                        </div>
+                    </div>
 
-                                    {/* Modal Body */}
-                                    <div className="p-6 space-y-6 text-sm">
-                                        {/* Section 1: Access & Schedule */}
-                                        <div>
-                                            <h4 className="font-bold text-gray-800 text-xs uppercase tracking-wider mb-3">Access & Schedule</h4>
-                                            
-                                            {/* Set as assignment tick checkbox */}
-                                            {!examId && (
-                                                <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-200/80 mb-4 transition-all">
-                                                    <label className="flex items-start gap-3 cursor-pointer select-none">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={!!quizSettings.isAssignment}
-                                                            onChange={(e) => setQuizSettings({ ...quizSettings, isAssignment: e.target.checked })}
-                                                            className="mt-0.5 rounded border-gray-300 text-[#E9C46A] focus:ring-0 h-4 w-4 cursor-pointer accent-[#E9C46A]"
-                                                        />
-                                                        <div>
-                                                            <span className="block text-xs font-bold text-gray-800">
-                                                                Set as assignment
-                                                            </span>
-                                                            <span className="block text-xs font-normal text-gray-500 mt-0.5">
-                                                                Marks this quiz as an assignment with a deadline
-                                                            </span>
-                                                        </div>
-                                                    </label>
-                                                </div>
-                                            )}
+                    {/* Quiz Settings Modal Popup Overlay */}
+                    {showSettings && (
+                        <div 
+                            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
+                            onClick={(e) => {
+                                if (e.target === e.currentTarget) setShowSettings(false)
+                            }}
+                        >
+                            <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xl w-full max-w-lg animate-in zoom-in-95 duration-200">
+                                {/* Modal Header */}
+                                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-2xl">
+                                    <h3 className="font-bold text-gray-800 text-base">{examId ? "Exam Settings" : "Quiz Settings"}</h3>
+                                    <button 
+                                        onClick={() => setShowSettings(false)} 
+                                        className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
 
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                                {/* Start Date */}
+                                {/* Modal Body */}
+                                <div className="p-6 space-y-6 text-sm">
+                                    {/* Section 1: Access & Schedule */}
+                                    <div>
+                                        <h4 className="font-bold text-gray-800 text-xs uppercase tracking-wider mb-3">Access & Schedule</h4>
+                                        
+                                        {/* Set as assignment tick checkbox */}
+                                        {!examId && (
+                                            <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-200/80 mb-4 transition-all">
+                                                <label className="flex items-start gap-3 cursor-pointer select-none">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={!!quizSettings.isAssignment}
+                                                        onChange={(e) => setQuizSettings({ ...quizSettings, isAssignment: e.target.checked })}
+                                                        className="mt-0.5 rounded border-gray-300 text-[#E9C46A] focus:ring-0 h-4 w-4 cursor-pointer accent-[#E9C46A]"
+                                                    />
+                                                    <div>
+                                                        <span className="block text-xs font-bold text-gray-800">
+                                                            Set as assignment
+                                                        </span>
+                                                        <span className="block text-xs font-normal text-gray-500 mt-0.5">
+                                                            Marks this quiz as an assignment with a deadline
+                                                        </span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        )}
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                            {/* Start Date */}
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="font-semibold text-gray-600 text-xs">Start Date</label>
+                                                <MinimalDatePicker
+                                                    value={quizSettings.startDate}
+                                                    onChange={(dateStr) => setQuizSettings({ ...quizSettings, startDate: dateStr })}
+                                                    placeholder="Select start date..."
+                                                    popoverPosition="bottom"
+                                                />
+                                            </div>
+
+                                            {/* Start Time */}
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="font-semibold text-gray-600 text-xs">Start Time</label>
+                                                <MinimalTimePicker
+                                                    value={quizSettings.startTime || ""}
+                                                    onChange={(timeStr) => setQuizSettings({ ...quizSettings, startTime: timeStr })}
+                                                    size="compact"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* End Date and End Time (shown when isAssignment is true) */}
+                                        {quizSettings.isAssignment && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-4 pt-4 border-t border-dashed border-gray-200 animate-in fade-in duration-150">
+                                                {/* End Date */}
                                                 <div className="flex flex-col gap-1.5">
-                                                    <label className="font-semibold text-gray-600 text-xs">Start Date</label>
+                                                    <label className="font-semibold text-gray-600 text-xs">End Date (Deadline)</label>
                                                     <MinimalDatePicker
-                                                        value={quizSettings.startDate}
-                                                        onChange={(dateStr) => setQuizSettings({ ...quizSettings, startDate: dateStr })}
-                                                        placeholder="Select start date..."
+                                                        value={quizSettings.endDate}
+                                                        onChange={(dateStr) => setQuizSettings({ ...quizSettings, endDate: dateStr })}
+                                                        placeholder="Select due date..."
                                                         popoverPosition="bottom"
                                                     />
                                                 </div>
 
-                                                {/* Start Time */}
+                                                {/* End Time */}
                                                 <div className="flex flex-col gap-1.5">
-                                                    <label className="font-semibold text-gray-600 text-xs">Start Time</label>
+                                                    <label className="font-semibold text-gray-600 text-xs">End Time</label>
                                                     <MinimalTimePicker
-                                                        value={quizSettings.startTime || ""}
-                                                        onChange={(timeStr) => setQuizSettings({ ...quizSettings, startTime: timeStr })}
+                                                        value={quizSettings.endTime || ""}
+                                                        onChange={(timeStr) => setQuizSettings({ ...quizSettings, endTime: timeStr })}
                                                         size="compact"
                                                     />
                                                 </div>
                                             </div>
+                                        )}
+                                    </div>
 
-                                            {/* End Date and End Time (shown when isAssignment is true) */}
-                                            {quizSettings.isAssignment && (
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-4 pt-4 border-t border-dashed border-gray-200 animate-in fade-in duration-150">
-                                                    {/* End Date */}
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <label className="font-semibold text-gray-600 text-xs">End Date (Deadline)</label>
-                                                        <MinimalDatePicker
-                                                            value={quizSettings.endDate}
-                                                            onChange={(dateStr) => setQuizSettings({ ...quizSettings, endDate: dateStr })}
-                                                            placeholder="Select due date..."
-                                                            popoverPosition="bottom"
-                                                        />
-                                                    </div>
+                                    <div className="border-t border-gray-100 pt-5">
+                                        {/* Section 2: Time Limit & Retries */}
+                                        <h4 className="font-bold text-gray-800 text-xs uppercase tracking-wider mb-3">Time Limit & Attempts</h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="font-semibold text-gray-600 text-xs">{examId ? "Exam Duration (Minutes)" : "Quiz Duration (Minutes)"}</label>
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    max={360}
+                                                    placeholder="0 (Unlimited)"
+                                                    value={quizSettings.timeLimitMinutes || ""}
+                                                    onChange={(e) => setQuizSettings({ ...quizSettings, timeLimitMinutes: Math.max(0, Number(e.target.value)) })}
+                                                    className="w-full bg-gray-50/60 border border-gray-200/80 rounded-xl px-3 py-2 text-gray-800 text-sm outline-none focus:bg-white focus:border-gray-400 transition-all"
+                                                />
+                                                <span className="text-xs text-gray-400">Set to 0 for unlimited duration.</span>
+                                            </div>
 
-                                                    {/* End Time */}
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <label className="font-semibold text-gray-600 text-xs">End Time</label>
-                                                        <MinimalTimePicker
-                                                            value={quizSettings.endTime || ""}
-                                                            onChange={(timeStr) => setQuizSettings({ ...quizSettings, endTime: timeStr })}
-                                                            size="compact"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="border-t border-gray-100 pt-5">
-                                            {/* Section 2: Time Limit & Retries */}
-                                            <h4 className="font-bold text-gray-800 text-xs uppercase tracking-wider mb-3">Time Limit & Attempts</h4>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                                <div className="flex flex-col gap-1.5">
-                                                    <label className="font-semibold text-gray-600 text-xs">{examId ? "Exam Duration (Minutes)" : "Quiz Duration (Minutes)"}</label>
-                                                    <input
-                                                        type="number"
-                                                        min={0}
-                                                        max={360}
-                                                        placeholder="0 (Unlimited)"
-                                                        value={quizSettings.timeLimitMinutes || ""}
-                                                        onChange={(e) => setQuizSettings({ ...quizSettings, timeLimitMinutes: Math.max(0, Number(e.target.value)) })}
-                                                        className="w-full bg-gray-50/60 border border-gray-200/80 rounded-xl px-3 py-2 text-gray-800 text-sm outline-none focus:bg-white focus:border-gray-400 transition-all"
-                                                    />
-                                                    <span className="text-xs text-gray-400">Set to 0 for unlimited duration.</span>
-                                                </div>
-
-                                                <div className="flex flex-col gap-1.5">
-                                                    <label className="font-semibold text-gray-600 text-xs">Allowed Retries</label>
-                                                    <input
-                                                        type="number"
-                                                        min={0}
-                                                        max={10}
-                                                        placeholder="0 (No retries)"
-                                                        value={quizSettings.maxRetries ?? 0}
-                                                        onChange={(e) => setQuizSettings({ ...quizSettings, maxRetries: Math.max(0, Number(e.target.value)) })}
-                                                        className="w-full bg-gray-50/60 border border-gray-200/80 rounded-xl px-3 py-2 text-gray-800 text-sm outline-none focus:bg-white focus:border-gray-400 transition-all"
-                                                    />
-                                                    <span className="text-xs text-gray-400">0 = single attempt only.</span>
-                                                </div>
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="font-semibold text-gray-600 text-xs">Allowed Retries</label>
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    max={10}
+                                                    placeholder="0 (No retries)"
+                                                    value={quizSettings.maxRetries ?? 0}
+                                                    onChange={(e) => setQuizSettings({ ...quizSettings, maxRetries: Math.max(0, Number(e.target.value)) })}
+                                                    className="w-full bg-gray-50/60 border border-gray-200/80 rounded-xl px-3 py-2 text-gray-800 text-sm outline-none focus:bg-white focus:border-gray-400 transition-all"
+                                                />
+                                                <span className="text-xs text-gray-400">0 = single attempt only.</span>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Modal Footer */}
-                                    <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end rounded-b-2xl">
-                                        <button
-                                            onClick={() => setShowSettings(false)}
-                                            className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold text-sm px-6 py-2 rounded-xl transition-all cursor-pointer shadow-2xs"
-                                        >
-                                            Done
-                                        </button>
-                                    </div>
+                                {/* Modal Footer */}
+                                <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end rounded-b-2xl">
+                                    <button
+                                        onClick={() => setShowSettings(false)}
+                                        className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold text-sm px-6 py-2 rounded-xl transition-all cursor-pointer shadow-2xs"
+                                    >
+                                        Done
+                                    </button>
                                 </div>
                             </div>
-                        )}
-                    </div>
-                )}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* 2-Column Body Layout: Questions Content (Left) + Questions Tracker (Right) */}
+            <div className="flex flex-col lg:flex-row gap-8 w-full items-start">
+                {/* Main Content Area */}
+                <div className="flex-1 w-full space-y-6">
+
 
                 {/* Student Floating Timer & Availability Banners */}
                 {effectiveIsStudent && (
@@ -1486,9 +1488,8 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
             </div>
 
             {/* Right Sidebar - Questions Tracker (Hidden when locked/not available yet or not started) */}
-            {/* Right Sidebar - Questions Tracker (Hidden when locked/not available yet or not started) */}
             {!isTooEarly && !((effectiveIsStudent && isPastDeadline && !isSubmitted)) && (!effectiveIsStudent || isSubmitted || isQuizStarted) && (
-                <div className="w-full lg:w-[300px] shrink-0 sticky top-24 self-start font-sans">
+                <div className="w-full lg:w-[300px] shrink-0 sticky top-6 self-start font-sans">
                     <div className="bg-white border border-gray-200/70 rounded-2xl h-[560px] flex flex-col overflow-hidden">
                         {/* Header */}
                         <div className="px-4 py-3.5 border-b border-gray-100 flex items-center justify-between bg-white">
@@ -1534,6 +1535,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                 </div>
             )}
 
+            </div>
         </div>
     )
 }

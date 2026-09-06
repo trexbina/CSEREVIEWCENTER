@@ -39,20 +39,16 @@ export async function GET(request, props) {
                     module_id,
                     title,
                     pdf_files,
-                    CASE
-                        WHEN LOWER(COALESCE(lesson_type, '')) = 'quiz' 
-                        THEN jsonb_build_object('settings', jsonb_build_object('referencePdfs', quiz_content->'settings'->'referencePdfs', 'referencePdf', quiz_content->'settings'->'referencePdf'))::text
-                        ELSE quiz_content
-                    END AS quiz_content,
+                    quiz_content,
                     COALESCE(
                         NULLIF(LOWER(lesson_type), ''),
                         CASE
-                            WHEN jsonb_typeof(pdf_files) = 'array' AND jsonb_array_length(pdf_files) > 0 THEN 'pdf'
+                            WHEN pdf_files IS NOT NULL AND pdf_files::text NOT IN ('[]', 'null', '') THEN 'pdf'
                             ELSE 'module'
                         END
                     ) AS lesson_type,
                     CASE
-                        WHEN jsonb_typeof(pdf_files) = 'array' AND jsonb_array_length(pdf_files) > 0 THEN true
+                        WHEN pdf_files IS NOT NULL AND pdf_files::text NOT IN ('[]', 'null', '') THEN true
                         ELSE false
                     END AS has_pdf,
                     order_index,
@@ -62,7 +58,26 @@ export async function GET(request, props) {
                  ORDER BY order_index ASC, created_at ASC`,
                 [moduleIds]
             )
-            contents = contentsResult.rows
+            contents = contentsResult.rows.map((row) => {
+                let safeQuizContent = row.quiz_content
+                if (String(row.lesson_type).toLowerCase() === "quiz" && row.quiz_content) {
+                    try {
+                        const parsed = typeof row.quiz_content === "string" ? JSON.parse(row.quiz_content) : row.quiz_content
+                        safeQuizContent = JSON.stringify({
+                            settings: {
+                                referencePdfs: parsed?.settings?.referencePdfs || (parsed?.settings?.referencePdf?.url ? [parsed.settings.referencePdf] : []),
+                                referencePdf: parsed?.settings?.referencePdf || null,
+                            }
+                        })
+                    } catch {
+                        safeQuizContent = null
+                    }
+                }
+                return {
+                    ...row,
+                    quiz_content: safeQuizContent,
+                }
+            })
         }
 
         // Fetch subject details for back navigation

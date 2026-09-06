@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { Loader2, Image as ImageIcon, Trash, Plus, ArrowRight, GripVertical, Save, HelpCircle, Clock, Calendar, AlertCircle, Settings, X, RotateCcw, Eye, PenTool, ArrowLeft, Maximize, Minimize, Play, CheckCircle2, FileText, ExternalLink } from "lucide-react"
@@ -48,9 +48,9 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     const [saving, setSaving] = useState(false)
     const [dragBlockIndex, setDragBlockIndex] = useState(null)
     const [dragOverBlockIndex, setDragOverBlockIndex] = useState(null)
+    const [isQuizStarted, setIsQuizStarted] = useState(false)
     const [studentAnswers, setStudentAnswers] = useState({})
     const [isSubmitted, setIsSubmitted] = useState(false)
-    const [isQuizStarted, setIsQuizStarted] = useState(false)
     const [internalPreview, setInternalPreview] = useState(false)
     const effectiveIsStudent = isStudent || internalPreview
     // When switching to student view from admin/teacher side, go straight to quiz view (start display is only for real student side)
@@ -66,10 +66,21 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         endTime: "",
         timeLimitMinutes: 0,
         maxRetries: 0,
-        referencePdf: null
+        referencePdf: null,
+        referencePdfs: []
     })
     const [showSettings, setShowSettings] = useState(false)
-    const [showPdfModal, setShowPdfModal] = useState(false)
+    const [viewingPdf, setViewingPdf] = useState(null)
+
+    const allReferencePdfs = useMemo(() => {
+        if (Array.isArray(quizSettings.referencePdfs) && quizSettings.referencePdfs.length > 0) {
+            return quizSettings.referencePdfs.filter(p => p && p.url)
+        }
+        if (quizSettings.referencePdf?.url) {
+            return [quizSettings.referencePdf]
+        }
+        return []
+    }, [quizSettings.referencePdfs, quizSettings.referencePdf])
     const [uploadingPdf, setUploadingPdf] = useState(false)
     const [timeRemaining, setTimeRemaining] = useState(null)
     const [isTimeUp, setIsTimeUp] = useState(false)
@@ -231,9 +242,14 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                         if (parsed && !Array.isArray(parsed) && parsed.questions) {
                             setQuestions(parsed.questions)
                             if (parsed.settings) {
+                                const rawList = Array.isArray(parsed.settings.referencePdfs)
+                                    ? parsed.settings.referencePdfs
+                                    : (parsed.settings.referencePdf?.url ? [parsed.settings.referencePdf] : [])
                                 setQuizSettings(prev => ({
                                     ...prev,
                                     ...parsed.settings,
+                                    referencePdfs: rawList,
+                                    referencePdf: rawList[0] || null,
                                     maxRetries: Number(parsed.settings.maxRetries ?? 0),
                                     timeLimitMinutes: Number(parsed.settings.timeLimitMinutes ?? 0)
                                 }))
@@ -272,9 +288,14 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                         if (parsed && !Array.isArray(parsed) && parsed.questions) {
                             setQuestions(parsed.questions)
                             if (parsed.settings) {
+                                const rawList = Array.isArray(parsed.settings.referencePdfs)
+                                    ? parsed.settings.referencePdfs
+                                    : (parsed.settings.referencePdf?.url ? [parsed.settings.referencePdf] : [])
                                 setQuizSettings(prev => ({
                                     ...prev,
                                     ...parsed.settings,
+                                    referencePdfs: rawList,
+                                    referencePdf: rawList[0] || null,
                                     maxRetries: Number(parsed.settings.maxRetries ?? 0),
                                     timeLimitMinutes: Number(parsed.settings.timeLimitMinutes ?? 0)
                                 }))
@@ -625,37 +646,53 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     }
 
     async function handlePdfUpload(e) {
-        const file = e.target.files?.[0]
-        if (!file) return
-        if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-            toast.error("Please select a valid PDF file")
+        const selectedFiles = Array.from(e.target.files || [])
+        if (selectedFiles.length === 0) return
+
+        const validFiles = selectedFiles.filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"))
+        if (validFiles.length === 0) {
+            toast.error("Please select valid PDF file(s)")
             if (e.target) e.target.value = ""
             return
         }
 
         setUploadingPdf(true)
         try {
-            const formData = new FormData()
-            formData.append("file", file)
-            const res = await fetch("/api/admin/upload", {
-                method: "POST",
-                body: formData
-            })
-            if (res.ok) {
-                const data = await res.json()
-                if (data.url) {
-                    setQuizSettings(prev => ({
-                        ...prev,
-                        referencePdf: {
+            const uploadedPdfs = []
+            for (const file of validFiles) {
+                const formData = new FormData()
+                formData.append("file", file)
+                const res = await fetch("/api/admin/upload", {
+                    method: "POST",
+                    body: formData
+                })
+                if (res.ok) {
+                    const data = await res.json()
+                    if (data.url) {
+                        uploadedPdfs.push({
                             url: data.url,
                             name: file.name
-                        }
-                    }))
-                    toast.success("PDF attached successfully!")
+                        })
+                    }
+                } else {
+                    const errData = await res.json().catch(() => ({}))
+                    toast.error(errData.error || `Failed to upload ${file.name}`)
                 }
-            } else {
-                const errData = await res.json().catch(() => ({}))
-                toast.error(errData.error || "Failed to upload PDF")
+            }
+
+            if (uploadedPdfs.length > 0) {
+                setQuizSettings(prev => {
+                    const currentList = Array.isArray(prev.referencePdfs) && prev.referencePdfs.length > 0
+                        ? prev.referencePdfs
+                        : (prev.referencePdf?.url ? [prev.referencePdf] : [])
+                    const updatedList = [...currentList, ...uploadedPdfs]
+                    return {
+                        ...prev,
+                        referencePdfs: updatedList,
+                        referencePdf: updatedList[0] || null
+                    }
+                })
+                toast.success(uploadedPdfs.length === 1 ? "PDF attached successfully!" : `${uploadedPdfs.length} PDFs attached successfully!`)
             }
         } catch (err) {
             console.error("Failed to upload PDF", err)
@@ -666,11 +703,18 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         }
     }
 
-    function handleRemovePdf() {
-        setQuizSettings(prev => ({
-            ...prev,
-            referencePdf: null
-        }))
+    function handleRemovePdf(indexToRemove) {
+        setQuizSettings(prev => {
+            const currentList = Array.isArray(prev.referencePdfs) && prev.referencePdfs.length > 0
+                ? prev.referencePdfs
+                : (prev.referencePdf?.url ? [prev.referencePdf] : [])
+            const updatedList = currentList.filter((_, idx) => idx !== indexToRemove)
+            return {
+                ...prev,
+                referencePdfs: updatedList,
+                referencePdf: updatedList[0] || null
+            }
+        })
         toast.info("Reference PDF removed")
     }
 
@@ -1089,63 +1133,77 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                 <span className="text-[11px] text-gray-400 font-normal">Optional</span>
                                             </div>
                                             <p className="text-xs text-gray-500 mb-3.5">
-                                                Attach a PDF file (e.g. formula sheet, reading passage, or reference table) that students can open and reference while taking the {quizSettings.isAssignment ? "assignment" : "quiz"}.
+                                                Attach PDF files (e.g. formula sheet, reading passage, or reference table) that students can open and reference while taking the {quizSettings.isAssignment ? "assignment" : "quiz"}.
                                             </p>
 
                                             <input
                                                 ref={pdfInputRef}
                                                 type="file"
                                                 accept="application/pdf"
+                                                multiple
                                                 className="hidden"
                                                 onChange={handlePdfUpload}
                                             />
 
-                                            {quizSettings.referencePdf?.url ? (
-                                                <div className="flex items-center justify-between p-3 bg-gray-50/80 border border-gray-200/80 rounded-xl transition-all">
-                                                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                                                        <FileText className="h-5 w-5 text-gray-500 shrink-0" />
-                                                        <div className="min-w-0">
-                                                            <p className="text-xs font-semibold text-gray-800 truncate max-w-[280px]" title={quizSettings.referencePdf.name || "Reference Material.pdf"}>
-                                                                {quizSettings.referencePdf.name || "Reference Material.pdf"}
-                                                            </p>
-                                                            <p className="text-[11px] text-gray-400">PDF Document</p>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex items-center gap-1 shrink-0">
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleRemovePdf}
-                                                            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                                                            title="Remove attached PDF"
-                                                        >
-                                                            <Trash className="h-4 w-4" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    type="button"
-                                                    disabled={uploadingPdf}
-                                                    onClick={() => pdfInputRef.current?.click()}
-                                                    className="w-full border border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50/80 rounded-xl p-4 flex flex-col items-center justify-center gap-2 text-gray-500 transition-all cursor-pointer disabled:opacity-50"
-                                                >
-                                                    {uploadingPdf ? (
-                                                        <>
-                                                            <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
-                                                            <span className="text-xs font-medium text-gray-600">Uploading PDF document...</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <FileText className="h-5 w-5 text-gray-400" />
-                                                            <div className="text-center">
-                                                                <span className="text-xs font-semibold text-gray-700">Click to upload reference PDF</span>
-                                                                <span className="block text-[11px] text-gray-400 mt-0.5">Supports PDF up to 50MB</span>
+                                            {allReferencePdfs.length > 0 && (
+                                                <div className="space-y-2 mb-3">
+                                                    {allReferencePdfs.map((pdf, idx) => (
+                                                        <div key={idx} className="flex items-center justify-between p-3 bg-gray-50/80 border border-gray-200/80 rounded-xl transition-all">
+                                                            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                                                <FileText className="h-5 w-5 text-gray-500 shrink-0" />
+                                                                <div className="min-w-0">
+                                                                    <p className="text-xs font-semibold text-gray-800 truncate max-w-[280px]" title={pdf.name || "Reference Material.pdf"}>
+                                                                        {pdf.name || "Reference Material.pdf"}
+                                                                    </p>
+                                                                    <p className="text-[11px] text-gray-400">PDF Document</p>
+                                                                </div>
                                                             </div>
-                                                        </>
-                                                    )}
-                                                </button>
+
+                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleRemovePdf(idx)}
+                                                                    className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                                                    title="Remove attached PDF"
+                                                                >
+                                                                    <Trash className="h-4 w-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             )}
+
+                                            <button
+                                                type="button"
+                                                disabled={uploadingPdf}
+                                                onClick={() => pdfInputRef.current?.click()}
+                                                className={`w-full border border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50/80 rounded-xl transition-all cursor-pointer disabled:opacity-50 ${
+                                                    allReferencePdfs.length > 0
+                                                        ? "p-3 flex items-center justify-center gap-2 text-gray-500"
+                                                        : "p-4 flex flex-col items-center justify-center gap-2 text-gray-500"
+                                                }`}
+                                            >
+                                                {uploadingPdf ? (
+                                                    <>
+                                                        <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                                                        <span className="text-xs font-medium text-gray-600">Uploading PDF document...</span>
+                                                    </>
+                                                ) : allReferencePdfs.length > 0 ? (
+                                                    <>
+                                                        <FileText className="h-4 w-4 text-gray-400" />
+                                                        <span className="text-xs font-semibold text-gray-700">Click to upload another PDF</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <FileText className="h-5 w-5 text-gray-400" />
+                                                        <div className="text-center">
+                                                            <span className="text-xs font-semibold text-gray-700">Click to upload reference PDF</span>
+                                                            <span className="block text-[11px] text-gray-400 mt-0.5">Supports multiple PDFs up to 50MB</span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
 
@@ -1227,16 +1285,24 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                         </span>
                                     </div>
                                 )}
-                                {quizSettings.referencePdf?.url && (
-                                    <div className="flex items-center justify-between py-2.5">
-                                        <span className="text-gray-400 font-medium">PDF Reference</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPdfModal(true)}
-                                            className="text-blue-600 hover:text-blue-700 underline text-xs font-medium cursor-pointer transition-colors"
-                                        >
-                                            {quizSettings.referencePdf.name || "View PDF Document"}
-                                        </button>
+                                {allReferencePdfs.length > 0 && (
+                                    <div className="flex items-start justify-between py-2.5">
+                                        <span className="text-gray-400 font-medium shrink-0 pt-0.5">
+                                            {allReferencePdfs.length > 1 ? "PDF References" : "PDF Reference"}
+                                        </span>
+                                        <div className="flex flex-col items-end gap-1 text-right min-w-0 pl-3">
+                                            {allReferencePdfs.map((pdf, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    type="button"
+                                                    onClick={() => setViewingPdf(pdf)}
+                                                    className="text-blue-600 hover:text-blue-700 underline text-xs font-medium cursor-pointer transition-colors max-w-[240px] truncate"
+                                                    title={pdf.name || `Reference ${idx + 1}`}
+                                                >
+                                                    {pdf.name || `View PDF Document ${idx + 1}`}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -1269,19 +1335,23 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                 ) : isQuizLocked ? null : (
                 <div className={`space-y-6 ${effectiveIsStudent ? 'bg-white pb-20' : 'min-h-[400px]'}`}>
                     {/* PDF Reference Section */}
-                    {quizSettings.referencePdf?.url && (
+                    {allReferencePdfs.length > 0 && (
                         <div className="pb-1">
                             <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                                PDF Reference
+                                {allReferencePdfs.length > 1 ? "PDF References" : "PDF Reference"}
                             </h4>
-                            <div>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPdfModal(true)}
-                                    className="text-blue-600 hover:text-blue-700 underline text-sm font-medium cursor-pointer transition-colors p-0 inline-block text-left"
-                                >
-                                    {quizSettings.referencePdf.name || "View PDF Reference"}
-                                </button>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                                {allReferencePdfs.map((pdf, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => setViewingPdf(pdf)}
+                                        className="text-blue-600 hover:text-blue-700 underline text-sm font-medium cursor-pointer transition-colors p-0 inline-block text-left"
+                                        title={pdf.name || `Reference ${idx + 1}`}
+                                    >
+                                        {pdf.name || (allReferencePdfs.length > 1 ? `View PDF Reference ${idx + 1}` : "View PDF Reference")}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     )}
@@ -1752,11 +1822,11 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
             )}
 
             {/* Reference Material (PDF) Viewer Modal */}
-            {showPdfModal && quizSettings.referencePdf?.url && (
+            {viewingPdf?.url && (
                 <div 
                     className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
                     onClick={(e) => {
-                        if (e.target === e.currentTarget) setShowPdfModal(false)
+                        if (e.target === e.currentTarget) setViewingPdf(null)
                     }}
                 >
                     <div className="bg-white border border-gray-200/80 rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] max-h-[900px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
@@ -1764,13 +1834,29 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                         <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
                             <div className="min-w-0 pr-3">
                                 <h3 className="font-bold text-gray-800 text-sm truncate">
-                                    {quizSettings.referencePdf.name || "PDF Reference"}
+                                    {viewingPdf.name || "PDF Reference"}
                                 </h3>
                                 <p className="text-[11px] text-gray-400">PDF Reference Document</p>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
+                                {allReferencePdfs.length > 1 && (
+                                    <select
+                                        value={allReferencePdfs.findIndex(p => p.url === viewingPdf.url)}
+                                        onChange={(e) => {
+                                            const idx = Number(e.target.value)
+                                            if (allReferencePdfs[idx]) setViewingPdf(allReferencePdfs[idx])
+                                        }}
+                                        className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 text-gray-700 focus:outline-none cursor-pointer max-w-[200px] truncate"
+                                    >
+                                        {allReferencePdfs.map((p, idx) => (
+                                            <option key={idx} value={idx}>
+                                                {p.name || `Document ${idx + 1}`}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                                 <button
-                                    onClick={() => setShowPdfModal(false)}
+                                    onClick={() => setViewingPdf(null)}
                                     className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                                     title="Close"
                                 >
@@ -1782,7 +1868,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                         {/* Modal PDF Viewer Body using built-in CustomPdfViewer */}
                         <div className="flex-1 w-full h-full bg-gray-100 relative overflow-hidden">
                             <CustomPdfViewer
-                                url={quizSettings.referencePdf.url}
+                                url={viewingPdf.url}
                                 watermarkText={currentUserName}
                                 isStudent={effectiveIsStudent}
                             />

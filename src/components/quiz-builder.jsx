@@ -91,6 +91,8 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     const startTimeRef = useRef(null)
     const fileInputRefs = useRef({})
     const pdfInputRef = useRef(null)
+    const pdfListRef = useRef(null)
+    const settingsModalBodyRef = useRef(null)
 
     useEffect(() => {
         fetch("/api/security/settings")
@@ -693,6 +695,14 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                     }
                 })
                 toast.success(uploadedPdfs.length === 1 ? "PDF attached successfully!" : `${uploadedPdfs.length} PDFs attached successfully!`)
+                setTimeout(() => {
+                    if (pdfListRef.current) {
+                        pdfListRef.current.scrollTop = pdfListRef.current.scrollHeight
+                    }
+                    if (settingsModalBodyRef.current) {
+                        settingsModalBodyRef.current.scrollTop = settingsModalBodyRef.current.scrollHeight
+                    }
+                }, 100)
             }
         } catch (err) {
             console.error("Failed to upload PDF", err)
@@ -986,9 +996,9 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                     if (e.target === e.currentTarget) setShowSettings(false)
                                 }}
                             >
-                                <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xl w-full max-w-lg animate-in zoom-in-95 duration-200">
+                                <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                                     {/* Modal Header */}
-                                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-2xl">
+                                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-2xl shrink-0">
                                         <h3 className="font-bold text-gray-800 text-base">{examId ? "Exam Settings" : "Quiz Settings"}</h3>
                                         <button 
                                             onClick={() => setShowSettings(false)} 
@@ -999,7 +1009,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                     </div>
 
                                     {/* Modal Body */}
-                                    <div className="p-6 space-y-6 text-sm">
+                                    <div ref={settingsModalBodyRef} className="p-6 space-y-6 text-sm overflow-y-auto flex-1">
                                         {/* Section 1: Access & Schedule */}
                                         <div>
                                             <h4 className="font-bold text-gray-800 text-xs uppercase tracking-wider mb-3">Access & Schedule</h4>
@@ -1146,7 +1156,10 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                             />
 
                                             {allReferencePdfs.length > 0 && (
-                                                <div className="space-y-2 mb-3">
+                                                <div 
+                                                    ref={pdfListRef}
+                                                    className={`space-y-2 mb-3 ${allReferencePdfs.length > 1 ? "max-h-[220px] overflow-y-auto pr-1" : ""}`}
+                                                >
                                                     {allReferencePdfs.map((pdf, idx) => (
                                                         <div key={idx} className="flex items-center justify-between p-3 bg-gray-50/80 border border-gray-200/80 rounded-xl transition-all">
                                                             <div className="flex items-center gap-2.5 min-w-0 pr-2">
@@ -1334,7 +1347,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                             <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                                 {allReferencePdfs.length > 1 ? "PDF References" : "PDF Reference"}
                             </h4>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                            <div className="flex flex-col items-start gap-1.5">
                                 {allReferencePdfs.map((pdf, idx) => (
                                     <button
                                         key={idx}

@@ -70,7 +70,7 @@
   --destructive: 0 84.2% 60.2%;
   --border: 214.3 20% 82%;
   --input: 214.3 20% 82%;
-  --ring: 43 74% 66%;
+  --ring: 215 16% 47%;
   --chart-1: 43 74% 66%;
   --chart-2: 35 85% 60%;
   --chart-3: 48 90% 55%;
@@ -83,7 +83,7 @@
   --sidebar-accent: 210 20% 96%; /* #f1f5f9 light gray hover */
   --sidebar-accent-foreground: 0 0% 30%;
   --sidebar-border: 214.3 20% 82%;
-  --sidebar-ring: 43 74% 66%;
+  --sidebar-ring: 215 16% 47%;
 }
 
 /* ===== DARK THEME (Based on #151515 with lighter gray accents) ===== */
@@ -109,7 +109,7 @@
   --destructive: 0 72% 55%;
   --border: 0 0% 24%; /* #3D3D3D clear, soft light-gray separation border */
   --input: 0 0% 24%;
-  --ring: 43 74% 66%;
+  --ring: 215 16% 55%;
   --chart-1: 43 74% 66%;
   --chart-2: 35 85% 60%;
   --chart-3: 48 90% 55%;
@@ -122,7 +122,7 @@
   --sidebar-accent: 0 0% 17%; /* #2B2B2B neutral sidebar hover */
   --sidebar-accent-foreground: 0 0% 100%;
   --sidebar-border: 0 0% 20%;
-  --sidebar-ring: 43 74% 66%;
+  --sidebar-ring: 215 16% 55%;
 }
 
 @layer base {
@@ -136,6 +136,25 @@
 
   h1, h2, h3, h4, h5, h6, p, span, label, div {
     overflow-wrap: break-word;
+  }
+
+  /* Universal input focus highlight: clean neutral color instead of yellow */
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible,
+  select:focus,
+  select:focus-visible {
+    outline: none;
+    border-color: #94a3b8 !important;
+  }
+  .dark input:focus,
+  .dark input:focus-visible,
+  .dark textarea:focus,
+  .dark textarea:focus-visible,
+  .dark select:focus,
+  .dark select:focus-visible {
+    border-color: #64748b !important;
   }
 
   /* Override browser autofill blue/yellow background */

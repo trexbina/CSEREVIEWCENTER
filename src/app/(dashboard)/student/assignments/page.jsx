@@ -157,7 +157,7 @@ export default function StudentAssignmentsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="appearance-none bg-white dark:bg-card border border-gray-200 dark:border-border text-xs font-medium text-gray-700 dark:text-foreground pl-3 pr-8 py-1.5 rounded-xl shadow-2xs cursor-pointer focus:outline-none focus:border-[#E9C46A]"
+            className="appearance-none bg-white dark:bg-card border border-gray-200 dark:border-border text-xs font-medium text-gray-700 dark:text-foreground pl-3 pr-8 py-1.5 rounded-xl shadow-2xs cursor-pointer focus:outline-none focus:border-slate-400"
           >
             <option value="all">{typeTab === "assignments" ? "All Assignments" : "All Quizzes"}</option>
             <option value="pending">Pending</option>

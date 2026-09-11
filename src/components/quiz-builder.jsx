@@ -1033,7 +1033,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                     type="text"
                                     value={lessonTitle}
                                     onChange={(e) => setLessonTitle(e.target.value)}
-                                    className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-[#E9C46A] outline-none pb-0.5"
+                                    className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-slate-400 outline-none pb-0.5"
                                     placeholder="Mock Exam Title"
                                 />
                             ) : (

@@ -648,7 +648,7 @@ export default function StudentMockExamsPage() {
                             ? isQuestionCorrect
                               ? "border-green-500 bg-green-500/10 ring-2 ring-green-500/20 text-green-900 dark:text-green-100"
                               : "border-red-500 bg-red-500/10 ring-2 ring-red-500/20 text-red-900 dark:text-red-100"
-                            : "border-input focus:ring-primary/30"
+                            : "border-input focus:ring-slate-400/30"
                         }`}
                       />
                     </div>

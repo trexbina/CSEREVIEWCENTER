@@ -687,7 +687,7 @@ const SpreadsheetView = ({ gradebookId, onBack }) => {
                           type="number" 
                           value={val === undefined ? "" : val}
                           onChange={e => handleScoreChange(student.id, m.id, e.target.value)}
-                          className="w-full text-center bg-transparent border-0 outline-none focus:bg-card focus:ring-1 focus:ring-primary rounded py-1 text-foreground font-semibold transition-all" 
+                          className="w-full text-center bg-transparent border-0 outline-none focus:bg-card focus:ring-1 focus:ring-slate-400 rounded py-1 text-foreground font-semibold transition-all" 
                           placeholder="—" 
                         />
                       </td>
@@ -798,7 +798,7 @@ const SpreadsheetView = ({ gradebookId, onBack }) => {
                           updated[idx].min = parseFloat(e.target.value) || 0
                           setTempRules(updated)
                         }}
-                        className="w-full text-xs h-9 px-3 bg-card border border-border rounded-lg font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary" 
+                        className="w-full text-xs h-9 px-3 bg-card border border-border rounded-lg font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-slate-400" 
                       />
                     </div>
                     <div>
@@ -812,7 +812,7 @@ const SpreadsheetView = ({ gradebookId, onBack }) => {
                           updated[idx].max = parseFloat(e.target.value) || 0
                           setTempRules(updated)
                         }}
-                        className="w-full text-xs h-9 px-3 bg-card border border-border rounded-lg font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary" 
+                        className="w-full text-xs h-9 px-3 bg-card border border-border rounded-lg font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-slate-400" 
                       />
                     </div>
                   </div>
@@ -827,7 +827,7 @@ const SpreadsheetView = ({ gradebookId, onBack }) => {
                         updated[idx].label = e.target.value
                         setTempRules(updated)
                       }}
-                      className="w-full text-xs h-9 px-3 bg-card border border-border rounded-lg font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-primary" 
+                      className="w-full text-xs h-9 px-3 bg-card border border-border rounded-lg font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-slate-400" 
                     />
                   </div>
                 </div>

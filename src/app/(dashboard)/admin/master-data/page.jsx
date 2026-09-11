@@ -123,7 +123,7 @@ const CustomPrompt = ({ isOpen, title, value, onChange, onConfirm, onCancel, pla
         <h3 className="font-bold text-foreground text-base">{title}</h3>
         <input
           type="text"
-          className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-slate-400/20"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}

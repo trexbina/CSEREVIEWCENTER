@@ -17,7 +17,7 @@ export function FontSwitcher() {
         <select
           value={font}
           onChange={(e) => setFont(e.target.value)}
-          className="w-full h-11 pl-9 pr-10 rounded-lg border border-border bg-background text-sm font-medium text-foreground shadow-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+          className="w-full h-11 pl-9 pr-10 rounded-lg border border-border bg-background text-sm font-medium text-foreground shadow-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 transition-all"
         >
           {/* Default / System */}
           <optgroup label="Default / Recommended">

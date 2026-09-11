@@ -737,7 +737,7 @@ export default function MasterDataBuilderPage() {
       <div className="space-y-6">
 
         {/* Header */}
-        <div className="border-b border-border pb-4">
+        <div className="border-b border-border/40 pb-4">
           <div className="flex items-center gap-2.5 mb-1">
             <Layers className="h-6 w-6 text-[#E9C46A]" />
             <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase">
@@ -745,7 +745,7 @@ export default function MasterDataBuilderPage() {
             </h1>
           </div>
           <p className="text-muted-foreground text-sm font-medium">
-            Manage core system data, structural blueprints, and cohorts.
+            Manage exams, review batches, schools, and grade settings.
           </p>
         </div>
 

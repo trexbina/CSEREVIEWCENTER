@@ -1112,40 +1112,39 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-      <div className="w-full bg-card border border-border rounded-2xl p-6 shadow-sm">
+      <div className="w-full bg-card border border-border/40 rounded-2xl p-6 shadow-xs">
         {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4 pb-6 mb-6 border-b border-border">
+        <div className="flex items-center justify-between flex-wrap gap-4 pb-4 mb-6 border-b border-border/40">
           <div className="flex items-center gap-4">
-            <button onClick={onBack} className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer" title="Back to Master Data">
+            <button onClick={onBack} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer" title="Back to Master Data">
               <ChevronRight className="h-5 w-5 rotate-180" />
             </button>
-            <div>
-              <h2 className="text-lg font-bold text-foreground">
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-foreground truncate">
                 Gradebooks
               </h2>
-              <p className="text-sm text-muted-foreground">Dynamic gradebooks — students and scores auto-populate from targeted batches, programs, and mock exams</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Configure grade formulas, weights, and student readiness scores.</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-muted-foreground bg-muted border border-border px-3 py-1.5 rounded-full">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
               {gradebooks.length} {gradebooks.length === 1 ? "Gradebook" : "Gradebooks"}
             </span>
-            <button onClick={handleOpenAdd} className="flex items-center justify-center bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold py-2 px-4 rounded-xl shadow-sm transition-all text-xs uppercase active:scale-95 cursor-pointer">
+            <button onClick={handleOpenAdd} className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-3.5 rounded-lg transition-all text-xs cursor-pointer active:scale-95">
               Add Gradebook
             </button>
           </div>
         </div>
 
         {/* Filters Row */}
-        <div className="flex flex-wrap items-center gap-2.5 mb-6">
+        <div className="flex flex-wrap items-center gap-2 mb-6">
           {/* Target Examination Filter */}
-          <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
-            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground font-medium">Exam:</span>
+          <div className="relative inline-flex items-center gap-1.5 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1 text-xs font-medium text-foreground">
+            <span className="text-muted-foreground font-normal">Exam:</span>
             <select 
               value={filterExam} 
               onChange={e => setFilterExam(e.target.value)}
-              className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+              className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1"
             >
               <option value="all">All</option>
               {tree.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
@@ -1153,13 +1152,12 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
           </div>
 
           {/* Batch Filter */}
-          <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
-            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground font-medium">Batch:</span>
+          <div className="relative inline-flex items-center gap-1.5 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1 text-xs font-medium text-foreground">
+            <span className="text-muted-foreground font-normal">Batch:</span>
             <select 
               value={filterBatch} 
               onChange={e => setFilterBatch(e.target.value)}
-              className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+              className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1"
             >
               <option value="all">All</option>
               {batches.map(b => <option key={b.id} value={b.id}>{b.name} / {b.target_year}</option>)}
@@ -1167,13 +1165,12 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
           </div>
 
           {/* Status Filter */}
-          <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
-            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground font-medium">Status:</span>
+          <div className="relative inline-flex items-center gap-1.5 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1 text-xs font-medium text-foreground">
+            <span className="text-muted-foreground font-normal">Status:</span>
             <select 
               value={filterStatus} 
               onChange={e => setFilterStatus(e.target.value)}
-              className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+              className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1"
             >
               <option value="all">All</option>
               <option value="ACTIVE">Active</option>
@@ -1188,7 +1185,7 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
                 setFilterBatch("all")
                 setFilterStatus("all")
               }}
-              className="text-xs text-[#E9C46A] font-semibold hover:underline self-center px-1 cursor-pointer"
+              className="text-xs text-[#E9C46A] hover:underline self-center px-1 cursor-pointer"
             >
               Reset filters
             </button>
@@ -1196,60 +1193,60 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
         </div>
 
         {/* Gradebooks Table */}
-        <div className="border border-border rounded-2xl overflow-hidden bg-card shadow-sm min-h-[300px] flex flex-col">
+        <div className="min-h-[220px] flex flex-col">
           {filteredGradebooks.length > 0 ? (
             <div className="overflow-x-auto flex-1">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-muted">
-                  <tr className="border-b border-border text-[13px] font-semibold text-foreground">
-                    <th className="py-3.5 px-5 w-[22%]" scope="col">
+                <thead>
+                  <tr className="border-b border-border/40 text-xs font-medium text-muted-foreground">
+                    <th className="py-2.5 px-4 w-[22%]" scope="col">
                       <SortButton label="Gradebook Title" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="py-3.5 px-4 w-[13%]" scope="col">
+                    <th className="py-2.5 px-3 w-[13%]" scope="col">
                       <SortButton label="Exam Code" field="code" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="py-3.5 px-4 w-[14%]" scope="col">
+                    <th className="py-2.5 px-3 w-[14%]" scope="col">
                       <SortButton label="Batch / Target" field="batch" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="py-3.5 px-4 w-[11%]" scope="col">
+                    <th className="py-2.5 px-3 w-[11%]" scope="col">
                       <SortButton label="Type" field="exam" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="py-3.5 px-4 w-[12%]" scope="col">
+                    <th className="py-2.5 px-3 w-[12%]" scope="col">
                       <SortButton label="Students" field="students" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="py-3.5 px-4 w-[12%]" scope="col">
+                    <th className="py-2.5 px-3 w-[12%]" scope="col">
                       <SortButton label="Date Created" field="created_at" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="py-3.5 px-4 w-[9%]" scope="col">
+                    <th className="py-2.5 px-3 w-[9%]" scope="col">
                       <SortButton label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                     </th>
-                    <th className="py-3.5 px-5 w-[7%] text-right font-medium text-foreground" scope="col">Actions</th>
+                    <th className="py-2.5 px-4 w-[7%] text-right font-medium text-muted-foreground" scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
                   {filteredGradebooks.map(gb => (
-                    <tr key={gb.id} className="h-11 border-b border-border/50 last:border-b-0">
-                      <td className="py-3 px-5 text-[#4382DF] whitespace-nowrap font-medium cursor-pointer hover:underline" onClick={() => setBuildGradebookId(gb.id)}>
+                    <tr key={gb.id} className="border-b border-border/30 last:border-b-0 hover:bg-muted/20 transition-colors">
+                      <td className="py-3 px-4 text-[#4382DF] whitespace-nowrap font-medium cursor-pointer hover:underline" onClick={() => setBuildGradebookId(gb.id)}>
                         {gb.name}
                       </td>
-                      <td className="py-3 px-4 text-foreground whitespace-nowrap">{gb.code}</td>
-                      <td className="py-3 px-4 text-foreground whitespace-nowrap">
+                      <td className="py-3 px-3 text-foreground whitespace-nowrap">{gb.code}</td>
+                      <td className="py-3 px-3 text-foreground whitespace-nowrap">
                         {gb.batch_name} / {gb.target_year}
                       </td>
-                      <td className="py-3 px-4 text-foreground whitespace-nowrap uppercase">{gb.exam_name || "—"}</td>
-                      <td className="py-3 px-4 text-foreground whitespace-nowrap">
+                      <td className="py-3 px-3 text-foreground whitespace-nowrap uppercase">{gb.exam_name || "—"}</td>
+                      <td className="py-3 px-3 text-foreground whitespace-nowrap">
                         {gb.student_count || 0} enrolled
                       </td>
-                      <td className="py-3 px-4 text-foreground whitespace-nowrap">{new Date(gb.created_at).toLocaleDateString()}</td>
-                      <td className="py-3 px-4 text-foreground whitespace-nowrap">
+                      <td className="py-3 px-3 text-foreground whitespace-nowrap">{new Date(gb.created_at).toLocaleDateString()}</td>
+                      <td className="py-3 px-3 text-foreground whitespace-nowrap">
                         <span className={gb.status === "ACTIVE" ? "text-emerald-600 font-medium" : "text-gray-500 font-medium"}>
                           {gb.status === "ACTIVE" ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td className="py-3 px-5 text-right whitespace-nowrap">
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="inline-flex items-center justify-end gap-1.5">
-                          <button onClick={() => handleOpenEdit(gb)} className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => handleDelete(gb.id, gb.name)} className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer" title="Delete"><Trash className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => handleOpenEdit(gb)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => handleDelete(gb.id, gb.name)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors cursor-pointer" title="Delete"><Trash className="h-3.5 w-3.5" /></button>
                         </div>
                       </td>
                     </tr>
@@ -1258,11 +1255,11 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
               </table>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-card">
-              <h2 className="text-lg font-bold text-foreground mb-1 tracking-tight">
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
+              <p className="text-sm font-semibold text-foreground mb-1">
                 {gradebooks.length === 0 ? "No Gradebooks Yet" : "No Matching Gradebooks"}
-              </h2>
-              <p className="text-xs font-medium text-muted-foreground">
+              </p>
+              <p className="text-xs text-muted-foreground">
                 {gradebooks.length === 0 
                   ? "Click on the add gradebook button above to create your first gradebook."
                   : "Try adjusting your filter criteria to view other gradebooks."}

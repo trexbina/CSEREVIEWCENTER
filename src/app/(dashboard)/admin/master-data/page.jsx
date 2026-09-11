@@ -850,7 +850,7 @@ export default function MasterDataBuilderPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="bg-card border border-border rounded-2xl p-6 shadow-sm relative"
+                className="bg-card border border-border/40 rounded-2xl p-6 shadow-xs relative"
               >
                 <AnimatePresence mode="wait">
 
@@ -862,27 +862,27 @@ export default function MasterDataBuilderPage() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -10 }}
                     >
-                      <div className="flex items-center gap-4 mb-6 pb-4 border-b border-border">
+                      <div className="flex items-center gap-4 mb-6 pb-4 border-b border-border/40">
                         <button
                           onClick={() => handleTabChange("menu")}
-                          className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
                           title="Back to Master Data"
                         >
                           <ChevronRight className="h-5 w-5 rotate-180" />
                         </button>
-                        <div className="flex-1">
-                          <h2 className="text-lg font-bold text-foreground">
+                        <div className="flex-1 min-w-0">
+                          <h2 className="text-lg font-bold text-foreground truncate">
                             Examination Management Data
                           </h2>
-                          <p className="text-sm text-muted-foreground">Select an examination to manage its structure.</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Select an examination to manage programs and specializations.</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-muted-foreground bg-muted border border-border px-3 py-1.5 rounded-full">
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
                             {tree.length} {tree.length === 1 ? "Exam" : "Exams"}
                           </span>
                           <button
                             onClick={() => openPrompt("Enter Examination Name:", "ADD_EXAM", null)}
-                            className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm transition-all text-xs uppercase cursor-pointer active:scale-95"
+                            className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-3.5 rounded-lg flex items-center gap-1.5 transition-all text-xs cursor-pointer active:scale-95"
                           >
                             Add Examination
                           </button>
@@ -890,17 +890,17 @@ export default function MasterDataBuilderPage() {
                       </div>
 
                       {tree.length > 0 && (
-                        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-100">
+                        <div className="bg-card border border-border/30 rounded-xl overflow-hidden divide-y divide-border/30">
                           {tree.map(exam => {
                             const totalMajors = exam.programs.reduce((acc, p) => acc + p.majors.length, 0);
                             return (
                               <div
                                 key={exam.id}
-                                className="p-4 sm:p-5 flex items-center justify-between cursor-pointer transition-all group"
+                                className="p-4 sm:p-4.5 flex items-center justify-between cursor-pointer hover:bg-muted/20 transition-all group"
                                 onClick={() => setSelectedExamId(exam.id)}
                               >
                                 <div>
-                                  <h3 className="font-bold text-foreground text-base group-hover:text-[#E9C46A] transition-colors">{exam.name}</h3>
+                                  <h3 className="font-bold text-foreground text-sm sm:text-base group-hover:text-[#E9C46A] transition-colors">{exam.name}</h3>
                                   <p className="text-xs text-muted-foreground mt-0.5">
                                     {exam.programs.length} course{exam.programs.length !== 1 ? "s" : ""} · {totalMajors} specialization{totalMajors !== 1 ? "s" : ""} · Max depth: {exam.maxLevel || 3}
                                   </p>
@@ -908,7 +908,7 @@ export default function MasterDataBuilderPage() {
                                 <div className="flex items-center gap-2 shrink-0 ml-4" onClick={e => e.stopPropagation()}>
                                   <SettingsBtn onClick={() => openExamSettings(exam)} />
                                   <DeleteBtn onClick={() => handleDeleteExam(exam.id, exam.name)} />
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground ml-2 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
+                                  <ChevronRight className="h-4 w-4 text-muted-foreground ml-1 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
                                 </div>
                               </div>
                             )
@@ -917,9 +917,9 @@ export default function MasterDataBuilderPage() {
                       )}
 
                       {tree.length === 0 && (
-                        <div className="text-center py-16 text-muted-foreground bg-muted/20 rounded-xl border border-solid border-border mt-4">
-                          <p className="font-medium text-foreground">No examinations yet.</p>
-                          <p className="text-sm mt-1">Click &quot;Add Examination&quot; above to create your first one.</p>
+                        <div className="text-center py-16 text-muted-foreground">
+                          <p className="font-semibold text-foreground text-sm">No examinations yet.</p>
+                          <p className="text-xs mt-1">Click &quot;Add Examination&quot; above to create your first one.</p>
                         </div>
                       )}
                     </motion.div>
@@ -938,27 +938,27 @@ export default function MasterDataBuilderPage() {
                         exit={{ opacity: 0, x: 10 }}
                       >
                         {/* Back button + header */}
-                        <div className="flex items-center gap-4 mb-6 pb-4 border-b border-border">
+                        <div className="flex items-center gap-4 mb-6 pb-4 border-b border-border/40">
                           <button
                             onClick={() => setSelectedExamId(null)}
-                            className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
                             title="Back to Examinations"
                           >
                             <ChevronRight className="h-5 w-5 rotate-180" />
                           </button>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2.5">
-                              <h2 className="text-lg font-bold text-foreground">{exam.name}</h2>
-                              <span className="text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200/70 px-2.5 py-0.5 rounded-full">
+                              <h2 className="text-lg font-bold text-foreground truncate">{exam.name}</h2>
+                              <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
                                 Max Depth: {exam.maxLevel || 3}
                               </span>
                             </div>
-                            <p className="text-sm text-muted-foreground mt-0.5">Manage courses and specializations under this examination.</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Manage courses and specializations under this examination.</p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 shrink-0">
                             <button
                               onClick={() => openPrompt("Enter Course / Program Name:", "ADD_PROGRAM", { examId: exam.id })}
-                              className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm transition-all text-xs uppercase cursor-pointer active:scale-95"
+                              className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-3.5 rounded-lg flex items-center gap-1.5 transition-all text-xs cursor-pointer active:scale-95"
                             >
                               Add Course
                             </button>
@@ -968,9 +968,9 @@ export default function MasterDataBuilderPage() {
 
                         {/* Course / Program List */}
                         {exam.programs.length === 0 ? (
-                          <div className="text-center py-16 text-muted-foreground bg-white rounded-2xl border border-gray-100 shadow-2xs">
-                            <p className="font-medium text-foreground">No courses added yet.</p>
-                            <p className="text-sm mt-1">Click &quot;Add Course&quot; to start building this examination&apos;s structure.</p>
+                          <div className="text-center py-16 text-muted-foreground">
+                            <p className="font-semibold text-foreground text-sm">No courses added yet.</p>
+                            <p className="text-xs mt-1">Click &quot;Add Course&quot; to start building this examination&apos;s structure.</p>
                           </div>
                         ) : (
                           <div className="space-y-3">
@@ -978,28 +978,28 @@ export default function MasterDataBuilderPage() {
                               const isProgOpen = expandedNodes[prog.id];
 
                               return (
-                                <div key={prog.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-2xs transition-all">
+                                <div key={prog.id} className="bg-card border border-border/30 rounded-xl overflow-hidden transition-all">
                                   {/* Course Row Header */}
-                                  <div className="p-4 sm:p-5 flex items-center justify-between transition-colors">
+                                  <div className="p-3.5 sm:p-4 flex items-center justify-between transition-colors">
                                     <div
-                                      className="flex items-center gap-2 cursor-pointer select-none"
+                                      className="flex items-center gap-2 cursor-pointer select-none min-w-0"
                                       onClick={() => toggleNode(prog.id)}
                                     >
-                                      <button className="p-1 text-gray-400 hover:text-gray-700 transition-colors">
+                                      <button className="p-1 text-muted-foreground hover:text-foreground transition-colors">
                                         {isProgOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                       </button>
-                                      <span className="font-bold text-foreground text-sm sm:text-base">{prog.name}</span>
-                                      <span className="text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200/60 px-2 py-0.5 rounded-md ml-1">
+                                      <span className="font-bold text-foreground text-sm truncate">{prog.name}</span>
+                                      <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md ml-1 shrink-0">
                                         {prog.majors.length} {prog.majors.length === 1 ? 'Spec' : 'Specs'}
                                       </span>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5 shrink-0">
                                       <button
                                         onClick={() => openPrompt("Enter Specialization / Major Name:", "ADD_MAJOR", { examId: exam.id, programId: prog.id })}
-                                        className="flex items-center gap-1 text-xs font-semibold text-[#E9C46A] hover:text-[#dfb550] hover:bg-blue-50/60 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                                        className="flex items-center gap-1 text-xs font-semibold text-[#E9C46A] hover:text-[#dfb550] px-2 py-1 rounded hover:bg-muted/40 transition-colors cursor-pointer"
                                         title="Add Specialization"
                                       >
-                                        <Plus className="h-3.5 w-3.5" /> Spec
+                                        <Plus className="h-3 w-3" /> Spec
                                       </button>
                                       <SettingsBtn onClick={() => openPrompt("Rename Course / Program:", "RENAME_PROGRAM", { examId: exam.id, programId: prog.id }, prog.name, prog.name)} />
                                       <DeleteBtn onClick={() => handleDeleteProgram(exam.id, prog.id, prog.name)} />
@@ -1013,21 +1013,21 @@ export default function MasterDataBuilderPage() {
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: "auto", opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
-                                        className="overflow-hidden border-t border-gray-100 bg-gray-50/40"
+                                        className="overflow-hidden border-t border-border/30 bg-muted/10"
                                       >
                                         {prog.majors.length === 0 ? (
-                                          <div className="py-3.5 px-6 text-xs text-muted-foreground italic">
+                                          <div className="py-3 px-6 text-xs text-muted-foreground italic">
                                             No specializations configured yet. Click &quot;+ Spec&quot; to add one.
                                           </div>
                                         ) : (
-                                          <div className="divide-y divide-gray-100/80">
+                                          <div className="divide-y divide-border/20">
                                             {prog.majors.map((major) => (
-                                              <div key={major.id} className="py-3 px-6 pl-10 flex items-center justify-between text-xs sm:text-sm font-medium text-gray-700">
-                                                <div className="flex items-center gap-2.5">
-                                                  <span className="h-1.5 w-1.5 rounded-full bg-[#E9C46A]" />
-                                                  <span className="font-semibold text-gray-800">{major.name}</span>
+                                              <div key={major.id} className="py-2.5 px-6 pl-10 flex items-center justify-between text-xs sm:text-sm font-medium">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                  <span className="h-1.5 w-1.5 rounded-full bg-[#E9C46A] shrink-0" />
+                                                  <span className="font-medium text-foreground truncate">{major.name}</span>
                                                 </div>
-                                                <div className="flex items-center gap-1.5">
+                                                <div className="flex items-center gap-1 shrink-0">
                                                   <SettingsBtn onClick={() => openPrompt("Rename Specialization / Major:", "RENAME_MAJOR", { examId: exam.id, programId: prog.id, majorId: major.id }, major.name, major.name)} />
                                                   <DeleteBtn onClick={() => handleDeleteMajor(exam.id, prog.id, major.id, major.name)} />
                                                 </div>
@@ -1226,33 +1226,33 @@ export default function MasterDataBuilderPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="bg-card border border-border rounded-2xl p-6 shadow-sm relative min-h-[400px] flex flex-col gap-10"
+                className="bg-card border border-border/40 rounded-2xl p-6 shadow-xs relative min-h-[400px] flex flex-col gap-8"
               >
                 {/* Header */}
-                <div className="flex items-center gap-4 border-b border-border pb-4">
+                <div className="flex items-center gap-4 border-b border-border/40 pb-4">
                   <button
                     onClick={() => handleTabChange("menu")}
-                    className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
                     title="Back to Master Data"
                   >
                     <ChevronRight className="h-5 w-5 rotate-180" />
                   </button>
-                  <div>
-                    <h2 className="text-xl font-bold text-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-lg font-bold text-foreground truncate">
                       Academic Institutions & Courses
                     </h2>
-                    <p className="text-sm text-muted-foreground">Configure registered universities, schools, and academic course offerings.</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Configure registered universities, schools, and academic course offerings.</p>
                   </div>
                 </div>
 
                 {/* Schools Section */}
                 <div>
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
-                    <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-border/40">
+                    <h3 className="text-sm sm:text-base font-bold text-foreground">
                       School Management Data
                     </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-muted-foreground bg-muted border border-border px-2.5 py-1 rounded-full">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
                         {schools.length} {schools.length === 1 ? "School" : "Schools"}
                       </span>
                       <button
@@ -1261,35 +1261,37 @@ export default function MasterDataBuilderPage() {
                           setIsSchoolEdit(false)
                           setIsSchoolDialogOpen(true)
                         }}
-                        className="flex items-center gap-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold py-1.5 px-3.5 rounded-lg shadow-sm transition-all text-xs uppercase cursor-pointer active:scale-95"
+                        className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-3.5 rounded-lg transition-all text-xs cursor-pointer active:scale-95"
                       >
                         Add School
                       </button>
                     </div>
                   </div>
 
-                  <div className={`rounded-lg border border-border ${isSchoolsExpanded ? 'max-h-[350px] overflow-y-auto' : 'overflow-hidden'}`}>
+                  <div className={`rounded-xl border border-border/30 overflow-hidden ${isSchoolsExpanded ? 'max-h-[350px] overflow-y-auto' : ''}`}>
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-muted/50 hover:bg-muted/50">
-                          <TableHead>School Name</TableHead>
-                          <TableHead>Address</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                        <TableRow className="bg-transparent border-b border-border/40 text-xs">
+                          <TableHead className="py-2.5 px-4 font-medium text-muted-foreground">School Name</TableHead>
+                          <TableHead className="py-2.5 px-4 font-medium text-muted-foreground">Address</TableHead>
+                          <TableHead className="py-2.5 px-4 text-right font-medium text-muted-foreground">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
-                      <TableBody>
+                      <TableBody className="text-sm">
                         {schools.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">No schools active.</TableCell>
+                          <TableRow className="border-0">
+                            <TableCell colSpan={3} className="text-center py-8 text-muted-foreground text-xs">No schools active.</TableCell>
                           </TableRow>
                         )}
                         {(isSchoolsExpanded ? schools : schools.slice(0, 5)).map(school => (
-                          <TableRow key={school.id}>
-                            <TableCell className="font-bold text-foreground">{school.name}</TableCell>
-                            <TableCell className="text-muted-foreground">{school.address || <span className="opacity-50 italic">No Address Configured</span>}</TableCell>
-                            <TableCell className="text-right flex justify-end gap-2">
-                              <SettingsBtn onClick={() => handleOpenEditSchool(school)} />
-                              <DeleteBtn onClick={() => triggerDelete("Delete School", `Are you sure you want to delete "${school.name}"?`, async () => { await apiCall("DELETE", "SCHOOL", { id: school.id }); await fetchData(); toast("Successfully moved institution to trash."); })} />
+                          <TableRow key={school.id} className="border-b border-border/20 last:border-b-0 hover:bg-muted/20 transition-colors">
+                            <TableCell className="py-3 px-4 font-medium text-foreground whitespace-nowrap">{school.name}</TableCell>
+                            <TableCell className="py-3 px-4 text-muted-foreground text-xs">{school.address || <span className="opacity-50 italic">No Address Configured</span>}</TableCell>
+                            <TableCell className="py-3 px-4 text-right whitespace-nowrap">
+                              <div className="inline-flex items-center justify-end gap-1.5">
+                                <SettingsBtn onClick={() => handleOpenEditSchool(school)} />
+                                <DeleteBtn onClick={() => triggerDelete("Delete School", `Are you sure you want to delete "${school.name}"?`, async () => { await apiCall("DELETE", "SCHOOL", { id: school.id }); await fetchData(); toast("Successfully moved institution to trash."); })} />
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1300,7 +1302,7 @@ export default function MasterDataBuilderPage() {
                     <div className="flex justify-center mt-3">
                       <button
                         onClick={() => setIsSchoolsExpanded(!isSchoolsExpanded)}
-                        className="text-sm font-semibold text-primary hover:text-primary/70 transition-colors"
+                        className="text-xs font-semibold text-[#E9C46A] hover:underline transition-colors"
                       >
                         {isSchoolsExpanded ? "Show Less" : `Show All (${schools.length})`}
                       </button>
@@ -1310,43 +1312,45 @@ export default function MasterDataBuilderPage() {
 
                 {/* Courses Section */}
                 <div>
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-border">
-                    <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-border/40">
+                    <h3 className="text-sm sm:text-base font-bold text-foreground">
                       Course Management Data
                     </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-muted-foreground bg-muted border border-border px-2.5 py-1 rounded-full">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
                         {academicCourses.length} {academicCourses.length === 1 ? "Course" : "Courses"}
                       </span>
                       <button
                         onClick={() => openPrompt("Add Course", "ADD_COURSE", null, "e.g. BS Computer Science")}
-                        className="flex items-center gap-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold py-1.5 px-3.5 rounded-lg shadow-sm transition-all text-xs uppercase cursor-pointer active:scale-95"
+                        className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-3.5 rounded-lg transition-all text-xs cursor-pointer active:scale-95"
                       >
                         Add Course
                       </button>
                     </div>
                   </div>
 
-                  <div className={`rounded-lg border border-border ${isCoursesExpanded ? 'max-h-[350px] overflow-y-auto' : 'overflow-hidden'}`}>
+                  <div className={`rounded-xl border border-border/30 overflow-hidden ${isCoursesExpanded ? 'max-h-[350px] overflow-y-auto' : ''}`}>
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-muted/50 hover:bg-muted/50">
-                          <TableHead>Course Name</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                        <TableRow className="bg-transparent border-b border-border/40 text-xs">
+                          <TableHead className="py-2.5 px-4 font-medium text-muted-foreground">Course Name</TableHead>
+                          <TableHead className="py-2.5 px-4 text-right font-medium text-muted-foreground">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
-                      <TableBody>
+                      <TableBody className="text-sm">
                         {academicCourses.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={2} className="text-center py-6 text-muted-foreground">No courses active.</TableCell>
+                          <TableRow className="border-0">
+                            <TableCell colSpan={2} className="text-center py-8 text-muted-foreground text-xs">No courses active.</TableCell>
                           </TableRow>
                         )}
                         {(isCoursesExpanded ? academicCourses : academicCourses.slice(0, 5)).map(course => (
-                          <TableRow key={course.id}>
-                            <TableCell className="font-bold text-foreground">{course.name}</TableCell>
-                            <TableCell className="text-right flex justify-end gap-2">
-                              <SettingsBtn onClick={() => openPrompt("Rename Course", "RENAME_COURSE", { id: course.id }, "Course Name", course.name)} />
-                              <DeleteBtn onClick={() => triggerDelete("Delete Academic Course", `Are you sure you want to delete "${course.name}"?`, async () => { await apiCall("DELETE", "COURSE", { id: course.id }); await fetchData(); toast("Successfully moved course to trash."); })} />
+                          <TableRow key={course.id} className="border-b border-border/20 last:border-b-0 hover:bg-muted/20 transition-colors">
+                            <TableCell className="py-3 px-4 font-medium text-foreground whitespace-nowrap">{course.name}</TableCell>
+                            <TableCell className="py-3 px-4 text-right whitespace-nowrap">
+                              <div className="inline-flex items-center justify-end gap-1.5">
+                                <SettingsBtn onClick={() => openPrompt("Rename Course", "RENAME_COURSE", { id: course.id }, "Course Name", course.name)} />
+                                <DeleteBtn onClick={() => triggerDelete("Delete Academic Course", `Are you sure you want to delete "${course.name}"?`, async () => { await apiCall("DELETE", "COURSE", { id: course.id }); await fetchData(); toast("Successfully moved course to trash."); })} />
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1357,7 +1361,7 @@ export default function MasterDataBuilderPage() {
                     <div className="flex justify-center mt-3">
                       <button
                         onClick={() => setIsCoursesExpanded(!isCoursesExpanded)}
-                        className="text-sm font-semibold text-primary hover:text-primary/70 transition-colors"
+                        className="text-xs font-semibold text-[#E9C46A] hover:underline transition-colors"
                       >
                         {isCoursesExpanded ? "Show Less" : `Show All (${academicCourses.length})`}
                       </button>

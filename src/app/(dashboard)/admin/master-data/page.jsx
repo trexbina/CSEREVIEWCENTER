@@ -737,14 +737,14 @@ export default function MasterDataBuilderPage() {
       <div className="space-y-6">
 
         {/* Header */}
-        {/* Header */}
-        <div className="border-b border-border pb-5">
-          <div className="flex items-center gap-2.5">
+        <div className="border-b border-border pb-4">
+          <div className="flex items-center gap-2.5 mb-1">
+            <Layers className="h-6 w-6 text-[#E9C46A]" />
             <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase">
               MASTER DATA
             </h1>
           </div>
-          <p className="text-muted-foreground text-xs sm:text-sm mt-1">
+          <p className="text-muted-foreground text-sm font-medium">
             Manage core system data, structural blueprints, and cohorts.
           </p>
         </div>
@@ -752,92 +752,92 @@ export default function MasterDataBuilderPage() {
         {isLoading ? (
           <div className="flex items-center justify-center p-12">
             <div className="flex flex-col items-center gap-3">
-              <span className="h-7 w-7 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="text-muted-foreground font-medium text-xs">Synchronizing Master Data...</p>
+              <span className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <p className="text-muted-foreground font-medium text-sm">Synchronizing Master Data...</p>
             </div>
           </div>
         ) : (
           <AnimatePresence mode="wait">
 
+
             {/* === LEVEL 0: MAIN MENU === */}
             {activeTab === "menu" && (
               <motion.div
                 key="menu"
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="bg-card border border-border/80 rounded-2xl shadow-xs overflow-hidden divide-y divide-border/60"
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-100"
               >
                 {/* Examination Management Data */}
                 <div
-                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all hover:bg-muted/40 group"
+                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
                   onClick={() => handleTabChange("tree")}
                 >
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground text-sm sm:text-base group-hover:text-primary transition-colors truncate">
+                    <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
                       Examination Management Data
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      Manage examinations, courses, and specializations
+                    <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
+                      Set up board exams, programs, and majors
                     </p>
                   </div>
                   <div className="flex items-center shrink-0 ml-4">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </div>
 
                 {/* Batch Management Data */}
                 <div
-                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all hover:bg-muted/40 group"
+                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
                   onClick={() => handleTabChange("batches")}
                 >
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground text-sm sm:text-base group-hover:text-primary transition-colors truncate">
+                    <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
                       Batch Management Data
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      Manage cohorts, timelines, and student batches
+                    <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
+                      Create and manage review batches and target exam years
                     </p>
                   </div>
                   <div className="flex items-center shrink-0 ml-4">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </div>
 
                 {/* Academic Institutions & Courses */}
                 <div
-                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all hover:bg-muted/40 group"
+                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
                   onClick={() => handleTabChange("education")}
                 >
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground text-sm sm:text-base group-hover:text-primary transition-colors truncate">
+                    <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
                       Academic Institutions & Courses
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      Manage registered universities, schools, and academic course offerings
+                    <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
+                      Manage schools, universities, and college degrees
                     </p>
                   </div>
                   <div className="flex items-center shrink-0 ml-4">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </div>
 
                 {/* Gradebook */}
                 <div
-                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all hover:bg-muted/40 group"
+                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
                   onClick={() => handleTabChange("gradebook")}
                 >
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground text-sm sm:text-base group-hover:text-primary transition-colors truncate">
+                    <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
                       Gradebook
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      Computation, formula, and readiness score monitoring
+                    <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
+                      Configure grade formulas and student readiness scores
                     </p>
                   </div>
                   <div className="flex items-center shrink-0 ml-4">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </div>
               </motion.div>
@@ -890,25 +890,25 @@ export default function MasterDataBuilderPage() {
                       </div>
 
                       {tree.length > 0 && (
-                        <div className="bg-card border border-border/80 rounded-2xl shadow-xs overflow-hidden divide-y divide-border/60">
+                        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-100">
                           {tree.map(exam => {
                             const totalMajors = exam.programs.reduce((acc, p) => acc + p.majors.length, 0);
                             return (
                               <div
                                 key={exam.id}
-                                className="p-4 sm:p-5 flex items-center justify-between cursor-pointer transition-all hover:bg-muted/40 group"
+                                className="p-4 sm:p-5 flex items-center justify-between cursor-pointer transition-all group"
                                 onClick={() => setSelectedExamId(exam.id)}
                               >
                                 <div>
-                                  <h3 className="font-semibold text-foreground text-sm sm:text-base group-hover:text-primary transition-colors">{exam.name}</h3>
+                                  <h3 className="font-bold text-foreground text-base group-hover:text-[#E9C46A] transition-colors">{exam.name}</h3>
                                   <p className="text-xs text-muted-foreground mt-0.5">
                                     {exam.programs.length} course{exam.programs.length !== 1 ? "s" : ""} · {totalMajors} specialization{totalMajors !== 1 ? "s" : ""} · Max depth: {exam.maxLevel || 3}
                                   </p>
                                 </div>
-                                <div className="flex items-center gap-1.5 shrink-0 ml-4" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center gap-2 shrink-0 ml-4" onClick={e => e.stopPropagation()}>
                                   <SettingsBtn onClick={() => openExamSettings(exam)} />
                                   <DeleteBtn onClick={() => handleDeleteExam(exam.id, exam.name)} />
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground/60 ml-2 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                                  <ChevronRight className="h-4 w-4 text-muted-foreground ml-2 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
                                 </div>
                               </div>
                             )
@@ -978,25 +978,25 @@ export default function MasterDataBuilderPage() {
                               const isProgOpen = expandedNodes[prog.id];
 
                               return (
-                                <div key={prog.id} className="bg-card border border-border/80 rounded-2xl overflow-hidden shadow-xs transition-all">
+                                <div key={prog.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-2xs transition-all">
                                   {/* Course Row Header */}
                                   <div className="p-4 sm:p-5 flex items-center justify-between transition-colors">
                                     <div
                                       className="flex items-center gap-2 cursor-pointer select-none"
                                       onClick={() => toggleNode(prog.id)}
                                     >
-                                      <button className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+                                      <button className="p-1 text-gray-400 hover:text-gray-700 transition-colors">
                                         {isProgOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                       </button>
-                                      <span className="font-semibold text-foreground text-sm sm:text-base">{prog.name}</span>
-                                      <span className="text-xs font-semibold text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-md ml-1">
+                                      <span className="font-bold text-foreground text-sm sm:text-base">{prog.name}</span>
+                                      <span className="text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200/60 px-2 py-0.5 rounded-md ml-1">
                                         {prog.majors.length} {prog.majors.length === 1 ? 'Spec' : 'Specs'}
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <button
                                         onClick={() => openPrompt("Enter Specialization / Major Name:", "ADD_MAJOR", { examId: exam.id, programId: prog.id })}
-                                        className="flex items-center gap-1 text-xs font-medium text-foreground hover:text-primary hover:bg-muted/60 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                                        className="flex items-center gap-1 text-xs font-semibold text-[#E9C46A] hover:text-[#dfb550] hover:bg-blue-50/60 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
                                         title="Add Specialization"
                                       >
                                         <Plus className="h-3.5 w-3.5" /> Spec
@@ -1013,19 +1013,19 @@ export default function MasterDataBuilderPage() {
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: "auto", opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
-                                        className="overflow-hidden border-t border-border/60 bg-muted/20"
+                                        className="overflow-hidden border-t border-gray-100 bg-gray-50/40"
                                       >
                                         {prog.majors.length === 0 ? (
                                           <div className="py-3.5 px-6 text-xs text-muted-foreground italic">
                                             No specializations configured yet. Click &quot;+ Spec&quot; to add one.
                                           </div>
                                         ) : (
-                                          <div className="divide-y divide-border/40">
+                                          <div className="divide-y divide-gray-100/80">
                                             {prog.majors.map((major) => (
-                                              <div key={major.id} className="py-3 px-6 pl-10 flex items-center justify-between text-xs sm:text-sm font-medium text-foreground">
+                                              <div key={major.id} className="py-3 px-6 pl-10 flex items-center justify-between text-xs sm:text-sm font-medium text-gray-700">
                                                 <div className="flex items-center gap-2.5">
-                                                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
-                                                  <span className="font-medium text-foreground">{major.name}</span>
+                                                  <span className="h-1.5 w-1.5 rounded-full bg-[#E9C46A]" />
+                                                  <span className="font-semibold text-gray-800">{major.name}</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                   <SettingsBtn onClick={() => openPrompt("Rename Specialization / Major:", "RENAME_MAJOR", { examId: exam.id, programId: prog.id, majorId: major.id }, major.name, major.name)} />

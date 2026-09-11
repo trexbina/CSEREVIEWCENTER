@@ -1059,29 +1059,31 @@ export default function MasterDataBuilderPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
               >
-                <div className="w-full bg-card border border-border rounded-2xl p-6 shadow-sm">
+                <div className="w-full bg-card border border-border/40 rounded-2xl p-6 shadow-xs">
                   {/* Header */}
-                  <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
+                  <div className="flex items-center gap-4 mb-6 pb-4 border-b border-border/40">
                     <button
                       onClick={() => handleTabChange("menu")}
-                      className="p-2 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
                       title="Back to Master Data"
                     >
                       <ChevronRight className="h-5 w-5 rotate-180" />
                     </button>
-                    <div className="flex-1">
-                      <h2 className="text-lg font-bold text-foreground">
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-lg font-bold text-foreground truncate">
                         Batch Management Data
                       </h2>
-                      <p className="text-sm text-muted-foreground">Manage cohorts, timelines, and student batches.</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Create and manage review batches and target exam years.
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-muted-foreground bg-muted border border-border px-3 py-1.5 rounded-full">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
                         {batches.length} {batches.length === 1 ? "Batch" : "Batches"}
                       </span>
                       <button
                         onClick={handleOpenAddBatch}
-                        className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm transition-all text-xs uppercase cursor-pointer active:scale-95"
+                        className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-3.5 rounded-lg flex items-center gap-1.5 transition-all text-xs cursor-pointer active:scale-95"
                       >
                         Add New Batch
                       </button>
@@ -1089,15 +1091,14 @@ export default function MasterDataBuilderPage() {
                   </div>
 
                   {/* Filters Row */}
-                  <div className="flex flex-wrap items-center gap-2.5 mb-6">
+                  <div className="flex flex-wrap items-center gap-2 mb-6">
                     {/* Examination Filter */}
-                    <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
-                      <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="text-muted-foreground font-medium">Exam:</span>
+                    <div className="relative inline-flex items-center gap-1.5 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1 text-xs font-medium text-foreground">
+                      <span className="text-muted-foreground font-normal">Exam:</span>
                       <select
                         value={filterExam}
                         onChange={e => setFilterExam(e.target.value)}
-                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1"
                       >
                         <option value="all">All</option>
                         {tree.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
@@ -1105,13 +1106,12 @@ export default function MasterDataBuilderPage() {
                     </div>
 
                     {/* Target Year Filter */}
-                    <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
-                      <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="text-muted-foreground font-medium">Year:</span>
+                    <div className="relative inline-flex items-center gap-1.5 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1 text-xs font-medium text-foreground">
+                      <span className="text-muted-foreground font-normal">Year:</span>
                       <select
                         value={filterYear}
                         onChange={e => setFilterYear(e.target.value)}
-                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1"
                       >
                         <option value="all">All</option>
                         {yearsList.map(y => <option key={y} value={y}>{y}</option>)}
@@ -1119,13 +1119,12 @@ export default function MasterDataBuilderPage() {
                     </div>
 
                     {/* Status Filter */}
-                    <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
-                      <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="text-muted-foreground font-medium">Status:</span>
+                    <div className="relative inline-flex items-center gap-1.5 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1 text-xs font-medium text-foreground">
+                      <span className="text-muted-foreground font-normal">Status:</span>
                       <select
                         value={filterStatus}
                         onChange={e => setFilterStatus(e.target.value)}
-                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1"
                       >
                         <option value="all">All</option>
                         <option value="active">Active</option>
@@ -1141,33 +1140,33 @@ export default function MasterDataBuilderPage() {
                           setFilterYear("all")
                           setFilterStatus("all")
                         }}
-                        className="text-xs text-[#E9C46A] font-semibold hover:underline self-center px-1 cursor-pointer"
+                        className="text-xs text-[#E9C46A] hover:underline self-center px-1 cursor-pointer"
                       >
                         Reset filters
                       </button>
                     )}
                   </div>
 
-                  {/* Batches Table */}
-                  <div className="border border-border rounded-2xl overflow-hidden bg-card shadow-sm min-h-[300px] flex flex-col">
+                  {/* Batches Table / Content */}
+                  <div className="min-h-[220px] flex flex-col">
                     {filteredBatches.length > 0 ? (
                       <div className="overflow-x-auto flex-1">
                         <table className="w-full text-left border-collapse">
-                          <thead className="bg-muted">
-                            <tr className="border-b border-border text-[13px] font-semibold text-foreground">
-                              <th className="py-3.5 px-5 w-[22%]" scope="col">
+                          <thead>
+                            <tr className="border-b border-border/40 text-xs font-medium text-muted-foreground">
+                              <th className="py-2.5 px-4 w-[22%]" scope="col">
                                 <SortButton label="Status" field="status" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
                               </th>
-                              <th className="py-3.5 px-5 w-[22%]" scope="col">
+                              <th className="py-2.5 px-4 w-[22%]" scope="col">
                                 <SortButton label="Batch" field="name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
                               </th>
-                              <th className="py-3.5 px-5 w-[26%]" scope="col">
+                              <th className="py-2.5 px-4 w-[26%]" scope="col">
                                 <SortButton label="Target Examination" field="exam" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
                               </th>
-                              <th className="py-3.5 px-5 w-[20%]" scope="col">
+                              <th className="py-2.5 px-4 w-[20%]" scope="col">
                                 <SortButton label="Target Year" field="target_year" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
                               </th>
-                              <th className="py-3.5 px-5 w-[10%] text-right font-medium text-foreground" scope="col">
+                              <th className="py-2.5 px-4 w-[10%] text-right font-medium text-muted-foreground" scope="col">
                                 Actions
                               </th>
                             </tr>
@@ -1176,22 +1175,22 @@ export default function MasterDataBuilderPage() {
                             {filteredBatches.map(batch => {
                               const exam = tree.find(e => e.id === batch.exam_id)
                               return (
-                                <tr key={batch.id} className="h-11 border-b border-border/50 last:border-b-0">
-                                  <td className="py-3 px-5 text-foreground whitespace-nowrap">
+                                <tr key={batch.id} className="border-b border-border/30 last:border-b-0 hover:bg-muted/20 transition-colors">
+                                  <td className="py-3 px-4 text-foreground whitespace-nowrap">
                                     <span className={getStatusStyle(batch.status)}>
                                       {batch.status ? batch.status.charAt(0).toUpperCase() + batch.status.slice(1) : "Unknown"}
                                     </span>
                                   </td>
-                                  <td className="py-3 px-5 text-foreground whitespace-nowrap font-medium">
+                                  <td className="py-3 px-4 text-foreground whitespace-nowrap font-medium">
                                     {batch.name}
                                   </td>
-                                  <td className="py-3 px-5 text-foreground whitespace-nowrap">
+                                  <td className="py-3 px-4 text-foreground whitespace-nowrap">
                                     {exam ? exam.name : "Unknown"}
                                   </td>
-                                  <td className="py-3 px-5 text-foreground whitespace-nowrap">
+                                  <td className="py-3 px-4 text-foreground whitespace-nowrap">
                                     {batch.target_year}
                                   </td>
-                                  <td className="py-3 px-5 text-right whitespace-nowrap">
+                                  <td className="py-3 px-4 text-right whitespace-nowrap">
                                     <div className="inline-flex items-center justify-end gap-1.5">
                                       <SettingsBtn onClick={() => handleOpenEditBatch(batch)} />
                                       <DeleteBtn onClick={() => handleDeleteBatch(batch.id, batch.name)} />
@@ -1204,11 +1203,11 @@ export default function MasterDataBuilderPage() {
                         </table>
                       </div>
                     ) : (
-                      <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-card">
-                        <h2 className="text-lg font-bold text-foreground mb-1 tracking-tight">
+                      <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
+                        <p className="text-sm font-semibold text-foreground mb-1">
                           {batches.length === 0 ? "No Batches Yet" : "No Matching Batches"}
-                        </h2>
-                        <p className="text-xs font-medium text-muted-foreground">
+                        </p>
+                        <p className="text-xs text-muted-foreground">
                           {batches.length === 0
                             ? "Click on the add new batch button to create your first batch."
                             : "Try adjusting your filter criteria to view other batches."}

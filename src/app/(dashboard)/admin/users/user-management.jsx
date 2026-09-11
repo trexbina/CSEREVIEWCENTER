@@ -539,23 +539,6 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                 </div>
               )}
 
-              {(role === "admin" || role === "super_admin" || role === "academic_admin" || role === "registrar") && (
-                <div className="space-y-1">
-                  <Label htmlFor="edit-job-role" className="text-xs">Job Role / Title *</Label>
-                  <Input 
-                    id="edit-job-role" 
-                    value={jobRoleDescription} 
-                    onChange={(e) => setJobRoleDescription(e.target.value)} 
-                    placeholder={
-                      role === "academic_admin" ? "e.g. Lead Academic Coordinator, Curriculum Head" :
-                      role === "registrar" ? "e.g. Head Registrar, Admissions Officer" :
-                      "e.g. System Administrator, IT Director"
-                    } 
-                    required 
-                  />
-                </div>
-              )}
-
               {role === "teacher" && (
                 <div className="space-y-1 sm:col-span-2">
                   <Label className="text-xs">Assigned Examination (e.g. LEPT) *</Label>

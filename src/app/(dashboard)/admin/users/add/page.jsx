@@ -743,24 +743,7 @@ export default function AddUserPage() {
                                 </Select>
                             </div>
                         )}
-                        
-                        {(role === "admin" || role === "super_admin" || role === "academic_admin" || role === "registrar") && (
-                            <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-150">
-                                <Label htmlFor="job-role" className="text-sm font-semibold text-[#696969]">Job Role / Title *</Label>
-                                <input 
-                                    id="job-role" 
-                                    value={jobRoleDescription} 
-                                    onChange={(e) => setJobRoleDescription(e.target.value)} 
-                                    placeholder={
-                                        role === "academic_admin" ? "e.g. Lead Academic Coordinator, Curriculum Head" :
-                                        role === "registrar" ? "e.g. Head Registrar, Admissions Officer" :
-                                        "e.g. System Administrator, IT Director"
-                                    } 
-                                    required 
-                                    className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" 
-                                />
-                            </div>
-                        )}
+
 
                         {role === "teacher" && (
                             <div className="space-y-3 sm:col-span-2">

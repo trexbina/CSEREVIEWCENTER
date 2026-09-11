@@ -411,13 +411,6 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                     <p className={`text-[15px] font-semibold text-foreground ${field.capitalize ? "capitalize" : ""}`}>{field.value}</p>
                   </div>
                 ))}
-
-                {user.role === 'admin' && (
-                  <div className="sm:col-span-2 space-y-1">
-                    <p className="text-[13px] text-muted-foreground font-medium">Job Role Description</p>
-                    <p className="text-[15px] font-semibold text-foreground">{user.job_role_description || "—"}</p>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -1088,27 +1081,6 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                         </Select>
                       </div>
                     )}
-                  </div>
-                </section>
-              )}
-
-              {["admin", "super_admin", "academic_admin", "registrar"].includes(role) && (
-                <section className="space-y-4 pt-6 border-t border-black/5 dark:border-white/10">
-                  <div className="flex items-center gap-2.5 pt-1">
-                    <User className="size-4.5 text-[#696969]" />
-                    <h3 className="text-base font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
-                      Administrator Details
-                    </h3>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="edit-job-desc" className="text-sm font-semibold text-[#696969]">Job Role / Description</Label>
-                    <input
-                      id="edit-job-desc"
-                      value={jobRoleDescription}
-                      onChange={(e) => setJobRoleDescription(e.target.value)}
-                      placeholder="e.g. Lead System Administrator & Technical Coordinator"
-                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
-                    />
                   </div>
                 </section>
               )}

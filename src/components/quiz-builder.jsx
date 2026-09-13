@@ -174,11 +174,39 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     // Listen for questions created by RapidOCR or external toolboxes
     useEffect(() => {
         const handleImport = (payload) => {
+            const generateUniqueId = (prefix = "q") => `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+
             if (Array.isArray(payload) && payload.length > 0) {
-                setQuestions(prev => [...prev, ...payload])
+                // Ensure every question and option has a strictly unique ID across the entire questions array
+                const sanitized = payload.map((q, qIdx) => ({
+                    ...q,
+                    id: q.id ? `${q.id}_${Math.random().toString(36).substring(2, 7)}` : generateUniqueId(`q_${qIdx}`),
+                    options: Array.isArray(q.options)
+                        ? q.options.map((opt, optIdx) => ({
+                            ...opt,
+                            id: opt.id ? `${opt.id}_${Math.random().toString(36).substring(2, 6)}` : generateUniqueId(`opt_${optIdx}`)
+                        }))
+                        : []
+                }))
+
+                setQuestions(prev => {
+                    const existingIds = new Set(prev.map(p => p.id))
+                    const deduped = sanitized.map(item => {
+                        if (existingIds.has(item.id)) {
+                            return { ...item, id: generateUniqueId() }
+                        }
+                        existingIds.add(item.id)
+                        return item
+                    })
+                    return [...prev, ...deduped]
+                })
                 toast.success(`${payload.length} questions created and added to exam!`)
             } else if (payload && payload.text) {
-                setQuestions(prev => [...prev, payload])
+                const newQ = {
+                    ...payload,
+                    id: generateUniqueId()
+                }
+                setQuestions(prev => [...prev, newQ])
                 toast.success("Question added to exam from RapidOCR!")
             }
         }

@@ -186,15 +186,17 @@ function parseQuestionsFromText(rawText) {
             })
         }
 
+        const uniqueQuestionId = `q_${Date.now()}_${blockIdx}_${Math.random().toString(36).substring(2, 9)}`
+
         parsedQuestions.push({
-            id: (Date.now() + blockIdx + Math.floor(Math.random() * 1000)).toString(),
+            id: uniqueQuestionId,
             type: "question",
             questionType: "Multiple Choice",
             text: questionPrompt || `Question ${blockIdx + 1}`,
             image: null,
             points: 1,
-            options: options.map(o => ({
-                id: o.id,
+            options: options.map((o, optIdx) => ({
+                id: o.id || `opt_${uniqueQuestionId}_${optIdx}_${Math.random().toString(36).substring(2, 6)}`,
                 text: o.text || `Choice ${o.letter}`,
                 isCorrect: !!o.isCorrect
             })),

@@ -54,7 +54,7 @@ export default async function AdminDashboard() {
       {/* ── Review Batches & Schedules Overview ── */}
       <ActiveBatchesOverview />
 
-      {/* ── Academic Programs & Cohort Distribution ── */}
+      {/* ── Academic Programs & Degree Tracks Overview ── */}
       <ProgramsDistributionOverview />
 
       {/* ── Recent Registrations & User Activity Feed ── */}

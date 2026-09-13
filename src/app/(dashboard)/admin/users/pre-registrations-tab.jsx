@@ -45,8 +45,14 @@ export function PreRegistrationsTab() {
   const [editForm, setEditForm] = useState({})
   const [customAccountEmail, setCustomAccountEmail] = useState("")
   const [customPassword, setCustomPassword] = useState("Student@123")
+  const [previewLoginId, setPreviewLoginId] = useState("")
   const [actionLoading, setActionLoading] = useState(false)
   const [actionMsg, setActionMsg] = useState(null)
+
+  // Delete Modal States
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   // Dropdown reference data for edit mode
   const [dropdownData, setDropdownData] = useState({
@@ -58,21 +64,17 @@ export function PreRegistrationsTab() {
     academic_courses: [],
   })
 
-  // Delete Modal States
-  const [deleteTarget, setDeleteTarget] = useState(null) // { ids: [...], name: '...' }
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [deleteLoading, setDeleteLoading] = useState(false)
-
+  // Data Loading
   async function loadApplications() {
     setLoading(true)
     try {
       const res = await fetch("/api/admin/pre-registrations")
+      const data = await res.json()
       if (res.ok) {
-        const data = await res.json()
-        setApplications(data.preRegistrations || [])
+        setApplications(data.applications || [])
       }
-    } catch (err) {
-      console.error("Failed to load pre-registrations:", err)
+    } catch {
+      toast("Failed to load pre-registrations.")
     } finally {
       setLoading(false)
     }
@@ -80,13 +82,13 @@ export function PreRegistrationsTab() {
 
   async function loadDropdowns() {
     try {
-      const res = await fetch("/api/public/pre-register")
-      if (res.ok) {
-        const data = await res.json()
+      const res = await fetch("/api/admin/master-data/dropdowns")
+      const data = await res.json()
+      if (res.ok && data.examinations) {
         setDropdownData(data)
       }
-    } catch (err) {
-      console.error("Failed to load dropdown options:", err)
+    } catch {
+      // ignore
     }
   }
 
@@ -100,6 +102,21 @@ export function PreRegistrationsTab() {
     setIsEditing(false)
     setCustomAccountEmail(app.email || "")
     setCustomPassword("Student@123")
+    setPreviewLoginId("")
+    const fullName = [app.first_name, app.middle_name, app.last_name, app.suffix].filter(Boolean).join(" ")
+    const params = new URLSearchParams({
+      lastName: app.last_name || "",
+      name: fullName || "",
+      role: "student",
+    })
+    fetch(`/api/admin/users/next-sequence?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.loginId) {
+          setPreviewLoginId(data.loginId)
+        }
+      })
+      .catch(console.error)
     setEditForm({
       first_name: app.first_name || "",
       middle_name: app.middle_name || "",
@@ -255,7 +272,7 @@ export function PreRegistrationsTab() {
       if (res.ok) {
         setActionMsg({
           type: "success",
-          text: `Approved! Account created for ${data.accountEmail || 'student'} with password: ${data.initialPassword}`,
+          text: `Approved! Account created with Login ID: ${data.loginId || 'assigned'} and password: ${data.initialPassword}`,
         })
         loadApplications()
         router.refresh()
@@ -992,17 +1009,17 @@ export function PreRegistrationsTab() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-[#3B3B3B] dark:text-white block">
-                          Student Login Email *
+                          Student Login ID (Auto-Generated)
                         </label>
                         <Input
-                          type="email"
-                          value={customAccountEmail}
-                          onChange={(e) => setCustomAccountEmail(e.target.value)}
-                          placeholder="student@peak.edu.ph"
-                          className="text-sm h-9 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10"
+                          type="text"
+                          readOnly
+                          disabled
+                          value={previewLoginId || "Generating..."}
+                          className="text-sm h-9 rounded-xl border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 font-mono cursor-not-allowed"
                         />
                         <span className="text-[11px] text-[#696969] dark:text-gray-400 block">
-                          The official portal login email.
+                          Permanent identifier for portal login.
                         </span>
                       </div>
                       <div className="space-y-1">

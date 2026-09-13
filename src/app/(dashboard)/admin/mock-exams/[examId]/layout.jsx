@@ -5,6 +5,7 @@
 import { useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { Menu, X, ChevronLeft } from "lucide-react"
+import OcrQuestionScanner from "@/components/ocr-question-scanner"
 
 // sidebar toolbar and content layout for the mock exam builder screen
 export default function MockExamBuilderLayout({ children, params }) {
@@ -102,7 +103,7 @@ export default function MockExamBuilderLayout({ children, params }) {
 
                 {/* Toolbar content area */}
                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                    {/* Empty toolbar ready for tools */}
+                    <OcrQuestionScanner />
                 </div>
             </aside>
 

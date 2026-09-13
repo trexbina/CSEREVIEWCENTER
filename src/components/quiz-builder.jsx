@@ -168,6 +168,18 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
     }, [])
 
+    useEffect(() => {
+        const handleAddOcrQuestion = (e) => {
+            const newQ = e.detail
+            if (newQ && newQ.text) {
+                setQuestions(prev => [...prev, newQ])
+                toast.success("Question added to exam from OCR!")
+            }
+        }
+        window.addEventListener("peak:add-ocr-question", handleAddOcrQuestion)
+        return () => window.removeEventListener("peak:add-ocr-question", handleAddOcrQuestion)
+    }, [])
+
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch((err) => {

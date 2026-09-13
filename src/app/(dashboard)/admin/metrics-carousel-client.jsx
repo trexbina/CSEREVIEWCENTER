@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useRef } from "react"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Users, Calendar, AlertTriangle, UserPlus, Award } from "lucide-react"
+import { Users, Calendar, AlertTriangle, UserPlus, Award } from "lucide-react"
 
 // Icon mapping dictionary
 const ICON_MAP = {
@@ -14,55 +14,35 @@ const ICON_MAP = {
 }
 
 export function MetricsCarouselClient({ items }) {
-  // We want to show a maximum of 3 cards at a time.
-  const CARDS_PER_VIEW = 3
-  const [startIndex, setStartIndex] = useState(0)
-
-  const maxStartIndex = Math.max(0, items.length - CARDS_PER_VIEW)
-
-  const handlePrev = () => {
-    setStartIndex((prev) => Math.max(0, prev - 1))
-  }
-
-  const handleNext = () => {
-    setStartIndex((prev) => Math.min(maxStartIndex, prev + 1))
-  }
-
-  const canPrev = startIndex > 0
-  const canNext = startIndex < maxStartIndex
-
-  // Extract visible 3 items
-  const visibleItems = items.slice(startIndex, startIndex + CARDS_PER_VIEW)
+  const scrollRef = useRef(null)
 
   return (
-    <div className="relative w-full flex items-center group">
-      {/* ── Left Carousel Arrow ── */}
-      <div className="absolute -left-3.5 sm:-left-4 z-20">
-        <button
-          type="button"
-          onClick={handlePrev}
-          disabled={!canPrev}
-          aria-label="Previous metrics"
-          className={`size-8 sm:size-9 rounded-full flex items-center justify-center border border-black/10 dark:border-white/15 bg-white dark:bg-neutral-800 text-[#3B3B3B] dark:text-white shadow-md transition-all ${
-            canPrev
-              ? "opacity-90 hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
-              : "opacity-20 cursor-not-allowed"
-          }`}
-        >
-          <ChevronLeft className="size-4 sm:size-5" />
-        </button>
-      </div>
-
-      {/* ── Metrics Strip Container ── */}
-      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-xs overflow-hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-          {visibleItems.map((item, idx) => {
-            const Icon = ICON_MAP[item.iconKey] || Users
-            return (
+    <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-xs overflow-hidden">
+      {/* 
+        Horizontal scroll container:
+        - Exactly 3 cards fit within the container width (w-1/3 on desktop)
+        - Snap scroll to card boundaries
+        - Hidden scrollbars for a clean, seamless look
+        - Supports drag / trackpad swipe / touch swipe / mousewheel horizontal scrolling
+      */}
+      <div
+        ref={scrollRef}
+        className="flex overflow-x-auto scrollbar-none snap-x snap-mandatory scroll-smooth"
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+      >
+        {items.map((item, idx) => {
+          const Icon = ICON_MAP[item.iconKey] || Users
+          return (
+            <div
+              key={item.label || idx}
+              className="w-full sm:w-1/2 md:w-1/3 shrink-0 snap-start flex flex-col justify-between group/card transition-colors hover:bg-black/[0.01] dark:hover:bg-white/[0.01]"
+            >
               <Link
-                key={item.label || idx}
                 href={item.href}
-                className="flex flex-col justify-between group/card transition-colors hover:bg-black/[0.01] dark:hover:bg-white/[0.01]"
+                className="flex flex-col justify-between h-full"
               >
                 {/* Header: Label + Icon with bottom border & dimensional soft shadow */}
                 <div
@@ -84,26 +64,9 @@ export function MetricsCarouselClient({ items }) {
                   </p>
                 </div>
               </Link>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* ── Right Carousel Arrow ── */}
-      <div className="absolute -right-3.5 sm:-right-4 z-20">
-        <button
-          type="button"
-          onClick={handleNext}
-          disabled={!canNext}
-          aria-label="Next metrics"
-          className={`size-8 sm:size-9 rounded-full flex items-center justify-center border border-black/10 dark:border-white/15 bg-white dark:bg-neutral-800 text-[#3B3B3B] dark:text-white shadow-md transition-all ${
-            canNext
-              ? "opacity-90 hover:opacity-100 hover:scale-105 active:scale-95 cursor-pointer"
-              : "opacity-20 cursor-not-allowed"
-          }`}
-        >
-          <ChevronRight className="size-4 sm:size-5" />
-        </button>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

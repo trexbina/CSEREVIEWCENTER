@@ -189,58 +189,48 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                         : []
                 }))
 
-                setQuestions(prev => {
-                    // Extract set of existing normalized question texts to avoid duplicate questions
-                    const existingPrompts = new Set(
-                        prev.filter(p => p.type === 'question' && p.text)
-                            .map(p => p.text.toLowerCase().replace(/[^a-z0-9]/g, ""))
-                            .filter(t => t.length > 5)
-                    )
+                // Normalize text helper for duplicate check
+                const normalizePrompt = (t) => (t || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim()
 
+                setQuestions(prev => {
                     const existingIds = new Set(prev.map(p => p.id))
-                    const toAdd = []
+                    const existingTexts = new Set(prev.filter(p => p.type === "question" && p.text).map(p => normalizePrompt(p.text)))
 
-                    for (const item of sanitized) {
-                        const norm = (item.text || "").toLowerCase().replace(/[^a-z0-9]/g, "")
-                        // If a question with identical prompt text already exists, skip it
-                        if (norm.length > 5 && existingPrompts.has(norm)) {
-                            continue
+                    // Filter out duplicate questions that have already been imported or added
+                    const nonDuplicates = sanitized.filter(item => {
+                        if (item.type !== "question" || !item.text) return true
+                        const norm = normalizePrompt(item.text)
+                        if (norm.length > 5 && existingTexts.has(norm)) {
+                            return false // Skip duplicate question
                         }
-                        if (norm.length > 5) {
-                            existingPrompts.add(norm)
-                        }
-
-                        let finalItem = item
-                        if (existingIds.has(item.id)) {
-                            finalItem = { ...item, id: generateUniqueId() }
-                        }
-                        existingIds.add(finalItem.id)
-                        toAdd.push(finalItem)
-                    }
-
-                    if (toAdd.length === 0) {
-                        toast.info("Scanned questions already exist in the exam.")
-                        return prev
-                    }
-
-                    const skippedCount = sanitized.length - toAdd.length
-                    if (skippedCount > 0) {
-                        toast.success(`${toAdd.length} new questions added (${skippedCount} duplicates skipped)`)
-                    } else {
-                        toast.success(`${toAdd.length} questions created and added to exam!`)
-                    }
-
-                    return [...prev, ...toAdd]
-                })
-            } else if (payload && payload.text) {
-                const normPayload = (payload.text || "").toLowerCase().replace(/[^a-z0-9]/g, "")
-                setQuestions(prev => {
-                    const alreadyExists = prev.some(p => {
-                        const normExisting = (p.text || "").toLowerCase().replace(/[^a-z0-9]/g, "")
-                        return normPayload.length > 5 && normExisting === normPayload
+                        if (norm.length > 5) existingTexts.add(norm)
+                        return true
                     })
-                    if (alreadyExists) {
-                        toast.info("This question is already in the exam.")
+
+                    const deduped = nonDuplicates.map(item => {
+                        if (existingIds.has(item.id)) {
+                            return { ...item, id: generateUniqueId() }
+                        }
+                        existingIds.add(item.id)
+                        return item
+                    })
+
+                    const skippedCount = sanitized.length - deduped.length
+                    if (skippedCount > 0) {
+                        toast.info(`Filtered out ${skippedCount} duplicate question${skippedCount === 1 ? '' : 's'}`)
+                    }
+
+                    return [...prev, ...deduped]
+                })
+                toast.success(`${sanitized.length} questions processed!`)
+            } else if (payload && payload.text) {
+                const normalizePrompt = (t) => (t || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim()
+                const newNorm = normalizePrompt(payload.text)
+
+                setQuestions(prev => {
+                    const isDup = prev.some(p => p.type === "question" && p.text && normalizePrompt(p.text) === newNorm && newNorm.length > 5)
+                    if (isDup) {
+                        toast.info("Question already exists in exam (duplicate skipped)")
                         return prev
                     }
                     const newQ = {
@@ -1130,111 +1120,105 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
                 {/* Header Actions */}
                 {!effectiveIsStudent && (
-                    <div className="border-b border-border/80 pb-4 relative flex flex-col gap-3">
-                        {/* Row 1: Exam / Quiz Title */}
-                        <div className="flex items-center justify-between gap-4 min-w-0">
-                            <div className="flex-1 min-w-0">
-                                {examId ? (
-                                    <input
-                                        type="text"
-                                        value={lessonTitle}
-                                        onChange={(e) => setLessonTitle(e.target.value)}
-                                        className="text-lg font-bold text-foreground tracking-tight bg-transparent border-b border-transparent hover:border-border focus:border-border/80 outline-none pb-0.5 w-full transition-colors"
-                                        placeholder="Mock Exam Title"
-                                    />
-                                ) : (
-                                    <h1 className="text-lg font-bold text-foreground tracking-tight truncate">
-                                        {lessonTitle}
-                                    </h1>
-                                )}
-                            </div>
-
-                            {/* Status indicator / Questions count badge */}
-                            <div className="hidden sm:flex items-center gap-1.5 shrink-0 text-xs text-muted-foreground font-medium">
-                                <span className="inline-flex size-2 rounded-full bg-emerald-500"></span>
-                                <span>{questions.filter(q => q.type === 'question').length} questions</span>
-                            </div>
+                    <div className="border-b border-gray-200/80 pb-3 relative flex flex-col gap-2.5">
+                        {/* Row 1: Title */}
+                        <div className="flex items-center min-w-0">
+                            {examId ? (
+                                <input
+                                    type="text"
+                                    value={lessonTitle}
+                                    onChange={(e) => setLessonTitle(e.target.value)}
+                                    className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-slate-400 outline-none pb-0.5"
+                                    placeholder="Mock Exam Title"
+                                />
+                            ) : (
+                                <h1 className="text-xl font-bold text-gray-800 tracking-tight truncate">
+                                    {lessonTitle}
+                                </h1>
+                            )}
                         </div>
 
-                        {/* Row 2: Minimal Toolbar Strip */}
-                        <div className="flex items-center justify-between gap-2.5 flex-wrap">
-                            {/* Left Group: Creation & Data Tools */}
-                            <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Row 2: Minimalist Toolbar matching PEAK system */}
+                        <div className="flex items-center justify-between gap-3 flex-wrap pt-0.5">
+                            {/* Left Controls: Question Actions + JSON Bridge */}
+                            <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border/80">
                                 <button
                                     onClick={addQuestion}
-                                    className="h-8 px-3 rounded-lg bg-card border border-border/80 hover:bg-muted/50 hover:border-border text-foreground text-xs font-medium shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-card text-foreground hover:bg-card/80 border border-border/60 shadow-2xs transition-all cursor-pointer"
                                 >
-                                    <Plus className="size-3.5 text-muted-foreground" />
+                                    <Plus className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                                     <span>Add Question</span>
                                 </button>
                                 <button
                                     onClick={addTitleDescription}
-                                    className="h-8 px-3 rounded-lg bg-card border border-border/80 hover:bg-muted/50 hover:border-border text-foreground text-xs font-medium shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/60 transition-all cursor-pointer"
                                 >
-                                    <FileText className="size-3.5 text-muted-foreground" />
-                                    <span>Section / Desc</span>
+                                    <span>Add Section</span>
                                 </button>
+                                <div className="h-3.5 w-px bg-border/80 mx-0.5" />
                                 <button
                                     type="button"
                                     onClick={() => {
                                         setJsonInputText(JSON.stringify(questions, null, 2))
                                         setShowJsonModal(true)
                                     }}
-                                    className="h-8 px-2.5 rounded-lg bg-card border border-border/80 hover:bg-muted/50 hover:border-border text-muted-foreground hover:text-foreground text-xs font-medium shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/60 transition-all cursor-pointer"
                                     title="View, edit, or import questions as JSON text"
                                 >
-                                    <Braces className="size-3.5 text-muted-foreground" />
+                                    <Braces className="h-3.5 w-3.5 text-muted-foreground" />
                                     <span>JSON</span>
                                 </button>
                                 {!examId && (
                                     <button
                                         type="button"
                                         onClick={() => setShowSettings(!showSettings)}
-                                        className={`h-8 w-8 rounded-lg border text-xs font-medium shadow-2xs transition-all cursor-pointer flex items-center justify-center ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-card border-border/80 hover:bg-muted/50 text-muted-foreground hover:text-foreground'}`}
+                                        className={`p-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${showSettings ? 'bg-[#E9C46A]/20 text-[#E9C46A]' : 'text-muted-foreground hover:text-foreground hover:bg-card/60'}`}
                                         title="Quiz Settings"
                                     >
-                                        <Settings className="size-3.5" />
+                                        <Settings className="h-3.5 w-3.5" />
                                     </button>
                                 )}
                             </div>
 
-                            {/* Right Group: Views & Primary Save */}
-                            <div className="flex items-center gap-1.5 shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={toggleFullscreen}
-                                    className="h-8 w-8 rounded-lg border border-border/80 bg-card hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-all shadow-2xs cursor-pointer flex items-center justify-center"
-                                    title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-                                >
-                                    {isFullscreen ? <Minimize className="size-3.5" /> : <Maximize className="size-3.5" />}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={async () => {
-                                        await saveQuiz(true)
-                                        if (onToggleViewMode) {
-                                            onToggleViewMode()
-                                        } else {
-                                            setInternalPreview(true)
-                                            setIsSubmitted(false)
-                                            setStudentAnswers({})
-                                            startTimeRef.current = Date.now()
-                                        }
-                                    }}
-                                    className="h-8 px-3 rounded-lg border border-border/80 bg-card hover:bg-muted/50 text-muted-foreground hover:text-foreground font-medium text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
-                                >
-                                    <Eye className="size-3.5 text-muted-foreground" />
-                                    <span>Preview</span>
-                                </button>
+                            {/* Right Controls: View Toggle, Fullscreen, and Save */}
+                            <div className="flex items-center gap-2 shrink-0">
+                                <div className="flex items-center bg-muted/60 p-1 rounded-xl border border-border/80 gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={toggleFullscreen}
+                                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/80 transition-all cursor-pointer flex items-center justify-center"
+                                        title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                                    >
+                                        {isFullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            await saveQuiz(true)
+                                            if (onToggleViewMode) {
+                                                onToggleViewMode()
+                                            } else {
+                                                setInternalPreview(true)
+                                                setIsSubmitted(false)
+                                                setStudentAnswers({})
+                                                startTimeRef.current = Date.now()
+                                            }
+                                        }}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/80 transition-all cursor-pointer"
+                                        title="Preview as Student"
+                                    >
+                                        <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                                        <span>Student View</span>
+                                    </button>
+                                </div>
 
                                 <button
                                     onClick={() => saveQuiz(false)}
                                     disabled={saving}
-                                    className="h-8 px-3.5 rounded-lg bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
                                 >
-                                    {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
-                                    <span>Save</span>
+                                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                                    <span>Save Changes</span>
                                 </button>
                             </div>
                         </div>

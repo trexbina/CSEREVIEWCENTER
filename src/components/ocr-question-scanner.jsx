@@ -204,21 +204,7 @@ function parseQuestionsFromText(rawText) {
         })
     })
 
-    // Avoid duplicate questions within the scanned document by prompt text
-    const seenTexts = new Set()
-    const deduplicatedQuestions = []
-    for (const q of parsedQuestions) {
-        const normalizedKey = (q.text || "").toLowerCase().replace(/[^a-z0-9]/g, "")
-        if (normalizedKey.length > 5 && seenTexts.has(normalizedKey)) {
-            continue // Skip duplicate question in the same document
-        }
-        if (normalizedKey.length > 5) {
-            seenTexts.add(normalizedKey)
-        }
-        deduplicatedQuestions.push(q)
-    }
-
-    return deduplicatedQuestions
+    return parsedQuestions
 }
 
 export default function OcrQuestionScanner() {
@@ -449,15 +435,15 @@ export default function OcrQuestionScanner() {
 
     return (
         <div className="space-y-4">
-            {/* Header Badge */}
-            <div className="rounded-xl border border-border/80 bg-muted/30 p-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            {/* Minimal Header Badge */}
+            <div className="rounded-xl border border-border bg-card p-3 flex items-center justify-between shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                    <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                         <Sparkles className="size-4" />
                     </div>
-                    <div>
-                        <h4 className="text-xs font-bold text-foreground">RapidOCR Extractor</h4>
-                        <p className="text-[10px] text-muted-foreground">PDF & image auto-builder</p>
+                    <div className="min-w-0">
+                        <h4 className="text-xs font-semibold text-foreground tracking-tight">RapidOCR Extractor</h4>
+                        <p className="text-[10px] text-muted-foreground">Auto-generate question cards</p>
                     </div>
                 </div>
 
@@ -465,7 +451,7 @@ export default function OcrQuestionScanner() {
                     <button
                         type="button"
                         onClick={resetScanner}
-                        className="text-[10px] font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 bg-muted px-2 py-1 rounded-md border border-border/70 cursor-pointer transition-colors"
+                        className="text-[10px] font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 bg-muted/70 hover:bg-muted px-2.5 py-1 rounded-lg border border-border/80 cursor-pointer transition-colors shadow-2xs"
                         title="Scan another document"
                     >
                         <RefreshCw className="size-3" />

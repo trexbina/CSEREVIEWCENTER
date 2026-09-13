@@ -176,61 +176,57 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         const handleImport = (payload) => {
             const generateUniqueId = (prefix = "q") => `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 
+            const normalizeText = (t) => (t || "").trim().toLowerCase().replace(/\s+/g, " ")
+
             if (Array.isArray(payload) && payload.length > 0) {
-                // Ensure every question and option has a strictly unique ID across the entire questions array
-                const sanitized = payload.map((q, qIdx) => ({
-                    ...q,
-                    id: q.id ? `${q.id}_${Math.random().toString(36).substring(2, 7)}` : generateUniqueId(`q_${qIdx}`),
-                    options: Array.isArray(q.options)
-                        ? q.options.map((opt, optIdx) => ({
-                            ...opt,
-                            id: opt.id ? `${opt.id}_${Math.random().toString(36).substring(2, 6)}` : generateUniqueId(`opt_${optIdx}`)
-                        }))
-                        : []
-                }))
-
-                // Normalize text helper for duplicate check
-                const normalizePrompt = (t) => (t || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim()
-
                 setQuestions(prev => {
+                    // Collect existing question texts to avoid duplicate questions
+                    const existingTexts = new Set(
+                        prev.filter(p => p.type === "question" && p.text).map(p => normalizeText(p.text))
+                    )
                     const existingIds = new Set(prev.map(p => p.id))
-                    const existingTexts = new Set(prev.filter(p => p.type === "question" && p.text).map(p => normalizePrompt(p.text)))
 
-                    // Filter out duplicate questions that have already been imported or added
-                    const nonDuplicates = sanitized.filter(item => {
-                        if (item.type !== "question" || !item.text) return true
-                        const norm = normalizePrompt(item.text)
-                        if (norm.length > 5 && existingTexts.has(norm)) {
+                    // Filter out incoming questions that already exist in the exam
+                    const incomingUnique = payload.filter(q => {
+                        if (!q || !q.text) return false
+                        const norm = normalizeText(q.text)
+                        if (existingTexts.has(norm)) {
                             return false // Skip duplicate question
                         }
-                        if (norm.length > 5) existingTexts.add(norm)
+                        existingTexts.add(norm)
                         return true
                     })
 
-                    const deduped = nonDuplicates.map(item => {
-                        if (existingIds.has(item.id)) {
-                            return { ...item, id: generateUniqueId() }
-                        }
-                        existingIds.add(item.id)
-                        return item
-                    })
-
-                    const skippedCount = sanitized.length - deduped.length
-                    if (skippedCount > 0) {
-                        toast.info(`Filtered out ${skippedCount} duplicate question${skippedCount === 1 ? '' : 's'}`)
+                    if (incomingUnique.length === 0) {
+                        toast.info("All scanned questions are already present in the exam.")
+                        return prev
                     }
 
-                    return [...prev, ...deduped]
-                })
-                toast.success(`${sanitized.length} questions processed!`)
-            } else if (payload && payload.text) {
-                const normalizePrompt = (t) => (t || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim()
-                const newNorm = normalizePrompt(payload.text)
+                    const sanitized = incomingUnique.map((q, qIdx) => {
+                        const qId = q.id && !existingIds.has(q.id) ? q.id : generateUniqueId(`q_${qIdx}`)
+                        existingIds.add(qId)
 
+                        return {
+                            ...q,
+                            id: qId,
+                            options: Array.isArray(q.options)
+                                ? q.options.map((opt, optIdx) => ({
+                                    ...opt,
+                                    id: opt.id ? `${opt.id}_${Math.random().toString(36).substring(2, 6)}` : generateUniqueId(`opt_${optIdx}`)
+                                }))
+                                : []
+                        }
+                    })
+
+                    toast.success(`${sanitized.length} questions added to exam!`)
+                    return [...prev, ...sanitized]
+                })
+            } else if (payload && payload.text) {
                 setQuestions(prev => {
-                    const isDup = prev.some(p => p.type === "question" && p.text && normalizePrompt(p.text) === newNorm && newNorm.length > 5)
-                    if (isDup) {
-                        toast.info("Question already exists in exam (duplicate skipped)")
+                    const norm = normalizeText(payload.text)
+                    const exists = prev.some(p => p.type === "question" && normalizeText(p.text) === norm)
+                    if (exists) {
+                        toast.info("This question is already in the exam.")
                         return prev
                     }
                     const newQ = {
@@ -255,7 +251,6 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         return () => {
             delete window.__peak_import_questions
             window.removeEventListener("peak:add-ocr-question", handleAddOcrQuestion)
-        }
     }, [])
 
     const toggleFullscreen = () => {
@@ -1138,86 +1133,78 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                             )}
                         </div>
 
-                        {/* Row 2: Minimalist Toolbar matching PEAK system */}
-                        <div className="flex items-center justify-between gap-3 flex-wrap pt-0.5">
-                            {/* Left Controls: Question Actions + JSON Bridge */}
-                            <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border/80">
+                        {/* Row 2: Add buttons + Settings icon on Left, Fullscreen + Student View + Save Changes on Right */}
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                            <div className="flex items-center gap-1.5">
                                 <button
                                     onClick={addQuestion}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-card text-foreground hover:bg-card/80 border border-border/60 shadow-2xs transition-all cursor-pointer"
+                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
                                 >
-                                    <Plus className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                                    <span>Add Question</span>
+                                    Add Question
                                 </button>
                                 <button
                                     onClick={addTitleDescription}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/60 transition-all cursor-pointer"
+                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
                                 >
-                                    <span>Add Section</span>
+                                    Add Title/Desc
                                 </button>
-                                <div className="h-3.5 w-px bg-border/80 mx-0.5" />
                                 <button
                                     type="button"
                                     onClick={() => {
                                         setJsonInputText(JSON.stringify(questions, null, 2))
                                         setShowJsonModal(true)
                                     }}
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/60 transition-all cursor-pointer"
+                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                                     title="View, edit, or import questions as JSON text"
                                 >
-                                    <Braces className="h-3.5 w-3.5 text-muted-foreground" />
-                                    <span>JSON</span>
+                                    <Braces className="h-3.5 w-3.5 text-gray-600" />
+                                    <span>JSON Text</span>
                                 </button>
                                 {!examId && (
                                     <button
                                         type="button"
                                         onClick={() => setShowSettings(!showSettings)}
-                                        className={`p-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${showSettings ? 'bg-[#E9C46A]/20 text-[#E9C46A]' : 'text-muted-foreground hover:text-foreground hover:bg-card/60'}`}
+                                        className={`p-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center justify-center ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-600 hover:text-gray-900'}`}
                                         title="Quiz Settings"
                                     >
-                                        <Settings className="h-3.5 w-3.5" />
+                                        <Settings className="h-4 w-4" />
                                     </button>
                                 )}
                             </div>
 
-                            {/* Right Controls: View Toggle, Fullscreen, and Save */}
                             <div className="flex items-center gap-2 shrink-0">
-                                <div className="flex items-center bg-muted/60 p-1 rounded-xl border border-border/80 gap-1">
-                                    <button
-                                        type="button"
-                                        onClick={toggleFullscreen}
-                                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/80 transition-all cursor-pointer flex items-center justify-center"
-                                        title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-                                    >
-                                        {isFullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={async () => {
-                                            await saveQuiz(true)
-                                            if (onToggleViewMode) {
-                                                onToggleViewMode()
-                                            } else {
-                                                setInternalPreview(true)
-                                                setIsSubmitted(false)
-                                                setStudentAnswers({})
-                                                startTimeRef.current = Date.now()
-                                            }
-                                        }}
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/80 transition-all cursor-pointer"
-                                        title="Preview as Student"
-                                    >
-                                        <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                                        <span>Student View</span>
-                                    </button>
-                                </div>
-
+                                <button
+                                    type="button"
+                                    onClick={toggleFullscreen}
+                                    className="p-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-800 transition-all shadow-2xs cursor-pointer flex items-center justify-center"
+                                    title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                                >
+                                    {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        await saveQuiz(true)
+                                        if (onToggleViewMode) {
+                                            onToggleViewMode()
+                                        } else {
+                                            setInternalPreview(true)
+                                            setIsSubmitted(false)
+                                            setStudentAnswers({})
+                                            startTimeRef.current = Date.now()
+                                        }
+                                    }}
+                                    className="px-3 py-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
+                                >
+                                    <Eye className="h-3.5 w-3.5 text-gray-500" />
+                                    <span>Student View</span>
+                                </button>
                                 <button
                                     onClick={() => saveQuiz(false)}
                                     disabled={saving}
-                                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
+                                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
                                 >
-                                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
                                     <span>Save Changes</span>
                                 </button>
                             </div>

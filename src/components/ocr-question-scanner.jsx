@@ -46,9 +46,9 @@ function preprocessQuestionText(text) {
     t = t.replace(/([^\n])\s+(\([a-eA-E]\))\s+/g, "$1\n$2 ")
     t = t.replace(/([^\n])\s+(\[[a-eA-E]\])\s+/g, "$1\n$2 ")
 
-    // Separate inline questions: e.g. "...text. 2. Next question..." or "...text? Q2. Next..."
+    // Separate inline questions: e.g. "...text. 2. Next question..." or "...text? Q2. Next..." or "...text. 10. Next..."
     t = t.replace(/([^\n])\s+((?:Question|Item|Q)\s*\d+[:.\-\)])\s+/gi, "$1\n$2 ")
-    t = t.replace(/([^\n])\s+(\d+[\.\)])\s+/g, "$1\n$2 ")
+    t = t.replace(/([^\n])\s+((?:[1-9]\d*)\s*[\.\)])\s+/g, "$1\n$2 ")
 
     // Separate inline answer keys / notes / explanations
     t = t.replace(/([^\n])\s+((?:Answer|Ans|Key|Correct Answer)\s*[:\-])\s+/gi, "$1\n$2 ")
@@ -69,8 +69,8 @@ function parseQuestionsFromText(rawText) {
 
     if (lines.length === 0) return []
 
-    // Match question starts: e.g. "1.", "1)", "Q1.", "Question 1:", "1 - ", etc.
-    const questionStartRegex = /^(?:(?:Question|Item|Q)\s*\d+[:.\-\)]|\d+[\.\)\-]\s+)/i
+    // Match question starts: e.g. "1.", "1)", "10.", "Q1.", "Question 1:", "1 - ", etc.
+    const questionStartRegex = /^(?:(?:Question|Item|Q)\s*\d+[:.\-\)]|\d+\s*[\.\)\-]\s*)/i
 
     let rawBlocks = []
     let currentBlock = []
@@ -78,7 +78,6 @@ function parseQuestionsFromText(rawText) {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i]
         if (questionStartRegex.test(line) && currentBlock.length > 0) {
-            // Check if currentBlock has non-empty content
             rawBlocks.push([...currentBlock])
             currentBlock = []
         }
@@ -435,15 +434,15 @@ export default function OcrQuestionScanner() {
 
     return (
         <div className="space-y-4">
-            {/* Minimal Header Badge */}
-            <div className="rounded-xl border border-border bg-card p-3 flex items-center justify-between shadow-2xs">
-                <div className="flex items-center gap-2.5">
-                    <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                        <Sparkles className="size-4" />
+            {/* Header Badge - Minimal Neutral */}
+            <div className="rounded-xl border border-border bg-card p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-7 rounded-lg bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                        <Sparkles className="size-3.5" />
                     </div>
                     <div className="min-w-0">
-                        <h4 className="text-xs font-semibold text-foreground tracking-tight">RapidOCR Extractor</h4>
-                        <p className="text-[10px] text-muted-foreground">Auto-generate question cards</p>
+                        <h4 className="text-xs font-semibold text-foreground truncate">RapidOCR Extractor</h4>
+                        <p className="text-[10px] text-muted-foreground truncate">PDF & image parser</p>
                     </div>
                 </div>
 
@@ -451,7 +450,7 @@ export default function OcrQuestionScanner() {
                     <button
                         type="button"
                         onClick={resetScanner}
-                        className="text-[10px] font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 bg-muted/70 hover:bg-muted px-2.5 py-1 rounded-lg border border-border/80 cursor-pointer transition-colors shadow-2xs"
+                        className="text-[11px] font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 bg-muted/80 hover:bg-muted px-2.5 py-1 rounded-lg border border-border/80 cursor-pointer transition-colors shrink-0"
                         title="Scan another document"
                     >
                         <RefreshCw className="size-3" />
@@ -472,10 +471,10 @@ export default function OcrQuestionScanner() {
                     }}
                     onClick={() => fileInputRef.current?.click()}
                     className={`
-                        relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all
+                        relative border border-dashed rounded-xl p-6 text-center cursor-pointer transition-all
                         ${isDragging 
-                            ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20" 
-                            : "border-border/80 hover:border-border hover:bg-muted/30 bg-card"
+                            ? "border-foreground/40 bg-muted/40" 
+                            : "border-border hover:border-border/80 hover:bg-muted/20 bg-card"
                         }
                     `}
                 >
@@ -490,38 +489,38 @@ export default function OcrQuestionScanner() {
                     />
 
                     <div className="flex flex-col items-center gap-2.5">
-                        <div className="size-11 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                            <Upload className="size-5" />
+                        <div className="size-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
+                            <Upload className="size-4" />
                         </div>
-                        <div className="space-y-1">
-                            <p className="text-xs font-semibold text-foreground">
+                        <div className="space-y-0.5">
+                            <p className="text-xs font-medium text-foreground">
                                 Upload PDF or Exam Image
                             </p>
-                            <p className="text-[10px] text-muted-foreground leading-relaxed px-2">
-                                Automatically parses questions & choices directly into cards
+                            <p className="text-[10px] text-muted-foreground leading-relaxed px-1">
+                                Automatically detects questions and choices
                             </p>
                         </div>
 
-                        <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/60 border border-border/80 text-[10px] text-muted-foreground font-medium">
-                            <Clipboard className="size-3" />
-                            <span>Or press <strong>Ctrl + V</strong> to paste screenshot</span>
+                        <div className="mt-1 inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-muted/60 border border-border/60 text-[10px] text-muted-foreground font-normal">
+                            <Clipboard className="size-2.5" />
+                            <span>Or press <kbd className="font-sans font-medium">Ctrl + V</kbd> to paste</span>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* File Info Bar */}
+            {/* File Info Bar - Minimal */}
             {fileInfo && (
-                <div className="p-3 rounded-xl border border-border bg-card flex items-center justify-between text-xs">
+                <div className="p-2.5 rounded-xl border border-border bg-card flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
-                            {fileInfo.type === "pdf" ? <FileText className="size-4" /> : <ImageIcon className="size-4" />}
+                        <div className="size-7 rounded-lg bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
+                            {fileInfo.type === "pdf" ? <FileText className="size-3.5" /> : <ImageIcon className="size-3.5" />}
                         </div>
                         <div className="min-w-0">
-                            <p className="font-semibold text-foreground truncate text-xs" title={fileInfo.name}>
+                            <p className="font-medium text-foreground truncate text-xs" title={fileInfo.name}>
                                 {fileInfo.name}
                             </p>
-                            <p className="text-[10px] text-muted-foreground uppercase font-mono">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">
                                 {fileInfo.type} {fileInfo.size ? `• ${fileInfo.size}` : ""}
                             </p>
                         </div>
@@ -529,49 +528,49 @@ export default function OcrQuestionScanner() {
                 </div>
             )}
 
-            {/* Scanning Progress Bar */}
+            {/* Scanning Progress Bar - Minimal Neutral */}
             {isScanning && (
-                <div className="p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-2">
+                <div className="p-3 rounded-xl border border-border bg-muted/30 space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-foreground flex items-center gap-1.5 truncate">
-                            <Loader2 className="size-3.5 animate-spin text-emerald-600 dark:text-emerald-400 shrink-0" />
-                            <span className="truncate">{progressStatus || "Scanning document..."}</span>
+                        <span className="font-medium text-foreground flex items-center gap-1.5 truncate">
+                            <Loader2 className="size-3.5 animate-spin text-muted-foreground shrink-0" />
+                            <span className="truncate text-xs">{progressStatus || "Scanning document..."}</span>
                         </span>
-                        <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold shrink-0 ml-2">
+                        <span className="font-mono text-muted-foreground font-medium shrink-0 ml-2 text-xs">
                             {progressPercent}%
                         </span>
                     </div>
-                    <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
                         <div
-                            className="h-full bg-emerald-500 transition-all duration-200"
+                            className="h-full bg-foreground/60 transition-all duration-200"
                             style={{ width: `${progressPercent}%` }}
                         />
                     </div>
                 </div>
             )}
 
-            {/* Auto-Creation Success Card */}
+            {/* Auto-Creation Success Card - Minimal Neutral */}
             {createdQuestions.length > 0 && (
                 <div className="space-y-3 pt-1 animate-in fade-in duration-200">
-                    <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/20 space-y-2">
-                        <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-                            <CheckCircle2 className="size-4 shrink-0" />
-                            <h5 className="text-xs font-bold">
-                                {createdQuestions.length} {createdQuestions.length === 1 ? "Question Card" : "Question Cards"} Created!
+                    <div className="p-3 rounded-xl border border-border bg-muted/20 flex items-start gap-2.5">
+                        <CheckCircle2 className="size-4 text-foreground/80 shrink-0 mt-0.5" />
+                        <div className="min-w-0 space-y-0.5">
+                            <h5 className="text-xs font-semibold text-foreground">
+                                {createdQuestions.length} {createdQuestions.length === 1 ? "Question" : "Questions"} Ready
                             </h5>
+                            <p className="text-[11px] text-muted-foreground leading-snug">
+                                Added to exam canvas. Duplicates are automatically prevented.
+                            </p>
                         </div>
-                        <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80 leading-snug">
-                            All questions and choices were automatically parsed and appended to your exam editor.
-                        </p>
                     </div>
 
-                    {/* Tab switcher: Cards preview vs JSON Text */}
-                    <div className="flex items-center justify-between border-b border-border/80 pb-1.5 pt-1">
-                        <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/70">
+                    {/* Tab switcher: Cards preview vs JSON Text - Minimal */}
+                    <div className="flex items-center justify-between border-b border-border pb-2 pt-0.5">
+                        <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/60">
                             <button
                                 type="button"
                                 onClick={() => setActiveTab("cards")}
-                                className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
                                     activeTab === "cards" 
                                         ? "bg-card text-foreground shadow-2xs" 
                                         : "text-muted-foreground hover:text-foreground"
@@ -583,7 +582,7 @@ export default function OcrQuestionScanner() {
                             <button
                                 type="button"
                                 onClick={() => setActiveTab("json")}
-                                className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
                                     activeTab === "json" 
                                         ? "bg-card text-foreground shadow-2xs" 
                                         : "text-muted-foreground hover:text-foreground"
@@ -597,10 +596,10 @@ export default function OcrQuestionScanner() {
                         <button
                             type="button"
                             onClick={() => setShowRawText(!showRawText)}
-                            className="text-[10px] font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
+                            className="text-[11px] font-normal text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
                         >
                             {showRawText ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
-                            <span>{showRawText ? "Hide Text" : "Raw OCR"}</span>
+                            <span>{showRawText ? "Hide Text" : "Raw Text"}</span>
                         </button>
                     </div>
 
@@ -610,27 +609,27 @@ export default function OcrQuestionScanner() {
                         </div>
                     )}
 
-                    {/* Tab 1: Cards View */}
+                    {/* Tab 1: Cards View - Minimal */}
                     {activeTab === "cards" && (
                         <div className="max-h-60 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
                             {createdQuestions.map((q, idx) => (
                                 <div
                                     key={q.id || idx}
-                                    className="p-2.5 rounded-lg border border-border/80 bg-card text-xs space-y-1"
+                                    className="p-2.5 rounded-lg border border-border bg-card text-xs space-y-1 hover:border-border/80 transition-colors"
                                 >
                                     <div className="flex items-start gap-1.5">
-                                        <span className="font-bold text-emerald-600 dark:text-emerald-400 shrink-0 font-mono text-[11px]">
-                                            Q{idx + 1}.
+                                        <span className="font-semibold text-muted-foreground shrink-0 font-mono text-[11px]">
+                                            {idx + 1}.
                                         </span>
-                                        <p className="font-medium text-foreground line-clamp-2 leading-snug">
+                                        <p className="font-normal text-foreground line-clamp-2 leading-snug text-xs">
                                             {q.text}
                                         </p>
                                     </div>
-                                    <div className="text-[10px] text-muted-foreground flex items-center gap-2 pl-5">
+                                    <div className="text-[10px] text-muted-foreground flex items-center gap-2 pl-4">
                                         <span>{q.options?.length || 0} Choices</span>
                                         {q.options?.some(o => o.isCorrect) && (
-                                            <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-0.5">
-                                                <Check className="size-2.5" /> Key marked
+                                            <span className="text-foreground/70 font-medium flex items-center gap-0.5">
+                                                <Check className="size-2.5" /> Key set
                                             </span>
                                         )}
                                     </div>
@@ -639,11 +638,11 @@ export default function OcrQuestionScanner() {
                         </div>
                     )}
 
-                    {/* Tab 2: JSON Text View */}
+                    {/* Tab 2: JSON Text View - Minimal */}
                     {activeTab === "json" && (
                         <div className="space-y-2">
-                            <div className="flex items-center justify-between text-[11px]">
-                                <span className="text-muted-foreground font-mono">
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-muted-foreground font-mono text-[11px]">
                                     {createdQuestions.length} Questions JSON
                                 </span>
                                 <button
@@ -655,14 +654,14 @@ export default function OcrQuestionScanner() {
                                         setTimeout(() => setJsonCopied(false), 2000)
                                         toast.success("JSON copied to clipboard!")
                                     }}
-                                    className="text-[10px] font-semibold text-foreground flex items-center gap-1 bg-muted px-2 py-0.5 rounded border border-border/70 hover:bg-muted/80 cursor-pointer transition-colors"
+                                    className="text-[11px] font-medium text-foreground flex items-center gap-1 bg-muted px-2 py-0.5 rounded-md border border-border hover:bg-muted/80 cursor-pointer transition-colors"
                                 >
                                     {jsonCopied ? <Check className="size-3 text-emerald-600" /> : <Copy className="size-3" />}
                                     <span>{jsonCopied ? "Copied" : "Copy JSON"}</span>
                                 </button>
                             </div>
 
-                            <pre className="p-2.5 rounded-lg border border-border bg-gray-950 text-emerald-400 font-mono text-[10px] max-h-56 overflow-y-auto whitespace-pre custom-scrollbar">
+                            <pre className="p-2.5 rounded-lg border border-border bg-muted/40 text-foreground font-mono text-[10px] max-h-56 overflow-y-auto whitespace-pre custom-scrollbar">
                                 {JSON.stringify(createdQuestions, null, 2)}
                             </pre>
 
@@ -674,9 +673,8 @@ export default function OcrQuestionScanner() {
                                     } else {
                                         window.dispatchEvent(new CustomEvent("peak:add-ocr-question", { detail: createdQuestions }))
                                     }
-                                    toast.success("Applied to exam cards!")
                                 }}
-                                className="w-full bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold py-1.5 rounded-lg transition-all shadow-2xs cursor-pointer text-center"
+                                className="w-full border border-border bg-muted hover:bg-muted/80 text-foreground text-xs font-medium py-1.5 rounded-lg transition-all cursor-pointer text-center"
                             >
                                 Re-Apply to Exam Cards
                             </button>

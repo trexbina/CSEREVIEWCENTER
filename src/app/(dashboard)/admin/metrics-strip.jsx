@@ -73,7 +73,7 @@ export async function MetricsStrip() {
   ]
 
   return (
-    <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs">
+    <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden">
       <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-black/5 dark:divide-white/5">
         {items.map((item, index) => {
           const Icon = item.icon
@@ -81,18 +81,18 @@ export async function MetricsStrip() {
             <Link
               key={index}
               href={item.href}
-              className="p-5 sm:p-6 flex flex-col justify-between"
+              className="flex flex-col justify-between group transition-colors"
             >
-              {/* Header: Label + Minimal Icon (Neutral, no background) */}
-              <div className="flex items-center justify-between gap-2">
+              {/* Header: Label + Icon with bottom border & background area */}
+              <div className="px-5 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between gap-2 border-b border-black/5 dark:border-white/5 bg-black/[0.015] dark:bg-white/[0.015]">
                 <span className="text-[13px] font-medium text-neutral-500 dark:text-neutral-400 select-none">
                   {item.label}
                 </span>
-                <Icon className="size-4.5 text-neutral-400 dark:text-neutral-500 stroke-[1.75]" />
+                <Icon className="size-4 text-neutral-400 dark:text-neutral-500 stroke-[1.75]" />
               </div>
 
-              {/* Value + Brief Note */}
-              <div className="mt-3">
+              {/* Body: Value + Brief Note */}
+              <div className="p-5 sm:p-6 pt-4 sm:pt-4">
                 <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                   {item.value.toLocaleString()}
                 </div>

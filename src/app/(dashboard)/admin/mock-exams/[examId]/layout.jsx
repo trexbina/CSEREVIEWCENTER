@@ -82,7 +82,7 @@ export default function MockExamBuilderLayout({ children, params }) {
                 </div>
 
                 {/* Title Action & Back Button */}
-                <div className="p-3 px-4 border-b border-border flex items-center justify-between gap-2">
+                <div className="p-3 px-4 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                         <button
                             onClick={() => {
@@ -95,7 +95,7 @@ export default function MockExamBuilderLayout({ children, params }) {
                             <ChevronLeft className="h-3.5 w-3.5" />
                         </button>
                         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
-                            Mock Exams
+                            Builder Toolbox
                         </span>
                     </div>
                 </div>

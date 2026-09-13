@@ -37,10 +37,10 @@ export async function ProgramsDistributionOverview() {
         </div>
 
         <Link
-          href="/admin/curriculum"
+          href="/admin/master-data"
           className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white transition-colors"
         >
-          <span>Manage curriculum</span>
+          <span>View all</span>
           <ArrowUpRight className="size-3.5 sm:size-4 text-neutral-400" />
         </Link>
       </div>

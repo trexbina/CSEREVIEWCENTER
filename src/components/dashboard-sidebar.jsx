@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import {
     LayoutDashboard,
     Users,
@@ -157,15 +157,85 @@ const roleBadgeMap = {
 
 /* ------------------------------------------------------------------ */
 /*  Sidebar component                                                  */
-/* ------------------------------------------------------------------ */
-export function DashboardSidebar({ role }) {
+export function DashboardSidebar({ role, permissions, roleName }) {
     const pathname = usePathname()
     const router = useRouter()
     const [collapsed, setCollapsed] = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
+    const [customPermissions, setCustomPermissions] = useState(null)
+    const [customRoleName, setCustomRoleName] = useState(roleName || "")
 
-    const navItems = navByRole[role] || studentNav
-    const badge = roleBadgeMap[role]
+    useEffect(() => {
+        // If permissions prop wasn't passed directly, fetch from /api/admin/roles
+        if (!permissions && role && role !== "student" && role !== "teacher") {
+            fetch("/api/admin/roles")
+                .then((res) => res.json())
+                .then((data) => {
+                    const r = (data.roles || []).find((x) => x.role_key === role)
+                    if (r) {
+                        setCustomPermissions(Array.isArray(r.permissions) ? r.permissions : [])
+                        if (!customRoleName) setCustomRoleName(r.name)
+                    }
+                })
+                .catch(() => {})
+        }
+
+        const handleRoleUpdated = () => {
+            fetch("/api/admin/roles")
+                .then((res) => res.json())
+                .then((data) => {
+                    const r = (data.roles || []).find((x) => x.role_key === role)
+                    if (r) {
+                        setCustomPermissions(Array.isArray(r.permissions) ? r.permissions : [])
+                        setCustomRoleName(r.name)
+                    }
+                })
+                .catch(() => {})
+        }
+        window.addEventListener("role-permissions-updated", handleRoleUpdated)
+        return () => window.removeEventListener("role-permissions-updated", handleRoleUpdated)
+    }, [role, permissions, customRoleName])
+
+    // Compute nav items: only show modules assigned to the admin user's role
+    const navItems = useMemo(() => {
+        if (role === "student") return studentNav
+        if (role === "teacher") return teacherNav
+
+        const allowed = permissions || customPermissions
+        if (Array.isArray(allowed)) {
+            const result = []
+            let pendingSection = null
+
+            for (const item of superAdminNav) {
+                if (item.section) {
+                    pendingSection = item
+                } else if (allowed.includes(item.href)) {
+                    if (pendingSection) {
+                        result.push(pendingSection)
+                        pendingSection = null
+                    }
+                    result.push(item)
+                }
+            }
+            return result
+        }
+
+        // Fallback if no permissions configured
+        if (navByRole[role]) return navByRole[role]
+        return superAdminNav
+    }, [role, permissions, customPermissions])
+
+    const badge = useMemo(() => {
+        const displayName = roleName || customRoleName
+        if (displayName) {
+            return {
+                label: displayName.toLowerCase(),
+                color: roleBadgeMap[role]?.color || "bg-slate-500/15 text-slate-700 dark:text-slate-300",
+            }
+        }
+        if (roleBadgeMap[role]) return roleBadgeMap[role]
+        return { label: (role || "admin").replace(/_/g, " "), color: "bg-slate-500/15 text-slate-700 dark:text-slate-300" }
+    }, [role, roleName, customRoleName])
 
     /* Eagerly prefetch every sidebar route on mount for instant navigation */
     useEffect(() => {

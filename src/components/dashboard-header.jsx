@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { Search, Bell, Maximize, Minimize, Trash, ChevronRight, User, Settings, ShieldCheck, CheckCheck } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { AdminHeaderSearch } from "@/components/admin-header-search"
 
 import Link from "next/link"
 
@@ -67,7 +68,6 @@ export function DashboardHeader({ role }) {
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
-  const [headerSearch, setHeaderSearch] = useState("")
 
   // Construct breadcrumb items from current pathname
   const segments = pathname.split("/").filter(Boolean)
@@ -103,7 +103,10 @@ export function DashboardHeader({ role }) {
       setIsFullscreen(!!document.fullscreenElement)
     }
     document.addEventListener("fullscreenchange", handleFullscreenChange)
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange)
+    }
   }, [role])
 
   const toggleFullscreen = () => {
@@ -180,17 +183,8 @@ export function DashboardHeader({ role }) {
 
       {/* Right side controls: Compact Search Bar + Fullscreen + Notifications + User Profile */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
-        {/* Compact Search Bar */}
-        <div className="relative w-44 sm:w-56 md:w-64">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#696969]/70 dark:text-gray-400" />
-          <input
-            type="search"
-            value={headerSearch}
-            onChange={(e) => setHeaderSearch(e.target.value)}
-            placeholder="Search.."
-            className="w-full h-9 pl-8.5 pr-3 text-xs rounded-xl bg-[#F2F2F2] dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 dark:placeholder:text-gray-400 border border-transparent focus:border-black/10 dark:focus:border-white/15 focus:bg-white dark:focus:bg-white/15 focus:outline-none focus:ring-1.5 focus:ring-black/10 transition-all shadow-2xs"
-          />
-        </div>
+        {/* Compact Search Bar with Role-Scoped Dropdown */}
+        <AdminHeaderSearch />
 
         {/* Fullscreen Toggle Button - Minimal borderless/backgroundless */}
         <button

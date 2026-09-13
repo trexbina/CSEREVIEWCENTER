@@ -153,7 +153,7 @@ export function EditUserDialog({ open, onOpenChange, user }) {
   const [batchId, setBatchId] = useState("")
   const [programId, setProgramId] = useState("")
   const [majorId, setMajorId] = useState("")
-  const [dropdownData, setDropdownData] = useState({ examinations: [], batches: [], programs: [], majors: [], schools: [], academic_courses: [] })
+  const [dropdownData, setDropdownData] = useState({ examinations: [], batches: [], programs: [], majors: [], schools: [], academic_courses: [], roles: [] })
 
   // ── Avatar Upload ──
   const [avatarUrl, setAvatarUrl] = useState("")
@@ -238,7 +238,7 @@ export function EditUserDialog({ open, onOpenChange, user }) {
       .trim() || user?.name || email
 
     try {
-        const isAdminRole = role === "admin" || role === "super_admin" || role === "academic_admin" || role === "registrar"
+        const isAdminRole = role !== "student" && role !== "teacher"
         const payload = {
         name: fullName,
         email,
@@ -493,7 +493,7 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                 <Label className="text-xs">User Role *</Label>
                 <Select 
                   value={
-                    role === "super_admin" || role === "academic_admin" || role === "registrar" || role === "admin"
+                    role !== "student" && role !== "teacher"
                       ? "admin_group"
                       : role
                   } 
@@ -522,7 +522,7 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                 </Select>
               </div>
 
-              {(role === "super_admin" || role === "academic_admin" || role === "registrar" || role === "admin") && (
+              {role !== "student" && role !== "teacher" && (
                 <div className="space-y-1 animate-in fade-in zoom-in-95 duration-150">
                   <Label className="text-xs">Admin Role *</Label>
                   <Select 
@@ -534,6 +534,14 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                       <SelectItem value="super_admin">Super Admin (System Owner)</SelectItem>
                       <SelectItem value="academic_admin">Academic Coordinator (Curriculum & Exams)</SelectItem>
                       <SelectItem value="registrar">Registrar (Students & Admissions)</SelectItem>
+                      {(dropdownData.roles || [])
+                        .filter(r => !["super_admin", "academic_admin", "registrar"].includes(r.role_key))
+                        .map(r => (
+                          <SelectItem key={r.id || r.role_key} value={r.role_key}>
+                            {r.name}
+                          </SelectItem>
+                        ))
+                      }
                     </SelectContent>
                   </Select>
                 </div>

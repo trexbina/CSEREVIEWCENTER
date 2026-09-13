@@ -31,7 +31,6 @@ async function ensureTable() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS targets JSONB DEFAULT '[]'::jsonb;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS personal_email VARCHAR(255);
     ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
-    ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('student', 'teacher', 'admin', 'super_admin', 'academic_admin', 'registrar'));
   `).catch(console.error)
 }
 
@@ -55,9 +54,17 @@ export async function POST(request) {
       )
     }
 
-    if (!VALID_ROLES.includes(role)) {
+    let isValidRole = VALID_ROLES.includes(role)
+    if (!isValidRole && role) {
+      const customRoleCheck = await pool.query("SELECT id FROM custom_roles WHERE role_key = $1", [role])
+      if (customRoleCheck.rows.length > 0) {
+        isValidRole = true
+      }
+    }
+
+    if (!isValidRole) {
       return NextResponse.json(
-        { error: "Role must be 'student', 'teacher', or 'admin'." },
+        { error: "Invalid role selected." },
         { status: 400 }
       )
     }
@@ -123,7 +130,7 @@ export async function POST(request) {
     return NextResponse.json({ user: result.rows[0] }, { status: 201 })
   } catch (err) {
     console.error("[admin/users POST] error:", err)
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 })
+    return NextResponse.json({ error: err.message || "Internal server error." }, { status: 500 })
   }
 }
 
@@ -233,11 +240,20 @@ export async function PUT(request) {
       )
     }
 
-    if (role && !VALID_ROLES.includes(role)) {
-      return NextResponse.json(
-        { error: "Role must be 'student', 'teacher', or 'admin'." },
-        { status: 400 }
-      )
+    if (role) {
+      let isValidRole = VALID_ROLES.includes(role)
+      if (!isValidRole) {
+        const customRoleCheck = await pool.query("SELECT id FROM custom_roles WHERE role_key = $1", [role])
+        if (customRoleCheck.rows.length > 0) {
+          isValidRole = true
+        }
+      }
+      if (!isValidRole) {
+        return NextResponse.json(
+          { error: "Invalid role selected." },
+          { status: 400 }
+        )
+      }
     }
 
     // Check if login email is taken by another user

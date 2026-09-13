@@ -296,6 +296,8 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
             if (res.ok) {
                 const data = await res.json()
                 const exam = data.exam
+                let initialLoadedQuestions = []
+                let initialLoadedSettings = DEFAULT_QUIZ_SETTINGS
                 if (exam) {
                     if (exam.title) setLessonTitle(exam.title)
                     if (exam.questions) {
@@ -304,24 +306,27 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                             try { parsed = JSON.parse(parsed) } catch (e) { parsed = [] }
                         }
                         if (parsed && !Array.isArray(parsed) && parsed.questions) {
-                            setQuestions(parsed.questions || [])
+                            initialLoadedQuestions = parsed.questions || []
+                            setQuestions(initialLoadedQuestions)
                             if (parsed.settings) {
                                 const rawList = Array.isArray(parsed.settings.referencePdfs)
                                     ? parsed.settings.referencePdfs
                                     : (parsed.settings.referencePdf?.url ? [parsed.settings.referencePdf] : [])
-                                setQuizSettings({
+                                initialLoadedSettings = {
                                     ...DEFAULT_QUIZ_SETTINGS,
                                     ...parsed.settings,
                                     referencePdfs: rawList,
                                     referencePdf: rawList[0] || null,
                                     maxRetries: Number(parsed.settings.maxRetries ?? 0),
                                     timeLimitMinutes: Number(parsed.settings.timeLimitMinutes ?? 0)
-                                })
+                                }
+                                setQuizSettings(initialLoadedSettings)
                             } else {
                                 setQuizSettings(DEFAULT_QUIZ_SETTINGS)
                             }
                         } else {
-                            setQuestions(Array.isArray(parsed) ? parsed : [])
+                            initialLoadedQuestions = Array.isArray(parsed) ? parsed : []
+                            setQuestions(initialLoadedQuestions)
                             setQuizSettings(DEFAULT_QUIZ_SETTINGS)
                         }
                     } else {
@@ -330,8 +335,8 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                     }
                     initialDataRef.current = JSON.stringify({
                         title: exam.title || lessonTitle || "",
-                        settings: parsed?.settings ? { ...DEFAULT_QUIZ_SETTINGS, ...parsed.settings } : DEFAULT_QUIZ_SETTINGS,
-                        questions: (parsed && !Array.isArray(parsed) && parsed.questions) ? (parsed.questions || []) : (Array.isArray(parsed) ? parsed : [])
+                        settings: initialLoadedSettings,
+                        questions: initialLoadedQuestions
                     })
                 }
             }

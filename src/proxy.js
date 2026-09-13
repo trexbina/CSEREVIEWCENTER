@@ -87,9 +87,10 @@ export default async function proxy(request) {
   // ── RBAC check ────────────────────────────────────────
   for (const [prefix, allowedRoles] of Object.entries(ROUTE_PERMISSIONS)) {
     if (pathname.startsWith(prefix)) {
-      if (!allowedRoles.includes(session.role)) {
+      const isCustomAdmin = prefix === "/admin" && session.role !== "student" && session.role !== "teacher"
+      if (!allowedRoles.includes(session.role) && !isCustomAdmin) {
         return NextResponse.redirect(
-          new URL(ROLE_HOME[session.role] || DEFAULT_HOME, request.url)
+          new URL(ROLE_HOME[session.role] || (session.role !== "student" && session.role !== "teacher" ? "/admin" : DEFAULT_HOME), request.url)
         )
       }
       break

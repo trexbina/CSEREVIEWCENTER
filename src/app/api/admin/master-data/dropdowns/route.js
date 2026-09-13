@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
-import { ADMIN_ROLES } from "@/lib/auth"
+import { ADMIN_ROLES, isAdminRole } from "@/lib/auth"
 
 export async function GET() {
   try {
     const session = await getSession()
-    if (!session || !ADMIN_ROLES.includes(session.role)) {
+    if (!session || !isAdminRole(session.role)) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
 
-    const [examsResult, batchesResult, programsResult, majorsResult, schoolsResult, academicCoursesResult, categoriesResult, gradebooksResult] = await Promise.all([
+    const [examsResult, batchesResult, programsResult, majorsResult, schoolsResult, academicCoursesResult, categoriesResult, gradebooksResult, rolesResult] = await Promise.all([
       pool.query("SELECT id, name FROM examinations ORDER BY name ASC"),
       pool.query("SELECT id, name, exam_id, target_year, status FROM batches ORDER BY name ASC"),
       pool.query("SELECT id, name, exam_id FROM programs ORDER BY name ASC"),
@@ -30,7 +30,13 @@ export async function GET() {
         JOIN batches b ON g.batch_id = b.id
         JOIN examinations e ON g.exam_id = e.id
         ORDER BY g.created_at DESC
-      `)
+      `),
+      pool.query(`
+        SELECT r.id, r.role_key, r.name, r.description, r.permissions, r.is_system, r.created_at, r.updated_at,
+               (SELECT COUNT(*) FROM users u WHERE u.role = r.role_key) as user_count
+        FROM custom_roles r
+        ORDER BY r.is_system DESC, r.name ASC
+      `).catch(() => ({ rows: [] }))
     ])
 
     return NextResponse.json({
@@ -41,7 +47,8 @@ export async function GET() {
       schools: schoolsResult.rows,
       academic_courses: academicCoursesResult.rows,
       categories: categoriesResult.rows,
-      gradebooks: gradebooksResult.rows
+      gradebooks: gradebooksResult.rows,
+      roles: rolesResult.rows
     })
   } catch (err) {
     console.error("[admin/master-data/dropdowns GET] error:", err)

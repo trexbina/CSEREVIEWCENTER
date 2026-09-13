@@ -41,6 +41,13 @@ export const SESSION_COOKIE_OPTIONS = {
 
 export const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 
+export function isAdminRole(role) {
+  if (!role) return false
+  if (ADMIN_ROLES.includes(role)) return true
+  // Any role that is not student or teacher is considered administrative
+  return role !== "student" && role !== "teacher"
+}
+
 /** Role → home page mapping. */
 export const ROLE_HOME = {
   student: "/student",

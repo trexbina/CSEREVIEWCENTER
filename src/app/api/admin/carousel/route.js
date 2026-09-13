@@ -16,25 +16,14 @@ async function ensureTableAndSeed() {
             id SERIAL PRIMARY KEY,
             src TEXT NOT NULL,
             alt VARCHAR(255),
-            badge VARCHAR(255) DEFAULT 'New Course Available',
-            title VARCHAR(255) DEFAULT 'Advancing Through Neural Networks',
-            description TEXT DEFAULT 'Explore the foundations of modern AI with our comprehensive advanced study module.',
+            badge VARCHAR(255) DEFAULT '',
+            title VARCHAR(255) DEFAULT '',
+            description TEXT DEFAULT '',
             slide_order INT NOT NULL DEFAULT 0,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
     `)
-
-    // 2. Check if table is empty, seed if empty
-    const countRes = await pool.query("SELECT COUNT(*) FROM carousel_slides")
-    if (parseInt(countRes.rows[0].count, 10) === 0) {
-        await pool.query(`
-            INSERT INTO carousel_slides (src, alt, badge, title, description, slide_order) VALUES
-            ('/peakassestsimage/corousel.jpg', 'Peak Excellence Training Academy', 'New Course Available', 'Advancing Through Neural Networks', 'Explore the foundations of modern AI with our comprehensive advanced study module.', 0),
-            ('/peakassestsimage/courosel 2.jpg', 'Peak Excellence 24th Anniversary', 'Special Event', 'Celebrating 24 Years of Excellence', 'Join us in celebrating 24 years of top-tier review preparation and academic tutoring.', 1),
-            ('/peakassestsimage/courosel 3.jpg', 'Peak Excellence Branches', 'Branches', 'Our Learning Hubs', 'Visit any of our state-of-the-art review centers located across the country.', 2)
-        `)
-    }
 }
 
 // GET: anyone logged in can fetch the slides

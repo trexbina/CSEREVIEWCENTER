@@ -1,4 +1,5 @@
 import dynamic from "next/dynamic"
+import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth-session"
 import pool from "@/lib/db"
 
@@ -49,8 +50,28 @@ async function getAdminData() {
 export default async function AdminDashboard() {
   const session = await getSession()
 
-  let data = {
+  if (session?.role && session.role !== "student" && session.role !== "teacher") {
+    try {
+      const res = await pool.query(
+        "SELECT permissions FROM custom_roles WHERE role_key = $1",
+        [session.role]
+      )
+      if (res.rows.length > 0 && Array.isArray(res.rows[0].permissions)) {
+        const perms = res.rows[0].permissions
+        if (!perms.includes("/admin")) {
+          const firstAllowed = perms.find((p) => p.startsWith("/admin/")) || perms[0]
+          if (firstAllowed) {
+            redirect(firstAllowed)
+          }
+        }
+      }
+    } catch (e) {
+      if (e.digest?.startsWith("NEXT_REDIRECT")) throw e
+      console.error("[AdminDashboard] role check error:", e)
+    }
+  }
 
+  let data = {
     totalUsers: 0,
     usersByRole: {},
     totalAssignments: 0,

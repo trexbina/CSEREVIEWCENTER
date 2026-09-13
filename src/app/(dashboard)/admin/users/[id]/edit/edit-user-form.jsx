@@ -322,7 +322,7 @@ export default function EditUserForm({ initialUser }) {
         }
         return []
     })
-    const [dropdownData, setDropdownData] = useState({ examinations: [], batches: [], programs: [], majors: [], schools: [], academic_courses: [] })
+    const [dropdownData, setDropdownData] = useState({ examinations: [], batches: [], programs: [], majors: [], schools: [], academic_courses: [], roles: [] })
 
     // Course tree for multi-select
     const courseTree = useMemo(() => {
@@ -397,11 +397,7 @@ export default function EditUserForm({ initialUser }) {
             return
         }
 
-        const isAdminRole = role === "admin" || role === "super_admin" || role === "academic_admin" || role === "registrar"
-        if (isAdminRole && !jobRoleDescription.trim()) {
-            setError("Job Role / Title is required for administrative staff.")
-            return
-        }
+        const isAdminRole = role !== "student" && role !== "teacher"
 
         setSaving(true)
 
@@ -721,7 +717,7 @@ export default function EditUserForm({ initialUser }) {
                             <Label className="text-sm font-semibold text-[#696969]">User Role *</Label>
                             <Select 
                                 value={
-                                    role === "super_admin" || role === "academic_admin" || role === "registrar" || role === "admin"
+                                    role !== "student" && role !== "teacher"
                                         ? "admin_group"
                                         : role
                                 } 
@@ -750,7 +746,7 @@ export default function EditUserForm({ initialUser }) {
                             </Select>
                         </div>
 
-                        {(role === "super_admin" || role === "academic_admin" || role === "registrar" || role === "admin") && (
+                        {role !== "student" && role !== "teacher" && (
                             <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-150">
                                 <Label className="text-sm font-semibold text-[#696969]">Admin Role *</Label>
                                 <Select 
@@ -762,6 +758,14 @@ export default function EditUserForm({ initialUser }) {
                                         <SelectItem value="super_admin">Super Admin (System Owner)</SelectItem>
                                         <SelectItem value="academic_admin">Academic Coordinator (Curriculum & Exams)</SelectItem>
                                         <SelectItem value="registrar">Registrar (Students & Admissions)</SelectItem>
+                                        {(dropdownData.roles || [])
+                                            .filter(r => !["super_admin", "academic_admin", "registrar"].includes(r.role_key))
+                                            .map(r => (
+                                                <SelectItem key={r.id || r.role_key} value={r.role_key}>
+                                                    {r.name}
+                                                </SelectItem>
+                                            ))
+                                        }
                                     </SelectContent>
                                 </Select>
                             </div>

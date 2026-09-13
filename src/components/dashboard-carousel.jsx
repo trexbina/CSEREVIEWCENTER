@@ -3,6 +3,14 @@
 import { useState, useEffect, useCallback } from "react"
 import { ChevronLeft, ChevronRight, Settings, X, Plus, Pencil, Trash, Upload, Loader2, ImageIcon } from "lucide-react"
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
+import { Playfair_Display } from "next/font/google"
+import { motion } from "motion/react"
+
+const playfair = Playfair_Display({
+    subsets: ["latin"],
+    weight: ["500", "600", "700"],
+    display: "swap",
+})
 
 export function DashboardCarousel() {
     const [slides, setSlides] = useState([])
@@ -59,11 +67,11 @@ export function DashboardCarousel() {
         checkRole()
     }, [fetchSlides, checkRole])
 
-    // Auto-advance every 5 seconds
+    // Auto-advance every 8 seconds
     useEffect(() => {
         if (slides.length <= 1) return
         const next = () => setCurrent((i) => (i + 1) % slides.length)
-        const timer = setInterval(next, 5000)
+        const timer = setInterval(next, 8000)
         return () => clearInterval(timer)
     }, [slides])
 
@@ -229,41 +237,46 @@ export function DashboardCarousel() {
         <div className="group relative w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
             {/* Slide container */}
             <div className="relative aspect-[21/7] w-full overflow-hidden">
-                {slides.map((slide, i) => (
-                    <div
-                        key={slide.id || slide.src}
-                        className={`absolute inset-0 h-full w-full transition-opacity duration-500 ${
-                            i === current ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-                        }`}
-                    >
-                        <img
-                            src={slide.src}
-                            alt={slide.alt || "Announcement Banner"}
-                            className="absolute inset-0 h-full w-full object-cover"
-                        />
-                        {/* Overlay to ensure text readability */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-transparent z-10" />
+                <div
+                    className="absolute inset-0 flex h-full"
+                    style={{
+                        width: `${slides.length * 100}%`,
+                        transform: `translateX(-${(current * 100) / slides.length}%)`,
+                        transition: "transform 700ms cubic-bezier(0.4, 0, 0.2, 1)",
+                        willChange: "transform",
+                    }}
+                >
+                    {slides.map((slide, i) => (
+                        <div
+                            key={slide.id || slide.src}
+                            style={{ width: `${100 / slides.length}%` }}
+                            className="relative h-full shrink-0 select-none overflow-hidden"
+                        >
+                            <img
+                                src={slide.src}
+                                alt={slide.alt || "Announcement Banner"}
+                                className="w-full h-full object-cover select-none"
+                            />
+                            {/* Overlay to ensure text readability */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/20" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
 
-                        {/* Overlay text content */}
-                        <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 z-20 pointer-events-none">
-                            {slide.badge && (
-                                <span className="inline-block w-fit rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
-                                    {slide.badge}
-                                </span>
-                            )}
-                            {slide.title && (
-                                <h2 className="mt-3 text-xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight max-w-xl drop-shadow-md">
-                                    {slide.title}
-                                </h2>
-                            )}
-                            {slide.description && (
-                                <p className="mt-2 text-xs sm:text-sm md:text-base text-white/80 max-w-md line-clamp-2 sm:line-clamp-3">
-                                    {slide.description}
-                                </p>
-                            )}
+                            {/* Overlay text content */}
+                            <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 md:p-10 pb-12 sm:pb-14 max-w-xl z-20 space-y-2 pointer-events-none">
+                                {slide.title && slide.title.trim() && (
+                                    <h2 className={`${playfair.className} text-2xl sm:text-3xl md:text-4xl font-semibold text-white tracking-tight leading-[1.15] drop-shadow-sm`}>
+                                        {slide.title}
+                                    </h2>
+                                )}
+                                {slide.description && slide.description.trim() && (
+                                    <p className="text-xs sm:text-[13px] text-neutral-200/85 line-clamp-3 max-w-md font-normal leading-relaxed tracking-normal drop-shadow-xs">
+                                        {slide.description}
+                                    </p>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
 
             {/* Left arrow - Sleek Minimal Pill/Glass */}
@@ -288,21 +301,39 @@ export function DashboardCarousel() {
                 </button>
             )}
 
-            {/* Minimal Pagination Dots / Pill Bars */}
+            {/* Minimal Pagination Dots / True Sliding Pill with Motion LayoutId */}
             {slides.length > 1 && (
-                <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/25 backdrop-blur-md border border-white/10">
-                    {slides.map((_, i) => (
-                        <button
-                            key={i}
-                            onClick={() => setCurrent(i)}
-                            className={`transition-all duration-300 rounded-full cursor-pointer ${
-                                i === current 
-                                    ? "w-5 h-1.5 bg-[#E9C46A]" 
-                                    : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70"
-                            }`}
-                            aria-label={`Go to slide ${i + 1}`}
-                        />
-                    ))}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 sm:bottom-3.5 z-20 flex items-center px-2 py-1 rounded-full bg-black/25 backdrop-blur-xs border border-white/10 shadow-xs">
+                    <div className="flex items-center gap-2">
+                        {slides.map((_, i) => {
+                            const isActive = i === current
+                            return (
+                                <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => setCurrent(i)}
+                                    aria-label={`Go to slide ${i + 1}`}
+                                    className="relative flex items-center justify-center p-0.5 cursor-pointer"
+                                >
+                                    {/* Inactive circle dot */}
+                                    <span className="block size-1.5 rounded-full bg-white/30 hover:bg-white/60 transition-colors" />
+
+                                    {/* Active sliding pill that physically slides across between buttons */}
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="activeSlidePillStudent"
+                                            className="absolute inset-y-0.5 -inset-x-0.5 rounded-full bg-white/85 shadow-xs pointer-events-none"
+                                            transition={{
+                                                type: "spring",
+                                                stiffness: 380,
+                                                damping: 30,
+                                            }}
+                                        />
+                                    )}
+                                </button>
+                            )
+                        })}
+                    </div>
                 </div>
             )}
 

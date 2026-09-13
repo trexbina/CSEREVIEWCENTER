@@ -77,7 +77,7 @@ export async function MetricsStrip() {
   ]
 
   return (
-    <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden">
+    <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-xs overflow-hidden">
       <div className="grid grid-cols-2 md:grid-cols-4">
         {items.map((item, index) => {
           const Icon = item.icon

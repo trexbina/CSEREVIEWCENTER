@@ -44,8 +44,8 @@ export default async function AdminDashboard() {
           <MetricsStrip />
         </div>
 
-        {/* Right Column (spans 3 cols): To-do List + Calendar Widget */}
-        <div className="lg:col-span-3 flex flex-col justify-start gap-4">
+        {/* Right Column (spans 3 cols): To-do List + Calendar Widget (flex-col justify-between to align bottom with metric strip) */}
+        <div className="lg:col-span-3 flex flex-col justify-between gap-6 sm:gap-7">
           <TodoWidget />
           <CalendarWidget />
         </div>

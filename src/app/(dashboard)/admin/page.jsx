@@ -36,22 +36,20 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* ── Top Row: Wider Banner + Compact Notepad Widget & Calendar (spans 3 cols) ── */}
+      {/* ── Top Section: 9-col Banner + Metrics Strip / 3-col To-Do List + Calendar ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-        {/* Banner with increased width (spans 9 cols) */}
-        <div className="lg:col-span-9 flex flex-col">
+        {/* Left Column (spans 9 cols): Banner + Metric Strip (same width as banner) */}
+        <div className="lg:col-span-9 flex flex-col justify-between gap-5">
           <BannerSection />
+          <MetricsStrip />
         </div>
 
-        {/* Compact Notepad To-do List Widget & Calendar Widget (spans 3 cols) */}
-        <div className="lg:col-span-3 flex flex-col justify-between gap-4">
+        {/* Right Column (spans 3 cols): To-do List + Calendar Widget */}
+        <div className="lg:col-span-3 flex flex-col justify-between gap-5">
           <TodoWidget />
           <CalendarWidget />
         </div>
       </div>
-
-      {/* ── Overview Metrics Strip (Single unified container, neutral, minimal) ── */}
-      <MetricsStrip />
 
       {/* ── Review Batches & Schedules Overview ── */}
       <ActiveBatchesOverview />

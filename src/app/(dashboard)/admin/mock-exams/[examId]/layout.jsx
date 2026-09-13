@@ -3,13 +3,36 @@
 
 // helper functions from react to store states
 import { useState, use } from "react"
-import { Menu, X } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Menu, X, ChevronLeft } from "lucide-react"
 
 // sidebar toolbar and content layout for the mock exam builder screen
 export default function MockExamBuilderLayout({ children, params }) {
     const unwrappedParams = use(params)
     const examId = unwrappedParams?.examId
+    const router = useRouter()
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+    function checkUnsavedChanges() {
+        if (typeof window !== "undefined") {
+            const hasQuizChanges = typeof window.__peak_is_quiz_dirty === "function"
+                ? window.__peak_is_quiz_dirty()
+                : !!window.__peak_has_unsaved_quiz
+
+            if (hasQuizChanges) {
+                const confirmed = window.confirm("You have unsaved changes that may not be saved. Are you sure you want to leave?")
+                if (confirmed) {
+                    window.__peak_has_unsaved_quiz = false
+                    if (typeof window.__peak_is_quiz_dirty === "function") {
+                        window.__peak_is_quiz_dirty = () => false
+                    }
+                    return true
+                }
+                return false
+            }
+        }
+        return true
+    }
 
     return (
         <div className="flex relative h-screen w-full overflow-hidden bg-background">
@@ -30,21 +53,51 @@ export default function MockExamBuilderLayout({ children, params }) {
                 />
             )}
 
-            {/* Toolbar Sidebar (Emptied and ready for toolbar items) */}
+            {/* Toolbar Sidebar */}
             <aside className={`
                 absolute md:static inset-y-0 left-0 z-50 
                 w-80 shrink-0 border-r border-border bg-card flex flex-col h-full overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-transform duration-300 ease-in-out
                 ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 md:shadow-none'}
             `}>
-                {/* Mobile close button header */}
-                <div className="md:hidden p-3 border-b border-border flex justify-end">
+                {/* School Branding / Header */}
+                <div className="p-6 pb-4 flex items-center justify-between border-b border-border">
+                    <div className="flex flex-col items-start gap-1">
+                        <img
+                            src="/landingpageassets/logo.png"
+                            alt="Peak Excellence"
+                            className="h-10 md:h-12 w-auto object-contain"
+                            onError={(e) => { e.target.style.display = 'none' }}
+                        />
+                        <h2 className="text-xs md:text-sm font-extrabold tracking-widest text-foreground uppercase font-sans mt-2">
+                            PEAK EXCELLENCE
+                        </h2>
+                    </div>
+                    {/* Close button for mobile */}
                     <button
-                        className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted cursor-pointer"
+                        className="md:hidden p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted cursor-pointer"
                         onClick={() => setIsSidebarOpen(false)}
-                        aria-label="Close sidebar"
                     >
-                        <X className="h-4 w-4" />
+                        <X className="h-5 w-5" />
                     </button>
+                </div>
+
+                {/* Title Action & Back Button */}
+                <div className="p-3 px-4 border-b border-border flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <button
+                            onClick={() => {
+                                if (!checkUnsavedChanges()) return
+                                router.push('/admin/mock-exams')
+                            }}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/80 bg-muted/60 text-muted-foreground transition-all hover:bg-muted hover:text-foreground shadow-2xs shrink-0 cursor-pointer"
+                            title="Back to Mock Exams List"
+                        >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
+                            Mock Exams
+                        </span>
+                    </div>
                 </div>
 
                 {/* Toolbar content area */}

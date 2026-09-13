@@ -48,9 +48,6 @@ export async function ActiveBatchesOverview() {
           <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
             Batches
           </h2>
-          <span className="text-xs font-medium text-neutral-400 dark:text-neutral-500 bg-black/5 dark:bg-white/5 px-2.5 py-0.5 rounded-full">
-            {batches.length} {batches.length === 1 ? "batch" : "batches"}
-          </span>
         </div>
 
         <Link

@@ -52,7 +52,7 @@ export async function MetricsStrip() {
       href: "/admin/users",
       iconKey: "users",
       meta: "Active student accounts",
-      headerBg: "bg-emerald-500/20 dark:bg-emerald-400/25",
+      headerBg: "bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25",
     },
     {
       label: "Active Batches",
@@ -60,7 +60,7 @@ export async function MetricsStrip() {
       href: "/admin/master-data",
       iconKey: "calendar",
       meta: "Ongoing review terms",
-      headerBg: "bg-emerald-500/20 dark:bg-emerald-400/25",
+      headerBg: "bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25",
     },
     {
       label: "Examinations",
@@ -68,7 +68,7 @@ export async function MetricsStrip() {
       href: "/admin/master-data",
       iconKey: "award",
       meta: "Active board exams (LEPT, etc.)",
-      headerBg: "bg-emerald-500/20 dark:bg-emerald-400/25",
+      headerBg: "bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25",
     },
     {
       label: "Expiring Soon",
@@ -76,7 +76,7 @@ export async function MetricsStrip() {
       href: "/admin/subscriptions",
       iconKey: "alertTriangle",
       meta: "Within next 14 days",
-      headerBg: "bg-emerald-500/20 dark:bg-emerald-400/25",
+      headerBg: "bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25",
     },
     {
       label: "Pre-Registrations",
@@ -84,7 +84,7 @@ export async function MetricsStrip() {
       href: "/admin/users?tab=pre-registrations",
       iconKey: "userPlus",
       meta: "Pending application review",
-      headerBg: "bg-emerald-500/20 dark:bg-emerald-400/25",
+      headerBg: "bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25",
     },
   ]
 

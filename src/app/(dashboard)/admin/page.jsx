@@ -35,30 +35,36 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-9 sm:space-y-10 pb-10">
       {/* ── Top Section: 9-col Banner + Metrics Strip / 3-col To-Do List + Calendar ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-7 items-stretch">
         {/* Left Column (spans 9 cols): Banner + Metric Strip (same width as banner) */}
-        <div className="lg:col-span-9 flex flex-col justify-between gap-5">
+        <div className="lg:col-span-9 flex flex-col justify-between gap-6 sm:gap-7">
           <BannerSection />
           <MetricsStrip />
         </div>
 
         {/* Right Column (spans 3 cols): To-do List + Calendar Widget */}
-        <div className="lg:col-span-3 flex flex-col justify-between gap-5">
+        <div className="lg:col-span-3 flex flex-col justify-between gap-6 sm:gap-7">
           <TodoWidget />
           <CalendarWidget />
         </div>
       </div>
 
       {/* ── Review Batches & Schedules Overview ── */}
-      <ActiveBatchesOverview />
+      <div className="pt-1">
+        <ActiveBatchesOverview />
+      </div>
 
       {/* ── Academic Programs & Degree Tracks Overview ── */}
-      <ProgramsDistributionOverview />
+      <div className="pt-1">
+        <ProgramsDistributionOverview />
+      </div>
 
       {/* ── Recent Registrations & User Activity Feed ── */}
-      <RecentEnrollmentsFeed />
+      <div className="pt-1">
+        <RecentEnrollmentsFeed />
+      </div>
     </div>
   )
 }

@@ -87,8 +87,8 @@ export async function MetricsStrip() {
               href={item.href}
               className="flex flex-col justify-between group transition-colors"
             >
-              {/* Header: Label + Icon with bottom border & muted translucent background */}
-              <div className={`px-5 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between gap-2 border-b border-black/5 dark:border-white/5 ${item.headerBg}`}>
+              {/* Header: Label + Icon with bottom border & dimensional soft shadow */}
+              <div className={`relative z-10 px-5 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between gap-2 border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] ${item.headerBg}`}>
                 <span className="text-[13px] font-medium text-neutral-500 dark:text-neutral-400 select-none">
                   {item.label}
                 </span>

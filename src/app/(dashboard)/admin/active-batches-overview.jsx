@@ -1,6 +1,6 @@
 import pool from "@/lib/db"
 import Link from "next/link"
-import { Calendar, Users, ChevronRight, Clock } from "lucide-react"
+import { Calendar, Users, Clock } from "lucide-react"
 
 function getDaysRemaining(endDateStr) {
   if (!endDateStr) return null
@@ -52,10 +52,9 @@ export async function ActiveBatchesOverview() {
 
         <Link
           href="/admin/subscriptions"
-          className="inline-flex items-center gap-1.5 px-3 h-8 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/15 border border-black/5 dark:border-white/10 transition-all shadow-2xs shrink-0 cursor-pointer"
+          className="inline-flex items-center justify-center px-3.5 h-8 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/15 border border-black/5 dark:border-white/10 transition-all shadow-2xs shrink-0 cursor-pointer"
         >
-          <span>View all</span>
-          <ChevronRight className="h-3.5 w-3.5" />
+          View all
         </Link>
       </div>
 

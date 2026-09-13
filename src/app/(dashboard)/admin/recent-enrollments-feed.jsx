@@ -73,9 +73,8 @@ export async function RecentEnrollmentsFeed() {
       {/* External Section Header */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2.5">
-          <Activity className="size-4.5 text-neutral-400 dark:text-neutral-500 stroke-[1.75]" />
           <h2 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-white tracking-tight">
-            Recent Registrations & User Feed
+            Recent Activity
           </h2>
           <span className="text-xs font-medium text-neutral-400 dark:text-neutral-500 bg-black/5 dark:bg-white/5 px-2.5 py-0.5 rounded-full">
             Latest {recentUsers.length}
@@ -86,7 +85,7 @@ export async function RecentEnrollmentsFeed() {
           href="/admin/users"
           className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
         >
-          <span>User directory</span>
+          <span>View users</span>
           <ArrowUpRight className="size-3.5 sm:size-4 text-neutral-400" />
         </Link>
       </div>

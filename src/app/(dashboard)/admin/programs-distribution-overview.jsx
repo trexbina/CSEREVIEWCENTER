@@ -31,9 +31,8 @@ export async function ProgramsDistributionOverview() {
       {/* External Section Header */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2.5">
-          <BookOpen className="size-4.5 text-neutral-400 dark:text-neutral-500 stroke-[1.75]" />
           <h2 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-white tracking-tight">
-            Academic Programs & Degree Tracks
+            Programs & Courses
           </h2>
         </div>
 
@@ -41,7 +40,7 @@ export async function ProgramsDistributionOverview() {
           href="/admin/curriculum"
           className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
         >
-          <span>Curriculum manager</span>
+          <span>Manage curriculum</span>
           <ArrowUpRight className="size-3.5 sm:size-4 text-neutral-400" />
         </Link>
       </div>
@@ -49,15 +48,15 @@ export async function ProgramsDistributionOverview() {
       {/* Dual Column Container (Non-analytical item display) */}
       <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs p-5 sm:p-6">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-          {/* Left Column (spans 5 cols): Licensure Examination Targets */}
+          {/* Left Column (spans 5 cols): Examinations */}
           <div className="md:col-span-5 space-y-3 pr-0 md:pr-4 md:border-r md:border-black/5 md:dark:border-white/5">
             <div className="text-[11px] font-medium tracking-wider uppercase text-neutral-400 dark:text-neutral-500">
-              Licensure Examination Targets
+              Examinations
             </div>
 
             {exams.length === 0 ? (
               <div className="py-4 text-xs text-neutral-400 dark:text-neutral-500">
-                No examination programs configured.
+                No examinations found.
               </div>
             ) : (
               <div className="divide-y divide-black/5 dark:divide-white/5">
@@ -73,15 +72,15 @@ export async function ProgramsDistributionOverview() {
             )}
           </div>
 
-          {/* Right Column (spans 7 cols): Specialization & Degree Tracks */}
+          {/* Right Column (spans 7 cols): Degree Programs */}
           <div className="md:col-span-7 space-y-3">
             <div className="text-[11px] font-medium tracking-wider uppercase text-neutral-400 dark:text-neutral-500">
-              Specialization & Degree Tracks
+              Degree Programs
             </div>
 
             {programs.length === 0 ? (
               <div className="py-4 text-xs text-neutral-400 dark:text-neutral-500">
-                No degree programs registered yet.
+                No degree programs found.
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">

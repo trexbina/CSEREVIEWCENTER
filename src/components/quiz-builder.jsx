@@ -1389,6 +1389,9 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                        )}
+
                         {/* JSON Text Import / Export Modal */}
                         {showJsonModal && (
                             <div

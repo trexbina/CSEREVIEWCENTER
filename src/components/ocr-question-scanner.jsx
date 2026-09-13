@@ -417,7 +417,6 @@ export default function OcrQuestionScanner() {
         setRawExtractedText("")
         setCreatedQuestions([])
         setShowRawText(false)
-        setActiveTab("cards")
         if (fileInputRef.current) fileInputRef.current.value = ""
     }
 

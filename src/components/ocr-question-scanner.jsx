@@ -204,7 +204,21 @@ function parseQuestionsFromText(rawText) {
         })
     })
 
-    return parsedQuestions
+    // Avoid duplicate questions within the scanned document by prompt text
+    const seenTexts = new Set()
+    const deduplicatedQuestions = []
+    for (const q of parsedQuestions) {
+        const normalizedKey = (q.text || "").toLowerCase().replace(/[^a-z0-9]/g, "")
+        if (normalizedKey.length > 5 && seenTexts.has(normalizedKey)) {
+            continue // Skip duplicate question in the same document
+        }
+        if (normalizedKey.length > 5) {
+            seenTexts.add(normalizedKey)
+        }
+        deduplicatedQuestions.push(q)
+    }
+
+    return deduplicatedQuestions
 }
 
 export default function OcrQuestionScanner() {

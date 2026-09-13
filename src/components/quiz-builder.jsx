@@ -190,24 +190,66 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                 }))
 
                 setQuestions(prev => {
+                    // Extract set of existing normalized question texts to avoid duplicate questions
+                    const existingPrompts = new Set(
+                        prev.filter(p => p.type === 'question' && p.text)
+                            .map(p => p.text.toLowerCase().replace(/[^a-z0-9]/g, ""))
+                            .filter(t => t.length > 5)
+                    )
+
                     const existingIds = new Set(prev.map(p => p.id))
-                    const deduped = sanitized.map(item => {
-                        if (existingIds.has(item.id)) {
-                            return { ...item, id: generateUniqueId() }
+                    const toAdd = []
+
+                    for (const item of sanitized) {
+                        const norm = (item.text || "").toLowerCase().replace(/[^a-z0-9]/g, "")
+                        // If a question with identical prompt text already exists, skip it
+                        if (norm.length > 5 && existingPrompts.has(norm)) {
+                            continue
                         }
-                        existingIds.add(item.id)
-                        return item
-                    })
-                    return [...prev, ...deduped]
+                        if (norm.length > 5) {
+                            existingPrompts.add(norm)
+                        }
+
+                        let finalItem = item
+                        if (existingIds.has(item.id)) {
+                            finalItem = { ...item, id: generateUniqueId() }
+                        }
+                        existingIds.add(finalItem.id)
+                        toAdd.push(finalItem)
+                    }
+
+                    if (toAdd.length === 0) {
+                        toast.info("Scanned questions already exist in the exam.")
+                        return prev
+                    }
+
+                    const skippedCount = sanitized.length - toAdd.length
+                    if (skippedCount > 0) {
+                        toast.success(`${toAdd.length} new questions added (${skippedCount} duplicates skipped)`)
+                    } else {
+                        toast.success(`${toAdd.length} questions created and added to exam!`)
+                    }
+
+                    return [...prev, ...toAdd]
                 })
-                toast.success(`${payload.length} questions created and added to exam!`)
             } else if (payload && payload.text) {
-                const newQ = {
-                    ...payload,
-                    id: generateUniqueId()
-                }
-                setQuestions(prev => [...prev, newQ])
-                toast.success("Question added to exam from RapidOCR!")
+                const normPayload = (payload.text || "").toLowerCase().replace(/[^a-z0-9]/g, "")
+                setQuestions(prev => {
+                    const alreadyExists = prev.some(p => {
+                        const normExisting = (p.text || "").toLowerCase().replace(/[^a-z0-9]/g, "")
+                        return normPayload.length > 5 && normExisting === normPayload
+                    })
+                    if (alreadyExists) {
+                        toast.info("This question is already in the exam.")
+                        return prev
+                    }
+                    const newQ = {
+                        ...payload,
+                        id: generateUniqueId()
+                    }
+                    toast.success("Question added to exam from RapidOCR!")
+                    return [...prev, newQ]
+                })
             }
         }
 

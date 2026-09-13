@@ -170,10 +170,13 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
     useEffect(() => {
         const handleAddOcrQuestion = (e) => {
-            const newQ = e.detail
-            if (newQ && newQ.text) {
-                setQuestions(prev => [...prev, newQ])
-                toast.success("Question added to exam from OCR!")
+            const payload = e.detail
+            if (Array.isArray(payload) && payload.length > 0) {
+                setQuestions(prev => [...prev, ...payload])
+                toast.success(`${payload.length} questions created and added to exam!`)
+            } else if (payload && payload.text) {
+                setQuestions(prev => [...prev, payload])
+                toast.success("Question added to exam from RapidOCR!")
             }
         }
         window.addEventListener("peak:add-ocr-question", handleAddOcrQuestion)

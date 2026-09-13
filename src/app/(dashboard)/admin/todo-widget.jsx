@@ -83,10 +83,10 @@ export function TodoWidget() {
   }
 
   return (
-    <div className="h-full w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs p-3.5 sm:p-4 flex flex-col justify-between transition-all">
-      {/* ── Top Bar / Header ── */}
+    <div className="h-full w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between transition-all">
+      {/* ── Top Bar / Header (styled like metric strip: light gray bg + border-b + dimensional soft shadow) ── */}
       <div>
-        <div className="flex items-center justify-between pb-2.5 border-b border-black/5 dark:border-white/5">
+        <div className="relative z-10 px-4 py-3 sm:px-4.5 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-black/[0.03] dark:bg-white/[0.05] shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-[#3B3B3B] dark:text-white tracking-wider uppercase">
               To-do List
@@ -106,79 +106,79 @@ export function TodoWidget() {
           </button>
         </div>
 
-        {/* ── Add Input Row (Appears when plus is pressed) ── */}
-        {isAdding && (
-          <form onSubmit={handleAdd} className="mt-3 flex items-center gap-2 animate-in fade-in duration-150">
-            <input
-              type="text"
-              autoFocus
-              value={newText}
-              onChange={(e) => setNewText(e.target.value)}
-              placeholder="Write a task..."
-              className="flex-1 h-8 rounded-lg border border-black/10 dark:border-white/15 bg-white dark:bg-white/5 px-2.5 text-xs text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs"
-            />
-            <button
-              type="submit"
-              className="h-8 px-2.5 rounded-lg bg-[#3B3B3B] hover:bg-[#2B2B2B] dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
-            >
-              Add
-            </button>
-          </form>
-        )}
-
-        {/* ── Items List ── */}
-        <div className="mt-3 space-y-1 overflow-y-auto max-h-[220px] pr-0.5">
-          {items.length === 0 ? (
-            <div className="py-6 text-center text-xs text-[#696969] dark:text-gray-500 italic">
-              No tasks yet. Press + to add one.
-            </div>
-          ) : (
-            items.map((item) => (
-              <div
-                key={item.id}
-                className="group flex items-center justify-between gap-2.5 px-2 py-1.5 rounded-lg hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors"
+        {/* ── Content Body Container ── */}
+        <div className="p-3.5 sm:p-4 pt-2.5 sm:pt-3">
+          {/* ── Add Input Row (Appears when plus is pressed) ── */}
+          {isAdding && (
+            <form onSubmit={handleAdd} className="mb-3 flex items-center gap-2 animate-in fade-in duration-150">
+              <input
+                type="text"
+                autoFocus
+                value={newText}
+                onChange={(e) => setNewText(e.target.value)}
+                placeholder="Write a task..."
+                className="flex-1 h-8 rounded-lg border border-black/10 dark:border-white/15 bg-white dark:bg-white/5 px-2.5 text-xs text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs"
+              />
+              <button
+                type="submit"
+                className="h-8 px-2.5 rounded-lg bg-[#3B3B3B] hover:bg-[#2B2B2B] dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
               >
-                <div
-                  onClick={() => toggleComplete(item.id)}
-                  className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer select-none"
-                >
-                  {/* Random Colored Bullet */}
-                  <span
-                    className="size-2 rounded-full shrink-0 transition-transform group-hover:scale-125"
-                    style={{ backgroundColor: item.color || "#3B82F6" }}
-                  />
-
-                  {/* Text Item */}
-                  <span
-                    className={`text-xs truncate transition-colors ${
-                      item.completed
-                        ? "line-through text-[#696969]/50 dark:text-gray-500"
-                        : "text-[#3B3B3B] dark:text-gray-200"
-                    }`}
-                  >
-                    {item.text}
-                  </span>
-                </div>
-
-                {/* Delete button (pops up on hover) */}
-                <button
-                  type="button"
-                  onClick={() => handleDelete(item.id)}
-                  aria-label="Delete task"
-                  className="opacity-0 group-hover:opacity-100 size-5 rounded flex items-center justify-center text-[#696969] hover:text-rose-500 dark:text-gray-400 dark:hover:text-rose-400 hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
-                >
-                  <Trash2 className="size-3" />
-                </button>
-              </div>
-            ))
+                Add
+              </button>
+            </form>
           )}
-        </div>
-      </div>
 
-      {/* ── Subtle Notepad Bottom Note / Detail ── */}
-      <div className="pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[10px] text-[#696969]/70 dark:text-gray-500">
-        <span>Daily Notes</span>
-        <span>{items.length} total</span>
+          {/* ── Items List ── */}
+          <div className="space-y-1 overflow-y-auto max-h-[220px] pr-0.5">
+            {items.length === 0 ? (
+              <div className="py-6 text-center text-xs text-[#696969] dark:text-gray-500 italic">
+                No tasks yet. Press + to add one.
+              </div>
+            ) : (
+              items.map((item) => (
+                <div
+                  key={item.id}
+                  className="group flex items-center justify-between gap-2.5 px-2 py-1.5 rounded-lg hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors"
+                >
+                  <div
+                    onClick={() => toggleComplete(item.id)}
+                    className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer select-none"
+                  >
+                    {/* Neutral Colored Bullet */}
+                    <span
+                      className={`size-2 rounded-full shrink-0 transition-transform group-hover:scale-125 ${
+                        item.completed
+                          ? "bg-neutral-300 dark:bg-neutral-600"
+                          : "bg-neutral-400 dark:bg-neutral-500"
+                      }`}
+                    />
+
+                    {/* Text Item */}
+                    <span
+                      className={`text-xs truncate transition-colors ${
+                        item.completed
+                          ? "line-through text-[#696969]/50 dark:text-gray-500"
+                          : "text-[#3B3B3B] dark:text-gray-200"
+                      }`}
+                    >
+                      {item.text}
+                    </span>
+                  </div>
+
+                  {/* Delete button (pops up on hover) */}
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(item.id)}
+                    aria-label="Delete task"
+                    className="opacity-0 group-hover:opacity-100 size-5 rounded flex items-center justify-center text-[#696969] hover:text-rose-500 dark:text-gray-400 dark:hover:text-rose-400 hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
+                  >
+                    <Trash2 className="size-3" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

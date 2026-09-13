@@ -6,6 +6,7 @@ import { BannerSection } from "./banner-section"
 import { TodoWidget } from "./todo-widget"
 import { MetricsStrip } from "./metrics-strip"
 import { ActiveBatchesOverview } from "./active-batches-overview"
+import { ProgramsDistributionOverview } from "./programs-distribution-overview"
 
 export default async function AdminDashboard() {
   const session = await getSession()
@@ -51,6 +52,9 @@ export default async function AdminDashboard() {
 
       {/* ── Review Batches & Schedules Overview ── */}
       <ActiveBatchesOverview />
+
+      {/* ── Academic Programs & Cohort Distribution ── */}
+      <ProgramsDistributionOverview />
     </div>
   )
 }

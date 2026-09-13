@@ -4,6 +4,7 @@ import pool from "@/lib/db"
 
 import { BannerSection } from "./banner-section"
 import { TodoWidget } from "./todo-widget"
+import { CalendarWidget } from "./calendar-widget"
 import { MetricsStrip } from "./metrics-strip"
 import { ActiveBatchesOverview } from "./active-batches-overview"
 import { ProgramsDistributionOverview } from "./programs-distribution-overview"
@@ -35,16 +36,17 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* ── Top Row: Wider Banner + Compact Notepad Widget (Altered to align top edges) ── */}
+      {/* ── Top Row: Wider Banner + Compact Notepad Widget & Calendar (spans 3 cols) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         {/* Banner with increased width (spans 9 cols) */}
-        <div className="lg:col-span-9">
+        <div className="lg:col-span-9 flex flex-col">
           <BannerSection />
         </div>
 
-        {/* Compact Notepad To-do List Widget (spans 3 cols) */}
-        <div className="lg:col-span-3">
+        {/* Compact Notepad To-do List Widget & Calendar Widget (spans 3 cols) */}
+        <div className="lg:col-span-3 flex flex-col justify-between gap-4">
           <TodoWidget />
+          <CalendarWidget />
         </div>
       </div>
 

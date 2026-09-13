@@ -159,17 +159,10 @@ function parseQuestionsFromText(rawText) {
 
         // If block only contained header text with no options and wasn't a question, skip
         if (!questionPrompt && options.length === 0) return
-        if (options.length === 0 && !questionStartRegex.test(blockLines[0])) return
 
-        // Default to standard 4 options if none detected
-        if (options.length === 0) {
-            options = [
-                { id: Date.now() + "_" + blockIdx + "_A", letter: "A", text: "Option A", isCorrect: false },
-                { id: Date.now() + "_" + blockIdx + "_B", letter: "B", text: "Option B", isCorrect: false },
-                { id: Date.now() + "_" + blockIdx + "_C", letter: "C", text: "Option C", isCorrect: false },
-                { id: Date.now() + "_" + blockIdx + "_D", letter: "D", text: "Option D", isCorrect: false },
-            ]
-        }
+        // Skip non-MCQ questions: if no choices were detected, this is likely
+        // a short-answer, essay, or identification question — disregard it.
+        if (options.length === 0) return
 
         // If an answer key letter was detected, mark the matching choice
         if (detectedAnswer) {

@@ -38,30 +38,31 @@ export async function ProgramsDistributionOverview() {
   }
 
   return (
-    <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs p-5 sm:p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-black/5 dark:border-white/5">
+    <div className="w-full space-y-3">
+      {/* External Section Header */}
+      <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2.5">
-          <BookOpen className="size-4 text-neutral-400 dark:text-neutral-500 stroke-[1.75]" />
-          <h2 className="text-sm font-semibold text-neutral-900 dark:text-white tracking-tight">
+          <BookOpen className="size-4.5 text-neutral-400 dark:text-neutral-500 stroke-[1.75]" />
+          <h2 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-white tracking-tight">
             Academic Programs & Cohort Distribution
           </h2>
         </div>
 
         <Link
           href="/admin/curriculum"
-          className="inline-flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
+          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
         >
           <span>Curriculum manager</span>
-          <ArrowUpRight className="size-3.5 text-neutral-400" />
+          <ArrowUpRight className="size-3.5 sm:size-4 text-neutral-400" />
         </Link>
       </div>
 
-      {/* Asymmetric Dual Split: Left is Key Programs, Right is Sub-track Distribution */}
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-        {/* Left Column (spans 5 cols): Licensure Examination Pillars */}
-        <div className="md:col-span-5 space-y-4 pr-0 md:pr-4 md:border-r md:border-black/5 md:dark:border-white/5">
-          <div className="text-[11px] font-medium tracking-wider uppercase text-neutral-400 dark:text-neutral-500">
+      {/* Asymmetric Dual Split Container */}
+      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs p-5 sm:p-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+          {/* Left Column (spans 5 cols): Licensure Examination Pillars */}
+          <div className="md:col-span-5 space-y-4 pr-0 md:pr-4 md:border-r md:border-black/5 md:dark:border-white/5">
+            <div className="text-[11px] font-medium tracking-wider uppercase text-neutral-400 dark:text-neutral-500">
             Licensure Examination Targets
           </div>
 

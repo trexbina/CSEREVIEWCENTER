@@ -179,6 +179,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
             const normalizeText = (t) => (t || "").trim().toLowerCase().replace(/\s+/g, " ")
 
             if (Array.isArray(payload) && payload.length > 0) {
+                let addedCount = 0
                 setQuestions(prev => {
                     // Collect existing question texts to avoid duplicate questions
                     const existingTexts = new Set(
@@ -198,7 +199,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                     })
 
                     if (incomingUnique.length === 0) {
-                        toast.info("All scanned questions are already present in the exam.")
+                        addedCount = 0
                         return prev
                     }
 
@@ -218,24 +219,40 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                         }
                     })
 
-                    toast.success(`${sanitized.length} questions added to exam!`)
+                    addedCount = sanitized.length
                     return [...prev, ...sanitized]
                 })
+                // Toast after state update, outside the updater
+                setTimeout(() => {
+                    if (addedCount === 0) {
+                        toast.info("All scanned questions are already present in the exam.")
+                    } else {
+                        toast.success(`${addedCount} questions added to exam!`)
+                    }
+                }, 0)
             } else if (payload && payload.text) {
+                let wasAdded = false
                 setQuestions(prev => {
                     const norm = normalizeText(payload.text)
                     const exists = prev.some(p => p.type === "question" && normalizeText(p.text) === norm)
                     if (exists) {
-                        toast.info("This question is already in the exam.")
+                        wasAdded = false
                         return prev
                     }
                     const newQ = {
                         ...payload,
                         id: generateUniqueId()
                     }
-                    toast.success("Question added to exam from RapidOCR!")
+                    wasAdded = true
                     return [...prev, newQ]
                 })
+                setTimeout(() => {
+                    if (wasAdded) {
+                        toast.success("Question added to exam from RapidOCR!")
+                    } else {
+                        toast.info("This question is already in the exam.")
+                    }
+                }, 0)
             }
         }
 

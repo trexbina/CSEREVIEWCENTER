@@ -5,6 +5,7 @@ import pool from "@/lib/db"
 import { BannerSection } from "./banner-section"
 import { TodoWidget } from "./todo-widget"
 import { MetricsStrip } from "./metrics-strip"
+import { ActiveBatchesOverview } from "./active-batches-overview"
 
 export default async function AdminDashboard() {
   const session = await getSession()
@@ -47,6 +48,9 @@ export default async function AdminDashboard() {
 
       {/* ── Overview Metrics Strip (Single unified container, neutral, minimal) ── */}
       <MetricsStrip />
+
+      {/* ── Review Batches & Schedules Overview ── */}
+      <ActiveBatchesOverview />
     </div>
   )
 }

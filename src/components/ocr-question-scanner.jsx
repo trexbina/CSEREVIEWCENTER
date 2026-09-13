@@ -20,7 +20,9 @@ import {
     EyeOff,
     FileCheck,
     Layers,
-    ListFilter
+    ListFilter,
+    Braces,
+    Copy
 } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 
@@ -33,20 +35,41 @@ if (typeof window !== "undefined" && !pdfjs.GlobalWorkerOptions.workerSrc) {
 }
 
 /**
+ * Pre-processes text to break inline choices and questions onto new lines
+ */
+function preprocessQuestionText(text) {
+    if (!text) return ""
+    let t = text.replace(/\r\n/g, "\n")
+
+    // Separate inline choices: e.g. "a. ... b. ..." or "A. ... B. ..." or "(a) ... (b) ..." or "[a] ... [b] ..."
+    t = t.replace(/([^\n])\s+([a-eA-E][\.\)])\s+/g, "$1\n$2 ")
+    t = t.replace(/([^\n])\s+(\([a-eA-E]\))\s+/g, "$1\n$2 ")
+    t = t.replace(/([^\n])\s+(\[[a-eA-E]\])\s+/g, "$1\n$2 ")
+
+    // Separate inline questions: e.g. "...text. 2. Next question..." or "...text? Q2. Next..."
+    t = t.replace(/([^\n])\s+((?:Question|Item|Q)\s*\d+[:.\-\)])\s+/gi, "$1\n$2 ")
+    t = t.replace(/([^\n])\s+(\d+[\.\)])\s+/g, "$1\n$2 ")
+
+    // Separate inline answer keys / notes / explanations
+    t = t.replace(/([^\n])\s+((?:Answer|Ans|Key|Correct Answer)\s*[:\-])\s+/gi, "$1\n$2 ")
+    t = t.replace(/([^\n])\s+((?:Explanation|Rationale|Note)\s*[:\-])\s+/gi, "$1\n$2 ")
+
+    return t
+}
+
+/**
  * Intelligent Multi-Question Parser for RapidOCR
  * Parses single or multi-question questionnaires from PDFs or screenshots.
  */
 function parseQuestionsFromText(rawText) {
     if (!rawText || !rawText.trim()) return []
 
-    // Normalize line endings and remove extra spaces
-    const normalized = rawText.replace(/\r\n/g, "\n")
-    const lines = normalized.split("\n").map(l => l.trim()).filter(Boolean)
+    const preprocessed = preprocessQuestionText(rawText)
+    const lines = preprocessed.split("\n").map(l => l.trim()).filter(Boolean)
 
     if (lines.length === 0) return []
 
-    // Split into question blocks using question numbering patterns:
-    // e.g. "1.", "1)", "Q1.", "Question 1:", "1 - ", etc.
+    // Match question starts: e.g. "1.", "1)", "Q1.", "Question 1:", "1 - ", etc.
     const questionStartRegex = /^(?:(?:Question|Item|Q)\s*\d+[:.\-\)]|\d+[\.\)\-]\s+)/i
 
     let rawBlocks = []
@@ -55,12 +78,9 @@ function parseQuestionsFromText(rawText) {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i]
         if (questionStartRegex.test(line) && currentBlock.length > 0) {
-            // Check if currentBlock already has at least one option line
-            const hasOption = currentBlock.some(l => /^[(\[]?[A-Da-d][)\]\.\s]/.test(l))
-            if (hasOption) {
-                rawBlocks.push([...currentBlock])
-                currentBlock = []
-            }
+            // Check if currentBlock has non-empty content
+            rawBlocks.push([...currentBlock])
+            currentBlock = []
         }
         currentBlock.push(line)
     }
@@ -69,7 +89,7 @@ function parseQuestionsFromText(rawText) {
         rawBlocks.push(currentBlock)
     }
 
-    // If no distinct numbered blocks were found, treat the entire document as a single block
+    // If no distinct numbered blocks were found, treat lines as a single block
     if (rawBlocks.length === 0) {
         rawBlocks = [lines]
     }
@@ -119,7 +139,7 @@ function parseQuestionsFromText(rawText) {
                 const optContent = optMatch[2] || ""
 
                 options.push({
-                    id: Date.now() + "_" + blockIdx + "_" + letter + "_" + Math.random().toString(36).substring(2, 5),
+                    id: Date.now() + "_" + blockIdx + "_" + letter + "_" + Math.random().toString(36).substring(2, 6),
                     letter,
                     text: optContent.trim(),
                     isCorrect: false
@@ -140,7 +160,9 @@ function parseQuestionsFromText(rawText) {
             .replace(/^(?:(?:Question|Item|Q)\s*\d+[:.\-\)]|\d+[\.\)\-]\s*)/i, "")
             .trim()
 
+        // If block only contained header text with no options and wasn't a question, skip
         if (!questionPrompt && options.length === 0) return
+        if (options.length === 0 && !questionStartRegex.test(blockLines[0])) return
 
         // Default to standard 4 options if none detected
         if (options.length === 0) {
@@ -165,7 +187,7 @@ function parseQuestionsFromText(rawText) {
         }
 
         parsedQuestions.push({
-            id: (Date.now() + blockIdx).toString(),
+            id: (Date.now() + blockIdx + Math.floor(Math.random() * 1000)).toString(),
             type: "question",
             questionType: "Multiple Choice",
             text: questionPrompt || `Question ${blockIdx + 1}`,
@@ -191,6 +213,8 @@ export default function OcrQuestionScanner() {
     const [rawExtractedText, setRawExtractedText] = useState("")
     const [createdQuestions, setCreatedQuestions] = useState([])
     const [showRawText, setShowRawText] = useState(false)
+    const [activeTab, setActiveTab] = useState("cards") // "cards" | "json"
+    const [jsonCopied, setJsonCopied] = useState(false)
     const [isDragging, setIsDragging] = useState(false)
     const fileInputRef = useRef(null)
 
@@ -307,11 +331,33 @@ export default function OcrQuestionScanner() {
 
                 const page = await pdf.getPage(pageNum)
                 const textContent = await page.getTextContent()
-                const pageDigitalText = textContent.items.map(item => item.str).join(" ")
+
+                // Reconstruct page text while preserving line breaks based on Y-coordinates and hasEOL
+                let pageDigitalText = ""
+                let lastY = null
+
+                for (let i = 0; i < textContent.items.length; i++) {
+                    const item = textContent.items[i]
+                    if (!item || !item.str) continue
+
+                    const currentY = item.transform ? item.transform[5] : null
+                    if (lastY !== null && currentY !== null && Math.abs(currentY - lastY) > 5) {
+                        pageDigitalText += "\n"
+                    } else if (item.hasEOL) {
+                        pageDigitalText += "\n"
+                    } else if (pageDigitalText.length > 0 && !pageDigitalText.endsWith("\n") && !pageDigitalText.endsWith(" ")) {
+                        pageDigitalText += " "
+                    }
+
+                    pageDigitalText += item.str
+                    if (currentY !== null) {
+                        lastY = currentY
+                    }
+                }
 
                 if (pageDigitalText.trim().length > 40) {
                     // Page has digital text
-                    combinedText += "\n" + pageDigitalText
+                    combinedText += "\n\n" + pageDigitalText
                 } else {
                     // Scanned PDF page: render to canvas and run OCR
                     setProgressStatus(`RapidOCR scanning page ${pageNum} of ${totalPages}...`)
@@ -329,7 +375,7 @@ export default function OcrQuestionScanner() {
                     }
 
                     const ocrRes = await ocrWorker.recognize(pageDataUrl)
-                    combinedText += "\n" + (ocrRes.data.text || "")
+                    combinedText += "\n\n" + (ocrRes.data.text || "")
                 }
             }
 
@@ -362,8 +408,14 @@ export default function OcrQuestionScanner() {
             return
         }
 
-        // Automatically create and add question cards to the exam!
+        // 1. Direct function call to QuizBuilder bridge
+        if (typeof window !== "undefined" && typeof window.__peak_import_questions === "function") {
+            window.__peak_import_questions(questions)
+        }
+
+        // 2. Dispatch custom event as backup
         window.dispatchEvent(new CustomEvent("peak:add-ocr-question", { detail: questions }))
+
         setCreatedQuestions(questions)
         setIsScanning(false)
         setProgressStatus("")
@@ -375,6 +427,7 @@ export default function OcrQuestionScanner() {
         setRawExtractedText("")
         setCreatedQuestions([])
         setShowRawText(false)
+        setActiveTab("cards")
         if (fileInputRef.current) fileInputRef.current.value = ""
     }
 
@@ -510,30 +563,54 @@ export default function OcrQuestionScanner() {
                         </p>
                     </div>
 
-                    {/* Summary list of created questions */}
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                                <Layers className="size-3" />
-                                <span>Imported Items</span>
-                            </span>
+                    {/* Tab switcher: Cards preview vs JSON Text */}
+                    <div className="flex items-center justify-between border-b border-border/80 pb-1.5 pt-1">
+                        <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/70">
                             <button
                                 type="button"
-                                onClick={() => setShowRawText(!showRawText)}
-                                className="text-[10px] font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
+                                onClick={() => setActiveTab("cards")}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                                    activeTab === "cards" 
+                                        ? "bg-card text-foreground shadow-2xs" 
+                                        : "text-muted-foreground hover:text-foreground"
+                                }`}
                             >
-                                {showRawText ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
-                                <span>{showRawText ? "Hide Text" : "View Raw Text"}</span>
+                                <Layers className="size-3" />
+                                <span>Cards ({createdQuestions.length})</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("json")}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                                    activeTab === "json" 
+                                        ? "bg-card text-foreground shadow-2xs" 
+                                        : "text-muted-foreground hover:text-foreground"
+                                }`}
+                            >
+                                <Braces className="size-3" />
+                                <span>JSON Text</span>
                             </button>
                         </div>
 
-                        {showRawText && (
-                            <div className="p-2.5 rounded-lg border border-border bg-muted/40 font-mono text-[10px] text-muted-foreground max-h-36 overflow-y-auto whitespace-pre-wrap">
-                                {rawExtractedText}
-                            </div>
-                        )}
+                        <button
+                            type="button"
+                            onClick={() => setShowRawText(!showRawText)}
+                            className="text-[10px] font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
+                        >
+                            {showRawText ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
+                            <span>{showRawText ? "Hide Text" : "Raw OCR"}</span>
+                        </button>
+                    </div>
 
-                        <div className="max-h-56 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
+                    {showRawText && (
+                        <div className="p-2.5 rounded-lg border border-border bg-muted/40 font-mono text-[10px] text-muted-foreground max-h-36 overflow-y-auto whitespace-pre-wrap">
+                            {rawExtractedText}
+                        </div>
+                    )}
+
+                    {/* Tab 1: Cards View */}
+                    {activeTab === "cards" && (
+                        <div className="max-h-60 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
                             {createdQuestions.map((q, idx) => (
                                 <div
                                     key={q.id || idx}
@@ -558,7 +635,51 @@ export default function OcrQuestionScanner() {
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    )}
+
+                    {/* Tab 2: JSON Text View */}
+                    {activeTab === "json" && (
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between text-[11px]">
+                                <span className="text-muted-foreground font-mono">
+                                    {createdQuestions.length} Questions JSON
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const text = JSON.stringify(createdQuestions, null, 2)
+                                        navigator.clipboard.writeText(text)
+                                        setJsonCopied(true)
+                                        setTimeout(() => setJsonCopied(false), 2000)
+                                        toast.success("JSON copied to clipboard!")
+                                    }}
+                                    className="text-[10px] font-semibold text-foreground flex items-center gap-1 bg-muted px-2 py-0.5 rounded border border-border/70 hover:bg-muted/80 cursor-pointer transition-colors"
+                                >
+                                    {jsonCopied ? <Check className="size-3 text-emerald-600" /> : <Copy className="size-3" />}
+                                    <span>{jsonCopied ? "Copied" : "Copy JSON"}</span>
+                                </button>
+                            </div>
+
+                            <pre className="p-2.5 rounded-lg border border-border bg-gray-950 text-emerald-400 font-mono text-[10px] max-h-56 overflow-y-auto whitespace-pre custom-scrollbar">
+                                {JSON.stringify(createdQuestions, null, 2)}
+                            </pre>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (typeof window !== "undefined" && typeof window.__peak_import_questions === "function") {
+                                        window.__peak_import_questions(createdQuestions)
+                                    } else {
+                                        window.dispatchEvent(new CustomEvent("peak:add-ocr-question", { detail: createdQuestions }))
+                                    }
+                                    toast.success("Applied to exam cards!")
+                                }}
+                                className="w-full bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold py-1.5 rounded-lg transition-all shadow-2xs cursor-pointer text-center"
+                            >
+                                Re-Apply to Exam Cards
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

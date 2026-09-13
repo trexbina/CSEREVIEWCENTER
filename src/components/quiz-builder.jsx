@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
-import { Loader2, Image as ImageIcon, Trash, Plus, ArrowRight, GripVertical, Save, HelpCircle, Clock, Calendar, AlertCircle, Settings, X, RotateCcw, Eye, PenTool, ArrowLeft, Maximize, Minimize, Play, CheckCircle2, FileText, ExternalLink } from "lucide-react"
+import { Loader2, Image as ImageIcon, Trash, Plus, ArrowRight, GripVertical, Save, HelpCircle, Clock, Calendar, AlertCircle, Settings, X, RotateCcw, Eye, PenTool, ArrowLeft, Maximize, Minimize, Play, CheckCircle2, FileText, ExternalLink, Braces, Copy, Check } from "lucide-react"
 
 const CustomPdfViewer = dynamic(() => import("@/components/custom-pdf-viewer"), {
     ssr: false,
@@ -74,6 +74,9 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
     const [quizSettings, setQuizSettings] = useState(DEFAULT_QUIZ_SETTINGS)
     const [showSettings, setShowSettings] = useState(false)
+    const [showJsonModal, setShowJsonModal] = useState(false)
+    const [jsonInputText, setJsonInputText] = useState("")
+    const [jsonCopied, setJsonCopied] = useState(false)
     const [viewingPdf, setViewingPdf] = useState(null)
 
     const allReferencePdfs = useMemo(() => {
@@ -168,9 +171,9 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
     }, [])
 
+    // Listen for questions created by RapidOCR or external toolboxes
     useEffect(() => {
-        const handleAddOcrQuestion = (e) => {
-            const payload = e.detail
+        const handleImport = (payload) => {
             if (Array.isArray(payload) && payload.length > 0) {
                 setQuestions(prev => [...prev, ...payload])
                 toast.success(`${payload.length} questions created and added to exam!`)
@@ -179,8 +182,20 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                 toast.success("Question added to exam from RapidOCR!")
             }
         }
+
+        // 1. Direct window bridge for reliable cross-component calls
+        window.__peak_import_questions = handleImport
+
+        // 2. CustomEvent listener
+        const handleAddOcrQuestion = (e) => {
+            handleImport(e.detail)
+        }
         window.addEventListener("peak:add-ocr-question", handleAddOcrQuestion)
-        return () => window.removeEventListener("peak:add-ocr-question", handleAddOcrQuestion)
+
+        return () => {
+            delete window.__peak_import_questions
+            window.removeEventListener("peak:add-ocr-question", handleAddOcrQuestion)
+        }
     }, [])
 
     const toggleFullscreen = () => {
@@ -1078,6 +1093,18 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                 >
                                     Add Title/Desc
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setJsonInputText(JSON.stringify(questions, null, 2))
+                                        setShowJsonModal(true)
+                                    }}
+                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                    title="View, edit, or import questions as JSON text"
+                                >
+                                    <Braces className="h-3.5 w-3.5 text-gray-600" />
+                                    <span>JSON Text</span>
+                                </button>
                                 {!examId && (
                                     <button
                                         type="button"
@@ -1360,6 +1387,126 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                         >
                                             Done
                                         </button>
+                                    </div>
+                                </div>
+                        {/* JSON Text Import / Export Modal */}
+                        {showJsonModal && (
+                            <div
+                                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
+                                onClick={(e) => {
+                                    if (e.target === e.currentTarget) setShowJsonModal(false)
+                                }}
+                            >
+                                <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                                    {/* Modal Header */}
+                                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-2xl shrink-0">
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                                                <Braces className="h-4 w-4" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-gray-800 text-sm">Exam Questions JSON</h3>
+                                                <p className="text-[11px] text-gray-400">View, copy, or paste raw JSON questions into your exam</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setShowJsonModal(false)}
+                                            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+
+                                    {/* Modal Body */}
+                                    <div className="p-6 flex-1 overflow-y-auto space-y-3">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="text-gray-500 font-medium">JSON Questions Array</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(jsonInputText)
+                                                    setJsonCopied(true)
+                                                    setTimeout(() => setJsonCopied(false), 2000)
+                                                    toast.success("JSON copied to clipboard!")
+                                                }}
+                                                className="text-gray-600 hover:text-gray-900 flex items-center gap-1 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-colors"
+                                            >
+                                                {jsonCopied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                                                <span>{jsonCopied ? "Copied!" : "Copy JSON"}</span>
+                                            </button>
+                                        </div>
+
+                                        <textarea
+                                            value={jsonInputText}
+                                            onChange={(e) => setJsonInputText(e.target.value)}
+                                            placeholder='[
+  {
+    "id": "1",
+    "type": "question",
+    "questionType": "Multiple Choice",
+    "text": "What is...?",
+    "points": 1,
+    "options": [
+      { "id": "1", "text": "Option 1", "isCorrect": true },
+      { "id": "2", "text": "Option 2", "isCorrect": false }
+    ]
+  }
+]'
+                                            className="w-full h-80 p-3 bg-gray-900 text-emerald-400 font-mono text-xs rounded-xl border border-gray-800 outline-none focus:border-emerald-500 transition-colors resize-none leading-relaxed custom-scrollbar"
+                                        />
+                                    </div>
+
+                                    {/* Modal Footer */}
+                                    <div className="px-6 py-3.5 bg-gray-50/70 border-t border-gray-100 flex items-center justify-between rounded-b-2xl">
+                                        <p className="text-[11px] text-gray-400">
+                                            Paste valid JSON and click "Apply JSON" to replace or add to the current exam.
+                                        </p>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    try {
+                                                        let parsed = JSON.parse(jsonInputText)
+                                                        if (parsed && !Array.isArray(parsed) && parsed.questions) {
+                                                            parsed = parsed.questions
+                                                        }
+                                                        if (!Array.isArray(parsed)) {
+                                                            throw new Error("JSON must be an array of questions or an object with a questions array")
+                                                        }
+                                                        setQuestions(prev => [...prev, ...parsed])
+                                                        setShowJsonModal(false)
+                                                        toast.success(`Appended ${parsed.length} questions from JSON!`)
+                                                    } catch (err) {
+                                                        toast.error("Invalid JSON: " + err.message)
+                                                    }
+                                                }}
+                                                className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 font-semibold text-xs transition-all cursor-pointer shadow-2xs"
+                                            >
+                                                Append to Exam
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    try {
+                                                        let parsed = JSON.parse(jsonInputText)
+                                                        if (parsed && !Array.isArray(parsed) && parsed.questions) {
+                                                            parsed = parsed.questions
+                                                        }
+                                                        if (!Array.isArray(parsed)) {
+                                                            throw new Error("JSON must be an array of questions or an object with a questions array")
+                                                        }
+                                                        setQuestions(parsed)
+                                                        setShowJsonModal(false)
+                                                        toast.success(`Applied ${parsed.length} questions to exam!`)
+                                                    } catch (err) {
+                                                        toast.error("Invalid JSON: " + err.message)
+                                                    }
+                                                }}
+                                                className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold text-xs px-4 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs"
+                                            >
+                                                Replace Exam Questions
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

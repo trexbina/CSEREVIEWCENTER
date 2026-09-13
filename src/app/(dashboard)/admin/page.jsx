@@ -45,7 +45,7 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Right Column (spans 3 cols): To-do List + Calendar Widget */}
-        <div className="lg:col-span-3 flex flex-col justify-between gap-6 sm:gap-7">
+        <div className="lg:col-span-3 flex flex-col justify-start gap-4">
           <TodoWidget />
           <CalendarWidget />
         </div>

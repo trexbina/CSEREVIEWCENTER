@@ -83,10 +83,10 @@ export function TodoWidget() {
   }
 
   return (
-    <div className="h-full w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between transition-all">
+    <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col transition-all">
       {/* ── Top Bar / Header (styled like metric strip: light gray bg + border-b + dimensional soft shadow) ── */}
       <div>
-        <div className="relative z-10 px-4 py-3 sm:px-4.5 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-black/[0.03] dark:bg-white/[0.05] shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+        <div className="relative z-10 px-4 py-2.5 sm:px-4.5 sm:py-3 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-black/[0.03] dark:bg-white/[0.05] shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-[#3B3B3B] dark:text-white tracking-wider uppercase">
               To-do List
@@ -107,42 +107,42 @@ export function TodoWidget() {
         </div>
 
         {/* ── Content Body Container ── */}
-        <div className="p-3.5 sm:p-4 pt-2.5 sm:pt-3">
+        <div className="p-3 sm:p-3.5 pt-2 sm:pt-2.5">
           {/* ── Add Input Row (Appears when plus is pressed) ── */}
           {isAdding && (
-            <form onSubmit={handleAdd} className="mb-3 flex items-center gap-2 animate-in fade-in duration-150">
+            <form onSubmit={handleAdd} className="mb-2 flex items-center gap-2 animate-in fade-in duration-150">
               <input
                 type="text"
                 autoFocus
                 value={newText}
                 onChange={(e) => setNewText(e.target.value)}
                 placeholder="Write a task..."
-                className="flex-1 h-8 rounded-lg border border-black/10 dark:border-white/15 bg-white dark:bg-white/5 px-2.5 text-xs text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs"
+                className="flex-1 h-7.5 rounded-lg border border-black/10 dark:border-white/15 bg-white dark:bg-white/5 px-2.5 text-xs text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs"
               />
               <button
                 type="submit"
-                className="h-8 px-2.5 rounded-lg bg-[#3B3B3B] hover:bg-[#2B2B2B] dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                className="h-7.5 px-2.5 rounded-lg bg-[#3B3B3B] hover:bg-[#2B2B2B] dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
               >
                 Add
               </button>
             </form>
           )}
 
-          {/* ── Items List ── */}
-          <div className="space-y-1 overflow-y-auto max-h-[220px] pr-0.5">
+          {/* ── Items List (Compact height so calendar fits fully) ── */}
+          <div className="space-y-0.5 overflow-y-auto max-h-[110px] pr-0.5">
             {items.length === 0 ? (
-              <div className="py-6 text-center text-xs text-[#696969] dark:text-gray-500 italic">
+              <div className="py-3 text-center text-xs text-[#696969] dark:text-gray-500 italic">
                 No tasks yet. Press + to add one.
               </div>
             ) : (
               items.map((item) => (
                 <div
                   key={item.id}
-                  className="group flex items-center justify-between gap-2.5 px-2 py-1.5 rounded-lg hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors"
+                  className="group flex items-center justify-between gap-2 px-1.5 py-1 rounded-lg hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors"
                 >
                   <div
                     onClick={() => toggleComplete(item.id)}
-                    className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer select-none"
+                    className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer select-none"
                   >
                     {/* Neutral Colored Bullet */}
                     <span

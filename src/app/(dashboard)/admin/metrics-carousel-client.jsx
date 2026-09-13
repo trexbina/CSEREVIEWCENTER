@@ -55,35 +55,46 @@ export function MetricsCarouselClient({ items }) {
 
       {/* ── Metrics Strip Container ── */}
       <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-xs overflow-hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-          {visibleItems.map((item, idx) => {
+        {/* Sliding Track - using exact same bezier & smooth sliding translation as the banner */}
+        <div
+          className="flex transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform"
+          style={{
+            transform: `translateX(-${startIndex * (100 / CARDS_PER_VIEW)}%)`,
+          }}
+        >
+          {items.map((item, idx) => {
             const Icon = ICON_MAP[item.iconKey] || Users
             return (
-              <Link
+              <div
                 key={item.label || idx}
-                href={item.href}
-                className="flex flex-col justify-between group/card transition-colors hover:bg-black/[0.01] dark:hover:bg-white/[0.01]"
+                style={{ width: `${100 / CARDS_PER_VIEW}%` }}
+                className="shrink-0"
               >
-                {/* Header: Label + Icon with bottom border & dimensional soft shadow */}
-                <div
-                  className={`relative z-10 px-5 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between gap-2 border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] ${item.headerBg}`}
+                <Link
+                  href={item.href}
+                  className="flex flex-col justify-between select-none"
                 >
-                  <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                    {item.label}
-                  </span>
-                  <Icon className="size-4 text-neutral-500 dark:text-neutral-400 stroke-[1.75]" />
-                </div>
-
-                {/* Body: Value + Brief Note */}
-                <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-                  <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                    {Number(item.value).toLocaleString()}
+                  {/* Header: Label + Icon with bottom border & dimensional soft shadow */}
+                  <div
+                    className={`relative z-10 px-5 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between gap-2 border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] ${item.headerBg}`}
+                  >
+                    <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                      {item.label}
+                    </span>
+                    <Icon className="size-4 text-neutral-500 dark:text-neutral-400 stroke-[1.75]" />
                   </div>
-                  <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                    {item.meta}
-                  </p>
-                </div>
-              </Link>
+
+                  {/* Body: Value + Brief Note */}
+                  <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+                    <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                      {Number(item.value).toLocaleString()}
+                    </div>
+                    <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                      {item.meta}
+                    </p>
+                  </div>
+                </Link>
+              </div>
             )
           })}
         </div>

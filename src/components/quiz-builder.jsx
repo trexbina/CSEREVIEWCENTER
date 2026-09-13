@@ -251,6 +251,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         return () => {
             delete window.__peak_import_questions
             window.removeEventListener("peak:add-ocr-question", handleAddOcrQuestion)
+        }
     }, [])
 
     const toggleFullscreen = () => {

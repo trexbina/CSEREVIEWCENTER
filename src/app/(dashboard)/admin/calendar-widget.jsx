@@ -129,9 +129,9 @@ export function CalendarWidget() {
                     !cell.currentMonth
                       ? "text-neutral-300 dark:text-neutral-600 cursor-default opacity-40"
                       : activeSelected
-                      ? "bg-[#3B3B3B] text-white dark:bg-white dark:text-gray-900 font-semibold shadow-xs"
+                      ? "bg-neutral-200 text-[#3B3B3B] dark:bg-white/20 dark:text-white font-semibold shadow-2xs"
                       : activeToday
-                      ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold hover:bg-emerald-500/30"
+                      ? "bg-neutral-300 text-neutral-800 dark:bg-neutral-600 dark:text-neutral-100 font-bold hover:bg-neutral-300/80"
                       : "text-[#3B3B3B] dark:text-neutral-200 hover:bg-black/5 dark:hover:bg-white/10"
                   }`}
                 >

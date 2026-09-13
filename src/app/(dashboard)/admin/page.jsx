@@ -7,6 +7,7 @@ import { TodoWidget } from "./todo-widget"
 import { MetricsStrip } from "./metrics-strip"
 import { ActiveBatchesOverview } from "./active-batches-overview"
 import { ProgramsDistributionOverview } from "./programs-distribution-overview"
+import { RecentEnrollmentsFeed } from "./recent-enrollments-feed"
 
 export default async function AdminDashboard() {
   const session = await getSession()
@@ -55,6 +56,9 @@ export default async function AdminDashboard() {
 
       {/* ── Academic Programs & Cohort Distribution ── */}
       <ProgramsDistributionOverview />
+
+      {/* ── Recent Registrations & User Activity Feed ── */}
+      <RecentEnrollmentsFeed />
     </div>
   )
 }

@@ -20,9 +20,7 @@ import {
     EyeOff,
     FileCheck,
     Layers,
-    ListFilter,
-    Braces,
-    Copy
+    ListFilter
 } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 
@@ -214,8 +212,6 @@ export default function OcrQuestionScanner() {
     const [rawExtractedText, setRawExtractedText] = useState("")
     const [createdQuestions, setCreatedQuestions] = useState([])
     const [showRawText, setShowRawText] = useState(false)
-    const [activeTab, setActiveTab] = useState("cards") // "cards" | "json"
-    const [jsonCopied, setJsonCopied] = useState(false)
     const [isDragging, setIsDragging] = useState(false)
     const fileInputRef = useRef(null)
 
@@ -562,35 +558,11 @@ export default function OcrQuestionScanner() {
                                 Added to exam canvas. Duplicates are automatically prevented.
                             </p>
                         </div>
-                    </div>
-
-                    {/* Tab switcher: Cards preview vs JSON Text - Minimal */}
+                    </div>                    {/* Cards preview header & Raw text toggle */}
                     <div className="flex items-center justify-between border-b border-border pb-2 pt-0.5">
-                        <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/60">
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab("cards")}
-                                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
-                                    activeTab === "cards" 
-                                        ? "bg-card text-foreground shadow-2xs" 
-                                        : "text-muted-foreground hover:text-foreground"
-                                }`}
-                            >
-                                <Layers className="size-3" />
-                                <span>Cards ({createdQuestions.length})</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setActiveTab("json")}
-                                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
-                                    activeTab === "json" 
-                                        ? "bg-card text-foreground shadow-2xs" 
-                                        : "text-muted-foreground hover:text-foreground"
-                                }`}
-                            >
-                                <Braces className="size-3" />
-                                <span>JSON Text</span>
-                            </button>
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                            <Layers className="size-3.5 text-muted-foreground" />
+                            <span>Generated Questions ({createdQuestions.length})</span>
                         </div>
 
                         <button
@@ -609,77 +581,32 @@ export default function OcrQuestionScanner() {
                         </div>
                     )}
 
-                    {/* Tab 1: Cards View - Minimal */}
-                    {activeTab === "cards" && (
-                        <div className="max-h-60 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
-                            {createdQuestions.map((q, idx) => (
-                                <div
-                                    key={q.id || idx}
-                                    className="p-2.5 rounded-lg border border-border bg-card text-xs space-y-1 hover:border-border/80 transition-colors"
-                                >
-                                    <div className="flex items-start gap-1.5">
-                                        <span className="font-semibold text-muted-foreground shrink-0 font-mono text-[11px]">
-                                            {idx + 1}.
-                                        </span>
-                                        <p className="font-normal text-foreground line-clamp-2 leading-snug text-xs">
-                                            {q.text}
-                                        </p>
-                                    </div>
-                                    <div className="text-[10px] text-muted-foreground flex items-center gap-2 pl-4">
-                                        <span>{q.options?.length || 0} Choices</span>
-                                        {q.options?.some(o => o.isCorrect) && (
-                                            <span className="text-foreground/70 font-medium flex items-center gap-0.5">
-                                                <Check className="size-2.5" /> Key set
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Tab 2: JSON Text View - Minimal */}
-                    {activeTab === "json" && (
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground font-mono text-[11px]">
-                                    {createdQuestions.length} Questions JSON
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const text = JSON.stringify(createdQuestions, null, 2)
-                                        navigator.clipboard.writeText(text)
-                                        setJsonCopied(true)
-                                        setTimeout(() => setJsonCopied(false), 2000)
-                                        toast.success("JSON copied to clipboard!")
-                                    }}
-                                    className="text-[11px] font-medium text-foreground flex items-center gap-1 bg-muted px-2 py-0.5 rounded-md border border-border hover:bg-muted/80 cursor-pointer transition-colors"
-                                >
-                                    {jsonCopied ? <Check className="size-3 text-emerald-600" /> : <Copy className="size-3" />}
-                                    <span>{jsonCopied ? "Copied" : "Copy JSON"}</span>
-                                </button>
-                            </div>
-
-                            <pre className="p-2.5 rounded-lg border border-border bg-muted/40 text-foreground font-mono text-[10px] max-h-56 overflow-y-auto whitespace-pre custom-scrollbar">
-                                {JSON.stringify(createdQuestions, null, 2)}
-                            </pre>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (typeof window !== "undefined" && typeof window.__peak_import_questions === "function") {
-                                        window.__peak_import_questions(createdQuestions)
-                                    } else {
-                                        window.dispatchEvent(new CustomEvent("peak:add-ocr-question", { detail: createdQuestions }))
-                                    }
-                                }}
-                                className="w-full border border-border bg-muted hover:bg-muted/80 text-foreground text-xs font-medium py-1.5 rounded-lg transition-all cursor-pointer text-center"
+                    {/* Cards View - Minimal */}
+                    <div className="max-h-60 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
+                        {createdQuestions.map((q, idx) => (
+                            <div
+                                key={q.id || idx}
+                                className="p-2.5 rounded-lg border border-border bg-card text-xs space-y-1 hover:border-border/80 transition-colors"
                             >
-                                Re-Apply to Exam Cards
-                            </button>
-                        </div>
-                    )}
+                                <div className="flex items-start gap-1.5">
+                                    <span className="font-semibold text-muted-foreground shrink-0 font-mono text-[11px]">
+                                        {idx + 1}.
+                                    </span>
+                                    <p className="font-normal text-foreground line-clamp-2 leading-snug text-xs">
+                                        {q.text}
+                                    </p>
+                                </div>
+                                <div className="text-[10px] text-muted-foreground flex items-center gap-2 pl-4">
+                                    <span>{q.options?.length || 0} Choices</span>
+                                    {q.options?.some(o => o.isCorrect) && (
+                                        <span className="text-foreground/70 font-medium flex items-center gap-0.5">
+                                            <Check className="size-2.5" /> Key set
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>

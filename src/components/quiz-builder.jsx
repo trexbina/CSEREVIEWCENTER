@@ -1149,18 +1149,6 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                 >
                                     Add Title/Desc
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setJsonInputText(JSON.stringify(questions, null, 2))
-                                        setShowJsonModal(true)
-                                    }}
-                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-                                    title="View, edit, or import questions as JSON text"
-                                >
-                                    <Braces className="h-3.5 w-3.5 text-gray-600" />
-                                    <span>JSON Text</span>
-                                </button>
                                 {!examId && (
                                     <button
                                         type="button"

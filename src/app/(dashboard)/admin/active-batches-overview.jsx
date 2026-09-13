@@ -45,7 +45,7 @@ export async function ActiveBatchesOverview() {
       {/* External Section Header */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2.5">
-          <h2 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-white tracking-tight">
+          <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
             Batches
           </h2>
           <span className="text-xs font-medium text-neutral-400 dark:text-neutral-500 bg-black/5 dark:bg-white/5 px-2.5 py-0.5 rounded-full">
@@ -55,7 +55,7 @@ export async function ActiveBatchesOverview() {
 
         <Link
           href="/admin/subscriptions"
-          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
+          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white transition-colors"
         >
           <span>View all</span>
           <ArrowUpRight className="size-3.5 sm:size-4 text-neutral-400" />
@@ -85,7 +85,7 @@ export async function ActiveBatchesOverview() {
                   <div className="size-2 rounded-full shrink-0 bg-neutral-300 dark:bg-neutral-600" />
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-neutral-900 dark:text-white">
+                      <span className="text-sm font-medium text-[#3B3B3B] dark:text-white">
                         {batch.name}
                       </span>
                       {batch.target_year && (

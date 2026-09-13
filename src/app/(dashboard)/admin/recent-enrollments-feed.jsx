@@ -73,7 +73,7 @@ export async function RecentEnrollmentsFeed() {
       {/* External Section Header */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2.5">
-          <h2 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-white tracking-tight">
+          <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
             Recent Activity
           </h2>
           <span className="text-xs font-medium text-neutral-400 dark:text-neutral-500 bg-black/5 dark:bg-white/5 px-2.5 py-0.5 rounded-full">
@@ -83,7 +83,7 @@ export async function RecentEnrollmentsFeed() {
 
         <Link
           href="/admin/users"
-          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
+          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white transition-colors"
         >
           <span>View users</span>
           <ArrowUpRight className="size-3.5 sm:size-4 text-neutral-400" />
@@ -115,7 +115,7 @@ export async function RecentEnrollmentsFeed() {
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-neutral-900 dark:text-white truncate">
+                      <span className="text-xs font-medium text-[#3B3B3B] dark:text-white truncate">
                         {user.name}
                       </span>
                       {user.login_id && (

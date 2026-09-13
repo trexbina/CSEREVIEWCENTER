@@ -93,7 +93,7 @@ export async function MetricsStrip() {
 
               {/* Value + Brief Note */}
               <div className="mt-3">
-                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white">
+                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                   {item.value.toLocaleString()}
                 </div>
                 <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">

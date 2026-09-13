@@ -31,14 +31,14 @@ export async function ProgramsDistributionOverview() {
       {/* External Section Header */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2.5">
-          <h2 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-white tracking-tight">
+          <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
             Programs & Courses
           </h2>
         </div>
 
         <Link
           href="/admin/curriculum"
-          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
+          className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white transition-colors"
         >
           <span>Manage curriculum</span>
           <ArrowUpRight className="size-3.5 sm:size-4 text-neutral-400" />
@@ -63,7 +63,7 @@ export async function ProgramsDistributionOverview() {
                 {exams.map((exam) => (
                   <div key={exam.id} className="py-2.5 first:pt-0 last:pb-0 flex items-center gap-2.5">
                     <Award className="size-3.5 text-neutral-400 dark:text-neutral-500 shrink-0 stroke-[1.75]" />
-                    <span className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-white leading-snug">
+                    <span className="text-xs sm:text-sm font-medium text-[#3B3B3B] dark:text-white leading-snug">
                       {exam.name}
                     </span>
                   </div>
@@ -89,7 +89,7 @@ export async function ProgramsDistributionOverview() {
                     key={prog.id}
                     className="p-3 rounded-xl border border-black/5 dark:border-white/5 bg-black/[0.015] dark:bg-white/[0.015] flex items-center justify-between gap-2"
                   >
-                    <span className="text-xs font-medium text-neutral-900 dark:text-white line-clamp-1">
+                    <span className="text-xs font-medium text-[#3B3B3B] dark:text-white line-clamp-1">
                       {prog.name}
                     </span>
                     <GraduationCap className="size-3.5 text-neutral-400 shrink-0 stroke-[1.75]" />

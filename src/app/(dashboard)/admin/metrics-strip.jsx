@@ -48,6 +48,7 @@ export async function MetricsStrip() {
       href: "/admin/users",
       icon: Users,
       meta: "Active student accounts",
+      headerBg: "bg-emerald-500/[0.07] dark:bg-emerald-400/[0.08]",
     },
     {
       label: "Active Batches",
@@ -55,6 +56,7 @@ export async function MetricsStrip() {
       href: "/admin/master-data",
       icon: Calendar,
       meta: "Ongoing review terms",
+      headerBg: "bg-amber-500/[0.08] dark:bg-amber-400/[0.08]",
     },
     {
       label: "Expiring Soon",
@@ -62,6 +64,7 @@ export async function MetricsStrip() {
       href: "/admin/subscriptions",
       icon: AlertTriangle,
       meta: "Within next 14 days",
+      headerBg: "bg-rose-500/[0.07] dark:bg-rose-400/[0.08]",
     },
     {
       label: "Pre-Registrations",
@@ -69,6 +72,7 @@ export async function MetricsStrip() {
       href: "/admin/users?tab=pre-registrations",
       icon: UserPlus,
       meta: "Pending application review",
+      headerBg: "bg-[#E9C46A]/15 dark:bg-[#E9C46A]/15",
     },
   ]
 
@@ -83,8 +87,8 @@ export async function MetricsStrip() {
               href={item.href}
               className="flex flex-col justify-between group transition-colors"
             >
-              {/* Header: Label + Icon with bottom border & background area */}
-              <div className="px-5 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between gap-2 border-b border-black/5 dark:border-white/5 bg-black/[0.015] dark:bg-white/[0.015]">
+              {/* Header: Label + Icon with bottom border & muted translucent background */}
+              <div className={`px-5 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between gap-2 border-b border-black/5 dark:border-white/5 ${item.headerBg}`}>
                 <span className="text-[13px] font-medium text-neutral-500 dark:text-neutral-400 select-none">
                   {item.label}
                 </span>

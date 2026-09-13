@@ -14,7 +14,7 @@ function getDaysRemaining(endDateStr) {
 function formatDate(dateStr) {
   if (!dateStr) return "No date set"
   const d = new Date(dateStr)
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+  return d.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
 }
 
 export async function ActiveBatchesOverview() {
@@ -102,7 +102,9 @@ export async function ActiveBatchesOverview() {
                   <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300">
                     <Users className="size-3.5 text-neutral-400 stroke-[1.75]" />
                     <span>
-                      {batch.student_count}{" "}
+                      <span className="tabular-nums">
+                        {String(batch.student_count ?? 0).padStart(2, "0")}
+                      </span>{" "}
                       <span className="text-neutral-400 dark:text-neutral-500 text-[11px]">
                         enrolled
                       </span>
@@ -112,7 +114,7 @@ export async function ActiveBatchesOverview() {
                   {/* Term Deadline */}
                   <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300">
                     <Clock className="size-3.5 text-neutral-400 stroke-[1.75]" />
-                    <span>
+                    <span className="tabular-nums">
                       {formatDate(batch.end_date)}
                     </span>
                   </div>
@@ -124,12 +126,12 @@ export async function ActiveBatchesOverview() {
                         Term ended
                       </span>
                     ) : isExpiringSoon ? (
-                      <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                        {daysLeft}d left
+                      <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400 tabular-nums">
+                        {daysLeft !== null && daysLeft >= 0 && daysLeft < 10 ? `0${daysLeft}` : daysLeft}d left
                       </span>
                     ) : daysLeft !== null ? (
-                      <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
-                        {daysLeft}d left
+                      <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 tabular-nums">
+                        {daysLeft >= 0 && daysLeft < 10 ? `0${daysLeft}` : daysLeft}d left
                       </span>
                     ) : (
                       <span className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">

@@ -9,7 +9,6 @@ import { MetricsStrip } from "./metrics-strip"
 import { ActiveBatchesOverview } from "./active-batches-overview"
 import { ProgramsDistributionOverview } from "./programs-distribution-overview"
 import { RecentEnrollmentsFeed } from "./recent-enrollments-feed"
-import { DynamicDashboardBackground } from "./dynamic-dashboard-bg"
 
 export default async function AdminDashboard() {
   const session = await getSession()
@@ -36,8 +35,7 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <div className="relative isolate space-y-9 sm:space-y-10 pb-10">
-      <DynamicDashboardBackground />
+    <div className="space-y-9 sm:space-y-10 pb-10">
       {/* ── Top Section: 9-col Banner + Metrics Strip / 3-col To-Do List + Calendar ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-7 items-stretch">
         {/* Left Column (spans 9 cols): Banner + Metric Strip (same width as banner) */}
@@ -52,6 +50,9 @@ export default async function AdminDashboard() {
           <CalendarWidget />
         </div>
       </div>
+
+      {/* ── Subtle Line Divider ── */}
+      <div className="border-t border-black/5 dark:border-white/10" />
 
       {/* ── Review Batches & Schedules Overview ── */}
       <div className="pt-1">

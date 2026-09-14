@@ -86,12 +86,12 @@ export function TodoWidget() {
     <div className="w-full flex-1 rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col transition-all">
       {/* ── Top Bar / Header (styled like metric strip: light gray bg + border-b + dimensional soft shadow) ── */}
       <div>
-        <div className="relative z-10 px-4 py-3 sm:px-4.5 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-rose-50/70 dark:bg-rose-950/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+        <div className="relative z-10 px-4 py-3 sm:px-4.5 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E17055]/20 dark:bg-[#E17055]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#3B3B3B] dark:text-white tracking-wider uppercase">
+            <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
               To-do List
             </span>
-            <span className="text-[10px] font-medium text-[#696969] dark:text-gray-400 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-full">
+            <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-full">
               {items.filter((t) => !t.completed).length}
             </span>
           </div>

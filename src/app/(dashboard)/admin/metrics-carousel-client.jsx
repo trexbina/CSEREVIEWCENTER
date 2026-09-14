@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, Users, Calendar, AlertTriangle, UserPlus, Award } from "lucide-react"
+import { LordIcon } from "@/components/ui/lord-icon"
 
 // Icon mapping dictionary
 const ICON_MAP = {
@@ -11,6 +12,52 @@ const ICON_MAP = {
   award: Award,
   alertTriangle: AlertTriangle,
   userPlus: UserPlus,
+}
+
+function MetricCardItem({ item }) {
+  const iconRef = useRef(null)
+
+  return (
+    <Link
+      href={item.href}
+      onMouseEnter={() => iconRef.current?.play()}
+      onMouseLeave={() => iconRef.current?.stop()}
+      className="flex flex-col justify-between select-none group/card"
+    >
+      {/* Header: Label without icon, with bottom border & dimensional soft shadow */}
+      <div
+        className={`relative z-10 px-5 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] ${item.headerBg}`}
+      >
+        <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+          {item.label}
+        </span>
+      </div>
+
+      {/* Body: Value + Note on left, Animated LordIcon on right */}
+      <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+            {Number(item.value).toLocaleString()}
+          </div>
+          <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+            {item.meta}
+          </p>
+        </div>
+
+        {/* Animated LordIcon on right side - triggered by whole card hover */}
+        {item.lordIcon && (
+          <div className="shrink-0 transition-transform duration-300 group-hover/card:scale-110">
+            <LordIcon
+              ref={iconRef}
+              src={item.lordIcon}
+              size={46}
+              trigger="manual"
+            />
+          </div>
+        )}
+      </div>
+    </Link>
+  )
 }
 
 export function MetricsCarouselClient({ items }) {
@@ -30,9 +77,6 @@ export function MetricsCarouselClient({ items }) {
 
   const canPrev = startIndex > 0
   const canNext = startIndex < maxStartIndex
-
-  // Extract visible 3 items
-  const visibleItems = items.slice(startIndex, startIndex + CARDS_PER_VIEW)
 
   return (
     <div className="relative w-full flex items-center group">
@@ -63,37 +107,13 @@ export function MetricsCarouselClient({ items }) {
           }}
         >
           {items.map((item, idx) => {
-            const Icon = ICON_MAP[item.iconKey] || Users
             return (
               <div
                 key={item.label || idx}
                 style={{ width: `${100 / CARDS_PER_VIEW}%` }}
                 className="shrink-0"
               >
-                <Link
-                  href={item.href}
-                  className="flex flex-col justify-between select-none"
-                >
-                  {/* Header: Label + Icon with bottom border & dimensional soft shadow */}
-                  <div
-                    className={`relative z-10 px-5 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between gap-2 border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] ${item.headerBg}`}
-                  >
-                    <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                      {item.label}
-                    </span>
-                    <Icon className="size-4 text-neutral-500 dark:text-neutral-400 stroke-[1.75]" />
-                  </div>
-
-                  {/* Body: Value + Brief Note */}
-                  <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-                    <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                      {Number(item.value).toLocaleString()}
-                    </div>
-                    <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                      {item.meta}
-                    </p>
-                  </div>
-                </Link>
+                <MetricCardItem item={item} />
               </div>
             )
           })}

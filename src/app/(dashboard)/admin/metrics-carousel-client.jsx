@@ -46,7 +46,7 @@ function MetricCardItem({ item }) {
 
         {/* Animated LordIcon on right side - triggered by whole card hover */}
         {item.lordIcon && (
-          <div className="shrink-0 transition-transform duration-300 opacity-45 group-hover/card:scale-105">
+          <div className="shrink-0 transition-transform duration-300 opacity-80 group-hover/card:scale-105">
             <LordIcon
               ref={iconRef}
               src={item.lordIcon}

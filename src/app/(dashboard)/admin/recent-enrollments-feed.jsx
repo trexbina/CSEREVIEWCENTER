@@ -76,9 +76,6 @@ export async function RecentEnrollmentsFeed() {
           <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
             Recent Activity
           </h2>
-          <span className="text-xs font-medium text-neutral-400 dark:text-neutral-500 bg-black/5 dark:bg-white/5 px-2.5 py-0.5 rounded-full">
-            Latest {recentUsers.length}
-          </span>
         </div>
 
         <Link

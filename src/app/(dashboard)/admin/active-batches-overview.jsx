@@ -59,7 +59,7 @@ export async function ActiveBatchesOverview() {
       </div>
 
       {/* Batches Table / Clean List inside Container */}
-      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-[#f4f4f4] dark:bg-white/[0.025] backdrop-blur-md shadow-2xs px-5 sm:px-6 py-3 sm:py-3.5">
+      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.025] backdrop-blur-md shadow-2xs px-5 sm:px-6 py-3 sm:py-3.5">
         <div className="divide-y divide-black/5 dark:divide-white/5">
         {batches.length === 0 ? (
           <div className="py-6 text-center text-xs text-neutral-400 dark:text-neutral-500">

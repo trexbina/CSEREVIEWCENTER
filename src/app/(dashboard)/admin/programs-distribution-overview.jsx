@@ -45,7 +45,7 @@ export async function ProgramsDistributionOverview() {
       </div>
 
       {/* Dual Column Container (Non-analytical item display) */}
-      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs p-5 sm:p-6">
+      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-[#f8f9fa] dark:bg-white/[0.04] backdrop-blur-md shadow-2xs p-5 sm:p-6">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
           {/* Left Column (spans 5 cols): Examinations */}
           <div className="md:col-span-5 space-y-3 pr-0 md:pr-4 md:border-r md:border-black/5 md:dark:border-white/5">
@@ -58,13 +58,18 @@ export async function ProgramsDistributionOverview() {
                 No examinations found.
               </div>
             ) : (
-              <div className="divide-y divide-black/5 dark:divide-white/5">
+              <div className="space-y-2 pt-0.5">
                 {exams.map((exam) => (
-                  <div key={exam.id} className="py-2.5 first:pt-0 last:pb-0 flex items-center gap-2.5">
-                    <Award className="size-3.5 text-neutral-400 dark:text-neutral-500 shrink-0 stroke-[1.75]" />
-                    <span className="text-xs sm:text-sm font-medium text-[#3B3B3B] dark:text-white leading-snug">
-                      {exam.name}
-                    </span>
+                  <div
+                    key={exam.id}
+                    className="p-3 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/[0.03] shadow-2xs flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Award className="size-4 text-neutral-400 dark:text-neutral-500 shrink-0 stroke-[1.75]" />
+                      <span className="text-xs font-semibold text-[#3B3B3B] dark:text-white truncate">
+                        {exam.name}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -86,7 +91,7 @@ export async function ProgramsDistributionOverview() {
                 {programs.map((prog) => (
                   <div
                     key={prog.id}
-                    className="p-3 rounded-xl border border-black/5 dark:border-white/5 bg-black/[0.015] dark:bg-white/[0.015] flex items-center justify-between gap-2"
+                    className="p-3 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/[0.03] shadow-2xs flex items-center justify-between gap-2"
                   >
                     <span className="text-xs font-medium text-[#3B3B3B] dark:text-white line-clamp-1">
                       {prog.name}

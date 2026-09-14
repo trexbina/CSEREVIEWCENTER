@@ -44,7 +44,7 @@ export async function ProgramsDistributionOverview() {
         </Link>
       </div>
 
-      {/* Dual Column Container (Non-analytical item display) */}
+      {/* Dual Column Container (Clean List Layout) */}
       <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-[#fafafa] dark:bg-white/[0.025] backdrop-blur-md shadow-2xs p-5 sm:p-6">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
           {/* Left Column (spans 5 cols): Examinations */}
@@ -58,18 +58,19 @@ export async function ProgramsDistributionOverview() {
                 No examinations found.
               </div>
             ) : (
-              <div className="space-y-2 pt-0.5">
+              <div className="divide-y divide-black/5 dark:divide-white/5">
                 {exams.map((exam) => (
                   <div
                     key={exam.id}
-                    className="p-3 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/[0.03] shadow-2xs flex items-center justify-between gap-3"
+                    className="py-3 first:pt-1 last:pb-1 flex items-center justify-between gap-3 group"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <Award className="size-4 text-neutral-400 dark:text-neutral-500 shrink-0 stroke-[1.75]" />
-                      <span className="text-xs font-semibold text-[#3B3B3B] dark:text-white truncate">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="size-2 rounded-full shrink-0 bg-neutral-300 dark:bg-neutral-600 group-hover:bg-[#E9C46A] transition-colors" />
+                      <span className="text-xs sm:text-sm font-medium text-[#3B3B3B] dark:text-white truncate">
                         {exam.name}
                       </span>
                     </div>
+                    <Award className="size-3.5 text-neutral-400 dark:text-neutral-500 shrink-0 stroke-[1.75]" />
                   </div>
                 ))}
               </div>
@@ -87,16 +88,19 @@ export async function ProgramsDistributionOverview() {
                 No degree programs found.
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
+              <div className="divide-y divide-black/5 dark:divide-white/5">
                 {programs.map((prog) => (
                   <div
                     key={prog.id}
-                    className="p-3 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/[0.03] shadow-2xs flex items-center justify-between gap-2"
+                    className="py-3 first:pt-1 last:pb-1 flex items-center justify-between gap-3 group"
                   >
-                    <span className="text-xs font-medium text-[#3B3B3B] dark:text-white line-clamp-1">
-                      {prog.name}
-                    </span>
-                    <GraduationCap className="size-3.5 text-neutral-400 shrink-0 stroke-[1.75]" />
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="size-2 rounded-full shrink-0 bg-neutral-300 dark:bg-neutral-600 group-hover:bg-[#E9C46A] transition-colors" />
+                      <span className="text-xs sm:text-sm font-medium text-[#3B3B3B] dark:text-white truncate">
+                        {prog.name}
+                      </span>
+                    </div>
+                    <GraduationCap className="size-3.5 text-neutral-400 dark:text-neutral-500 shrink-0 stroke-[1.75]" />
                   </div>
                 ))}
               </div>

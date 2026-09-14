@@ -43,6 +43,27 @@ function getInitials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
+const AVATAR_PALETTES = [
+  "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-500/20",
+  "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/20",
+  "bg-amber-500/10 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-500/20",
+  "bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 border border-purple-500/20",
+  "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/20",
+  "bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-500/20",
+  "bg-teal-500/10 text-teal-600 dark:bg-teal-500/20 dark:text-teal-400 border border-teal-500/20",
+  "bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400 border border-orange-500/20",
+]
+
+function getAvatarColor(id, name) {
+  const seed = (id ? String(id) : "") + (name || "")
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const index = Math.abs(hash) % AVATAR_PALETTES.length
+  return AVATAR_PALETTES[index]
+}
+
 export async function RecentEnrollmentsFeed() {
   let recentUsers = []
 
@@ -115,7 +136,7 @@ export async function RecentEnrollmentsFeed() {
               >
                 {/* Left: Avatar initial + Name & Subtitle */}
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="size-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 shrink-0">
+                  <div className={`size-8 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0 ${getAvatarColor(user.id, user.name)}`}>
                     {initials}
                   </div>
 

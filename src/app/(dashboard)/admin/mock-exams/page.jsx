@@ -40,13 +40,13 @@ function SortButton({ label, field, sortField, sortDir, onSort }) {
   return (
     <button
       onClick={() => onSort(field)}
-      className="flex items-center gap-1 hover:text-foreground transition-colors font-medium cursor-pointer text-foreground select-none"
+      className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors font-semibold cursor-pointer text-foreground/85 select-none whitespace-nowrap text-xs group"
     >
       <span>{label}</span>
       {active ? (
-        sortDir === "asc" ? <ArrowUp className="h-3 w-3 text-[#E9C46A]" /> : <ArrowDown className="h-3 w-3 text-[#E9C46A]" />
+        sortDir === "asc" ? <ArrowUp className="h-3 w-3 text-[#E9C46A] shrink-0" /> : <ArrowDown className="h-3 w-3 text-[#E9C46A] shrink-0" />
       ) : (
-        <ArrowUpDown className="h-3 w-3 opacity-40" />
+        <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-70 transition-opacity shrink-0" />
       )}
     </button>
   )
@@ -771,15 +771,14 @@ export default function MockExamsPage() {
             </div>
 
             {/* Dynamic Master Data Filters */}
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap items-center gap-2">
                 {/* Batch Filter */}
-                <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
-                    <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground font-medium">Batch:</span>
+                <div className="inline-flex items-center gap-1.5 bg-background border border-border/70 rounded-md px-2.5 py-1 text-xs font-medium text-foreground hover:border-border transition-colors">
+                    <span className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Batch:</span>
                     <select
                         value={selectedBatch}
                         onChange={(e) => setSelectedBatch(e.target.value)}
-                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1 text-xs"
                     >
                         <option value="All">All</option>
                         {masterData.batches.map(b => (
@@ -789,13 +788,12 @@ export default function MockExamsPage() {
                 </div>
 
                 {/* Exam Type Filter */}
-                <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
-                    <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground font-medium">Type:</span>
+                <div className="inline-flex items-center gap-1.5 bg-background border border-border/70 rounded-md px-2.5 py-1 text-xs font-medium text-foreground hover:border-border transition-colors">
+                    <span className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Type:</span>
                     <select
                         value={selectedType}
                         onChange={(e) => setSelectedType(e.target.value)}
-                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1 text-xs"
                     >
                         <option value="All">All</option>
                         {masterData.examinations.map(ex => (
@@ -805,13 +803,12 @@ export default function MockExamsPage() {
                 </div>
 
                 {/* Course / Program Filter */}
-                <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
-                    <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground font-medium">Course:</span>
+                <div className="inline-flex items-center gap-1.5 bg-background border border-border/70 rounded-md px-2.5 py-1 text-xs font-medium text-foreground hover:border-border transition-colors">
+                    <span className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Course:</span>
                     <select
                         value={selectedCourse}
                         onChange={(e) => setSelectedCourse(e.target.value)}
-                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1 text-xs max-w-[200px] truncate"
                     >
                         <option value="All">All</option>
                         {masterData.programs.map(pr => (
@@ -821,13 +818,12 @@ export default function MockExamsPage() {
                 </div>
 
                 {/* Year Filter */}
-                <div className="relative inline-flex items-center gap-1.5 bg-card border border-border rounded-lg px-3 py-1.5 text-xs font-medium text-foreground shadow-2xs">
-                    <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground font-medium">Year:</span>
+                <div className="inline-flex items-center gap-1.5 bg-background border border-border/70 rounded-md px-2.5 py-1 text-xs font-medium text-foreground hover:border-border transition-colors">
+                    <span className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Year:</span>
                     <select
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(e.target.value)}
-                        className="bg-transparent font-semibold text-foreground outline-none cursor-pointer pr-1"
+                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1 text-xs"
                     >
                         <option value="All">All</option>
                         {availableYears.map(yr => (
@@ -844,7 +840,7 @@ export default function MockExamsPage() {
                             setSelectedCourse("All")
                             setSelectedYear("All")
                         }}
-                        className="text-xs text-[#E9C46A] font-semibold hover:underline self-center px-1"
+                        className="text-xs text-muted-foreground hover:text-foreground font-medium underline underline-offset-2 self-center px-1.5 transition-colors cursor-pointer"
                     >
                         Reset filters
                     </button>
@@ -852,7 +848,7 @@ export default function MockExamsPage() {
             </div>
 
             {/* Table */}
-            <div className="border border-border rounded-2xl overflow-hidden bg-card shadow-sm min-h-[450px] flex flex-col">
+            <div className="border border-border/80 rounded-xl overflow-hidden bg-card shadow-xs min-h-[400px] flex flex-col">
                 {loading ? (
                     <div className="flex-1 flex items-center justify-center p-8 bg-card">
                         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest animate-pulse">Loading Mock Exams & Master Data...</span>
@@ -863,7 +859,7 @@ export default function MockExamsPage() {
                     </div>
                 ) : filteredExams.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-card">
-                        <h2 className="text-lg font-bold text-foreground mb-1 tracking-tight">
+                        <h2 className="text-base font-bold text-foreground mb-1 tracking-tight">
                             {exams.length === 0 ? "No Exams Yet" : "No Matching Exams"}
                         </h2>
                         <p className="text-xs font-medium text-muted-foreground">
@@ -874,68 +870,76 @@ export default function MockExamsPage() {
                     </div>
                 ) : (
                     <div className="overflow-x-auto flex-1">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-muted">
-                                <tr className="border-b border-border text-[13px] font-semibold text-foreground">
-                                    <th className="py-3.5 px-5 w-[26%]" scope="col">
+                        <table className="w-full text-left border-collapse min-w-[760px]">
+                            <thead>
+                                <tr className="border-b border-border bg-muted/50 text-xs font-semibold text-muted-foreground">
+                                    <th className="py-2.5 px-4 whitespace-nowrap min-w-[180px]" scope="col">
                                         <SortButton label="Mock Exam Title" field="title" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-3.5 px-4 w-[13%]" scope="col">
+                                    <th className="py-2.5 px-3 whitespace-nowrap" scope="col">
                                         <SortButton label="Exam Code" field="exam_code" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-3.5 px-4 w-[12%]" scope="col">
+                                    <th className="py-2.5 px-3 whitespace-nowrap" scope="col">
                                         <SortButton label="Batch" field="batch" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-3.5 px-4 w-[10%]" scope="col">
+                                    <th className="py-2.5 px-3 whitespace-nowrap" scope="col">
                                         <SortButton label="Type" field="type" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-3.5 px-4 w-[11%]" scope="col">
+                                    <th className="py-2.5 px-3 whitespace-nowrap" scope="col">
                                         <SortButton label="Course" field="course" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-3.5 px-4 w-[12%]" scope="col">
+                                    <th className="py-2.5 px-3 whitespace-nowrap" scope="col">
                                         <SortButton label="Date" field="date" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-3.5 px-4 w-[8%]" scope="col">
+                                    <th className="py-2.5 px-3 whitespace-nowrap" scope="col">
                                         <SortButton label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-3.5 px-5 w-[8%] text-right font-medium text-foreground" scope="col">Actions</th>
+                                    <th className="py-2.5 px-4 text-right whitespace-nowrap text-xs font-semibold text-muted-foreground" scope="col">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="text-sm">
+                            <tbody className="text-xs divide-y divide-border/40">
                                 {filteredExams.map((exam) => {
                                     const { batch, type, course } = parseTargets(exam.targets, courseTree, masterData)
                                     return (
-                                        <tr key={exam.id} className="h-11 border-b border-border/50 last:border-b-0">
-                                            <td className="py-3 px-5 font-medium text-[#4382DF] cursor-pointer hover:underline" onClick={() => router.push(`/admin/mock-exams/${exam.id}`)}>
+                                        <tr key={exam.id} className="hover:bg-muted/30 transition-colors">
+                                            <td 
+                                                className="py-2.5 px-4 font-semibold text-blue-600 dark:text-blue-400 cursor-pointer hover:underline whitespace-nowrap" 
+                                                onClick={() => router.push(`/admin/mock-exams/${exam.id}`)}
+                                                title={exam.title}
+                                            >
                                                 {exam.title}
                                             </td>
-                                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{exam.exam_code}</td>
-                                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{batch}</td>
-                                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{type}</td>
-                                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{course}</td>
-                                            <td className="py-3 px-4 text-foreground whitespace-nowrap">{new Date(exam.created_at).toLocaleDateString()}</td>
-                                            <td className="py-3 px-4 text-foreground whitespace-nowrap">
+                                            <td className="py-2.5 px-3 text-foreground/80 whitespace-nowrap font-mono text-[11px]">{exam.exam_code}</td>
+                                            <td className="py-2.5 px-3 text-foreground/80 whitespace-nowrap">{batch}</td>
+                                            <td className="py-2.5 px-3 text-foreground/80 whitespace-nowrap max-w-[200px] truncate" title={type}>{type}</td>
+                                            <td className="py-2.5 px-3 text-foreground/80 whitespace-nowrap max-w-[220px] truncate" title={course}>{course}</td>
+                                            <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">{new Date(exam.created_at).toLocaleDateString()}</td>
+                                            <td className="py-2.5 px-3 whitespace-nowrap">
                                                 {(() => {
                                                     const isLocked = exam.unlock_date && new Date(exam.unlock_date).getTime() > Date.now()
                                                     return (
-                                                        <span className={isLocked ? "text-amber-600 font-medium" : "text-emerald-600 font-medium"}>
+                                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium ${
+                                                            isLocked 
+                                                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" 
+                                                                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                                        }`}>
                                                             {isLocked ? "Locked" : "Active"}
                                                         </span>
                                                     )
                                                 })()}
                                             </td>
-                                            <td className="py-3 px-5 text-right whitespace-nowrap">
-                                                <div className="inline-flex items-center justify-end gap-1.5">
+                                            <td className="py-2.5 px-4 text-right whitespace-nowrap">
+                                                <div className="inline-flex items-center justify-end gap-1">
                                                     <button
                                                         onClick={() => openModal(exam)}
-                                                        className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors cursor-pointer"
+                                                        className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors cursor-pointer"
                                                         title="Edit Exam"
                                                     >
                                                         <Pencil className="h-3.5 w-3.5" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteExam(exam)}
-                                                        className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                                                        className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors cursor-pointer"
                                                         title="Delete Exam"
                                                     >
                                                         <Trash className="h-3.5 w-3.5" />

@@ -12,7 +12,7 @@ export async function GET() {
 
     const [examsResult, batchesResult, programsResult, majorsResult, schoolsResult, academicCoursesResult, categoriesResult, gradebooksResult, rolesResult] = await Promise.all([
       pool.query("SELECT id, name FROM examinations ORDER BY name ASC"),
-      pool.query("SELECT id, name, exam_id, target_year, status FROM batches ORDER BY name ASC"),
+      pool.query("SELECT id, name, exam_id, target_year, status, start_date, end_date FROM batches ORDER BY name ASC"),
       pool.query("SELECT id, name, exam_id FROM programs ORDER BY name ASC"),
       pool.query("SELECT id, name, program_id FROM majors ORDER BY name ASC"),
       pool.query("SELECT id, name, address FROM schools ORDER BY name ASC"),

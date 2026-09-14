@@ -424,6 +424,12 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
 
                 <div className="space-y-5">
                   <div className="space-y-1">
+                    <p className="text-[13px] text-muted-foreground font-medium">Login ID</p>
+                    <p className="text-[15px] font-mono font-semibold text-foreground">
+                      {user.login_id || user.email || "—"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
                     <p className="text-[13px] text-muted-foreground font-medium">Email Address</p>
                     <a href={`mailto:${user.email}`} className="text-[15px] font-semibold text-[#4382DF] hover:underline break-all block">
                       {user.email}
@@ -452,6 +458,32 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                       <p className="text-[13px] text-muted-foreground font-medium">Batch / Year</p>
                       <p className="text-[15px] font-semibold text-foreground">{batchName}</p>
                     </div>
+                    {(() => {
+                      const effectiveEnd = user.subscription_end_date || user.batch_end_date
+                      if (!effectiveEnd) return null
+                      const expDate = new Date(effectiveEnd)
+                      const today = new Date()
+                      today.setHours(0,0,0,0)
+                      const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24))
+                      const dateStr = expDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                      const isExpired = diffDays < 0
+                      return (
+                        <div className="space-y-1">
+                          <p className="text-[13px] text-muted-foreground font-medium">Subscription Term</p>
+                          <div className="flex items-center gap-2">
+                            <p className={`text-[15px] font-semibold ${isExpired ? "text-neutral-500" : "text-foreground"}`}>
+                              {dateStr}
+                            </p>
+                            <span className="text-xs px-2 py-0.5 rounded border border-border/40 text-neutral-600 dark:text-neutral-300">
+                              {user.is_active === false ? "Account Disabled" : isExpired ? "Term Completed" : diffDays <= 7 ? `${diffDays} days left` : "Active"}
+                            </span>
+                          </div>
+                          {user.subscription_end_date && (
+                            <p className="text-[11px] text-muted-foreground">Custom individual extension</p>
+                          )}
+                        </div>
+                      )
+                    })()}
                     {programName && programName !== "—" && (
                       <div className="space-y-1">
                         <p className="text-[13px] text-muted-foreground font-medium">Program</p>
@@ -1095,6 +1127,19 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label htmlFor="account-login-id" className="text-sm font-semibold text-[#696969]">Login ID</Label>
+                    <input
+                      id="account-login-id"
+                      type="text"
+                      readOnly
+                      disabled
+                      value={user.login_id || user.email || "—"}
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white font-mono cursor-not-allowed shadow-2xs"
+                    />
+                    <p className="text-xs text-[#696969]">Permanent identifier used for logging into the portal.</p>
+                  </div>
+
                   <div className="space-y-1.5 sm:col-span-2">
                     <Label htmlFor="account-login-email" className="text-sm font-semibold text-[#696969]">Account Login Email *</Label>
                     <input

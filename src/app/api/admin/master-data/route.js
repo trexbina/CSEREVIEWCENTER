@@ -312,17 +312,19 @@ export async function POST(req) {
     // ── BATCH ──
     if (entity === "BATCH") {
       if (action === "ADD" || action === "UPDATE") {
-        const { id, name, target_year, status, exam_id } = payload
+        const { id, name, target_year, status, exam_id, start_date, end_date } = payload
+        const cleanStartDate = start_date ? start_date : null
+        const cleanEndDate = end_date ? end_date : null
         if (id) {
           await pool.query(
-            "UPDATE batches SET name = $1, target_year = $2, status = $3, exam_id = $4 WHERE id = $5",
-            [name, target_year, status, parseInt(exam_id), parseInt(id)]
+            "UPDATE batches SET name = $1, target_year = $2, status = $3, exam_id = $4, start_date = $5, end_date = $6 WHERE id = $7",
+            [name, target_year, status, parseInt(exam_id), cleanStartDate, cleanEndDate, parseInt(id)]
           )
           return NextResponse.json({ id })
         } else {
           const res = await pool.query(
-            "INSERT INTO batches (name, target_year, status, exam_id) VALUES ($1, $2, $3, $4) RETURNING id",
-            [name, target_year, status, parseInt(exam_id)]
+            "INSERT INTO batches (name, target_year, status, exam_id, start_date, end_date) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+            [name, target_year, status, parseInt(exam_id), cleanStartDate, cleanEndDate]
           )
           return NextResponse.json(res.rows[0])
         }

@@ -246,6 +246,26 @@ const BatchDialog = ({ isOpen, batchForm, setBatchForm, onSubmit, onCancel, tree
               <option value="completed">Completed</option>
             </select>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Start Date</label>
+              <input
+                type="date"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                value={batchForm.startDate || ""}
+                onChange={(e) => setBatchForm({ ...batchForm, startDate: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Scheduled End Date</label>
+              <input
+                type="date"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                value={batchForm.endDate || ""}
+                onChange={(e) => setBatchForm({ ...batchForm, endDate: e.target.value })}
+              />
+            </div>
+          </div>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
             <button type="submit" className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer">{isEdit ? "Save Changes" : "Create Batch"}</button>
@@ -599,19 +619,22 @@ export default function MasterDataBuilderPage() {
 
   // --- Batch Actions ---
   const handleOpenAddBatch = () => {
-    setBatchForm({ id: "", batchNumber: "", year: "2025", examId: "", status: "upcoming" })
+    setBatchForm({ id: "", batchNumber: "", year: "2025", examId: "", status: "upcoming", startDate: "", endDate: "" })
     setIsBatchEdit(false)
     setIsBatchDialogOpen(true)
   }
 
   const handleOpenEditBatch = (batch) => {
     const batchNum = batch.name ? batch.name.replace("Batch ", "") : ""
+    const formatDt = (d) => d ? new Date(d).toISOString().split('T')[0] : ""
     setBatchForm({
       id: batch.id,
       batchNumber: batchNum,
       year: batch.target_year || "2025",
       examId: batch.exam_id || "",
-      status: batch.status || "upcoming"
+      status: batch.status || "upcoming",
+      startDate: formatDt(batch.start_date),
+      endDate: formatDt(batch.end_date)
     })
     setIsBatchEdit(true)
     setIsBatchDialogOpen(true)
@@ -624,10 +647,25 @@ export default function MasterDataBuilderPage() {
     const newName = `Batch ${batchForm.batchNumber}`
     try {
       if (isBatchEdit) {
-        await apiCall("UPDATE", "BATCH", { id: batchForm.id, name: newName, target_year: parseInt(batchForm.year), exam_id: batchForm.examId, status: batchForm.status });
+        await apiCall("UPDATE", "BATCH", {
+          id: batchForm.id,
+          name: newName,
+          target_year: parseInt(batchForm.year),
+          exam_id: batchForm.examId,
+          status: batchForm.status,
+          start_date: batchForm.startDate || null,
+          end_date: batchForm.endDate || null
+        });
         toast("Successfully updated batch.");
       } else {
-        await apiCall("ADD", "BATCH", { name: newName, target_year: parseInt(batchForm.year), exam_id: batchForm.examId, status: batchForm.status });
+        await apiCall("ADD", "BATCH", {
+          name: newName,
+          target_year: parseInt(batchForm.year),
+          exam_id: batchForm.examId,
+          status: batchForm.status,
+          start_date: batchForm.startDate || null,
+          end_date: batchForm.endDate || null
+        });
         toast("Successfully created batch.");
       }
       await fetchData();
@@ -1177,17 +1215,20 @@ export default function MasterDataBuilderPage() {
                         <table className="w-full text-left border-collapse">
                           <thead>
                             <tr className="border-b border-border/40 text-xs font-medium text-muted-foreground">
-                              <th className="py-2.5 px-4 w-[22%]" scope="col">
+                              <th className="py-2.5 px-4 w-[16%]" scope="col">
                                 <SortButton label="Status" field="status" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
                               </th>
-                              <th className="py-2.5 px-4 w-[22%]" scope="col">
+                              <th className="py-2.5 px-4 w-[18%]" scope="col">
                                 <SortButton label="Batch" field="name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
                               </th>
-                              <th className="py-2.5 px-4 w-[26%]" scope="col">
+                              <th className="py-2.5 px-4 w-[22%]" scope="col">
                                 <SortButton label="Target Examination" field="exam" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
                               </th>
-                              <th className="py-2.5 px-4 w-[20%]" scope="col">
+                              <th className="py-2.5 px-4 w-[14%]" scope="col">
                                 <SortButton label="Target Year" field="target_year" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                              </th>
+                              <th className="py-2.5 px-4 w-[20%]" scope="col">
+                                <span className="font-semibold text-foreground">Scheduled End Date</span>
                               </th>
                               <th className="py-2.5 px-4 w-[10%] text-right font-medium text-muted-foreground" scope="col">
                                 Actions
@@ -1197,6 +1238,8 @@ export default function MasterDataBuilderPage() {
                           <tbody className="text-sm">
                             {filteredBatches.map(batch => {
                               const exam = tree.find(e => e.id === batch.exam_id)
+                              const endDateStr = batch.end_date ? new Date(batch.end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : null
+                              const isPast = batch.end_date ? new Date(batch.end_date) < new Date(new Date().setHours(0,0,0,0)) : false
                               return (
                                 <tr key={batch.id} className="border-b border-border/30 last:border-b-0 hover:bg-muted/20 transition-colors">
                                   <td className="py-3 px-4 text-foreground whitespace-nowrap">
@@ -1212,6 +1255,20 @@ export default function MasterDataBuilderPage() {
                                   </td>
                                   <td className="py-3 px-4 text-foreground whitespace-nowrap">
                                     {batch.target_year}
+                                  </td>
+                                  <td className="py-3 px-4 text-foreground whitespace-nowrap">
+                                    {endDateStr ? (
+                                      <div className="flex items-center gap-1.5">
+                                        <span className={`text-xs ${isPast ? "text-red-500 font-medium" : "text-muted-foreground"}`}>
+                                          {endDateStr}
+                                        </span>
+                                        {isPast && (
+                                          <span className="text-[10px] text-red-500/80 font-normal">(Term ended)</span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground/60 italic">No end date</span>
+                                    )}
                                   </td>
                                   <td className="py-3 px-4 text-right whitespace-nowrap">
                                     <div className="inline-flex items-center justify-end gap-1.5">

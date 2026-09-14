@@ -5,27 +5,58 @@ import { signToken, SESSION_COOKIE_OPTIONS } from "@/lib/auth"
 
 export async function POST(request) {
   try {
-    const { email, password } = await request.json()
+    const body = await request.json()
+    const identifier = (body.loginId || body.login_id || body.email || "").toLowerCase().trim()
+    const password = body.password
 
-    if (!email || !password) {
+    if (!identifier || !password) {
       return NextResponse.json(
-        { error: "Email and password are required." },
+        { error: "Login ID and password are required." },
         { status: 400 }
       )
     }
 
     const result = await pool.query(
-      "SELECT id, name, email, password, role FROM users WHERE email = $1",
-      [email.toLowerCase().trim()]
+      `SELECT u.id, u.name, u.email, u.login_id, u.password, u.role, u.is_active, u.subscription_end_date,
+              b.end_date as batch_end_date, b.name as batch_name
+       FROM users u
+       LEFT JOIN batches b ON u.batch_id = b.id
+       WHERE LOWER(u.login_id) = $1 OR LOWER(u.email) = $1`,
+      [identifier]
     )
 
     const user = result.rows[0]
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return NextResponse.json(
-        { error: "Invalid email or password." },
+        { error: "Invalid Login ID or password." },
         { status: 401 }
       )
+    }
+
+    // Check account active status
+    if (user.is_active === false) {
+      return NextResponse.json(
+        { error: "Your account has been deactivated. Please contact your administrator for assistance." },
+        { status: 403 }
+      )
+    }
+
+    // Check student subscription expiry (inherited from batch or custom student extension)
+    if (user.role === "student") {
+      const effectiveEndDate = user.subscription_end_date || user.batch_end_date
+      if (effectiveEndDate) {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const expDate = new Date(effectiveEndDate)
+        if (expDate < today) {
+          const formattedDate = expDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+          return NextResponse.json(
+            { error: `Your review term completed on ${formattedDate}. Please contact your administrator for renewal or extension.` },
+            { status: 403 }
+          )
+        }
+      }
     }
 
     // Update login count and last login timestamp
@@ -43,6 +74,7 @@ export async function POST(request) {
     const token = await signToken({
       userId: user.id,
       email: user.email,
+      loginId: user.login_id,
       role: user.role,
     })
 

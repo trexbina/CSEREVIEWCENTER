@@ -279,7 +279,7 @@ export default function AddUserPage() {
     const [saving, setSaving] = useState(false)
 
     // account details state
-    const [accountEmail, setAccountEmail] = useState("")
+    const [loginIdPreview, setLoginIdPreview] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
@@ -357,6 +357,24 @@ export default function AddUserPage() {
             .catch(console.error)
     }, [])
 
+    // Live preview of the automatic Login ID
+    useEffect(() => {
+        const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(" ")
+        const params = new URLSearchParams({
+            lastName: lastName || "",
+            name: fullName || "",
+            role: role || "student",
+        })
+        fetch(`/api/admin/users/next-sequence?${params.toString()}`)
+            .then((res) => res.json())
+            .then((data) => {
+                if (data?.loginId) {
+                    setLoginIdPreview(data.loginId)
+                }
+            })
+            .catch(console.error)
+    }, [lastName, firstName, middleName, suffix, role])
+
     async function handleSubmit(e) {
         e.preventDefault()
         setError("")
@@ -399,7 +417,7 @@ export default function AddUserPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     name: fullName,
-                    email: accountEmail,
+                    email: personalEmail || undefined,
                     personal_email: personalEmail,
                     password,
                     role,
@@ -640,9 +658,20 @@ export default function AddUserPage() {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5 sm:col-span-2">
-                            <Label htmlFor="account-email" className="text-sm font-semibold text-[#696969]">Account Login Email *</Label>
-                            <input id="account-email" type="email" required value={accountEmail} onChange={(e) => setAccountEmail(e.target.value)} placeholder="student@peak.edu.ph" className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
-                            <p className="text-xs text-[#696969]">This email is used to log into the PEAK Review System.</p>
+                            <Label htmlFor="account-login-id" className="text-sm font-semibold text-[#696969]">Login ID (System Generated)</Label>
+                            <div className="relative">
+                                <input
+                                    id="account-login-id"
+                                    type="text"
+                                    readOnly
+                                    disabled
+                                    value={loginIdPreview || "Generating..."}
+                                    className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white font-mono cursor-not-allowed shadow-2xs"
+                                />
+                            </div>
+                            <p className="text-xs text-[#696969]">
+                                Automatically assigned in sequential order (surname + 5-digit number).
+                            </p>
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="add-password" className="text-sm font-semibold text-[#696969]">Password *</Label>

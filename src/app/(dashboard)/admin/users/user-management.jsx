@@ -14,7 +14,7 @@ import Link from "next/link"
 import {
   Pencil, Trash, BookOpen, Plus, X, Save,
   Search, ArrowUpDown, ArrowUp, ArrowDown, ChevronRight,
-  User, GraduationCap, Shield, Check, Minus,
+  User, GraduationCap, Shield, Check, Minus, Filter,
 } from "lucide-react"
 
 // ui component helpers
@@ -124,6 +124,7 @@ export function EditUserDialog({ open, onOpenChange, user }) {
   const [saving, setSaving] = useState(false)
 
   // ── Account ──
+  const [loginId, setLoginId] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [role, setRole] = useState("student")
@@ -153,6 +154,8 @@ export function EditUserDialog({ open, onOpenChange, user }) {
   const [batchId, setBatchId] = useState("")
   const [programId, setProgramId] = useState("")
   const [majorId, setMajorId] = useState("")
+  const [isActive, setIsActive] = useState(true)
+  const [subscriptionEndDate, setSubscriptionEndDate] = useState("")
   const [dropdownData, setDropdownData] = useState({ examinations: [], batches: [], programs: [], majors: [], schools: [], academic_courses: [], roles: [] })
 
   // ── Avatar Upload ──
@@ -196,6 +199,7 @@ export function EditUserDialog({ open, onOpenChange, user }) {
 
   useEffect(() => {
     if (open && user) {
+      setLoginId(user.login_id || user.email || "")
       setEmail(user.email || "")
       setRole(user.role || "student")
       setPassword("")
@@ -224,6 +228,8 @@ export function EditUserDialog({ open, onOpenChange, user }) {
       setMajorId(user.major_id ? user.major_id.toString() : "")
       setJobRoleDescription(user.job_role_description || "")
       setAvatarUrl(user.avatar_url || "")
+      setIsActive(user.is_active !== undefined ? Boolean(user.is_active) : true)
+      setSubscriptionEndDate(user.subscription_end_date ? new Date(user.subscription_end_date).toISOString().split('T')[0] : "")
     }
   }, [open, user])
 
@@ -264,6 +270,8 @@ export function EditUserDialog({ open, onOpenChange, user }) {
         major_id: !isAdminRole && majorId ? parseInt(majorId) : null,
         job_role_description: isAdminRole ? jobRoleDescription : null,
         avatar_url: avatarUrl || null,
+        is_active: isActive,
+        subscription_end_date: role === "student" && subscriptionEndDate ? subscriptionEndDate : null,
       }
 
       if (password.trim()) {
@@ -478,6 +486,18 @@ export function EditUserDialog({ open, onOpenChange, user }) {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="edit-user-login-id" className="text-xs">Login ID</Label>
+                <Input
+                  id="edit-user-login-id"
+                  type="text"
+                  readOnly
+                  disabled
+                  value={loginId}
+                  className="bg-muted/40 cursor-not-allowed font-mono text-xs"
+                />
+                <p className="text-[10px] text-muted-foreground">Permanent system-generated identifier used for logging in.</p>
+              </div>
+              <div className="space-y-1 sm:col-span-2">
                 <Label htmlFor="edit-user-email" className="text-xs">Email *</Label>
                 <Input id="edit-user-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="juan@school.edu" />
               </div>
@@ -628,6 +648,33 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">Custom Extension Date</Label>
+                      {(() => {
+                        const selBatch = dropdownData.batches.find(b => b.id.toString() === batchId);
+                        const bEnd = selBatch?.end_date ? new Date(selBatch.end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : null;
+                        return bEnd ? <span className="text-[10px] text-muted-foreground">Batch ends: {bEnd}</span> : null;
+                      })()}
+                    </div>
+                    <Input
+                      type="date"
+                      value={subscriptionEndDate}
+                      onChange={(e) => setSubscriptionEndDate(e.target.value)}
+                      className="text-xs h-9"
+                    />
+                  </div>
+                  <div className="space-y-1 sm:col-span-2 pt-1 border-t border-border/40">
+                    <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={isActive}
+                        onChange={(e) => setIsActive(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-black/20"
+                      />
+                      <span>Account is active (Uncheck to manually disable student access)</span>
+                    </label>
+                  </div>
                 </>
               )}
             </div>
@@ -755,6 +802,7 @@ export function UserSearchTable({ users, currentUserId }) {
       const q = debouncedQuery.toLowerCase().trim()
       list = list.filter((u) =>
         u.name?.toLowerCase().includes(q) ||
+        (u.login_id || "").toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
         u.role?.toLowerCase().includes(q)
       )
@@ -877,7 +925,7 @@ export function UserSearchTable({ users, currentUserId }) {
                   <SortButton label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
                 <th className="px-4 py-2.5" scope="col">
-                  <SortButton label="Email" field="email" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortButton label="Login ID" field="login_id" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
                 <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Role" field="role" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
@@ -932,7 +980,7 @@ export function UserSearchTable({ users, currentUserId }) {
                           {user.name}
                         </Link>
                       </td>
-                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal">{user.email}</td>
+                      <td className="px-4 text-sm font-mono text-[#696969] dark:text-gray-300 font-normal">{user.login_id || user.email}</td>
                       <td className="px-4 text-sm">
                         {(() => {
                           const r = user.role
@@ -964,10 +1012,37 @@ export function UserSearchTable({ users, currentUserId }) {
                               </span>
                             )
                           }
+                          const effectiveEnd = user.subscription_end_date || user.batch_end_date
+                          const isManualDisabled = user.is_active === false
+                          let statusText = "Active"
+                          let statusColor = "text-[#696969] dark:text-gray-300"
+                          if (isManualDisabled) {
+                            statusText = "Disabled"
+                            statusColor = "text-[#888888]"
+                          } else if (effectiveEnd) {
+                            const today = new Date()
+                            today.setHours(0,0,0,0)
+                            const expDate = new Date(effectiveEnd)
+                            const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24))
+                            if (diffDays < 0) {
+                              statusText = "Expired"
+                              statusColor = "text-neutral-500 font-medium"
+                            } else if (diffDays <= 7) {
+                              statusText = `${diffDays}d left`
+                              statusColor = "text-neutral-600 dark:text-neutral-300 font-medium"
+                            }
+                          }
                           return (
-                            <span className="font-medium capitalize text-[#696969] dark:text-gray-300">
-                              {r}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium capitalize text-[#696969] dark:text-gray-300">
+                                Student
+                              </span>
+                              {statusText !== "Active" && (
+                                <span className={`text-[11px] px-1.5 py-0.5 rounded border border-border/40 ${statusColor}`}>
+                                  {statusText}
+                                </span>
+                              )}
+                            </div>
                           )
                         })()}
                       </td>
@@ -1078,6 +1153,7 @@ export function UserTable({ users, currentUserId }) {
       const matchesSearch =
         !q ||
         fullName.includes(q) ||
+        (u.login_id || "").toLowerCase().includes(q) ||
         (u.email || "").toLowerCase().includes(q) ||
         (u.academic_course_name || u.course || "").toLowerCase().includes(q) ||
         (u.program_name || "").toLowerCase().includes(q) ||
@@ -1160,7 +1236,7 @@ export function UserTable({ users, currentUserId }) {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#696969]/70 pointer-events-none" />
             <input
               type="search"
-              placeholder="Search user name, email, course, program..."
+              placeholder="Search user name, login ID, email, course, program..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
@@ -1168,26 +1244,39 @@ export function UserTable({ users, currentUserId }) {
           </div>
 
           {/* Role Filter Dropdown */}
-          <div className="w-44 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="h-10 w-full rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white px-3.5 shadow-2xs cursor-pointer">
-                <SelectValue placeholder="Filter by role" />
+              <SelectTrigger
+                aria-label="Filter users by role"
+                className="w-40 h-10 rounded-xl text-xs font-semibold border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <Filter className="h-3.5 w-3.5 text-[#696969]/70 shrink-0" />
+                  <span className="truncate">
+                    {roleFilter === "ALL" && "All Roles"}
+                    {roleFilter === "student" && `Students (${studentCount})`}
+                    {roleFilter === "teacher" && `Teachers (${teacherCount})`}
+                    {roleFilter === "admin" && `Admins (${adminCount})`}
+                  </span>
+                </div>
               </SelectTrigger>
-              <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 text-xs shadow-xl">
-                <SelectItem value="ALL" className="text-xs py-1.5 cursor-pointer">
-                  All Roles ({users.length})
-                </SelectItem>
-                <SelectItem value="student" className="text-xs py-1.5 cursor-pointer">
-                  Students ({studentCount})
-                </SelectItem>
-                <SelectItem value="teacher" className="text-xs py-1.5 cursor-pointer">
-                  Teachers ({teacherCount})
-                </SelectItem>
-                <SelectItem value="admin" className="text-xs py-1.5 cursor-pointer">
-                  Admins ({adminCount})
-                </SelectItem>
+              <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                <SelectItem value="ALL" className="text-xs">All Roles ({users.length})</SelectItem>
+                <SelectItem value="student" className="text-xs">Students ({studentCount})</SelectItem>
+                <SelectItem value="teacher" className="text-xs">Teachers ({teacherCount})</SelectItem>
+                <SelectItem value="admin" className="text-xs">Admins ({adminCount})</SelectItem>
               </SelectContent>
             </Select>
+
+            {roleFilter !== "ALL" && (
+              <button
+                type="button"
+                onClick={() => setRoleFilter("ALL")}
+                className="h-10 px-2.5 text-xs text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white underline cursor-pointer"
+              >
+                Reset
+              </button>
+            )}
           </div>
         </div>
 
@@ -1217,7 +1306,7 @@ export function UserTable({ users, currentUserId }) {
                   <SortButton label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
                 <th className="px-4 py-2.5" scope="col">
-                  <SortButton label="Email" field="email" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortButton label="Login ID" field="login_id" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
                 <th className="px-4 py-2.5" scope="col">
                   <SortButton label="Course" field="academic_course_name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
@@ -1283,7 +1372,7 @@ export function UserTable({ users, currentUserId }) {
                           {user.name}
                         </Link>
                       </td>
-                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal">{user.email}</td>
+                      <td className="px-4 text-sm font-mono text-[#696969] dark:text-gray-300 font-normal">{user.login_id || user.email}</td>
                       <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal max-w-[200px]" title={isStudent && courseName !== "—" ? courseName : undefined}>
                         <span className="block truncate">
                           {isStudent ? courseName : ""}
@@ -1326,10 +1415,37 @@ export function UserTable({ users, currentUserId }) {
                               </span>
                             )
                           }
+                          const effectiveEnd = user.subscription_end_date || user.batch_end_date
+                          const isManualDisabled = user.is_active === false
+                          let statusText = "Active"
+                          let statusColor = "text-[#696969] dark:text-gray-300"
+                          if (isManualDisabled) {
+                            statusText = "Disabled"
+                            statusColor = "text-[#888888]"
+                          } else if (effectiveEnd) {
+                            const today = new Date()
+                            today.setHours(0,0,0,0)
+                            const expDate = new Date(effectiveEnd)
+                            const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24))
+                            if (diffDays < 0) {
+                              statusText = "Expired"
+                              statusColor = "text-neutral-500 font-medium"
+                            } else if (diffDays <= 7) {
+                              statusText = `${diffDays}d left`
+                              statusColor = "text-neutral-600 dark:text-neutral-300 font-medium"
+                            }
+                          }
                           return (
-                            <span className="font-medium capitalize text-[#696969] dark:text-gray-300">
-                              {r}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium capitalize text-[#696969] dark:text-gray-300">
+                                Student
+                              </span>
+                              {statusText !== "Active" && (
+                                <span className={`text-[11px] px-1.5 py-0.5 rounded border border-border/40 ${statusColor}`}>
+                                  {statusText}
+                                </span>
+                              )}
+                            </div>
                           )
                         })()}
                       </td>

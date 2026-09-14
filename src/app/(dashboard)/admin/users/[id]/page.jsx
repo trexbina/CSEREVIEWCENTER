@@ -27,6 +27,8 @@ async function getUserDetail(userId) {
         ex.name AS exam_name,
         b.name AS batch_name,
         b.target_year AS batch_year,
+        b.end_date AS batch_end_date,
+        b.start_date AS batch_start_date,
         p.name AS program_name,
         m.name AS major_name
       FROM users u

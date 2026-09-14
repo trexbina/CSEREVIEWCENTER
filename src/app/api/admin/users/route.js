@@ -5,6 +5,8 @@ import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { moveToTrash } from "@/lib/trash"
 
+import { generateNextLoginId } from "@/lib/login-id"
+
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 const VALID_ROLES = ["student", "teacher", ...ADMIN_ROLES]
 
@@ -17,7 +19,7 @@ export async function GET() {
     }
 
     const { rows } = await pool.query(
-      "SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC"
+      "SELECT id, name, email, login_id, login_prefix, login_number, role, created_at FROM users ORDER BY created_at DESC"
     )
     return NextResponse.json({ users: rows })
   } catch (err) {
@@ -30,7 +32,11 @@ async function ensureTable() {
   await pool.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS targets JSONB DEFAULT '[]'::jsonb;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS personal_email VARCHAR(255);
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS login_prefix VARCHAR(100);
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS login_number VARCHAR(20);
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS login_id VARCHAR(120);
     ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_login_id_unique ON users(LOWER(login_id));
   `).catch(console.error)
 }
 
@@ -45,11 +51,11 @@ export async function POST(request) {
     await ensureTable()
 
     const body = await request.json()
-    const { name, email, password, role, personal_email } = body
+    const { name, password, role, personal_email } = body
 
-    if (!name || !email || !password) {
+    if (!name || !password) {
       return NextResponse.json(
-        { error: "Name, login email and password are required." },
+        { error: "Name and password are required." },
         { status: 400 }
       )
     }
@@ -69,11 +75,22 @@ export async function POST(request) {
       )
     }
 
-    // Check if login email already exists
-    const existing = await pool.query("SELECT id FROM users WHERE email = $1", [email.toLowerCase().trim()])
+    // Automatically generate next Login ID based on last_name, name, and role
+    const generated = await generateNextLoginId(
+      pool,
+      body.last_name,
+      name,
+      role || "student"
+    )
+
+    // Fallback for legacy email NOT NULL column if email is not provided
+    const userEmail = (body.email || `${generated.login_id}@peak.edu.ph`).toLowerCase().trim()
+
+    // Check if email already exists
+    const existing = await pool.query("SELECT id FROM users WHERE email = $1", [userEmail])
     if (existing.rows.length > 0) {
       return NextResponse.json(
-        { error: "Login email already registered." },
+        { error: "Email or account already registered." },
         { status: 409 }
       )
     }
@@ -87,13 +104,14 @@ export async function POST(request) {
         birthday, gender, phone, address, city, province, zip_code,
         school, course, year_graduated, highest_education,
         exam_id, batch_id, program_id, major_id, job_role_description,
-        school_id, academic_course_id, avatar_url, targets, personal_email, created_at
+        school_id, academic_course_id, avatar_url, targets, personal_email,
+        is_active, subscription_end_date, login_prefix, login_number, login_id, created_at
       )
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29, NOW())
-       RETURNING id, name, email, personal_email, role, created_at, avatar_url`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34, NOW())
+       RETURNING id, name, email, login_id, login_prefix, login_number, personal_email, role, is_active, subscription_end_date, created_at, avatar_url`,
       [
         name.trim(),
-        email.toLowerCase().trim(),
+        userEmail,
         hash,
         role,
         body.first_name?.trim() || null,
@@ -120,7 +138,12 @@ export async function POST(request) {
         body.academic_course_id || null,
         body.avatar_url || null,
         JSON.stringify(body.targets || []),
-        personal_email?.toLowerCase().trim() || email.toLowerCase().trim(),
+        personal_email?.toLowerCase().trim() || userEmail,
+        body.is_active !== undefined ? Boolean(body.is_active) : true,
+        body.subscription_end_date ? body.subscription_end_date : null,
+        generated.login_prefix,
+        generated.login_number,
+        generated.login_id,
       ]
     )
 
@@ -231,14 +254,22 @@ export async function PUT(request) {
     }
 
     const body = await request.json()
-    const { name, email, role, password, personal_email } = body
+    const { name, role, password, personal_email } = body
 
-    if (!name || !email) {
+    if (!name) {
       return NextResponse.json(
-        { error: "Name and login email are required." },
+        { error: "Name is required." },
         { status: 400 }
       )
     }
+
+    // Fetch existing user to preserve fields if needed
+    const existingUserRes = await pool.query("SELECT email, login_id FROM users WHERE id = $1", [userId])
+    if (existingUserRes.rows.length === 0) {
+      return NextResponse.json({ error: "User not found." }, { status: 404 })
+    }
+    const currentUser = existingUserRes.rows[0]
+    const userEmail = (body.email || currentUser.email || `${currentUser.login_id}@peak.edu.ph`).toLowerCase().trim()
 
     if (role) {
       let isValidRole = VALID_ROLES.includes(role)
@@ -256,19 +287,22 @@ export async function PUT(request) {
       }
     }
 
-    // Check if login email is taken by another user
+    // Check if email is taken by another user
     const existing = await pool.query(
       "SELECT id FROM users WHERE email = $1 AND id != $2",
-      [email.toLowerCase().trim(), userId]
+      [userEmail, userId]
     )
     if (existing.rows.length > 0) {
       return NextResponse.json(
-        { error: "Login email already in use by another account." },
+        { error: "Email already in use by another account." },
         { status: 409 }
       )
     }
 
     let result
+    const isActiveVal = body.is_active !== undefined ? Boolean(body.is_active) : true
+    const subEndDateVal = body.subscription_end_date ? body.subscription_end_date : null
+
     if (password?.trim()) {
       const hash = await bcrypt.hash(password.trim(), 10)
       result = await pool.query(
@@ -279,12 +313,12 @@ export async function PUT(request) {
           school = $16, course = $17, year_graduated = $18, highest_education = $19,
           exam_id = $20, batch_id = $21, program_id = $22, major_id = $23, job_role_description = $24,
           school_id = $25, academic_course_id = $26, avatar_url = $27, targets = $28,
-          personal_email = $29
-         WHERE id = $30
-         RETURNING id, name, email, personal_email, role, created_at, avatar_url`,
+          personal_email = $29, is_active = $30, subscription_end_date = $31
+         WHERE id = $32
+         RETURNING id, name, email, login_id, login_prefix, login_number, personal_email, role, is_active, subscription_end_date, created_at, avatar_url`,
         [
           name.trim(),
-          email.toLowerCase().trim(),
+          userEmail,
           role || "student",
           hash,
           body.first_name?.trim() || null,
@@ -311,7 +345,9 @@ export async function PUT(request) {
           body.academic_course_id || null,
           body.avatar_url || null,
           body.targets !== undefined ? JSON.stringify(body.targets) : null,
-          personal_email?.toLowerCase().trim() || email.toLowerCase().trim(),
+          personal_email?.toLowerCase().trim() || userEmail,
+          isActiveVal,
+          subEndDateVal,
           userId,
         ]
       )
@@ -324,12 +360,12 @@ export async function PUT(request) {
           school = $15, course = $16, year_graduated = $17, highest_education = $18,
           exam_id = $19, batch_id = $20, program_id = $21, major_id = $22, job_role_description = $23,
           school_id = $24, academic_course_id = $25, avatar_url = $26, targets = $27,
-          personal_email = $28
-         WHERE id = $29
-         RETURNING id, name, email, personal_email, role, created_at, avatar_url`,
+          personal_email = $28, is_active = $29, subscription_end_date = $30
+         WHERE id = $31
+         RETURNING id, name, email, login_id, login_prefix, login_number, personal_email, role, is_active, subscription_end_date, created_at, avatar_url`,
         [
           name.trim(),
-          email.toLowerCase().trim(),
+          userEmail,
           role || "student",
           body.first_name?.trim() || null,
           body.middle_name?.trim() || null,
@@ -355,7 +391,9 @@ export async function PUT(request) {
           body.academic_course_id || null,
           body.avatar_url || null,
           body.targets !== undefined ? JSON.stringify(body.targets) : null,
-          personal_email?.toLowerCase().trim() || email.toLowerCase().trim(),
+          personal_email?.toLowerCase().trim() || userEmail,
+          isActiveVal,
+          subEndDateVal,
           userId,
         ]
       )

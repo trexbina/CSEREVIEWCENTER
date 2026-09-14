@@ -313,6 +313,10 @@ export default function EditUserForm({ initialUser }) {
     const [batchId, setBatchId] = useState(initialUser.batch_id ? String(initialUser.batch_id) : "")
     const [programId, setProgramId] = useState(initialUser.program_id ? String(initialUser.program_id) : "")
     const [majorId, setMajorId] = useState(initialUser.major_id ? String(initialUser.major_id) : "")
+    const [isActive, setIsActive] = useState(initialUser.is_active !== undefined ? Boolean(initialUser.is_active) : true)
+    const [subscriptionEndDate, setSubscriptionEndDate] = useState(
+        initialUser.subscription_end_date ? new Date(initialUser.subscription_end_date).toISOString().split('T')[0] : ""
+    )
     const [teacherTargets, setTeacherTargets] = useState(() => {
         if (Array.isArray(initialUser.targets) && initialUser.targets.length > 0) {
             return initialUser.targets
@@ -442,6 +446,8 @@ export default function EditUserForm({ initialUser }) {
                 job_role_description: isAdminRole ? jobRoleDescription.trim() : null,
                 avatar_url: avatarUrl || null,
                 targets: role === "teacher" ? teacherTargets : [],
+                is_active: isActive,
+                subscription_end_date: role === "student" && subscriptionEndDate ? subscriptionEndDate : null,
             }
 
             if (password.trim()) {
@@ -665,9 +671,20 @@ export default function EditUserForm({ initialUser }) {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5 sm:col-span-2">
-                            <Label htmlFor="account-email" className="text-sm font-semibold text-[#696969]">Account Login Email *</Label>
+                            <Label htmlFor="account-login-id" className="text-sm font-semibold text-[#696969]">Login ID</Label>
+                            <input
+                                id="account-login-id"
+                                type="text"
+                                readOnly
+                                disabled
+                                value={initialUser.login_id || initialUser.email || "—"}
+                                className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white font-mono cursor-not-allowed shadow-2xs"
+                            />
+                            <p className="text-xs text-[#696969]">Permanent identifier used for logging into the portal.</p>
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                            <Label htmlFor="account-email" className="text-sm font-semibold text-[#696969]">Email *</Label>
                             <input id="account-email" type="email" required value={accountEmail} onChange={(e) => setAccountEmail(e.target.value)} placeholder="student@peak.edu.ph" className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
-                            <p className="text-xs text-[#696969]">This email is used to log into the PEAK Review System.</p>
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="edit-password" className="text-sm font-semibold text-[#696969]">New Password (Optional)</Label>
@@ -855,6 +872,42 @@ export default function EditUserForm({ initialUser }) {
                                             {dropdownData.batches.length === 0 && <SelectItem value="no_batches" disabled>No batches available</SelectItem>}
                                         </SelectContent>
                                     </Select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-semibold text-[#696969]">Custom Subscription Extension Date</Label>
+                                        {(() => {
+                                            const selBatch = dropdownData.batches.find(b => b.id.toString() === batchId);
+                                            const batchEnd = selBatch?.end_date ? new Date(selBatch.end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : null;
+                                            return batchEnd ? (
+                                                <span className="text-xs text-muted-foreground">
+                                                    Inherited from batch: <span className="text-[#3B3B3B] dark:text-gray-200 font-medium">{batchEnd}</span>
+                                                </span>
+                                            ) : null;
+                                        })()}
+                                    </div>
+                                    <Input
+                                        type="date"
+                                        value={subscriptionEndDate}
+                                        onChange={(e) => setSubscriptionEndDate(e.target.value)}
+                                        className="h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"
+                                    />
+                                    <p className="text-[11px] text-[#696969]">
+                                        Leave empty to follow the assigned batch end date, or set an individual extension date.
+                                    </p>
+                                </div>
+                                <div className="space-y-1.5 sm:col-span-2 pt-2 border-t border-black/5 dark:border-white/10">
+                                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={isActive}
+                                            onChange={(e) => setIsActive(e.target.checked)}
+                                            className="h-4 w-4 rounded border-black/20 text-[#3B3B3B] focus:ring-0"
+                                        />
+                                        <span className="text-sm font-medium text-[#3B3B3B] dark:text-white">
+                                            Account is active (Uncheck to manually disable student access)
+                                        </span>
+                                    </label>
                                 </div>
                             </>
                         )}

@@ -33,7 +33,7 @@ function LoginFormInner() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl")
 
-  const [email, setEmail] = useState("")
+  const [loginId, setLoginId] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
@@ -48,13 +48,13 @@ function LoginFormInner() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ loginId, password }),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || "Invalid username or password.")
+        setError(data.error || "Invalid Login ID or password.")
         setLoading(false)
         return
       }
@@ -95,17 +95,17 @@ function LoginFormInner() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-xs font-semibold text-foreground">
-            Email
+          <Label htmlFor="login-id" className="text-xs font-semibold text-foreground">
+            Login ID
           </Label>
           <Input
-            id="email"
-            type="email"
+            id="login-id"
+            type="text"
             required
             autoComplete="username"
-            placeholder="name@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            placeholder="e.g. dianalan00002"
+            value={loginId}
+            onChange={(e) => setLoginId(e.target.value)}
             className="h-10 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-background/50 focus-visible:ring-1 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-600 focus-visible:border-slate-400 dark:focus-visible:border-slate-500 transition-all px-3.5"
           />
         </div>

@@ -46,7 +46,8 @@ function createPool() {
       : undefined,
     max: 2, // Serverless-friendly: keep connections low per lambda
     idleTimeoutMillis: 10000, // Close idle connections quickly
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 15000, // Generous timeout for serverless cold starts to cloud DBs
+    keepAlive: true,
   })
 
   pool.on("error", (err) => {

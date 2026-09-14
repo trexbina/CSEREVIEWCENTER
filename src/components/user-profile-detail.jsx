@@ -425,7 +425,7 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                 <div className="space-y-5">
                   <div className="space-y-1">
                     <p className="text-[13px] text-muted-foreground font-medium">Login ID</p>
-                    <p className="text-[15px] font-mono font-semibold text-foreground">
+                    <p className="text-[15px] font-semibold text-foreground">
                       {user.login_id || user.email || "—"}
                     </p>
                   </div>
@@ -1135,7 +1135,7 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                       readOnly
                       disabled
                       value={user.login_id || user.email || "—"}
-                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white font-mono cursor-not-allowed shadow-2xs"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white cursor-not-allowed shadow-2xs"
                     />
                     <p className="text-xs text-[#696969]">Permanent identifier used for logging into the portal.</p>
                   </div>

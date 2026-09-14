@@ -493,7 +493,7 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                   readOnly
                   disabled
                   value={loginId}
-                  className="bg-muted/40 cursor-not-allowed font-mono text-xs"
+                  className="bg-muted/40 cursor-not-allowed text-xs"
                 />
                 <p className="text-[10px] text-muted-foreground">Permanent system-generated identifier used for logging in.</p>
               </div>
@@ -980,7 +980,7 @@ export function UserSearchTable({ users, currentUserId }) {
                           {user.name}
                         </Link>
                       </td>
-                      <td className="px-4 text-sm font-mono text-[#696969] dark:text-gray-300 font-normal">{user.login_id || user.email}</td>
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal">{user.login_id || user.email}</td>
                       <td className="px-4 text-sm">
                         {(() => {
                           const r = user.role
@@ -1372,7 +1372,7 @@ export function UserTable({ users, currentUserId }) {
                           {user.name}
                         </Link>
                       </td>
-                      <td className="px-4 text-sm font-mono text-[#696969] dark:text-gray-300 font-normal">{user.login_id || user.email}</td>
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal">{user.login_id || user.email}</td>
                       <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal max-w-[200px]" title={isStudent && courseName !== "—" ? courseName : undefined}>
                         <span className="block truncate">
                           {isStudent ? courseName : ""}

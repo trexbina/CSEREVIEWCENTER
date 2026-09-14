@@ -115,7 +115,7 @@ export async function RecentEnrollmentsFeed() {
                         {user.name}
                       </span>
                       {user.login_id && (
-                        <span className="text-[10px] font-mono text-neutral-400 dark:text-neutral-500">
+                        <span className="text-[11px] text-neutral-400 dark:text-neutral-500 font-normal">
                           {user.login_id}
                         </span>
                       )}

@@ -678,7 +678,7 @@ export default function EditUserForm({ initialUser }) {
                                 readOnly
                                 disabled
                                 value={initialUser.login_id || initialUser.email || "—"}
-                                className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white font-mono cursor-not-allowed shadow-2xs"
+                                className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white cursor-not-allowed shadow-2xs"
                             />
                             <p className="text-xs text-[#696969]">Permanent identifier used for logging into the portal.</p>
                         </div>

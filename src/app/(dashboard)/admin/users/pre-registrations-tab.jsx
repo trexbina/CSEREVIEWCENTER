@@ -1016,7 +1016,7 @@ export function PreRegistrationsTab() {
                           readOnly
                           disabled
                           value={previewLoginId || "Generating..."}
-                          className="text-sm h-9 rounded-xl border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 font-mono cursor-not-allowed"
+                          className="text-sm h-9 rounded-xl border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 cursor-not-allowed"
                         />
                         <span className="text-[11px] text-[#696969] dark:text-gray-400 block">
                           Permanent identifier for portal login.

@@ -43,21 +43,23 @@ function getInitials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
-// Only use the exact colors used for headers in To-do list (#E17055), Calendar (#2A9D8F), and Metric strip (#E9C46A)
-const AVATAR_PALETTES = [
-  "bg-[#E17055]/20 dark:bg-[#E17055]/25",
-  "bg-[#2A9D8F]/20 dark:bg-[#2A9D8F]/25",
-  "bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25",
-]
-
-function getAvatarColor(id, name) {
-  const seed = (id ? String(id) : "") + (name || "")
-  let hash = 0
-  for (let i = 0; i < seed.length; i++) {
-    hash = seed.charCodeAt(i) + ((hash << 5) - hash)
+// Color code by user role:
+// Red (#E17055) for Admin roles
+// Green (#2A9D8F) for Teachers/Instructors
+// Yellow (#E9C46A) for Students/Reviewees
+function getAvatarColorByRole(role) {
+  switch (role) {
+    case "teacher":
+      return "bg-[#2A9D8F]/20 dark:bg-[#2A9D8F]/25"
+    case "admin":
+    case "super_admin":
+    case "academic_admin":
+    case "registrar":
+      return "bg-[#E17055]/20 dark:bg-[#E17055]/25"
+    case "student":
+    default:
+      return "bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25"
   }
-  const index = Math.abs(hash) % AVATAR_PALETTES.length
-  return AVATAR_PALETTES[index]
 }
 
 export async function RecentEnrollmentsFeed() {
@@ -132,7 +134,7 @@ export async function RecentEnrollmentsFeed() {
               >
                 {/* Left: Avatar initial + Name & Subtitle */}
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`size-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 shrink-0 ${getAvatarColor(user.id, user.name)}`}>
+                  <div className={`size-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 shrink-0 ${getAvatarColorByRole(user.role)}`}>
                     {initials}
                   </div>
 

@@ -111,17 +111,17 @@ export async function RecentEnrollmentsFeed() {
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-[#3B3B3B] dark:text-white truncate">
+                      <span className="text-xs sm:text-sm font-medium text-[#3B3B3B] dark:text-white truncate">
                         {user.name}
                       </span>
                       {user.login_id && (
-                        <span className="text-[11px] text-neutral-400 dark:text-neutral-500 font-normal">
+                        <span className="text-[11px] sm:text-xs text-neutral-400 dark:text-neutral-500 font-normal">
                           {user.login_id}
                         </span>
                       )}
                     </div>
 
-                    <div className="text-[11px] text-neutral-400 dark:text-neutral-500 truncate mt-0.5">
+                    <div className="text-[11px] sm:text-xs text-neutral-400 dark:text-neutral-500 truncate mt-0.5">
                       {isStudent
                         ? user.batch_name || user.exam_name || user.email
                         : user.email}
@@ -131,11 +131,11 @@ export async function RecentEnrollmentsFeed() {
 
                 {/* Right: Role tag + Timestamp */}
                 <div className="flex items-center gap-4 shrink-0 text-right">
-                  <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+                  <span className="text-[11px] sm:text-xs font-medium text-neutral-500 dark:text-neutral-400">
                     {roleLabel}
                   </span>
 
-                  <span className="text-[11px] text-neutral-400 dark:text-neutral-500 min-w-[54px]">
+                  <span className="text-[11px] sm:text-xs text-neutral-400 dark:text-neutral-500 min-w-[54px]">
                     {formatRelativeTime(user.created_at)}
                   </span>
                 </div>

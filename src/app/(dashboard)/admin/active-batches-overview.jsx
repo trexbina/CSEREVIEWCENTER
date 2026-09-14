@@ -81,29 +81,29 @@ export async function ActiveBatchesOverview() {
                   <div className="size-2 rounded-full shrink-0 bg-neutral-300 dark:bg-neutral-600" />
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-[#3B3B3B] dark:text-white">
+                      <span className="text-xs sm:text-sm font-medium text-[#3B3B3B] dark:text-white">
                         {batch.name}
                       </span>
                       {batch.target_year && (
-                        <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                        <span className="text-[11px] sm:text-xs text-neutral-400 dark:text-neutral-500">
                           ({batch.target_year})
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
+                    <div className="text-[11px] sm:text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
                       {batch.exam_name || "General Review"}
                     </div>
                   </div>
                 </div>
 
                 {/* Right: Students Enrolled + Term Expiry Info */}
-                <div className="flex items-center gap-5 sm:gap-7 text-xs self-end sm:self-center">
+                <div className="flex items-center gap-5 sm:gap-7 text-xs sm:text-sm self-end sm:self-center">
                   {/* Students Count */}
                   <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300">
                     <Users className="size-3.5 text-neutral-400 stroke-[1.75]" />
                     <span>
                       {batch.student_count}{" "}
-                      <span className="text-neutral-400 dark:text-neutral-500 text-[11px]">
+                      <span className="text-neutral-400 dark:text-neutral-500 text-[11px] sm:text-xs">
                         enrolled
                       </span>
                     </span>
@@ -120,19 +120,19 @@ export async function ActiveBatchesOverview() {
                   {/* Status Indicator */}
                   <div className="min-w-[76px] text-right">
                     {isExpired ? (
-                      <span className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
+                      <span className="text-[11px] sm:text-xs font-medium text-neutral-400 dark:text-neutral-500">
                         Term ended
                       </span>
                     ) : isExpiringSoon ? (
-                      <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                      <span className="text-[11px] sm:text-xs font-medium text-amber-600 dark:text-amber-400">
                         {daysLeft}d left
                       </span>
                     ) : daysLeft !== null ? (
-                      <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+                      <span className="text-[11px] sm:text-xs font-medium text-neutral-500 dark:text-neutral-400">
                         {daysLeft}d left
                       </span>
                     ) : (
-                      <span className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
+                      <span className="text-[11px] sm:text-xs font-medium text-neutral-400 dark:text-neutral-500">
                         Ongoing
                       </span>
                     )}

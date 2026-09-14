@@ -771,65 +771,69 @@ export default function MockExamsPage() {
             </div>
 
             {/* Dynamic Master Data Filters */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
                 {/* Batch Filter */}
-                <div className="inline-flex items-center gap-1.5 bg-background border border-border/70 rounded-md px-2.5 py-1 text-xs font-medium text-foreground hover:border-border transition-colors">
-                    <span className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Batch:</span>
+                <div className="relative inline-flex items-center gap-1.5 h-8 bg-card border border-border/75 rounded-lg px-2.5 text-xs text-foreground hover:border-border transition-colors shadow-2xs">
+                    <span className="text-muted-foreground text-[11px] font-medium select-none">Batch:</span>
                     <select
                         value={selectedBatch}
                         onChange={(e) => setSelectedBatch(e.target.value)}
-                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1 text-xs"
+                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-4 text-xs appearance-none"
                     >
                         <option value="All">All</option>
                         {masterData.batches.map(b => (
                             <option key={b.id} value={b.name}>{b.name}</option>
                         ))}
                     </select>
+                    <ChevronDown className="h-3 w-3 text-muted-foreground pointer-events-none absolute right-2" />
                 </div>
 
                 {/* Exam Type Filter */}
-                <div className="inline-flex items-center gap-1.5 bg-background border border-border/70 rounded-md px-2.5 py-1 text-xs font-medium text-foreground hover:border-border transition-colors">
-                    <span className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Type:</span>
+                <div className="relative inline-flex items-center gap-1.5 h-8 bg-card border border-border/75 rounded-lg px-2.5 text-xs text-foreground hover:border-border transition-colors shadow-2xs">
+                    <span className="text-muted-foreground text-[11px] font-medium select-none">Type:</span>
                     <select
                         value={selectedType}
                         onChange={(e) => setSelectedType(e.target.value)}
-                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1 text-xs"
+                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-4 text-xs appearance-none"
                     >
                         <option value="All">All</option>
                         {masterData.examinations.map(ex => (
                             <option key={ex.id} value={ex.name}>{ex.name}</option>
                         ))}
                     </select>
+                    <ChevronDown className="h-3 w-3 text-muted-foreground pointer-events-none absolute right-2" />
                 </div>
 
                 {/* Course / Program Filter */}
-                <div className="inline-flex items-center gap-1.5 bg-background border border-border/70 rounded-md px-2.5 py-1 text-xs font-medium text-foreground hover:border-border transition-colors">
-                    <span className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Course:</span>
+                <div className="relative inline-flex items-center gap-1.5 h-8 bg-card border border-border/75 rounded-lg px-2.5 text-xs text-foreground hover:border-border transition-colors shadow-2xs">
+                    <span className="text-muted-foreground text-[11px] font-medium select-none">Course:</span>
                     <select
                         value={selectedCourse}
                         onChange={(e) => setSelectedCourse(e.target.value)}
-                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1 text-xs max-w-[200px] truncate"
+                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-4 text-xs appearance-none max-w-[180px] truncate"
                     >
                         <option value="All">All</option>
                         {masterData.programs.map(pr => (
                             <option key={pr.id} value={pr.name}>{pr.name}</option>
                         ))}
                     </select>
+                    <ChevronDown className="h-3 w-3 text-muted-foreground pointer-events-none absolute right-2" />
                 </div>
 
                 {/* Year Filter */}
-                <div className="inline-flex items-center gap-1.5 bg-background border border-border/70 rounded-md px-2.5 py-1 text-xs font-medium text-foreground hover:border-border transition-colors">
-                    <span className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Year:</span>
+                <div className="relative inline-flex items-center gap-1.5 h-8 bg-card border border-border/75 rounded-lg px-2.5 text-xs text-foreground hover:border-border transition-colors shadow-2xs">
+                    <span className="text-muted-foreground text-[11px] font-medium select-none">Year:</span>
                     <select
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(e.target.value)}
-                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1 text-xs"
+                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-4 text-xs appearance-none"
                     >
                         <option value="All">All</option>
                         {availableYears.map(yr => (
                             <option key={yr} value={yr}>{yr}</option>
                         ))}
                     </select>
+                    <ChevronDown className="h-3 w-3 text-muted-foreground pointer-events-none absolute right-2" />
                 </div>
 
                 {(selectedBatch !== "All" || selectedType !== "All" || selectedCourse !== "All" || selectedYear !== "All") && (

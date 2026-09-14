@@ -5,22 +5,14 @@ import { createWorker } from "tesseract.js"
 import { pdfjs } from "react-pdf"
 import { 
     Upload, 
-    Clipboard, 
-    Sparkles, 
-    Check, 
-    AlertCircle, 
-    Plus, 
-    Trash2, 
     Loader2, 
     FileText, 
     Image as ImageIcon,
-    RefreshCw,
-    CheckCircle2,
+    Check,
+    ChevronDown,
+    X,
     Eye,
-    EyeOff,
-    FileCheck,
-    Layers,
-    ListFilter
+    EyeOff
 } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 
@@ -205,6 +197,7 @@ export default function OcrQuestionScanner() {
     const [rawExtractedText, setRawExtractedText] = useState("")
     const [createdQuestions, setCreatedQuestions] = useState([])
     const [showRawText, setShowRawText] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(false)
     const [isDragging, setIsDragging] = useState(false)
     const fileInputRef = useRef(null)
 
@@ -417,83 +410,73 @@ export default function OcrQuestionScanner() {
         setRawExtractedText("")
         setCreatedQuestions([])
         setShowRawText(false)
+        setIsExpanded(false)
         if (fileInputRef.current) fileInputRef.current.value = ""
     }
 
     return (
-        <div className="space-y-4">
-            {/* Header Badge - Minimal Neutral */}
-            <div className="rounded-xl border border-border bg-card p-3 flex items-center justify-between">
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="size-7 rounded-lg bg-muted text-muted-foreground flex items-center justify-center shrink-0">
-                        <Sparkles className="size-3.5" />
-                    </div>
-                    <div className="min-w-0">
-                        <h4 className="text-xs font-semibold text-foreground truncate">RapidOCR Extractor</h4>
-                        <p className="text-[10px] text-muted-foreground truncate">PDF & image parser</p>
-                    </div>
-                </div>
+        <div className="space-y-3">
+            {/* Hidden native file input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf, application/pdf, image/png, image/jpeg, image/webp"
+                className="hidden"
+                onChange={(e) => {
+                    if (e.target.files?.[0]) handleSelectedFile(e.target.files[0])
+                }}
+            />
 
-                {(fileInfo || createdQuestions.length > 0) && (
+            {/* Initial Single Trigger Button - Yellow Design like Subject Builder */}
+            {!fileInfo && (
+                <div className="space-y-2.5">
                     <button
                         type="button"
-                        onClick={resetScanner}
-                        className="text-[11px] font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 bg-muted/80 hover:bg-muted px-2.5 py-1 rounded-lg border border-border/80 cursor-pointer transition-colors shrink-0"
-                        title="Scan another document"
+                        onClick={() => setIsExpanded(prev => !prev)}
+                        className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold shadow-2xs transition-all flex items-center justify-between cursor-pointer ${
+                            isExpanded 
+                                ? "bg-[#E9C46A] text-white shadow-xs" 
+                                : "bg-[#E9C46A] hover:bg-[#dfb550] text-white"
+                        }`}
                     >
-                        <RefreshCw className="size-3" />
-                        <span>New Scan</span>
+                        <span>Extract Questions from File</span>
+                        <ChevronDown className={`size-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
                     </button>
-                )}
-            </div>
 
-            {/* Input Dropzone & Paste Area (when no scan is active or completed) */}
-            {!fileInfo && (
-                <div
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={(e) => {
-                        e.preventDefault()
-                        setIsDragging(false)
-                        if (e.dataTransfer.files?.[0]) handleSelectedFile(e.dataTransfer.files[0])
-                    }}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`
-                        relative border border-dashed rounded-xl p-6 text-center cursor-pointer transition-all
-                        ${isDragging 
-                            ? "border-foreground/40 bg-muted/40" 
-                            : "border-border hover:border-border/80 hover:bg-muted/20 bg-card"
-                        }
-                    `}
-                >
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".pdf, application/pdf, image/png, image/jpeg, image/webp"
-                        className="hidden"
-                        onChange={(e) => {
-                            if (e.target.files?.[0]) handleSelectedFile(e.target.files[0])
-                        }}
-                    />
-
-                    <div className="flex flex-col items-center gap-2.5">
-                        <div className="size-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
-                            <Upload className="size-4" />
+                    {/* Sliding / Morphing Dropzone panel */}
+                    {isExpanded && (
+                        <div
+                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+                            onDragLeave={() => setIsDragging(false)}
+                            onDrop={(e) => {
+                                e.preventDefault()
+                                setIsDragging(false)
+                                if (e.dataTransfer.files?.[0]) handleSelectedFile(e.dataTransfer.files[0])
+                            }}
+                            onClick={() => fileInputRef.current?.click()}
+                            className={`
+                                relative border border-dashed rounded-xl p-5 text-center cursor-pointer transition-all animate-in fade-in slide-in-from-top-2 duration-200
+                                ${isDragging 
+                                    ? "border-[#E9C46A] bg-[#E9C46A]/10" 
+                                    : "border-border hover:border-[#E9C46A]/60 hover:bg-muted/30 bg-card"
+                                }
+                            `}
+                        >
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="size-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
+                                    <Upload className="size-4" />
+                                </div>
+                                <div className="space-y-0.5">
+                                    <p className="text-xs font-medium text-foreground">
+                                        Upload PDF or Image
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        or paste screenshot (Ctrl+V)
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <div className="space-y-0.5">
-                            <p className="text-xs font-medium text-foreground">
-                                Upload PDF or Exam Image
-                            </p>
-                            <p className="text-[10px] text-muted-foreground leading-relaxed px-1">
-                                Automatically detects questions and choices
-                            </p>
-                        </div>
-
-                        <div className="mt-1 inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-muted/60 border border-border/60 text-[10px] text-muted-foreground font-normal">
-                            <Clipboard className="size-2.5" />
-                            <span>Or press <kbd className="font-sans font-medium">Ctrl + V</kbd> to paste</span>
-                        </div>
-                    </div>
+                    )}
                 </div>
             )}
 
@@ -513,6 +496,17 @@ export default function OcrQuestionScanner() {
                             </p>
                         </div>
                     </div>
+
+                    {!isScanning && (
+                        <button
+                            type="button"
+                            onClick={resetScanner}
+                            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
+                            title="Clear and scan another file"
+                        >
+                            <X className="size-3.5" />
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -537,24 +531,12 @@ export default function OcrQuestionScanner() {
                 </div>
             )}
 
-            {/* Auto-Creation Success Card - Minimal Neutral */}
+            {/* Auto-Creation Success Summary - Minimal */}
             {createdQuestions.length > 0 && (
                 <div className="space-y-3 pt-1 animate-in fade-in duration-200">
-                    <div className="p-3 rounded-xl border border-border bg-muted/20 flex items-start gap-2.5">
-                        <CheckCircle2 className="size-4 text-foreground/80 shrink-0 mt-0.5" />
-                        <div className="min-w-0 space-y-0.5">
-                            <h5 className="text-xs font-semibold text-foreground">
-                                {createdQuestions.length} {createdQuestions.length === 1 ? "Question" : "Questions"} Ready
-                            </h5>
-                            <p className="text-[11px] text-muted-foreground leading-snug">
-                                Added to exam canvas. Duplicates are automatically prevented.
-                            </p>
-                        </div>
-                    </div>                    {/* Cards preview header & Raw text toggle */}
-                    <div className="flex items-center justify-between border-b border-border pb-2 pt-0.5">
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                            <Layers className="size-3.5 text-muted-foreground" />
-                            <span>Generated Questions ({createdQuestions.length})</span>
+                    <div className="flex items-center justify-between border-b border-border pb-2">
+                        <div className="text-xs font-semibold text-foreground">
+                            {createdQuestions.length} {createdQuestions.length === 1 ? "Question" : "Questions"} Extracted
                         </div>
 
                         <button

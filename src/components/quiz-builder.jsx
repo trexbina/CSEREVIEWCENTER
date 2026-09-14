@@ -256,20 +256,34 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
             }
         }
 
-        // 1. Direct window bridge for reliable cross-component calls
+        // 1. Direct window bridges for reliable cross-component calls
         window.__peak_import_questions = handleImport
+        window.__peak_add_question = () => addQuestion()
+        window.__peak_add_title_desc = () => addTitleDescription()
 
-        // 2. CustomEvent listener
+        // 2. CustomEvent listeners
         const handleAddOcrQuestion = (e) => {
             handleImport(e.detail)
         }
+        const handleExternalAddQuestion = () => {
+            addQuestion()
+        }
+        const handleExternalAddTitleDesc = () => {
+            addTitleDescription()
+        }
         window.addEventListener("peak:add-ocr-question", handleAddOcrQuestion)
+        window.addEventListener("peak:add-question", handleExternalAddQuestion)
+        window.addEventListener("peak:add-title-desc", handleExternalAddTitleDesc)
 
         return () => {
             delete window.__peak_import_questions
+            delete window.__peak_add_question
+            delete window.__peak_add_title_desc
             window.removeEventListener("peak:add-ocr-question", handleAddOcrQuestion)
+            window.removeEventListener("peak:add-question", handleExternalAddQuestion)
+            window.removeEventListener("peak:add-title-desc", handleExternalAddTitleDesc)
         }
-    }, [])
+    }, [addQuestion, addTitleDescription])
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
@@ -1154,18 +1168,6 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                         {/* Row 2: Add buttons + Settings icon on Left, Fullscreen + Student View + Save Changes on Right */}
                         <div className="flex items-center justify-between gap-3 flex-wrap">
                             <div className="flex items-center gap-1.5">
-                                <button
-                                    onClick={addQuestion}
-                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
-                                >
-                                    Add Question
-                                </button>
-                                <button
-                                    onClick={addTitleDescription}
-                                    className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
-                                >
-                                    Add Title/Desc
-                                </button>
                                 {!examId && (
                                     <button
                                         type="button"

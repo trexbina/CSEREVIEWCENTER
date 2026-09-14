@@ -59,7 +59,7 @@ export async function ActiveBatchesOverview() {
       </div>
 
       {/* Batches Table / Clean List inside Container */}
-      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-[#fafafa] dark:bg-white/[0.025] backdrop-blur-md shadow-2xs px-5 sm:px-6 py-2 sm:py-2.5">
+      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-[#fafafa] dark:bg-white/[0.025] backdrop-blur-md shadow-2xs px-5 sm:px-6 py-3 sm:py-3.5">
         <div className="divide-y divide-black/5 dark:divide-white/5">
         {batches.length === 0 ? (
           <div className="py-6 text-center text-xs text-neutral-400 dark:text-neutral-500">
@@ -74,7 +74,7 @@ export async function ActiveBatchesOverview() {
             return (
               <div
                 key={batch.id}
-                className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               >
                 {/* Left: Index number + Batch Name & Exam Target */}
                 <div className="flex items-center gap-3">

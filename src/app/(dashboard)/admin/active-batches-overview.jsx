@@ -94,13 +94,13 @@ export async function ActiveBatchesOverview() {
                 </div>
 
                 {/* Right: Students Enrolled + Term Expiry Info */}
-                <div className="flex items-center gap-5 sm:gap-7 text-xs sm:text-sm self-end sm:self-center">
+                <div className="flex items-center gap-4 sm:gap-6 text-xs self-end sm:self-center">
                   {/* Students Count */}
                   <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300">
                     <Users className="size-3.5 text-neutral-400 stroke-[1.75]" />
                     <span>
                       {batch.student_count}{" "}
-                      <span className="text-neutral-400 dark:text-neutral-500 text-[11px] sm:text-xs">
+                      <span className="text-neutral-400 dark:text-neutral-500 text-[11px]">
                         enrolled
                       </span>
                     </span>
@@ -115,21 +115,21 @@ export async function ActiveBatchesOverview() {
                   </div>
 
                   {/* Status Indicator */}
-                  <div className="min-w-[76px] text-right">
+                  <div className="min-w-[70px] text-right">
                     {isExpired ? (
-                      <span className="text-[11px] sm:text-xs font-medium text-neutral-400 dark:text-neutral-500">
+                      <span className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
                         Term ended
                       </span>
                     ) : isExpiringSoon ? (
-                      <span className="text-[11px] sm:text-xs font-medium text-amber-600 dark:text-amber-400">
+                      <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
                         {daysLeft}d left
                       </span>
                     ) : daysLeft !== null ? (
-                      <span className="text-[11px] sm:text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                      <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
                         {daysLeft}d left
                       </span>
                     ) : (
-                      <span className="text-[11px] sm:text-xs font-medium text-neutral-400 dark:text-neutral-500">
+                      <span className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500">
                         Ongoing
                       </span>
                     )}

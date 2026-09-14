@@ -258,18 +258,50 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
         // 1. Direct window bridges for reliable cross-component calls
         window.__peak_import_questions = handleImport
-        window.__peak_add_question = () => addQuestion()
-        window.__peak_add_title_desc = () => addTitleDescription()
+        window.__peak_add_question = () => {
+            setQuestions(prev => [
+                ...prev,
+                {
+                    id: Date.now().toString(),
+                    type: "question",
+                    questionType: "Multiple Choice",
+                    text: "",
+                    image: null,
+                    points: 1,
+                    options: [
+                        { id: Date.now() + "1", text: "Option 1" },
+                        { id: Date.now() + "2", text: "Option 2" },
+                        { id: Date.now() + "3", text: "Option 3" },
+                    ]
+                }
+            ])
+        }
+        window.__peak_add_title_desc = () => {
+            setQuestions(prev => [
+                ...prev,
+                {
+                    id: Date.now().toString(),
+                    type: "title_description",
+                    title: "",
+                    description: "",
+                    image: null
+                }
+            ])
+        }
 
         // 2. CustomEvent listeners
         const handleAddOcrQuestion = (e) => {
             handleImport(e.detail)
         }
         const handleExternalAddQuestion = () => {
-            addQuestion()
+            if (typeof window.__peak_add_question === "function") {
+                window.__peak_add_question()
+            }
         }
         const handleExternalAddTitleDesc = () => {
-            addTitleDescription()
+            if (typeof window.__peak_add_title_desc === "function") {
+                window.__peak_add_title_desc()
+            }
         }
         window.addEventListener("peak:add-ocr-question", handleAddOcrQuestion)
         window.addEventListener("peak:add-question", handleExternalAddQuestion)
@@ -283,7 +315,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
             window.removeEventListener("peak:add-question", handleExternalAddQuestion)
             window.removeEventListener("peak:add-title-desc", handleExternalAddTitleDesc)
         }
-    }, [addQuestion, addTitleDescription])
+    }, [])
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {

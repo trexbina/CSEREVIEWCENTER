@@ -44,7 +44,7 @@ export async function ProgramsDistributionOverview() {
       </div>
 
       {/* Dual Column Container (Clean List Layout) */}
-      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-[#fafafa] dark:bg-white/[0.025] backdrop-blur-md shadow-2xs px-5 sm:px-6 py-4 sm:py-4.5">
+      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-[#f4f4f4] dark:bg-white/[0.025] backdrop-blur-md shadow-2xs px-5 sm:px-6 py-4 sm:py-4.5">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
           {/* Left Column (spans 5 cols): Examinations */}
           <div className="md:col-span-5 space-y-3 pr-0 md:pr-4 md:border-r md:border-black/5 md:dark:border-white/5">

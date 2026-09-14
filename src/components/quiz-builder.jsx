@@ -1179,15 +1179,15 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
 
                 {/* Header Actions */}
                 {!effectiveIsStudent && (
-                    <div className="border-b border-gray-200/80 pb-3 relative flex flex-col gap-2.5">
-                        {/* Row 1: Title */}
-                        <div className="flex items-center min-w-0">
+                    <div className="border-b border-gray-200/80 pb-3 relative flex items-center justify-between gap-4 flex-wrap">
+                        {/* Left: Mock Exam Title & Settings */}
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                             {examId ? (
                                 <input
                                     type="text"
                                     value={lessonTitle}
                                     onChange={(e) => setLessonTitle(e.target.value)}
-                                    className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-slate-400 outline-none pb-0.5"
+                                    className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-slate-400 outline-none pb-0.5 w-full max-w-xl"
                                     placeholder="Mock Exam Title"
                                 />
                             ) : (
@@ -1195,67 +1195,64 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                     {lessonTitle}
                                 </h1>
                             )}
-                        </div>
 
-                        {/* Row 2: Add buttons + Settings icon on Left, Fullscreen + Student View + Save Changes on Right */}
-                        <div className="flex items-center justify-between gap-3 flex-wrap">
-                            <div className="flex items-center gap-1.5">
-                                {!examId && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowSettings(!showSettings)}
-                                        className={`p-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center justify-center ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-600 hover:text-gray-900'}`}
-                                        title="Quiz Settings"
-                                    >
-                                        <Settings className="h-4 w-4" />
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0">
+                            {!examId && (
                                 <button
                                     type="button"
-                                    onClick={toggleFullscreen}
-                                    className="p-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-800 transition-all shadow-2xs cursor-pointer flex items-center justify-center"
-                                    title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                                    onClick={() => setShowSettings(!showSettings)}
+                                    className={`p-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center justify-center shrink-0 ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-600 hover:text-gray-900'}`}
+                                    title="Quiz Settings"
                                 >
-                                    {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                                    <Settings className="h-4 w-4" />
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={async () => {
-                                        await saveQuiz(true)
-                                        if (onToggleViewMode) {
-                                            onToggleViewMode()
-                                        } else {
-                                            setInternalPreview(true)
-                                            setIsSubmitted(false)
-                                            setStudentAnswers({})
-                                            startTimeRef.current = Date.now()
-                                        }
-                                    }}
-                                    className="px-3 py-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
-                                >
-                                    <Eye className="h-3.5 w-3.5 text-gray-500" />
-                                    <span>Student View</span>
-                                </button>
-                                <button
-                                    onClick={() => saveQuiz(false)}
-                                    disabled={saving}
-                                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
-                                >
-                                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
-                                    <span>Save Changes</span>
-                                </button>
-                            </div>
+                            )}
                         </div>
 
+                        {/* Right: Fullscreen + Student View + Save Changes */}
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                type="button"
+                                onClick={toggleFullscreen}
+                                className="p-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-800 transition-all shadow-2xs cursor-pointer flex items-center justify-center"
+                                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                            >
+                                {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    await saveQuiz(true)
+                                    if (onToggleViewMode) {
+                                        onToggleViewMode()
+                                    } else {
+                                        setInternalPreview(true)
+                                        setIsSubmitted(false)
+                                        setStudentAnswers({})
+                                        startTimeRef.current = Date.now()
+                                    }
+                                }}
+                                className="px-3 py-1.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
+                            >
+                                <Eye className="h-3.5 w-3.5 text-gray-500" />
+                                <span>Student View</span>
+                            </button>
+                            <button
+                                onClick={() => saveQuiz(false)}
+                                disabled={saving}
+                                className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
+                            >
+                                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+                                <span>Save Changes</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
 
-                        {/* Quiz Settings Modal Popup Overlay */}
-                        {showSettings && (
-                            <div
-                                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
-                                onClick={(e) => {
+                {/* Quiz Settings Modal Popup Overlay */}
+                {!effectiveIsStudent && showSettings && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
+                        onClick={(e) => {
                                     if (e.target === e.currentTarget) setShowSettings(false)
                                 }}
                             >
@@ -1609,8 +1606,6 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                 </div>
                             </div>
                         )}
-                    </div>
-                )}
 
                 {/* Student Floating Timer & Availability Banners */}
                 {effectiveIsStudent && (

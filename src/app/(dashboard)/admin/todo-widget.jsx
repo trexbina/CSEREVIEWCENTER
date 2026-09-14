@@ -19,11 +19,7 @@ function getRandomColor() {
 }
 
 export function TodoWidget() {
-  const [items, setItems] = useState([
-    { id: "1", text: "Review batch submissions", completed: false, color: "#3B82F6" },
-    { id: "2", text: "Update announcement banner", completed: false, color: "#10B981" },
-    { id: "3", text: "Verify teacher accounts", completed: true, color: "#EC4899" },
-  ])
+  const [items, setItems] = useState([])
   const [isAdding, setIsAdding] = useState(false)
   const [newText, setNewText] = useState("")
 
@@ -33,7 +29,7 @@ export function TodoWidget() {
       const saved = localStorage.getItem("peak_admin_todos")
       if (saved) {
         const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setItems(parsed)
         }
       }

@@ -59,14 +59,14 @@ export async function ActiveBatchesOverview() {
       </div>
 
       {/* Batches Table / Clean List inside Container */}
-      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-[#fafafa] dark:bg-white/[0.025] backdrop-blur-md shadow-2xs p-5 sm:p-6">
+      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-[#fafafa] dark:bg-white/[0.025] backdrop-blur-md shadow-2xs px-5 sm:px-6 py-2 sm:py-2.5">
         <div className="divide-y divide-black/5 dark:divide-white/5">
         {batches.length === 0 ? (
-          <div className="py-8 text-center text-xs text-neutral-400 dark:text-neutral-500">
+          <div className="py-6 text-center text-xs text-neutral-400 dark:text-neutral-500">
             No active batches created yet.
           </div>
         ) : (
-          batches.map((batch) => {
+          batches.map((batch, index) => {
             const daysLeft = getDaysRemaining(batch.end_date)
             const isExpired = daysLeft !== null && daysLeft <= 0
             const isExpiringSoon = daysLeft !== null && daysLeft > 0 && daysLeft <= 14
@@ -74,21 +74,18 @@ export async function ActiveBatchesOverview() {
             return (
               <div
                 key={batch.id}
-                className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               >
-                {/* Left: Batch Name & Exam Target */}
+                {/* Left: Index number + Batch Name & Exam Target */}
                 <div className="flex items-center gap-3">
-                  <div className="size-2 rounded-full shrink-0 bg-neutral-300 dark:bg-neutral-600" />
+                  <span className="w-4 text-[12px] font-semibold text-neutral-400 dark:text-neutral-500 tabular-nums shrink-0 text-left">
+                    {index + 1}
+                  </span>
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs sm:text-sm font-medium text-[#3B3B3B] dark:text-white">
                         {batch.name}
                       </span>
-                      {batch.target_year && (
-                        <span className="text-[11px] sm:text-xs text-neutral-400 dark:text-neutral-500">
-                          ({batch.target_year})
-                        </span>
-                      )}
                     </div>
                     <div className="text-[11px] sm:text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
                       {batch.exam_name || "General Review"}

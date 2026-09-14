@@ -87,9 +87,9 @@ export async function RecentEnrollmentsFeed() {
       </div>
 
       {/* Stream Container */}
-      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-[#fafafa] dark:bg-white/[0.025] backdrop-blur-md shadow-2xs p-5 sm:p-6 divide-y divide-black/5 dark:divide-white/5">
+      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-[#fafafa] dark:bg-white/[0.025] backdrop-blur-md shadow-2xs px-5 sm:px-6 py-2 sm:py-2.5 divide-y divide-black/5 dark:divide-white/5">
         {recentUsers.length === 0 ? (
-          <div className="py-8 text-center text-xs text-neutral-400 dark:text-neutral-500">
+          <div className="py-6 text-center text-xs text-neutral-400 dark:text-neutral-500">
             No registered users recorded yet.
           </div>
         ) : (
@@ -97,11 +97,21 @@ export async function RecentEnrollmentsFeed() {
             const initials = getInitials(user.name)
             const roleLabel = getRoleLabel(user.role)
             const isStudent = user.role === "student"
+            const isTeacher = user.role === "teacher"
+            const isAdmin = user.role === "admin" || user.role === "super_admin" || user.role === "academic_admin" || user.role === "registrar"
+
+            const description = isStudent
+              ? user.batch_name || user.exam_name || null
+              : isTeacher
+              ? null
+              : isAdmin
+              ? roleLabel
+              : null
 
             return (
               <div
                 key={user.id}
-                className="py-3 flex items-center justify-between gap-3"
+                className="py-2.5 flex items-center justify-between gap-3"
               >
                 {/* Left: Avatar initial + Name & Subtitle */}
                 <div className="flex items-center gap-3 min-w-0">
@@ -121,11 +131,11 @@ export async function RecentEnrollmentsFeed() {
                       )}
                     </div>
 
-                    <div className="text-[11px] sm:text-xs text-neutral-400 dark:text-neutral-500 truncate mt-0.5">
-                      {isStudent
-                        ? user.batch_name || user.exam_name || user.email
-                        : user.email}
-                    </div>
+                    {description && (
+                      <div className="text-[11px] sm:text-xs text-neutral-400 dark:text-neutral-500 truncate mt-0.5">
+                        {description}
+                      </div>
+                    )}
                   </div>
                 </div>
 

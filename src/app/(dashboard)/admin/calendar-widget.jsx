@@ -74,8 +74,8 @@ export function CalendarWidget() {
     <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between transition-all">
       {/* ── Top Bar / Header (styled like metric strip: light gray bg + border-b + dimensional soft shadow) ── */}
       <div>
-        <div className="relative z-10 px-4 py-3 sm:px-4.5 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-black/[0.03] dark:bg-white/[0.05] shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
-          <span className="text-xs font-bold text-[#3B3B3B] dark:text-white tracking-wider uppercase select-none">
+        <div className="relative z-10 px-4 py-3 sm:px-4.5 sm:py-3.5 flex items-center justify-between border-b border-emerald-200/50 dark:border-emerald-900/40 bg-emerald-50/70 dark:bg-emerald-950/25 shadow-[0_2px_4px_-1px_rgba(16,185,129,0.06)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+          <span className="text-xs font-bold text-emerald-800 dark:text-emerald-200 tracking-wider uppercase select-none">
             {MONTH_NAMES[month]} {year}
           </span>
           <div className="flex items-center gap-1">
@@ -83,7 +83,7 @@ export function CalendarWidget() {
               type="button"
               onClick={handlePrevMonth}
               aria-label="Previous month"
-              className="size-6 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer active:scale-95"
+              className="size-6 rounded-lg flex items-center justify-center text-emerald-700/80 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/50 transition-colors cursor-pointer active:scale-95"
             >
               <ChevronLeft className="size-3.5" />
             </button>
@@ -91,7 +91,7 @@ export function CalendarWidget() {
               type="button"
               onClick={handleNextMonth}
               aria-label="Next month"
-              className="size-6 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer active:scale-95"
+              className="size-6 rounded-lg flex items-center justify-center text-emerald-700/80 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/50 transition-colors cursor-pointer active:scale-95"
             >
               <ChevronRight className="size-3.5" />
             </button>

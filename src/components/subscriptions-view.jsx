@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 
 export function SubscriptionsView({ initialBatchFilter = "all" }) {
   const [data, setData] = useState({ metrics: {}, batches: [], students: [] })
@@ -31,6 +32,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
     student: null,
     targetBatchId: ""
   })
+  const [confirmMoveOpen, setConfirmMoveOpen] = useState(false)
   const [savingMove, setSavingMove] = useState(false)
 
   // Modal states for extending batch term
@@ -561,36 +563,36 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
 
       {/* ── Move Student Batch Modal ── */}
       {moveModal.isOpen && moveModal.student && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-card border border-border/60 rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-card border border-border/80 rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 font-sans">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-foreground text-sm">
+              <h3 className="font-semibold text-foreground text-sm tracking-tight">
                 Move Student to Another Batch
               </h3>
               <button 
                 onClick={() => setMoveModal({ isOpen: false, student: null, targetBatchId: "" })}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Moving <strong className="text-foreground">{moveModal.student.name}</strong> will update their review term to align with the target batch schedule.
+              Transfer <strong className="text-foreground font-medium">{moveModal.student.name}</strong> to a new batch. Their access schedule will update automatically.
             </p>
 
-            <div className="space-y-3 pt-1">
-              <div className="rounded-xl border border-border/40 p-3 bg-muted/20 space-y-1.5 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Current Batch:</span>
-                  <span className="font-semibold text-foreground">{moveModal.student.batch_name || "None"}</span>
+            <div className="space-y-3.5 pt-0.5">
+              <div className="rounded-xl border border-border/50 p-3 bg-muted/20 space-y-1.5 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Current Batch</span>
+                  <span className="font-medium text-foreground">{moveModal.student.batch_name || "None"}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Examination:</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Examination</span>
                   <span className="text-foreground">{moveModal.student.exam_name || "—"}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Current End Date:</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Current End Date</span>
                   <span className="text-foreground">
                     {moveModal.student.effective_end_date 
                       ? new Date(moveModal.student.effective_end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
@@ -600,65 +602,117 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-foreground block mb-1">
+                <label className="text-xs font-medium text-foreground block mb-1.5">
                   Select Target Batch
                 </label>
-                <select
-                  value={moveModal.targetBatchId}
-                  onChange={(e) => setMoveModal(prev => ({ ...prev, targetBatchId: e.target.value }))}
-                  className="w-full h-10 px-3 text-xs rounded-xl border border-border/60 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-neutral-400 cursor-pointer"
+                <Select
+                  value={moveModal.targetBatchId ? String(moveModal.targetBatchId) : ""}
+                  onValueChange={(val) => setMoveModal(prev => ({ ...prev, targetBatchId: val }))}
                 >
-                  <option value="">Choose a batch…</option>
-                  {(data.batches || []).map(b => {
-                    const isCurrent = String(b.id) === String(moveModal.student.batch_id)
-                    const endStr = b.end_date 
-                      ? new Date(b.end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-                      : "No end date"
-                    return (
-                      <option key={b.id} value={b.id} disabled={isCurrent}>
-                        {b.name} ({b.exam_name || "General"}) — Ends: {endStr} {isCurrent ? "(Current)" : ""}
-                      </option>
-                    )
-                  })}
-                </select>
+                  <SelectTrigger className="w-full h-9 px-3 text-xs font-sans rounded-xl border border-border/80 bg-background text-foreground shadow-2xs cursor-pointer focus:ring-1 focus:ring-[#E9C46A]">
+                    <SelectValue placeholder="Choose a batch…" />
+                  </SelectTrigger>
+                  <SelectContent className="font-sans text-xs max-h-56">
+                    {(data.batches || []).map(b => {
+                      const isCurrent = String(b.id) === String(moveModal.student.batch_id)
+                      const endStr = b.end_date 
+                        ? new Date(b.end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                        : "No end date"
+                      return (
+                        <SelectItem 
+                          key={b.id} 
+                          value={String(b.id)} 
+                          disabled={isCurrent}
+                          className="text-xs font-sans py-1.5"
+                        >
+                          <span>{b.name} <span className="text-muted-foreground">({b.exam_name || "General"})</span> — <span className="text-muted-foreground">Ends: {endStr}</span>{isCurrent ? " (Current)" : ""}</span>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
 
               {(() => {
                 const targetBatch = (data.batches || []).find(b => String(b.id) === String(moveModal.targetBatchId))
                 if (!targetBatch) return null
                 return (
-                  <div className="rounded-xl border border-border/40 p-3 bg-muted/20 text-xs space-y-1">
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>New End Date:</span>
-                      <span className="font-semibold text-foreground">
+                  <div className="rounded-xl border border-border/50 p-3 bg-muted/20 text-xs space-y-1">
+                    <div className="flex justify-between items-center text-muted-foreground">
+                      <span>New End Date</span>
+                      <span className="font-medium text-foreground">
                         {targetBatch.end_date 
                           ? new Date(targetBatch.end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) 
                           : "No scheduled end"}
                       </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground pt-1">
-                      Student review access will follow this batch's schedule.
-                    </p>
                   </div>
                 )
               })()}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-border/40">
+            <div className="flex justify-end items-center gap-2 pt-2.5 border-t border-border/40">
               <button
                 type="button"
                 onClick={() => setMoveModal({ isOpen: false, student: null, targetBatchId: "" })}
-                className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+                className="px-3.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 disabled={savingMove || !moveModal.targetBatchId || String(moveModal.targetBatchId) === String(moveModal.student.batch_id)}
-                onClick={handleMoveBatch}
-                className="bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-900 disabled:opacity-50 text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all cursor-pointer"
+                onClick={() => setConfirmMoveOpen(true)}
+                className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all cursor-pointer"
               >
-                {savingMove ? "Moving…" : "Move to Batch"}
+                Move
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirmation Modal Before Moving ── */}
+      {confirmMoveOpen && moveModal.student && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200 text-left font-sans">
+          <div className="bg-card w-full max-w-sm rounded-2xl shadow-2xl border border-border/80 p-5 sm:p-6 space-y-4 text-left animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground tracking-tight">
+                Confirm Move
+              </h3>
+              <button
+                type="button"
+                onClick={() => setConfirmMoveOpen(false)}
+                disabled={savingMove}
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Are you sure you want to move <strong className="text-foreground font-medium">{moveModal.student.name}</strong> to <strong className="text-foreground font-medium">{((data.batches || []).find(b => String(b.id) === String(moveModal.targetBatchId))?.name) || "the selected batch"}</strong>?
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
+              <button
+                type="button"
+                onClick={() => setConfirmMoveOpen(false)}
+                disabled={savingMove}
+                className="px-3.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleMoveBatch()
+                  setConfirmMoveOpen(false)
+                }}
+                disabled={savingMove}
+                className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all cursor-pointer"
+              >
+                {savingMove ? "Moving…" : "Confirm"}
               </button>
             </div>
           </div>
@@ -667,22 +721,22 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
 
       {/* ── Extend Batch Modal Dialog ── */}
       {extendBatchModal.isOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-card border border-border/80 rounded-2xl p-5 sm:p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 font-sans">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-foreground text-sm">
+              <h3 className="font-semibold text-foreground text-sm tracking-tight">
                 Extend Batch Term
               </h3>
               <button 
                 onClick={() => setExtendBatchModal(prev => ({ ...prev, isOpen: false }))}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <p className="text-xs text-muted-foreground">
-              Extending schedule for <strong className="text-foreground">{extendBatchModal.batchName}</strong>.
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Extending schedule for <strong className="text-foreground font-medium">{extendBatchModal.batchName}</strong>.
             </p>
 
             <div className="space-y-3 pt-1">
@@ -717,11 +771,11 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-border/40">
+            <div className="flex justify-end items-center gap-2 pt-2.5 border-t border-border/40">
               <button
                 type="button"
                 onClick={() => setExtendBatchModal(prev => ({ ...prev, isOpen: false }))}
-                className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+                className="px-3.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -729,7 +783,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                 type="button"
                 disabled={savingBatchExtension}
                 onClick={handleApplyBatchExtension}
-                className="bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-900 disabled:opacity-50 text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all cursor-pointer"
+                className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all cursor-pointer"
               >
                 {savingBatchExtension ? "Saving…" : "Save Extension"}
               </button>

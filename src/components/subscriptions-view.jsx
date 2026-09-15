@@ -189,159 +189,95 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* ── Metric Summary Strip (Compact, seamless, simpler terms) ── */}
-      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-xs overflow-hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          {/* 1. Total Reviewees */}
-          <div
-            className="flex flex-col justify-between select-none group/card cursor-pointer"
-            onClick={() => {
-              setActiveTab("students")
-              setStatusFilter("all")
-            }}
-          >
-            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                Total Reviewees
-              </span>
-            </div>
-            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(data.metrics?.totalStudents || 0).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                All enrolled students
-              </p>
-            </div>
-          </div>
-
-          {/* 2. Active Reviewees */}
-          <div
-            className="flex flex-col justify-between select-none group/card cursor-pointer"
-            onClick={() => {
-              setActiveTab("students")
-              setStatusFilter("active")
-            }}
-          >
-            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                Active
-              </span>
-            </div>
-            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(data.metrics?.activeCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                Currently with access
-              </p>
-            </div>
-          </div>
-
-          {/* 3. Expiring Soon */}
-          <div
-            className="flex flex-col justify-between select-none group/card cursor-pointer"
-            onClick={() => {
-              setActiveTab("students")
-              setStatusFilter("expiring")
-            }}
-          >
-            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                Expiring Soon
-              </span>
-            </div>
-            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(data.metrics?.expiringCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                Ends within 7 days
-              </p>
-            </div>
-          </div>
-
-          {/* 4. Expired */}
-          <div
-            className="flex flex-col justify-between select-none group/card cursor-pointer"
-            onClick={() => {
-              setActiveTab("students")
-              setStatusFilter("expired")
-            }}
-          >
-            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                Expired
-              </span>
-            </div>
-            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(data.metrics?.expiredCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                Access ended or inactive
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Sub-tabs & Search Toolbar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+    <div className="space-y-4">
+      {/* ── Integrated Controls Toolbar (Segmented Tabs, Live Status Filters, Search) ── */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        {/* Left: Tab Switcher & Status Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Main Sub-tabs: Reviewees vs Batches */}
           <div className="flex items-center gap-1 p-1 bg-[#F2F2F2]/80 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
             <button
+              type="button"
               onClick={() => setActiveTab("students")}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                 activeTab === "students"
-                  ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                  : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B]"
+                  ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                  : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
               }`}
             >
-              Reviewees
+              Reviewees ({data.metrics?.totalStudents || 0})
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab("batches")}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                 activeTab === "batches"
-                  ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                  : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B]"
+                  ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                  : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
               }`}
             >
               Batches ({data.batches?.length || 0})
             </button>
           </div>
 
+          {/* Status Pills (Only when on Reviewees tab) */}
           {activeTab === "students" && (
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger
-                aria-label="Filter by status"
-                className="h-9 px-3 rounded-xl border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
+            <div className="flex items-center gap-1 p-1 bg-[#F2F2F2]/80 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => setStatusFilter("all")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  statusFilter === "all"
+                    ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                    : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                }`}
               >
-                <div className="flex items-center gap-1.5">
-                  <span>
-                    {statusFilter === "all" && "All Statuses"}
-                    {statusFilter === "active" && "Active Only"}
-                    {statusFilter === "expiring" && "Expiring Soon (≤ 7 days)"}
-                    {statusFilter === "expired" && "Expired / Inactive"}
-                  </span>
-                </div>
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                <SelectItem value="all" className="text-xs">All Statuses</SelectItem>
-                <SelectItem value="active" className="text-xs">Active Only</SelectItem>
-                <SelectItem value="expiring" className="text-xs">Expiring Soon (≤ 7 days)</SelectItem>
-                <SelectItem value="expired" className="text-xs">Expired / Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+                All ({data.metrics?.totalStudents || 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("active")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  statusFilter === "active"
+                    ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                    : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                }`}
+              >
+                Active ({data.metrics?.activeCount || 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("expiring")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  statusFilter === "expiring"
+                    ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                    : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                }`}
+              >
+                Expiring Soon ({data.metrics?.expiringCount || 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("expired")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  statusFilter === "expired"
+                    ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                    : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                }`}
+              >
+                Expired ({data.metrics?.expiredCount || 0})
+              </button>
+            </div>
           )}
+        </div>
 
+        {/* Right: Batch Dropdown & Search Input */}
+        <div className="flex items-center gap-2">
           {activeTab === "students" && data.batches?.length > 0 && (
             <Select value={batchFilter} onValueChange={setBatchFilter}>
               <SelectTrigger
                 aria-label="Filter by batch"
-                className="h-9 px-3 rounded-xl border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 max-w-[200px] shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
+                className="h-10 px-3 rounded-xl border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 max-w-[180px] shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
               >
                 <div className="flex items-center gap-1.5 truncate">
                   <span className="truncate">
@@ -361,17 +297,17 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
               </SelectContent>
             </Select>
           )}
-        </div>
 
-        <div className="relative min-w-[220px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#696969]" />
-          <input
-            type="search"
-            placeholder="Search subscriptions…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-9 pl-9 pr-3 text-xs rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-          />
+          <div className="relative min-w-[220px] flex-1 md:flex-initial">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#696969]" />
+            <input
+              type="search"
+              placeholder={activeTab === "students" ? "Search reviewee or batch…" : "Search batches…"}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-10 pl-9 pr-3 text-xs rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 shadow-2xs"
+            />
+          </div>
         </div>
       </div>
 

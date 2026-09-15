@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle } from "lucide-react"
 import { toast } from "@/components/ui/toast"
+import { LordIcon } from "@/components/ui/lord-icon"
 
 export function SubscriptionsView({ initialBatchFilter = "all" }) {
   const [data, setData] = useState({ metrics: {}, batches: [], students: [] })
@@ -183,34 +184,136 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
 
   return (
     <div className="space-y-6">
-      {/* ── Metric Summary Cards (Minimal & Neutral) ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card border border-border/40 rounded-2xl p-4 shadow-2xs">
-          <p className="text-xs text-[#696969] font-medium">Total Reviewees</p>
-          <p className="text-2xl font-bold text-[#3B3B3B] dark:text-white mt-1">
-            {data.metrics?.totalStudents || 0}
-          </p>
-        </div>
+      {/* ── Metric Summary Strip (Admin Dashboard Metric Strip Styling) ── */}
+      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-xs overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-black/5 dark:divide-white/5">
+          {/* 1. Total Reviewees */}
+          <div
+            className="flex flex-col justify-between select-none group/card cursor-pointer transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+            onClick={() => {
+              setActiveTab("students")
+              setStatusFilter("all")
+            }}
+          >
+            <div className="relative z-10 px-5 py-3.5 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+              <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                Total Reviewees
+              </span>
+            </div>
+            <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  {Number(data.metrics?.totalStudents || 0).toLocaleString()}
+                </div>
+                <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                  Total student enrollments
+                </p>
+              </div>
+              <div className="shrink-0 transition-transform duration-300 opacity-80 group-hover/card:scale-105">
+                <LordIcon
+                  src="/icons/knowifready.json"
+                  size={38}
+                  trigger="hover"
+                />
+              </div>
+            </div>
+          </div>
 
-        <div className="bg-card border border-border/40 rounded-2xl p-4 shadow-2xs">
-          <p className="text-xs text-[#696969] font-medium">Active Subscriptions</p>
-          <p className="text-2xl font-bold text-neutral-800 dark:text-neutral-100 mt-1">
-            {data.metrics?.activeCount || 0}
-          </p>
-        </div>
+          {/* 2. Active Subscriptions */}
+          <div
+            className="flex flex-col justify-between select-none group/card cursor-pointer transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+            onClick={() => {
+              setActiveTab("students")
+              setStatusFilter("active")
+            }}
+          >
+            <div className="relative z-10 px-5 py-3.5 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+              <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                Active Subscriptions
+              </span>
+            </div>
+            <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  {Number(data.metrics?.activeCount || 0).toLocaleString()}
+                </div>
+                <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                  Currently active review terms
+                </p>
+              </div>
+              <div className="shrink-0 transition-transform duration-300 opacity-80 group-hover/card:scale-105">
+                <LordIcon
+                  src="/icons/allinonespot.json"
+                  size={38}
+                  trigger="hover"
+                />
+              </div>
+            </div>
+          </div>
 
-        <div className="bg-card border border-border/40 rounded-2xl p-4 shadow-2xs">
-          <p className="text-xs text-[#696969] font-medium">Expiring Soon (7d)</p>
-          <p className="text-2xl font-bold text-neutral-700 dark:text-neutral-200 mt-1">
-            {data.metrics?.expiringCount || 0}
-          </p>
-        </div>
+          {/* 3. Expiring Soon (7d) */}
+          <div
+            className="flex flex-col justify-between select-none group/card cursor-pointer transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+            onClick={() => {
+              setActiveTab("students")
+              setStatusFilter("expiring")
+            }}
+          >
+            <div className="relative z-10 px-5 py-3.5 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+              <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                Expiring Soon (7d)
+              </span>
+            </div>
+            <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  {Number(data.metrics?.expiringCount || 0).toLocaleString()}
+                </div>
+                <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                  Ending within next 7 days
+                </p>
+              </div>
+              <div className="shrink-0 transition-transform duration-300 opacity-80 group-hover/card:scale-105">
+                <LordIcon
+                  src="/icons/knowifready.json"
+                  size={38}
+                  trigger="hover"
+                />
+              </div>
+            </div>
+          </div>
 
-        <div className="bg-card border border-border/40 rounded-2xl p-4 shadow-2xs">
-          <p className="text-xs text-[#696969] font-medium">Expired / Inactive</p>
-          <p className="text-2xl font-bold text-neutral-500 dark:text-neutral-400 mt-1">
-            {data.metrics?.expiredCount || 0}
-          </p>
+          {/* 4. Expired / Inactive */}
+          <div
+            className="flex flex-col justify-between select-none group/card cursor-pointer transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+            onClick={() => {
+              setActiveTab("students")
+              setStatusFilter("expired")
+            }}
+          >
+            <div className="relative z-10 px-5 py-3.5 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+              <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                Expired / Inactive
+              </span>
+            </div>
+            <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  {Number(data.metrics?.expiredCount || 0).toLocaleString()}
+                </div>
+                <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                  Term ended or disabled
+                </p>
+              </div>
+              <div className="shrink-0 transition-transform duration-300 opacity-80 group-hover/card:scale-105">
+                <LordIcon
+                  src="/icons/instantresults.json"
+                  size={38}
+                  trigger="hover"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -285,16 +388,16 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-border/40 text-xs font-medium text-muted-foreground bg-[#F2F2F2]/60 dark:bg-white/5">
-                  <th className="py-2.5 px-4 font-semibold text-foreground">Student</th>
-                  <th className="py-2.5 px-4 font-semibold text-foreground">Examination & Batch</th>
-                  <th className="py-2.5 px-4 font-semibold text-foreground">Scheduled End Date</th>
-                  <th className="py-2.5 px-4 font-semibold text-foreground">Remaining Term</th>
-                  <th className="py-2.5 px-4 font-semibold text-foreground">Status</th>
-                  <th className="py-2.5 px-4 text-right font-semibold text-foreground">Actions</th>
+                <tr className="border-b border-black/5 dark:border-white/10 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs">
+                  <th className="py-2.5 px-4 font-semibold">Student</th>
+                  <th className="py-2.5 px-4 font-semibold">Examination & Batch</th>
+                  <th className="py-2.5 px-4 font-semibold">Scheduled End Date</th>
+                  <th className="py-2.5 px-4 font-semibold">Remaining Term</th>
+                  <th className="py-2.5 px-4 font-semibold">Status</th>
+                  <th className="py-2.5 px-4 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/20 text-sm">
+              <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
                 {loading ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-xs text-muted-foreground">
@@ -316,32 +419,32 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                       : "No scheduled end"
 
                     return (
-                      <tr key={student.id} className="hover:bg-muted/20 transition-colors">
+                      <tr key={student.id} className="hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
                         <td className="py-3 px-4">
-                          <p className="font-semibold text-foreground text-xs sm:text-sm">{student.name}</p>
-                          <p className="text-xs text-muted-foreground">{student.email}</p>
+                          <p className="font-semibold text-[#696969] dark:text-gray-300 text-xs sm:text-sm">{student.name}</p>
+                          <p className="text-xs text-[#696969]/80 dark:text-gray-400 font-normal">{student.email}</p>
                         </td>
-                        <td className="py-3 px-4 text-xs text-foreground">
-                          <p className="font-medium">{student.batch_name || "—"}</p>
-                          <p className="text-muted-foreground">{student.exam_name || "—"}</p>
+                        <td className="py-3 px-4 text-xs">
+                          <p className="font-medium text-[#3B3B3B] dark:text-gray-200">{student.batch_name || "—"}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-400 font-normal">{student.exam_name || "—"}</p>
                         </td>
-                        <td className="py-3 px-4 text-xs text-foreground">
+                        <td className="py-3 px-4 text-xs text-[#696969] dark:text-gray-300">
                           {dateFormatted}
                           {student.subscription_end_date && (
-                            <span className="block text-[10px] text-muted-foreground italic">Custom extension</span>
+                            <span className="block text-[10px] text-gray-400 dark:text-gray-400 italic">Custom extension</span>
                           )}
                         </td>
                         <td className="py-3 px-4 text-xs">
                           {student.days_remaining !== null ? (
-                            <span className={student.days_remaining < 0 ? "text-neutral-500 font-medium" : isExpiring ? "text-neutral-700 dark:text-neutral-200 font-medium" : "text-muted-foreground"}>
+                            <span className={student.days_remaining < 0 ? "text-neutral-500 font-medium" : isExpiring ? "text-neutral-700 dark:text-neutral-200 font-medium" : "text-[#696969] dark:text-gray-400 font-normal"}>
                               {student.days_remaining < 0 ? `${Math.abs(student.days_remaining)} days ago` : `${student.days_remaining} days left`}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground/60">—</span>
+                            <span className="text-[#696969]/60 dark:text-gray-500 font-normal">—</span>
                           )}
                         </td>
                         <td className="py-3 px-4 text-xs">
-                          <span className="px-2 py-0.5 rounded border border-border/40 text-neutral-600 dark:text-neutral-300 font-medium">
+                          <span className="px-2 py-0.5 rounded border border-black/5 dark:border-white/10 bg-white/60 dark:bg-white/5 text-[#696969] dark:text-gray-300 font-normal">
                             {student.is_active === false ? "Disabled" : isExpired ? "Term Completed" : isExpiring ? "Expiring Soon" : "Active"}
                           </span>
                         </td>
@@ -349,7 +452,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => openMoveBatch(student)}
-                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-neutral-100 hover:bg-neutral-200 dark:bg-white/10 dark:hover:bg-white/20 text-[#3B3B3B] dark:text-white transition-colors cursor-pointer"
+                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#F2F2F2] hover:bg-[#E5E5E5] dark:bg-white/10 dark:hover:bg-white/20 text-[#3B3B3B] dark:text-white transition-colors cursor-pointer"
                             >
                               Move Batch
                             </button>
@@ -377,16 +480,16 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-border/40 text-xs font-medium text-muted-foreground bg-[#F2F2F2]/60 dark:bg-white/5">
-                  <th className="py-2.5 px-4 font-semibold text-foreground">Batch Name</th>
-                  <th className="py-2.5 px-4 font-semibold text-foreground">Target Exam</th>
-                  <th className="py-2.5 px-4 font-semibold text-foreground">Enrolled Students</th>
-                  <th className="py-2.5 px-4 font-semibold text-foreground">Scheduled End Date</th>
-                  <th className="py-2.5 px-4 font-semibold text-foreground">Status</th>
-                  <th className="py-2.5 px-4 text-right font-semibold text-foreground">Actions</th>
+                <tr className="border-b border-black/5 dark:border-white/10 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs">
+                  <th className="py-2.5 px-4 font-semibold">Batch Name</th>
+                  <th className="py-2.5 px-4 font-semibold">Target Exam</th>
+                  <th className="py-2.5 px-4 font-semibold">Enrolled Students</th>
+                  <th className="py-2.5 px-4 font-semibold">Scheduled End Date</th>
+                  <th className="py-2.5 px-4 font-semibold">Status</th>
+                  <th className="py-2.5 px-4 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/20 text-sm">
+              <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
                 {filteredBatches.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-xs text-muted-foreground">
@@ -401,31 +504,31 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                     const isPast = batch.end_date ? new Date(batch.end_date) < new Date(new Date().setHours(0,0,0,0)) : false
 
                     return (
-                      <tr key={batch.id} className="hover:bg-muted/20 transition-colors">
-                        <td className="py-3 px-4 font-medium text-foreground text-xs sm:text-sm">
+                      <tr key={batch.id} className="hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3 px-4 font-medium text-[#3B3B3B] dark:text-gray-200 text-xs sm:text-sm">
                           {batch.name} ({batch.target_year})
                         </td>
-                        <td className="py-3 px-4 text-xs text-foreground">
+                        <td className="py-3 px-4 text-xs text-[#696969] dark:text-gray-300">
                           {batch.exam_name || "—"}
                         </td>
-                        <td className="py-3 px-4 text-xs text-foreground">
-                          <span className="font-semibold">{batch.student_count || 0}</span> reviewees
+                        <td className="py-3 px-4 text-xs text-[#696969] dark:text-gray-300">
+                          <span className="font-semibold text-[#3B3B3B] dark:text-white">{batch.student_count || 0}</span> reviewees
                           {batch.expired_count > 0 && (
-                            <span className="text-muted-foreground ml-1">({batch.expired_count} inactive/expired)</span>
+                            <span className="text-[#696969]/70 dark:text-gray-500 ml-1">({batch.expired_count} inactive/expired)</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-xs text-foreground">
+                        <td className="py-3 px-4 text-xs text-[#696969] dark:text-gray-300">
                           {endFormatted}
                         </td>
                         <td className="py-3 px-4 text-xs">
-                          <span className="px-2 py-0.5 rounded border border-border/40 text-neutral-600 dark:text-neutral-300 font-medium">
+                          <span className="px-2 py-0.5 rounded border border-black/5 dark:border-white/10 bg-white/60 dark:bg-white/5 text-[#696969] dark:text-gray-300 font-normal">
                             {isPast ? "Term Ended" : batch.status ? batch.status.charAt(0).toUpperCase() + batch.status.slice(1) : "Active"}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-right">
                           <button
                             onClick={() => openExtendBatch(batch)}
-                            className="px-3 py-1 text-xs font-semibold rounded-lg bg-neutral-100 hover:bg-neutral-200 dark:bg-white/10 dark:hover:bg-white/20 text-[#3B3B3B] dark:text-white transition-colors cursor-pointer"
+                            className="px-3 py-1 text-xs font-semibold rounded-lg bg-[#F2F2F2] hover:bg-[#E5E5E5] dark:bg-white/10 dark:hover:bg-white/20 text-[#3B3B3B] dark:text-white transition-colors cursor-pointer"
                           >
                             Extend Batch
                           </button>

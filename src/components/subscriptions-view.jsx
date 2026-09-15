@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react"
-import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle, Filter } from "lucide-react"
+import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle, Filter, ArrowRightLeft } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 import {
   Select,
@@ -10,6 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export function SubscriptionsView({ initialBatchFilter = "all" }) {
   const [data, setData] = useState({ metrics: {}, batches: [], students: [] })
@@ -381,7 +387,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-black/5 dark:border-white/10 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs">
+                <tr className="border-b border-black/5 dark:border-white/10 text-xs font-semibold text-[#696969]/80 dark:text-gray-400 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs">
                   <th className="py-2.5 px-4 font-semibold">Student</th>
                   <th className="py-2.5 px-4 font-semibold">Examination & Batch</th>
                   <th className="py-2.5 px-4 font-semibold">Scheduled End Date</th>
@@ -415,7 +421,6 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                       <tr key={student.id} className="transition-colors">
                         <td className="py-3 px-4">
                           <p className="font-semibold text-[#696969] dark:text-gray-300 text-xs sm:text-sm">{student.name}</p>
-                          <p className="text-xs text-[#696969]/80 dark:text-gray-400 font-normal">{student.login_id || "—"}</p>
                         </td>
                         <td className="py-3 px-4 text-xs">
                           <p className="font-medium text-[#3B3B3B] dark:text-gray-200">{student.batch_name || "—"}</p>
@@ -437,18 +442,32 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                           )}
                         </td>
                         <td className="py-3 px-4 text-xs">
-                          <span className="px-2 py-0.5 rounded border border-black/5 dark:border-white/10 bg-white/60 dark:bg-white/5 text-[#696969] dark:text-gray-300 font-normal">
-                            {student.is_active === false ? "Disabled" : isExpired ? "Term Completed" : isExpiring ? "Expiring Soon" : "Active"}
-                          </span>
+                          {student.is_active === false ? (
+                            <span className="font-medium text-rose-600 dark:text-rose-400">Disabled</span>
+                          ) : isExpired ? (
+                            <span className="font-medium text-gray-500 dark:text-gray-400">Term Completed</span>
+                          ) : isExpiring ? (
+                            <span className="font-medium text-amber-600 dark:text-amber-400">Expiring Soon</span>
+                          ) : (
+                            <span className="font-medium text-emerald-600 dark:text-emerald-400">Active</span>
+                          )}
                         </td>
                         <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => openMoveBatch(student)}
-                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#F2F2F2] hover:bg-[#E5E5E5] dark:bg-white/10 dark:hover:bg-white/20 text-[#3B3B3B] dark:text-white transition-colors cursor-pointer"
-                            >
-                              Move Batch
-                            </button>
+                          <div className="flex items-center justify-end gap-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => openMoveBatch(student)}
+                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                    aria-label="Move Batch"
+                                  >
+                                    <ArrowRightLeft className="h-3.5 w-3.5" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Move Batch</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                             {student.is_active === false && (
                               <button
                                 onClick={() => handleReactivate(student.id, student.name)}
@@ -473,7 +492,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-black/5 dark:border-white/10 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs">
+                <tr className="border-b border-black/5 dark:border-white/10 text-xs font-semibold text-[#696969]/80 dark:text-gray-400 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs">
                   <th className="py-2.5 px-4 font-semibold">Batch Name</th>
                   <th className="py-2.5 px-4 font-semibold">Target Exam</th>
                   <th className="py-2.5 px-4 font-semibold">Enrolled Students</th>
@@ -514,9 +533,13 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                           {endFormatted}
                         </td>
                         <td className="py-3 px-4 text-xs">
-                          <span className="px-2 py-0.5 rounded border border-black/5 dark:border-white/10 bg-white/60 dark:bg-white/5 text-[#696969] dark:text-gray-300 font-normal">
-                            {isPast ? "Term Ended" : batch.status ? batch.status.charAt(0).toUpperCase() + batch.status.slice(1) : "Active"}
-                          </span>
+                          {isPast ? (
+                            <span className="font-medium text-gray-500 dark:text-gray-400">Term Ended</span>
+                          ) : batch.status === "inactive" ? (
+                            <span className="font-medium text-rose-600 dark:text-rose-400">Inactive</span>
+                          ) : (
+                            <span className="font-medium text-emerald-600 dark:text-emerald-400">Active</span>
+                          )}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <button

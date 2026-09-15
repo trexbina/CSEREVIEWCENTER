@@ -388,7 +388,7 @@ export default function AnalyticalOverviewPage() {
               <div className="max-h-[720px] overflow-y-auto">
                 <table className="w-full text-left border-collapse" aria-label="Top Students Table">
                   <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
-                    <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
+                    <tr className="h-11 text-xs font-semibold text-[#696969]/80 dark:text-gray-400">
                       <th className="w-16 px-4 py-2.5 text-center" scope="col">Rank</th>
                       <th className="px-4 py-2.5" scope="col">
                         <button
@@ -487,7 +487,7 @@ export default function AnalyticalOverviewPage() {
               <div className="max-h-[720px] overflow-y-auto">
                 <table className="w-full text-left border-collapse" aria-label="Top Schools Table">
                   <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
-                    <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
+                    <tr className="h-11 text-xs font-semibold text-[#696969]/80 dark:text-gray-400">
                       <th className="w-16 px-4 py-2.5 text-center" scope="col">Rank</th>
                       <th className="px-4 py-2.5" scope="col">
                         <button
@@ -606,7 +606,7 @@ export default function AnalyticalOverviewPage() {
               <div className="max-h-[720px] overflow-y-auto">
                 <table className="w-full text-left border-collapse" aria-label="Students at Risk Table">
                   <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
-                    <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
+                    <tr className="h-11 text-xs font-semibold text-[#696969]/80 dark:text-gray-400">
                       <th className="w-16 px-4 py-2.5 text-center" scope="col">#</th>
                       <th className="px-4 py-2.5" scope="col">
                         <button

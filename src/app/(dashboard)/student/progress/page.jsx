@@ -1082,7 +1082,7 @@ export default function MyProgressPage() {
             <div className="max-h-[720px] overflow-y-auto">
               <table className="w-full text-left border-collapse" aria-label="Student Scores Table">
                 <thead className="sticky top-0 z-10 bg-black/[0.02] dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
-                  <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
+                  <tr className="h-11 text-xs font-semibold text-[#696969]/80 dark:text-gray-400">
                     <th className="px-4 py-2.5" scope="col">
                       <button
                         type="button"

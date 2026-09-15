@@ -312,7 +312,7 @@ export function TrashClient() {
           <div className="max-h-[720px] overflow-y-auto">
             <table className="w-full text-left border-collapse" aria-label="Trash items table">
               <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
-                <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
+                <tr className="h-11 text-xs font-semibold text-[#696969]/80 dark:text-gray-400">
                   {/* Select All Checkbox */}
                   <th className="w-12 px-4 text-center" scope="col">
                     <button

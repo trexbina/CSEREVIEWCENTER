@@ -157,7 +157,7 @@ export function AdminHeaderSearch() {
                   >
                     <div className="min-w-0 pr-2">
                       <div className="font-medium text-foreground truncate">{u.name}</div>
-                      <div className="text-[11px] text-muted-foreground truncate">{u.email}</div>
+                      <div className="text-[11px] text-muted-foreground truncate">{u.login_id || u.email}</div>
                     </div>
                     <span className="text-[10px] text-muted-foreground shrink-0 capitalize">
                       {u.role ? u.role.replace("_", " ") : "user"}

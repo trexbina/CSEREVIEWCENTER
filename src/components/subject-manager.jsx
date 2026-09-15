@@ -735,7 +735,7 @@ export default function SubjectManager() {
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                        className="h-8 w-8 text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
                                                         title="Delete subject"
                                                         onClick={() => setDeleting(subject)}
                                                     >

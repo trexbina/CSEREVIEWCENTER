@@ -936,14 +936,14 @@ export default function MockExamsPage() {
                                                 <div className="inline-flex items-center justify-end gap-1">
                                                     <button
                                                         onClick={() => openModal(exam)}
-                                                        className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors cursor-pointer"
+                                                        className="p-1 text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors cursor-pointer"
                                                         title="Edit Exam"
                                                     >
                                                         <Pencil className="h-3.5 w-3.5" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteExam(exam)}
-                                                        className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors cursor-pointer"
+                                                        className="p-1 text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors cursor-pointer"
                                                         title="Delete Exam"
                                                     >
                                                         <Trash className="h-3.5 w-3.5" />

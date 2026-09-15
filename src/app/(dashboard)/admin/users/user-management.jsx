@@ -85,7 +85,7 @@ export function DeleteUserButton({ userId, userName }) {
         size="icon"
         onClick={() => setIsConfirmOpen(true)}
         disabled={loading}
-        className="h-7 w-7 text-gray-400 hover:text-gray-600 cursor-pointer"
+        className="h-7 w-7 text-[#696969] hover:text-[#3B3B3B] hover:bg-black/5 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
         title="Delete User"
       >
         {loading ? (
@@ -730,7 +730,7 @@ function ActionButtons({ user, currentUserId }) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-primary"
+              className="h-7 w-7 text-[#696969] hover:text-[#3B3B3B] hover:bg-black/5 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
               onClick={() => router.push(`/admin/users/${user.id}/edit`)}
             >
               <Pencil className="h-3.5 w-3.5" />

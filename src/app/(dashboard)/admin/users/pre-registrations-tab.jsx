@@ -539,7 +539,7 @@ export function PreRegistrationsTab() {
                                     setDeleteTarget({ ids: [app.id], name: fullName })
                                     setDeleteModalOpen(true)
                                   }}
-                                  className="h-7 w-7 rounded-lg flex items-center justify-center text-[#696969] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
+                                  className="h-7 w-7 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                                 >
                                   <Trash className="h-3.5 w-3.5" />
                                 </button>

@@ -951,7 +951,7 @@ export function UserSearchTable({ users, currentUserId }) {
                   const isCurrentAdmin = user.id === currentUserId
                   const isChecked = selectedIds.includes(user.id)
                   return (
-                    <tr className={`h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${isChecked ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""}`} key={user.id}>
+                    <tr className={`h-13 transition-colors ${isChecked ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""}`} key={user.id}>
                       <td className="px-4 text-center">
                         <div
                           onClick={() => {
@@ -959,13 +959,11 @@ export function UserSearchTable({ users, currentUserId }) {
                           }}
                           className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
                             isChecked
-                              ? "bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 shadow-2xs"
+                              ? "bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 shadow-2xs"
                               : "border-black/20 dark:border-white/20 bg-white/60 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
                           } ${isCurrentAdmin ? "opacity-30 cursor-not-allowed" : ""}`}
                           title={isCurrentAdmin ? "Cannot select yourself" : `Select ${user.name}`}
-                        >
-                          {isChecked && <Check className="size-3 stroke-[2.5]" />}
-                        </div>
+                        />
                       </td>
                       <td className="px-4 font-semibold max-w-[200px]">
                         <Link
@@ -1354,7 +1352,7 @@ export function UserTable({ users, currentUserId }) {
                   return (
                     <tr
                       key={user.id}
-                      className={`h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${
+                      className={`h-13 transition-colors ${
                         isChecked ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""
                       }`}
                     >
@@ -1365,13 +1363,11 @@ export function UserTable({ users, currentUserId }) {
                           }}
                           className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
                             isChecked
-                              ? "bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 shadow-2xs"
+                              ? "bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 shadow-2xs"
                               : "border-black/20 dark:border-white/20 bg-white/60 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
                           } ${isCurrentAdmin ? "opacity-30 cursor-not-allowed" : ""}`}
                           title={isCurrentAdmin ? "Cannot select yourself" : `Select ${user.name}`}
-                        >
-                          {isChecked && <Check className="size-3 stroke-[2.5]" />}
-                        </div>
+                        />
                       </td>
                       <td className="px-4 font-semibold max-w-[200px]">
                         <Link

@@ -444,7 +444,7 @@ export function PreRegistrationsTab() {
                     return (
                       <tr
                         key={app.id}
-                        className={`h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${
+                        className={`h-13 transition-colors ${
                           isSelected ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""
                         }`}
                       >
@@ -453,13 +453,11 @@ export function PreRegistrationsTab() {
                             onClick={() => handleToggleRow(app.id)}
                             className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
                               isSelected
-                                ? "bg-[#3B3B3B] dark:bg-white border-[#3B3B3B] dark:border-white text-white dark:text-gray-900 shadow-xs"
+                                ? "bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 shadow-2xs"
                                 : "border-black/20 dark:border-white/20 bg-white/60 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
                             }`}
                             title={`Select ${fullName}`}
-                          >
-                            {isSelected && <Check className="size-3 stroke-[2.5]" />}
-                          </div>
+                          />
                         </td>
                         <td className="px-5 max-w-[180px] align-middle">
                           <button

@@ -905,7 +905,7 @@ export default function MockExamsPage() {
                                 {filteredExams.map((exam) => {
                                     const { batch, type, course } = parseTargets(exam.targets, courseTree, masterData)
                                     return (
-                                        <tr key={exam.id} className="hover:bg-muted/30 transition-colors">
+                                        <tr key={exam.id} className="transition-colors">
                                             <td 
                                                 className="py-2.5 px-4 font-semibold text-blue-600 dark:text-blue-400 cursor-pointer hover:underline whitespace-nowrap" 
                                                 onClick={() => router.push(`/admin/mock-exams/${exam.id}`)}

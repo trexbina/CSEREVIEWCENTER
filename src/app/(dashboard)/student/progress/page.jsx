@@ -1134,7 +1134,7 @@ export default function MyProgressPage() {
                     return (
                       <tr
                         key={item.id}
-                        className="h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+                        className="h-13 transition-colors"
                       >
                         {/* Title */}
                         <td className="px-4 py-3">

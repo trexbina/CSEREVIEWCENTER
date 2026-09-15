@@ -430,7 +430,7 @@ export default function AnalyticalOverviewPage() {
                       return (
                         <tr
                           key={st.id}
-                          className="h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+                          className="h-13 transition-colors"
                         >
                           {/* Rank */}
                           <td className="px-4 text-center font-medium text-xs text-[#696969] dark:text-gray-400">
@@ -547,7 +547,7 @@ export default function AnalyticalOverviewPage() {
                       return (
                         <tr
                           key={sch.schoolName}
-                          className="h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+                          className="h-13 transition-colors"
                         >
                           {/* Rank */}
                           <td className="px-4 text-center font-medium text-xs text-[#696969] dark:text-gray-400">
@@ -649,7 +649,7 @@ export default function AnalyticalOverviewPage() {
                       return (
                         <tr
                           key={st.id}
-                          className="h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+                          className="h-13 transition-colors"
                         >
                           {/* Index */}
                           <td className="px-4 text-center font-medium text-xs text-[#696969] dark:text-gray-400">

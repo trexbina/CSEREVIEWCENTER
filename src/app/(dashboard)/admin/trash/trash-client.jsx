@@ -320,16 +320,13 @@ export function TrashClient() {
                       onClick={handleToggleAll}
                       className={`size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer mx-auto ${
                         isAllSelected
-                          ? "bg-[#E9C46A] border-[#E9C46A] text-white"
+                          ? "bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 shadow-2xs"
                           : isSomeSelected
-                          ? "bg-[#E9C46A]/20 border-[#E9C46A] text-[#E9C46A]"
+                          ? "bg-neutral-100 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600"
                           : "border-black/20 dark:border-white/20 hover:border-black/40 dark:hover:border-white/40"
                       }`}
                       aria-label="Select all items"
-                    >
-                      {isAllSelected && <Check className="size-3 stroke-[3]" />}
-                      {isSomeSelected && !isAllSelected && <span className="size-1.5 bg-[#E9C46A] rounded-xs" />}
-                    </button>
+                    />
                   </th>
                   <th className="px-4 py-2.5" scope="col">Item Name</th>
                   <th className="px-4 py-2.5" scope="col">Source / Category</th>
@@ -348,7 +345,7 @@ export function TrashClient() {
                   return (
                     <React.Fragment key={item.id}>
                       <tr
-                        className={`h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02] ${
+                        className={`h-13 transition-colors ${
                           isChecked ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""
                         }`}
                       >
@@ -359,13 +356,11 @@ export function TrashClient() {
                             onClick={() => handleToggleItem(item.id)}
                             className={`size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer mx-auto ${
                               isChecked
-                                ? "bg-[#E9C46A] border-[#E9C46A] text-white"
+                                ? "bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 shadow-2xs"
                                 : "border-black/20 dark:border-white/20 hover:border-black/40 dark:hover:border-white/40"
                             }`}
                             aria-label={`Select item ${item.item_name}`}
-                          >
-                            {isChecked && <Check className="size-3 stroke-[3]" />}
-                          </button>
+                          />
                         </td>
 
                         {/* Item Name */}

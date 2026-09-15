@@ -412,7 +412,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                       : "No scheduled end"
 
                     return (
-                      <tr key={student.id} className="hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                      <tr key={student.id} className="transition-colors">
                         <td className="py-3 px-4">
                           <p className="font-semibold text-[#696969] dark:text-gray-300 text-xs sm:text-sm">{student.name}</p>
                           <p className="text-xs text-[#696969]/80 dark:text-gray-400 font-normal">{student.login_id || "—"}</p>
@@ -497,7 +497,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                     const isPast = batch.end_date ? new Date(batch.end_date) < new Date(new Date().setHours(0,0,0,0)) : false
 
                     return (
-                      <tr key={batch.id} className="hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                      <tr key={batch.id} className="transition-colors">
                         <td className="py-3 px-4 font-medium text-[#3B3B3B] dark:text-gray-200 text-xs sm:text-sm">
                           {batch.name} ({batch.target_year})
                         </td>

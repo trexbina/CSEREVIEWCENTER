@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react"
-import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle, Filter, ArrowRightLeft } from "lucide-react"
+import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle, Filter, ArrowRightLeft, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 import {
   Select,
@@ -18,6 +18,28 @@ import {
 } from "@/components/ui/tooltip"
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 
+function TableSortButton({ label, field, sortField, sortDir, onSort }) {
+  const active = sortField === field
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(field)}
+      className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer font-semibold select-none group"
+    >
+      <span>{label}</span>
+      {active ? (
+        sortDir === "asc" ? (
+          <ArrowUp className="h-3 w-3 text-[#3B3B3B] dark:text-white shrink-0" />
+        ) : (
+          <ArrowDown className="h-3 w-3 text-[#3B3B3B] dark:text-white shrink-0" />
+        )
+      ) : (
+        <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-70 transition-opacity shrink-0" />
+      )}
+    </button>
+  )
+}
+
 export function SubscriptionsView({ initialBatchFilter = "all" }) {
   const [data, setData] = useState({ metrics: {}, batches: [], students: [] })
   const [loading, setLoading] = useState(true)
@@ -25,6 +47,31 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
   const [statusFilter, setStatusFilter] = useState("all") // all, active, expiring, expired
   const [batchFilter, setBatchFilter] = useState(initialBatchFilter)
   const [activeTab, setActiveTab] = useState("students") // students, batches
+
+  // Sorting state for students and batches
+  const [studentSortField, setStudentSortField] = useState("name")
+  const [studentSortDir, setStudentSortDir] = useState("asc")
+
+  const [batchSortField, setBatchSortField] = useState("name")
+  const [batchSortDir, setBatchSortDir] = useState("asc")
+
+  const handleStudentSort = (field) => {
+    if (studentSortField === field) {
+      setStudentSortDir((d) => (d === "asc" ? "desc" : "asc"))
+    } else {
+      setStudentSortField(field)
+      setStudentSortDir("asc")
+    }
+  }
+
+  const handleBatchSort = (field) => {
+    if (batchSortField === field) {
+      setBatchSortDir((d) => (d === "asc" ? "desc" : "asc"))
+    } else {
+      setBatchSortField(field)
+      setBatchSortDir("asc")
+    }
+  }
 
   // Modal states for moving student to another batch
   const [moveModal, setMoveModal] = useState({
@@ -66,10 +113,10 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
     fetchData()
   }, [])
 
-  // Filtered students
+  // Filtered & sorted students
   const filteredStudents = useMemo(() => {
     const q = search.toLowerCase().trim()
-    return (data.students || []).filter(s => {
+    const list = (data.students || []).filter(s => {
       const matchSearch = !q || 
         (s.name || "").toLowerCase().includes(q) || 
         (s.login_id || "").toLowerCase().includes(q) ||
@@ -86,17 +133,79 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
 
       return matchSearch && matchStatus && matchBatch
     })
-  }, [data.students, search, statusFilter, batchFilter])
 
-  // Filtered batches
+    return list.sort((a, b) => {
+      let av = ""
+      let bv = ""
+
+      if (studentSortField === "name") {
+        av = (a.name || "").toLowerCase()
+        bv = (b.name || "").toLowerCase()
+      } else if (studentSortField === "batch_name") {
+        av = (a.batch_name || a.exam_name || "").toLowerCase()
+        bv = (b.batch_name || b.exam_name || "").toLowerCase()
+      } else if (studentSortField === "effective_end_date") {
+        const timeA = a.effective_end_date ? new Date(a.effective_end_date).getTime() : 0
+        const timeB = b.effective_end_date ? new Date(b.effective_end_date).getTime() : 0
+        return studentSortDir === "asc" ? timeA - timeB : timeB - timeA
+      } else if (studentSortField === "days_remaining") {
+        const remA = a.days_remaining ?? 999999
+        const remB = b.days_remaining ?? 999999
+        return studentSortDir === "asc" ? remA - remB : remB - remA
+      } else if (studentSortField === "status") {
+        av = (a.computed_status || "").toLowerCase()
+        bv = (b.computed_status || "").toLowerCase()
+      } else {
+        av = String(a[studentSortField] || "").toLowerCase()
+        bv = String(b[studentSortField] || "").toLowerCase()
+      }
+
+      if (av < bv) return studentSortDir === "asc" ? -1 : 1
+      if (av > bv) return studentSortDir === "asc" ? 1 : -1
+      return 0
+    })
+  }, [data.students, search, statusFilter, batchFilter, studentSortField, studentSortDir])
+
+  // Filtered & sorted batches
   const filteredBatches = useMemo(() => {
     const q = search.toLowerCase().trim()
-    return (data.batches || []).filter(b => {
+    const list = (data.batches || []).filter(b => {
       return !q || 
         (b.name || "").toLowerCase().includes(q) || 
         (b.exam_name || "").toLowerCase().includes(q)
     })
-  }, [data.batches, search])
+
+    return list.sort((a, b) => {
+      let av = ""
+      let bv = ""
+
+      if (batchSortField === "name") {
+        av = (a.name || "").toLowerCase()
+        bv = (b.name || "").toLowerCase()
+      } else if (batchSortField === "exam_name") {
+        av = (a.exam_name || "").toLowerCase()
+        bv = (b.exam_name || "").toLowerCase()
+      } else if (batchSortField === "student_count") {
+        const countA = Number(a.student_count || 0)
+        const countB = Number(b.student_count || 0)
+        return batchSortDir === "asc" ? countA - countB : countB - countA
+      } else if (batchSortField === "end_date") {
+        const timeA = a.end_date ? new Date(a.end_date).getTime() : 0
+        const timeB = b.end_date ? new Date(b.end_date).getTime() : 0
+        return batchSortDir === "asc" ? timeA - timeB : timeB - timeA
+      } else if (batchSortField === "status") {
+        av = (a.status || "").toLowerCase()
+        bv = (b.status || "").toLowerCase()
+      } else {
+        av = String(a[batchSortField] || "").toLowerCase()
+        bv = String(b[batchSortField] || "").toLowerCase()
+      }
+
+      if (av < bv) return batchSortDir === "asc" ? -1 : 1
+      if (av > bv) return batchSortDir === "asc" ? 1 : -1
+      return 0
+    })
+  }, [data.batches, search, batchSortField, batchSortDir])
 
   const openMoveBatch = (student) => {
     setMoveModal({
@@ -390,11 +499,21 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-black/5 dark:border-white/10 text-xs font-semibold text-[#696969]/80 dark:text-gray-400 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs">
-                  <th className="py-2.5 px-4 font-semibold">Student</th>
-                  <th className="py-2.5 px-4 font-semibold">Examination & Batch</th>
-                  <th className="py-2.5 px-4 font-semibold">Scheduled End Date</th>
-                  <th className="py-2.5 px-4 font-semibold">Remaining Term</th>
-                  <th className="py-2.5 px-4 font-semibold">Status</th>
+                  <th className="py-2.5 px-4 font-semibold">
+                    <TableSortButton label="Student" field="name" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} />
+                  </th>
+                  <th className="py-2.5 px-4 font-semibold">
+                    <TableSortButton label="Examination & Batch" field="batch_name" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} />
+                  </th>
+                  <th className="py-2.5 px-4 font-semibold">
+                    <TableSortButton label="Scheduled End Date" field="effective_end_date" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} />
+                  </th>
+                  <th className="py-2.5 px-4 font-semibold">
+                    <TableSortButton label="Remaining Term" field="days_remaining" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} />
+                  </th>
+                  <th className="py-2.5 px-4 font-semibold">
+                    <TableSortButton label="Status" field="status" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} />
+                  </th>
                   <th className="py-2.5 px-4 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
@@ -495,11 +614,21 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-black/5 dark:border-white/10 text-xs font-semibold text-[#696969]/80 dark:text-gray-400 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs">
-                  <th className="py-2.5 px-4 font-semibold">Batch Name</th>
-                  <th className="py-2.5 px-4 font-semibold">Target Exam</th>
-                  <th className="py-2.5 px-4 font-semibold">Enrolled Students</th>
-                  <th className="py-2.5 px-4 font-semibold">Scheduled End Date</th>
-                  <th className="py-2.5 px-4 font-semibold">Status</th>
+                  <th className="py-2.5 px-4 font-semibold">
+                    <TableSortButton label="Batch Name" field="name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                  </th>
+                  <th className="py-2.5 px-4 font-semibold">
+                    <TableSortButton label="Target Exam" field="exam_name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                  </th>
+                  <th className="py-2.5 px-4 font-semibold">
+                    <TableSortButton label="Enrolled Students" field="student_count" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                  </th>
+                  <th className="py-2.5 px-4 font-semibold">
+                    <TableSortButton label="Scheduled End Date" field="end_date" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                  </th>
+                  <th className="py-2.5 px-4 font-semibold">
+                    <TableSortButton label="Status" field="status" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                  </th>
                   <th className="py-2.5 px-4 text-right font-semibold">Actions</th>
                 </tr>
               </thead>

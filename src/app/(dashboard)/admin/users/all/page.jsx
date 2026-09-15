@@ -66,9 +66,6 @@ export default async function AllUsersPage() {
                         <h1 className="text-xl font-bold tracking-wide text-[#3B3B3B] dark:text-white">
                             All Users
                         </h1>
-                        <p className="text-xs text-[#696969] dark:text-gray-400">
-                            Complete user directory — sort by any column, edit, delete, or manage accounts.
-                        </p>
                     </div>
                 </div>
             </div>

@@ -1233,7 +1233,6 @@ export function UserTable({ users, currentUserId }) {
                 className="w-40 h-10 rounded-xl text-xs font-semibold border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
               >
                 <div className="flex items-center gap-2 truncate">
-                  <Filter className="h-3.5 w-3.5 text-[#696969]/70 shrink-0" />
                   <span className="truncate">
                     {roleFilter === "ALL" && "All Roles"}
                     {roleFilter === "student" && `Students (${studentCount})`}
@@ -1258,7 +1257,6 @@ export function UserTable({ users, currentUserId }) {
                   className="w-48 h-10 rounded-xl text-xs font-semibold border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
                 >
                   <div className="flex items-center gap-2 truncate">
-                    <Filter className="h-3.5 w-3.5 text-[#696969]/70 shrink-0" />
                     <span className="truncate">
                       {examFilter === "ALL" ? "All Examinations" : examFilter}
                     </span>

@@ -447,7 +447,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                           ) : isExpired ? (
                             <span className="font-medium text-gray-500 dark:text-gray-400">Term Completed</span>
                           ) : isExpiring ? (
-                            <span className="font-medium text-amber-600 dark:text-amber-400">Expiring Soon</span>
+                            <span className="font-medium text-[#C07028] dark:text-[#D48946]">Expiring Soon</span>
                           ) : (
                             <span className="font-medium text-emerald-600 dark:text-emerald-400">Active</span>
                           )}

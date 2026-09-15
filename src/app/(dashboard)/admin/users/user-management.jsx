@@ -14,7 +14,7 @@ import Link from "next/link"
 import {
   Pencil, Trash, BookOpen, Plus, X, Save,
   Search, ArrowUpDown, ArrowUp, ArrowDown, ChevronRight,
-  User, GraduationCap, Shield, Check, Minus, Filter,
+  User, GraduationCap, Shield, Check, Minus, Filter, Info,
 } from "lucide-react"
 
 // ui component helpers
@@ -476,7 +476,25 @@ export function EditUserDialog({ open, onOpenChange, user }) {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1 sm:col-span-2">
-                <Label htmlFor="edit-user-login-id" className="text-xs">Login ID</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="edit-user-login-id" className="text-xs">Login ID</Label>
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer inline-flex items-center justify-center"
+                          aria-label="Login ID information"
+                        >
+                          <Info className="h-3.5 w-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        Permanent identifier used for logging into the portal.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Input
                   id="edit-user-login-id"
                   type="text"
@@ -485,11 +503,6 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                   value={loginId}
                   className="bg-muted/40 cursor-not-allowed text-xs"
                 />
-                <p className="text-[10px] text-muted-foreground">Permanent system-generated identifier used for logging in.</p>
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <Label htmlFor="edit-user-email" className="text-xs">Email *</Label>
-                <Input id="edit-user-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="juan@school.edu" />
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <div className="flex items-center justify-between">

@@ -6,12 +6,18 @@ import Link from "next/link"
 import {
   Calendar, MapPin, GraduationCap, Phone, Mail, User,
   Edit, BarChart3, Clock, ArrowLeft, Loader2, Save, X, BookOpen, AlertCircle,
-  Key, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Shield
+  Key, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Shield, Info
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
   Select,
   SelectContent,
@@ -1128,7 +1134,25 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label htmlFor="account-login-id" className="text-sm font-semibold text-[#696969]">Login ID</Label>
+                    <div className="flex items-center gap-1.5">
+                      <Label htmlFor="account-login-id" className="text-sm font-semibold text-[#696969]">Login ID</Label>
+                      <TooltipProvider delayDuration={150}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className="text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
+                              aria-label="Login ID information"
+                            >
+                              <Info className="size-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            Permanent identifier used for logging into the portal.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <input
                       id="account-login-id"
                       type="text"
@@ -1137,21 +1161,6 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                       value={user.login_id || user.email || "—"}
                       className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white cursor-not-allowed shadow-2xs"
                     />
-                    <p className="text-xs text-[#696969]">Permanent identifier used for logging into the portal.</p>
-                  </div>
-
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label htmlFor="account-login-email" className="text-sm font-semibold text-[#696969]">Account Login Email *</Label>
-                    <input
-                      id="account-login-email"
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="user@peak.edu.ph"
-                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
-                    />
-                    <p className="text-xs text-[#696969]">This email is used to log into the PEAK Review System.</p>
                   </div>
 
                   <div className="space-y-1.5">

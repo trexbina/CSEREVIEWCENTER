@@ -12,13 +12,19 @@ import Link from "next/link"
 
 // icons used on form section headers and buttons
 import {
-    ArrowLeft, User, UserCog, Save, ChevronRight, ChevronDown, Check, Eye, EyeOff, GraduationCap, Shield,
+    ArrowLeft, User, UserCog, Save, ChevronRight, ChevronDown, Check, Eye, EyeOff, GraduationCap, Shield, Info,
 } from "lucide-react"
 
 // form component helpers
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
     Select,
     SelectContent,
@@ -376,11 +382,6 @@ export default function EditUserForm({ initialUser }) {
         e.preventDefault()
         setError("")
 
-        if (!accountEmail.trim()) {
-            setError("Account login email is required.")
-            return
-        }
-
         if (password && password !== confirmPassword) {
             setError("Passwords do not match.")
             return
@@ -417,11 +418,13 @@ export default function EditUserForm({ initialUser }) {
         }
 
         try {
-            const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(" ").trim() || initialUser.name || accountEmail.split("@")[0]
+            const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(" ").trim() || initialUser.name || (personalEmail ? personalEmail.split("@")[0] : initialUser.login_id)
+
+            const resolvedEmail = (personalEmail || initialUser.email || `${initialUser.login_id || 'user'}@peak.edu.ph`).toLowerCase().trim()
 
             const payload = {
                 name: fullName,
-                email: accountEmail.toLowerCase().trim(),
+                email: resolvedEmail,
                 personal_email: personalEmail.toLowerCase().trim(),
                 role,
                 first_name: firstName.trim() || null,
@@ -671,7 +674,25 @@ export default function EditUserForm({ initialUser }) {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5 sm:col-span-2">
-                            <Label htmlFor="account-login-id" className="text-sm font-semibold text-[#696969]">Login ID</Label>
+                            <div className="flex items-center gap-1.5">
+                                <Label htmlFor="account-login-id" className="text-sm font-semibold text-[#696969]">Login ID</Label>
+                                <TooltipProvider delayDuration={150}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                type="button"
+                                                className="text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
+                                                aria-label="Login ID information"
+                                            >
+                                                <Info className="size-3.5" />
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">
+                                            Permanent identifier used for logging into the portal.
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
                             <input
                                 id="account-login-id"
                                 type="text"
@@ -680,11 +701,6 @@ export default function EditUserForm({ initialUser }) {
                                 value={initialUser.login_id || initialUser.email || "—"}
                                 className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white cursor-not-allowed shadow-2xs"
                             />
-                            <p className="text-xs text-[#696969]">Permanent identifier used for logging into the portal.</p>
-                        </div>
-                        <div className="space-y-1.5 sm:col-span-2">
-                            <Label htmlFor="account-email" className="text-sm font-semibold text-[#696969]">Email *</Label>
-                            <input id="account-email" type="email" required value={accountEmail} onChange={(e) => setAccountEmail(e.target.value)} placeholder="student@peak.edu.ph" className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all" />
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="edit-password" className="text-sm font-semibold text-[#696969]">New Password (Optional)</Label>

@@ -18,25 +18,51 @@ import {
 } from "@/components/ui/tooltip"
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 
-function TableSortButton({ label, field, sortField, sortDir, onSort }) {
+function TableSortButton({ label, field, sortField, sortDir, onSort, type = "alpha" }) {
   const active = sortField === field
+
+  const getTooltipText = () => {
+    if (!active) {
+      if (type === "date") return `Sort by ${label} (Soonest first)`
+      if (type === "number") return `Sort by ${label} (Lowest first)`
+      return `Sort by ${label} (A to Z)`
+    }
+    if (sortDir === "asc") {
+      if (type === "date") return `Current: Earliest / Soonest first. Click for Latest first.`
+      if (type === "number") return `Current: Lowest first. Click for Highest first.`
+      return `Current: A to Z. Click for Z to A.`
+    }
+    if (type === "date") return `Current: Latest first. Click for Earliest / Soonest first.`
+    if (type === "number") return `Current: Highest first. Click for Lowest first.`
+    return `Current: Z to A. Click for A to Z.`
+  }
+
   return (
-    <button
-      type="button"
-      onClick={() => onSort(field)}
-      className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer font-semibold select-none group"
-    >
-      <span>{label}</span>
-      {active ? (
-        sortDir === "asc" ? (
-          <ArrowUp className="h-3 w-3 text-[#3B3B3B] dark:text-white shrink-0" />
-        ) : (
-          <ArrowDown className="h-3 w-3 text-[#3B3B3B] dark:text-white shrink-0" />
-        )
-      ) : (
-        <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-70 transition-opacity shrink-0" />
-      )}
-    </button>
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={() => onSort(field)}
+            className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer font-semibold select-none group"
+          >
+            <span>{label}</span>
+            {active ? (
+              sortDir === "asc" ? (
+                <ArrowUp className="h-3 w-3 text-[#3B3B3B] dark:text-white shrink-0" />
+              ) : (
+                <ArrowDown className="h-3 w-3 text-[#3B3B3B] dark:text-white shrink-0" />
+              )
+            ) : (
+              <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-70 transition-opacity shrink-0" />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent className="text-[11px] py-1 px-2">
+          {getTooltipText()}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
 
@@ -60,6 +86,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
       setStudentSortDir((d) => (d === "asc" ? "desc" : "asc"))
     } else {
       setStudentSortField(field)
+      // Dates and remaining terms default to asc (soonest/expiring first)
       setStudentSortDir("asc")
     }
   }
@@ -69,6 +96,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
       setBatchSortDir((d) => (d === "asc" ? "desc" : "asc"))
     } else {
       setBatchSortField(field)
+      // End dates default to asc (soonest ending first)
       setBatchSortDir("asc")
     }
   }
@@ -500,19 +528,19 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
               <thead>
                 <tr className="border-b border-black/5 dark:border-white/10 text-xs font-semibold text-[#696969]/80 dark:text-gray-400 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs">
                   <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Student" field="name" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} />
+                    <TableSortButton label="Student" field="name" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="alpha" />
                   </th>
                   <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Examination & Batch" field="batch_name" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} />
+                    <TableSortButton label="Examination & Batch" field="batch_name" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="alpha" />
                   </th>
                   <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Scheduled End Date" field="effective_end_date" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} />
+                    <TableSortButton label="Scheduled End Date" field="effective_end_date" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="date" />
                   </th>
                   <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Remaining Term" field="days_remaining" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} />
+                    <TableSortButton label="Remaining Term" field="days_remaining" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="number" />
                   </th>
                   <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Status" field="status" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} />
+                    <TableSortButton label="Status" field="status" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="alpha" />
                   </th>
                   <th className="py-2.5 px-4 text-right font-semibold">Actions</th>
                 </tr>
@@ -615,19 +643,19 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
               <thead>
                 <tr className="border-b border-black/5 dark:border-white/10 text-xs font-semibold text-[#696969]/80 dark:text-gray-400 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs">
                   <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Batch Name" field="name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                    <TableSortButton label="Batch Name" field="name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="alpha" />
                   </th>
                   <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Target Exam" field="exam_name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                    <TableSortButton label="Target Exam" field="exam_name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="alpha" />
                   </th>
                   <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Enrolled Students" field="student_count" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                    <TableSortButton label="Enrolled Students" field="student_count" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="number" />
                   </th>
                   <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Scheduled End Date" field="end_date" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                    <TableSortButton label="Scheduled End Date" field="end_date" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="date" />
                   </th>
                   <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Status" field="status" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                    <TableSortButton label="Status" field="status" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="alpha" />
                   </th>
                   <th className="py-2.5 px-4 text-right font-semibold">Actions</th>
                 </tr>

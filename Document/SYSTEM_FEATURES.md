@@ -172,7 +172,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS login_id VARCHAR(120);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_login_id_unique ON users(LOWER(login_id));
 
 -- 3. Migration of existing records executed chronologically:
--- ID 1 (Admin User)         -> user00001
+-- ID 1 (Admin User)         -> admin00001
 -- ID 2 (Yosra B. Dianalan)  -> dianalan00002
 -- ID 3 (Patrick Jake Bina)  -> bina00003
 -- ID 4 (John Patrick Rivera)-> rivera00004

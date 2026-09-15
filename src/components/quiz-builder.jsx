@@ -14,6 +14,16 @@ const CustomPdfViewer = dynamic(() => import("@/components/custom-pdf-viewer"), 
         </div>
     )
 })
+
+const OcrQuestionScanner = dynamic(() => import("@/components/ocr-question-scanner"), {
+    ssr: false,
+    loading: () => (
+        <div className="p-4 flex items-center justify-center text-xs text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            Loading RapidOCR Scanner...
+        </div>
+    )
+})
 import MinimalDatePicker from "@/components/ui/MinimalDatePicker"
 import MinimalTimePicker from "@/components/ui/MinimalTimePicker"
 import { toast } from "@/components/ui/toast"
@@ -1256,7 +1266,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                     if (e.target === e.currentTarget) setShowSettings(false)
                                 }}
                             >
-                                <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                                <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                                     {/* Modal Header */}
                                     <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-2xl shrink-0">
                                         <h3 className="font-bold text-gray-800 text-base">{examId ? "Exam Settings" : "Quiz Settings"}</h3>
@@ -1468,6 +1478,21 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
                                                     </div>
                                                 )}
                                             </button>
+                                        </div>
+
+                                        {/* Section 4: RapidOCR Question Scanner */}
+                                        <div className="border-t border-gray-100 pt-5">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <h4 className="font-bold text-gray-800 text-xs uppercase tracking-wider">RapidOCR Question Scanner</h4>
+                                                <span className="text-[11px] text-gray-400 font-normal">Extract from PDF / Images</span>
+                                            </div>
+                                            <p className="text-xs text-gray-500 mb-3.5 leading-relaxed">
+                                                Upload or paste questionnaires, reviewer PDFs, or exam screenshots to automatically parse and add multiple-choice questions into this {quizSettings.isAssignment ? "assignment" : "quiz"}.
+                                            </p>
+
+                                            <div className="bg-gray-50/60 border border-gray-200/80 rounded-2xl p-4">
+                                                <OcrQuestionScanner hideActionButtons={true} />
+                                            </div>
                                         </div>
                                     </div>
 

@@ -190,7 +190,7 @@ function parseQuestionsFromText(rawText) {
     return parsedQuestions
 }
 
-export default function OcrQuestionScanner() {
+export default function OcrQuestionScanner({ hideActionButtons = false } = {}) {
     const [fileInfo, setFileInfo] = useState(null)
     const [isScanning, setIsScanning] = useState(false)
     const [progressStatus, setProgressStatus] = useState("")
@@ -429,40 +429,42 @@ export default function OcrQuestionScanner() {
             />
 
             {/* Action Buttons: Add Question and Add Title/Desc */}
-            <div className="grid grid-cols-2 gap-2">
-                <button
-                    type="button"
-                    onClick={() => {
-                        if (typeof window !== "undefined") {
-                            if (typeof window.__peak_add_question === "function") {
-                                window.__peak_add_question()
-                            } else {
-                                window.dispatchEvent(new CustomEvent("peak:add-question"))
+            {!hideActionButtons && (
+                <div className="grid grid-cols-2 gap-2">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (typeof window !== "undefined") {
+                                if (typeof window.__peak_add_question === "function") {
+                                    window.__peak_add_question()
+                                } else {
+                                    window.dispatchEvent(new CustomEvent("peak:add-question"))
+                                }
                             }
-                        }
-                    }}
-                    className="w-full bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-2 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                    <Plus className="size-3 text-gray-500" />
-                    <span>Add Question</span>
-                </button>
-                <button
-                    type="button"
-                    onClick={() => {
-                        if (typeof window !== "undefined") {
-                            if (typeof window.__peak_add_title_desc === "function") {
-                                window.__peak_add_title_desc()
-                            } else {
-                                window.dispatchEvent(new CustomEvent("peak:add-title-desc"))
+                        }}
+                        className="w-full bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-2 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                        <Plus className="size-3 text-gray-500" />
+                        <span>Add Question</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (typeof window !== "undefined") {
+                                if (typeof window.__peak_add_title_desc === "function") {
+                                    window.__peak_add_title_desc()
+                                } else {
+                                    window.dispatchEvent(new CustomEvent("peak:add-title-desc"))
+                                }
                             }
-                        }
-                    }}
-                    className="w-full bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-2 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                    <Plus className="size-3 text-gray-500" />
-                    <span>Add Title/Desc</span>
-                </button>
-            </div>
+                        }}
+                        className="w-full bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-2 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                        <Plus className="size-3 text-gray-500" />
+                        <span>Add Title/Desc</span>
+                    </button>
+                </div>
+            )}
 
             {/* Initial Single Trigger Button - Yellow Design like Subject Builder */}
             {!fileInfo && (

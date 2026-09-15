@@ -190,97 +190,97 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
 
   return (
     <div className="space-y-6">
-      {/* ── Metric Summary Strip (Admin Dashboard Metric Strip Styling without icons) ── */}
+      {/* ── Metric Summary Strip (Compact, seamless, simpler terms) ── */}
       <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-xs overflow-hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-black/5 dark:divide-white/5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {/* 1. Total Reviewees */}
           <div
-            className="flex flex-col justify-between select-none group/card cursor-pointer transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+            className="flex flex-col justify-between select-none group/card cursor-pointer"
             onClick={() => {
               setActiveTab("students")
               setStatusFilter("all")
             }}
           >
-            <div className="relative z-10 px-5 py-3.5 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
                 Total Reviewees
               </span>
             </div>
-            <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                 {Number(data.metrics?.totalStudents || 0).toLocaleString()}
               </div>
-              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                Total student enrollments
+              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                All enrolled students
               </p>
             </div>
           </div>
 
-          {/* 2. Active Subscriptions */}
+          {/* 2. Active Reviewees */}
           <div
-            className="flex flex-col justify-between select-none group/card cursor-pointer transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+            className="flex flex-col justify-between select-none group/card cursor-pointer"
             onClick={() => {
               setActiveTab("students")
               setStatusFilter("active")
             }}
           >
-            <div className="relative z-10 px-5 py-3.5 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                Active Subscriptions
+            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                Active
               </span>
             </div>
-            <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                 {Number(data.metrics?.activeCount || 0).toLocaleString()}
               </div>
-              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                Currently active review terms
+              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                Currently with access
               </p>
             </div>
           </div>
 
-          {/* 3. Expiring Soon (7d) */}
+          {/* 3. Expiring Soon */}
           <div
-            className="flex flex-col justify-between select-none group/card cursor-pointer transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+            className="flex flex-col justify-between select-none group/card cursor-pointer"
             onClick={() => {
               setActiveTab("students")
               setStatusFilter("expiring")
             }}
           >
-            <div className="relative z-10 px-5 py-3.5 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                Expiring Soon (7d)
+            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                Expiring Soon
               </span>
             </div>
-            <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                 {Number(data.metrics?.expiringCount || 0).toLocaleString()}
               </div>
-              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                Ending within next 7 days
+              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                Ends within 7 days
               </p>
             </div>
           </div>
 
-          {/* 4. Expired / Inactive */}
+          {/* 4. Expired */}
           <div
-            className="flex flex-col justify-between select-none group/card cursor-pointer transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+            className="flex flex-col justify-between select-none group/card cursor-pointer"
             onClick={() => {
               setActiveTab("students")
               setStatusFilter("expired")
             }}
           >
-            <div className="relative z-10 px-5 py-3.5 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                Expired / Inactive
+            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                Expired
               </span>
             </div>
-            <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                 {Number(data.metrics?.expiredCount || 0).toLocaleString()}
               </div>
-              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                Term ended or disabled
+              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                Access ended or inactive
               </p>
             </div>
           </div>

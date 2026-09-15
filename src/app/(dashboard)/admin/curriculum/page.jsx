@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "motion/react"
 
 // these are small icons used on the buttons and cards
-import { X, Pencil, Trash, Image as ImageIcon, Plus, ChevronDown, ChevronUp, Lock, Clock, ChevronLeft, ChevronRight, Settings, ArrowUpDown, Layers, BookOpen, HelpCircle, Calendar, CheckCircle2, ArrowRight } from "lucide-react"
+import { X, Pencil, Trash, Image as ImageIcon, Plus, ChevronDown, ChevronUp, Lock, Clock, ChevronLeft, ChevronRight, Settings, ArrowUpDown, Layers, BookOpen, HelpCircle, Calendar, CheckCircle2, ArrowRight, Filter, Check } from "lucide-react"
 import { LordIcon } from "@/components/ui/lord-icon"
 
 // this lets us make clickable links to other pages
@@ -40,6 +40,8 @@ export default function CurriculumManagerPage() {
     const [subSortBy, setSubSortBy] = useState("date_desc")
     const [subjectSortBy, setSubjectSortBy] = useState("date_desc")
     const [showMoreDropdown, setShowMoreDropdown] = useState(false)
+    const [examFilter, setExamFilter] = useState("all")
+    const [showExamFilterDropdown, setShowExamFilterDropdown] = useState(false)
     const [subCurrentPage, setSubCurrentPage] = useState(1)
     const [subjectCurrentPage, setSubjectCurrentPage] = useState(1)
     // this tracks which subject row is expanded to show full details
@@ -669,21 +671,35 @@ export default function CurriculumManagerPage() {
                     {/* list of category buttons and more dropdown if there are too many */}
                     {(() => {
                         const MAX_VISIBLE_CATS = 5
-                        const isSelectedInOverflow = categories.findIndex(c => c.id === selectedCategory?.id) >= MAX_VISIBLE_CATS
 
-                        let visibleCategories = categories
+                        // Filter categories by selected examination
+                        const displayCategories = categories.filter((cat) => {
+                            if (examFilter === "all") return true
+                            const courses = parseTargetArray(cat.target_course)
+                            if (courses.includes("all")) return true
+                            return courses.some(
+                                (c) =>
+                                    c.toLowerCase() === examFilter.toLowerCase() ||
+                                    (examFilter.includes("(") && c.toLowerCase().includes(examFilter.toLowerCase())) ||
+                                    (c.includes("(") && examFilter.toLowerCase().includes(c.toLowerCase()))
+                            )
+                        })
+
+                        const isSelectedInOverflow = displayCategories.findIndex(c => c.id === selectedCategory?.id) >= MAX_VISIBLE_CATS
+
+                        let visibleCategories = displayCategories
                         let overflowCategories = []
 
-                        if (categories.length > MAX_VISIBLE_CATS) {
+                        if (displayCategories.length > MAX_VISIBLE_CATS) {
                             if (isSelectedInOverflow && selectedCategory) {
                                 visibleCategories = [
-                                    ...categories.slice(0, MAX_VISIBLE_CATS - 1),
+                                    ...displayCategories.slice(0, MAX_VISIBLE_CATS - 1),
                                     selectedCategory
                                 ]
-                                overflowCategories = categories.filter(c => !visibleCategories.some(vc => vc.id === c.id))
+                                overflowCategories = displayCategories.filter(c => !visibleCategories.some(vc => vc.id === c.id))
                             } else {
-                                visibleCategories = categories.slice(0, MAX_VISIBLE_CATS)
-                                overflowCategories = categories.slice(MAX_VISIBLE_CATS)
+                                visibleCategories = displayCategories.slice(0, MAX_VISIBLE_CATS)
+                                overflowCategories = displayCategories.slice(MAX_VISIBLE_CATS)
                             }
                         }
 
@@ -731,6 +747,12 @@ export default function CurriculumManagerPage() {
                                     )
                                 })}
 
+                                {visibleCategories.length === 0 && (
+                                    <div className="text-xs text-muted-foreground italic px-2 py-1">
+                                        No categories found for this examination.
+                                    </div>
+                                )}
+
                                 {/* dropdown button that shows hidden categories */}
                                 {overflowCategories.length > 0 && (
                                     <div className="relative">
@@ -768,6 +790,77 @@ export default function CurriculumManagerPage() {
                                         )}
                                     </div>
                                 )}
+
+                                {/* filter button to filter categories by examination */}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowExamFilterDropdown(!showExamFilterDropdown)}
+                                        title="Filter by Examination"
+                                        className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-all duration-300 ease-out shadow-xs shrink-0 cursor-pointer ${
+                                            examFilter !== "all"
+                                                ? "border-[#E9C46A] bg-[#E9C46A]/15 text-[#b08828] dark:text-[#E9C46A]"
+                                                : "border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                                        }`}
+                                    >
+                                        <Filter className="h-4 w-4" strokeWidth={2.2} />
+                                    </button>
+
+                                    {showExamFilterDropdown && (
+                                        <>
+                                            <div className="fixed inset-0 z-30" onClick={() => setShowExamFilterDropdown(false)} />
+                                            <div className="absolute right-0 sm:left-0 sm:right-auto mt-2 z-40 w-64 rounded-xl bg-popover border border-border shadow-xl py-1.5 animate-in fade-in zoom-in-95 duration-150">
+                                                <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border mb-1 flex items-center justify-between">
+                                                    <span>Filter Examination</span>
+                                                    {examFilter !== "all" && (
+                                                        <button
+                                                            onClick={() => setExamFilter("all")}
+                                                            className="text-[10px] font-semibold text-[#E9C46A] hover:underline normal-case cursor-pointer"
+                                                        >
+                                                            Reset
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="max-h-60 overflow-y-auto space-y-0.5 px-1">
+                                                    <div
+                                                        onClick={() => {
+                                                            setExamFilter("all")
+                                                            setShowExamFilterDropdown(false)
+                                                        }}
+                                                        className={`group flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase transition-all duration-150 cursor-pointer ${
+                                                            examFilter === "all"
+                                                                ? "bg-[#E9C46A]/15 text-[#b08828] dark:text-[#E9C46A]"
+                                                                : "text-foreground hover:bg-muted"
+                                                        }`}
+                                                    >
+                                                        <span>All Examinations</span>
+                                                        {examFilter === "all" && <Check className="h-3.5 w-3.5 shrink-0" />}
+                                                    </div>
+
+                                                    {(masterData.examinations || []).map((exam) => {
+                                                        const isSelected = examFilter === exam.name
+                                                        return (
+                                                            <div
+                                                                key={exam.id}
+                                                                onClick={() => {
+                                                                    setExamFilter(exam.name)
+                                                                    setShowExamFilterDropdown(false)
+                                                                }}
+                                                                className={`group flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase transition-all duration-150 cursor-pointer ${
+                                                                    isSelected
+                                                                        ? "bg-[#E9C46A]/15 text-[#b08828] dark:text-[#E9C46A]"
+                                                                        : "text-foreground hover:bg-muted"
+                                                                }`}
+                                                            >
+                                                                <span className="truncate pr-2">{exam.name}</span>
+                                                                {isSelected && <Check className="h-3.5 w-3.5 shrink-0" />}
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
 
                                 {/* plus button to add a new category */}
                                 <button

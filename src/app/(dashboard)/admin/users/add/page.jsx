@@ -12,7 +12,7 @@ import Link from "next/link"
 
 // icons used on form section headers and buttons
 import {
-    ArrowLeft, UserPlus, User, GraduationCap, Shield, ChevronRight, ChevronDown, Check, Eye, EyeOff,
+    ArrowLeft, UserPlus, User, GraduationCap, Shield, ChevronRight, ChevronDown, Check, Eye, EyeOff, Info,
 } from "lucide-react"
 
 // form component helpers
@@ -20,6 +20,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/toast"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
     Select,
     SelectContent,
@@ -658,7 +664,25 @@ export default function AddUserPage() {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5 sm:col-span-2">
-                            <Label htmlFor="account-login-id" className="text-sm font-semibold text-[#696969]">Login ID (System Generated)</Label>
+                            <div className="flex items-center gap-1.5">
+                                <Label htmlFor="account-login-id" className="text-sm font-semibold text-[#696969]">Login ID</Label>
+                                <TooltipProvider delayDuration={150}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                type="button"
+                                                className="text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
+                                                aria-label="Login ID information"
+                                            >
+                                                <Info className="size-3.5" />
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">
+                                            Automatically assigned in sequential order (surname + 5-digit number).
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
                             <div className="relative">
                                 <input
                                     id="account-login-id"
@@ -669,9 +693,6 @@ export default function AddUserPage() {
                                     className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white cursor-not-allowed shadow-2xs"
                                 />
                             </div>
-                            <p className="text-xs text-[#696969]">
-                                Automatically assigned in sequential order (surname + 5-digit number).
-                            </p>
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="add-password" className="text-sm font-semibold text-[#696969]">Password *</Label>

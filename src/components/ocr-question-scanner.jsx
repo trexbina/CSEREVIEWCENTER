@@ -466,56 +466,38 @@ export default function OcrQuestionScanner({ hideActionButtons = false } = {}) {
                 </div>
             )}
 
-            {/* Initial Single Trigger Button - Yellow Design like Subject Builder */}
+            {/* Direct Upload / Dropzone Box */}
             {!fileInfo && (
-                <div className="space-y-2.5">
-                    <button
-                        type="button"
-                        onClick={() => setIsExpanded(prev => !prev)}
-                        className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold shadow-2xs transition-all flex items-center justify-between cursor-pointer ${
-                            isExpanded 
-                                ? "bg-[#E9C46A] text-white shadow-xs" 
-                                : "bg-[#E9C46A] hover:bg-[#dfb550] text-white"
-                        }`}
-                    >
-                        <span>Extract Questions from File</span>
-                        <ChevronDown className={`size-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
-                    </button>
-
-                    {/* Sliding / Morphing Dropzone panel */}
-                    {isExpanded && (
-                        <div
-                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
-                            onDragLeave={() => setIsDragging(false)}
-                            onDrop={(e) => {
-                                e.preventDefault()
-                                setIsDragging(false)
-                                if (e.dataTransfer.files?.[0]) handleSelectedFile(e.dataTransfer.files[0])
-                            }}
-                            onClick={() => fileInputRef.current?.click()}
-                            className={`
-                                relative border border-dashed rounded-xl p-5 text-center cursor-pointer transition-all animate-in fade-in slide-in-from-top-2 duration-200
-                                ${isDragging 
-                                    ? "border-[#E9C46A] bg-[#E9C46A]/10" 
-                                    : "border-border hover:border-[#E9C46A]/60 hover:bg-muted/30 bg-card"
-                                }
-                            `}
-                        >
-                            <div className="flex flex-col items-center gap-2">
-                                <div className="size-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
-                                    <Upload className="size-4" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-xs font-medium text-foreground">
-                                        Upload PDF or Image
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground">
-                                        or paste screenshot (Ctrl+V)
-                                    </p>
-                                </div>
-                            </div>
+                <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={(e) => {
+                        e.preventDefault()
+                        setIsDragging(false)
+                        if (e.dataTransfer.files?.[0]) handleSelectedFile(e.dataTransfer.files[0])
+                    }}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`
+                        relative border border-dashed rounded-xl p-5 text-center cursor-pointer transition-all duration-200
+                        ${isDragging 
+                            ? "border-[#E9C46A] bg-[#E9C46A]/10" 
+                            : "border-border hover:border-[#E9C46A]/60 hover:bg-muted/30 bg-card"
+                        }
+                    `}
+                >
+                    <div className="flex flex-col items-center gap-2">
+                        <div className="size-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
+                            <Upload className="size-4" />
                         </div>
-                    )}
+                        <div className="space-y-0.5">
+                            <p className="text-xs font-medium text-foreground">
+                                Upload PDF or Image
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                                or paste screenshot (Ctrl+V)
+                            </p>
+                        </div>
+                    </div>
                 </div>
             )}
 

@@ -22,7 +22,8 @@ import {
     Trash, 
     PencilLine, 
     X, 
-    Loader2 
+    Loader2,
+    Search 
 } from "lucide-react"
 
 // date and time picker components
@@ -40,13 +41,13 @@ function SortButton({ label, field, sortField, sortDir, onSort }) {
   return (
     <button
       onClick={() => onSort(field)}
-      className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors font-semibold cursor-pointer text-foreground/85 select-none whitespace-nowrap text-xs group"
+      className="flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white transition-colors font-medium select-none cursor-pointer"
     >
       <span>{label}</span>
       {active ? (
-        sortDir === "asc" ? <ArrowUp className="h-3 w-3 text-[#E9C46A] shrink-0" /> : <ArrowDown className="h-3 w-3 text-[#E9C46A] shrink-0" />
+        sortDir === "asc" ? <ArrowUp className="h-3.5 w-3.5 text-[#E9C46A] shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-[#E9C46A] shrink-0" />
       ) : (
-        <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-70 transition-opacity shrink-0" />
+        <ArrowUpDown className="h-3.5 w-3.5 opacity-40 shrink-0" />
       )}
     </button>
   )
@@ -422,6 +423,15 @@ export default function MockExamsPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
     
+    // search state
+    const [searchQuery, setSearchQuery] = useState("")
+    const [debouncedSearch, setDebouncedSearch] = useState("")
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300)
+        return () => clearTimeout(timer)
+    }, [searchQuery])
+
     // dropdown filter states
     const [selectedBatch, setSelectedBatch] = useState("All")
     const [selectedType, setSelectedType] = useState("All")
@@ -513,8 +523,21 @@ export default function MockExamsPage() {
 
     // Filter and sort exams based on active filters & sorting
     const filteredExams = useMemo(() => {
+        const q = debouncedSearch.toLowerCase().trim()
+
         let list = exams.filter(exam => {
             const { batch, type, course } = parseTargets(exam.targets, courseTree, masterData)
+
+            if (q) {
+                const titleMatch = (exam.title || "").toLowerCase().includes(q)
+                const codeMatch = (exam.exam_code || "").toLowerCase().includes(q)
+                const batchMatch = batch.toLowerCase().includes(q)
+                const typeMatch = type.toLowerCase().includes(q)
+                const courseMatch = course.toLowerCase().includes(q)
+                if (!titleMatch && !codeMatch && !batchMatch && !typeMatch && !courseMatch) {
+                    return false
+                }
+            }
 
             if (selectedBatch !== "All" && !batch.toLowerCase().includes(selectedBatch.toLowerCase())) {
                 return false
@@ -770,181 +793,196 @@ export default function MockExamsPage() {
                 </button>
             </div>
 
-            {/* Dynamic Master Data Filters */}
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-                {/* Batch Filter */}
-                <div className="relative inline-flex items-center gap-1.5 h-8 bg-card border border-border/75 rounded-lg px-2.5 text-xs text-foreground hover:border-border transition-colors shadow-2xs">
-                    <span className="text-muted-foreground text-[11px] font-medium select-none">Batch:</span>
-                    <select
-                        value={selectedBatch}
-                        onChange={(e) => setSelectedBatch(e.target.value)}
-                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-4 text-xs appearance-none"
-                    >
-                        <option value="All">All</option>
-                        {masterData.batches.map(b => (
-                            <option key={b.id} value={b.name}>{b.name}</option>
-                        ))}
-                    </select>
-                    <ChevronDown className="h-3 w-3 text-muted-foreground pointer-events-none absolute right-2" />
-                </div>
+            {/* Controls & Filter toolbar matching User Management */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[260px]">
+                    {/* Search bar */}
+                    <div className="relative flex-1 min-w-[220px] max-w-md">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#696969]/70 pointer-events-none" />
+                        <input
+                            type="search"
+                            placeholder="Search title, exam code, batch, course..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
+                        />
+                    </div>
 
-                {/* Exam Type Filter */}
-                <div className="relative inline-flex items-center gap-1.5 h-8 bg-card border border-border/75 rounded-lg px-2.5 text-xs text-foreground hover:border-border transition-colors shadow-2xs">
-                    <span className="text-muted-foreground text-[11px] font-medium select-none">Type:</span>
-                    <select
-                        value={selectedType}
-                        onChange={(e) => setSelectedType(e.target.value)}
-                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-4 text-xs appearance-none"
-                    >
-                        <option value="All">All</option>
-                        {masterData.examinations.map(ex => (
-                            <option key={ex.id} value={ex.name}>{ex.name}</option>
-                        ))}
-                    </select>
-                    <ChevronDown className="h-3 w-3 text-muted-foreground pointer-events-none absolute right-2" />
-                </div>
+                    {/* Filter dropdowns in minimal pill style */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* Batch Filter */}
+                        <div className="relative inline-flex items-center gap-1.5 h-10 bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 rounded-xl px-3 text-xs text-[#696969] dark:text-gray-300 shadow-2xs">
+                            <span className="text-[#696969]/70 dark:text-gray-400 text-xs font-medium select-none">Batch:</span>
+                            <select
+                                value={selectedBatch}
+                                onChange={(e) => setSelectedBatch(e.target.value)}
+                                className="bg-transparent font-semibold text-[#3B3B3B] dark:text-white outline-none cursor-pointer pr-4 text-xs appearance-none"
+                            >
+                                <option value="All">All</option>
+                                {masterData.batches.map(b => (
+                                    <option key={b.id} value={b.name} className="dark:bg-[#14161b]">{b.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="h-3 w-3 text-[#696969]/60 pointer-events-none absolute right-2" />
+                        </div>
 
-                {/* Course / Program Filter */}
-                <div className="relative inline-flex items-center gap-1.5 h-8 bg-card border border-border/75 rounded-lg px-2.5 text-xs text-foreground hover:border-border transition-colors shadow-2xs">
-                    <span className="text-muted-foreground text-[11px] font-medium select-none">Course:</span>
-                    <select
-                        value={selectedCourse}
-                        onChange={(e) => setSelectedCourse(e.target.value)}
-                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-4 text-xs appearance-none max-w-[180px] truncate"
-                    >
-                        <option value="All">All</option>
-                        {masterData.programs.map(pr => (
-                            <option key={pr.id} value={pr.name}>{pr.name}</option>
-                        ))}
-                    </select>
-                    <ChevronDown className="h-3 w-3 text-muted-foreground pointer-events-none absolute right-2" />
-                </div>
+                        {/* Exam Type Filter */}
+                        <div className="relative inline-flex items-center gap-1.5 h-10 bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 rounded-xl px-3 text-xs text-[#696969] dark:text-gray-300 shadow-2xs">
+                            <span className="text-[#696969]/70 dark:text-gray-400 text-xs font-medium select-none">Type:</span>
+                            <select
+                                value={selectedType}
+                                onChange={(e) => setSelectedType(e.target.value)}
+                                className="bg-transparent font-semibold text-[#3B3B3B] dark:text-white outline-none cursor-pointer pr-4 text-xs appearance-none"
+                            >
+                                <option value="All">All</option>
+                                {masterData.examinations.map(ex => (
+                                    <option key={ex.id} value={ex.name} className="dark:bg-[#14161b]">{ex.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="h-3 w-3 text-[#696969]/60 pointer-events-none absolute right-2" />
+                        </div>
 
-                {/* Year Filter */}
-                <div className="relative inline-flex items-center gap-1.5 h-8 bg-card border border-border/75 rounded-lg px-2.5 text-xs text-foreground hover:border-border transition-colors shadow-2xs">
-                    <span className="text-muted-foreground text-[11px] font-medium select-none">Year:</span>
-                    <select
-                        value={selectedYear}
-                        onChange={(e) => setSelectedYear(e.target.value)}
-                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-4 text-xs appearance-none"
-                    >
-                        <option value="All">All</option>
-                        {availableYears.map(yr => (
-                            <option key={yr} value={yr}>{yr}</option>
-                        ))}
-                    </select>
-                    <ChevronDown className="h-3 w-3 text-muted-foreground pointer-events-none absolute right-2" />
-                </div>
+                        {/* Course / Program Filter */}
+                        <div className="relative inline-flex items-center gap-1.5 h-10 bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 rounded-xl px-3 text-xs text-[#696969] dark:text-gray-300 shadow-2xs">
+                            <span className="text-[#696969]/70 dark:text-gray-400 text-xs font-medium select-none">Course:</span>
+                            <select
+                                value={selectedCourse}
+                                onChange={(e) => setSelectedCourse(e.target.value)}
+                                className="bg-transparent font-semibold text-[#3B3B3B] dark:text-white outline-none cursor-pointer pr-4 text-xs appearance-none max-w-[150px] truncate"
+                            >
+                                <option value="All">All</option>
+                                {masterData.programs.map(pr => (
+                                    <option key={pr.id} value={pr.name} className="dark:bg-[#14161b]">{pr.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="h-3 w-3 text-[#696969]/60 pointer-events-none absolute right-2" />
+                        </div>
 
-                {(selectedBatch !== "All" || selectedType !== "All" || selectedCourse !== "All" || selectedYear !== "All") && (
-                    <button
-                        onClick={() => {
-                            setSelectedBatch("All")
-                            setSelectedType("All")
-                            setSelectedCourse("All")
-                            setSelectedYear("All")
-                        }}
-                        className="text-xs text-muted-foreground hover:text-foreground font-medium underline underline-offset-2 self-center px-1.5 transition-colors cursor-pointer"
-                    >
-                        Reset filters
-                    </button>
-                )}
+                        {/* Year Filter */}
+                        <div className="relative inline-flex items-center gap-1.5 h-10 bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 rounded-xl px-3 text-xs text-[#696969] dark:text-gray-300 shadow-2xs">
+                            <span className="text-[#696969]/70 dark:text-gray-400 text-xs font-medium select-none">Year:</span>
+                            <select
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(e.target.value)}
+                                className="bg-transparent font-semibold text-[#3B3B3B] dark:text-white outline-none cursor-pointer pr-4 text-xs appearance-none"
+                            >
+                                <option value="All">All</option>
+                                {availableYears.map(yr => (
+                                    <option key={yr} value={yr} className="dark:bg-[#14161b]">{yr}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="h-3 w-3 text-[#696969]/60 pointer-events-none absolute right-2" />
+                        </div>
+
+                        {(selectedBatch !== "All" || selectedType !== "All" || selectedCourse !== "All" || selectedYear !== "All" || searchQuery.trim()) && (
+                            <button
+                                onClick={() => {
+                                    setSelectedBatch("All")
+                                    setSelectedType("All")
+                                    setSelectedCourse("All")
+                                    setSelectedYear("All")
+                                    setSearchQuery("")
+                                }}
+                                className="text-xs text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white font-medium underline underline-offset-2 self-center px-2 py-1 transition-colors cursor-pointer"
+                            >
+                                Reset filters
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
 
-            {/* Table */}
-            <div className="border border-border/80 rounded-xl overflow-hidden bg-card shadow-xs min-h-[400px] flex flex-col">
+            {/* Table Container styled exactly like User Management */}
+            <div className="w-full overflow-hidden rounded-2xl border border-black/5 dark:border-white/10 bg-card shadow-2xs">
                 {loading ? (
-                    <div className="flex-1 flex items-center justify-center p-8 bg-card">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest animate-pulse">Loading Mock Exams & Master Data...</span>
+                    <div className="flex items-center justify-center p-12 bg-card">
+                        <span className="text-xs font-semibold text-[#696969] uppercase tracking-widest animate-pulse">Loading Mock Exams & Master Data...</span>
                     </div>
                 ) : error ? (
-                    <div className="flex-1 flex items-center justify-center p-8 bg-card text-destructive font-semibold uppercase text-xs">
+                    <div className="flex items-center justify-center p-12 bg-card text-destructive font-semibold uppercase text-xs">
                         {error}
                     </div>
                 ) : filteredExams.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-card">
-                        <h2 className="text-base font-bold text-foreground mb-1 tracking-tight">
-                            {exams.length === 0 ? "No Exams Yet" : "No Matching Exams"}
+                    <div className="py-16 text-center text-sm font-medium text-[#696969]">
+                        <h2 className="text-sm font-semibold text-[#3B3B3B] dark:text-white mb-1">
+                            {exams.length === 0 ? "No mock exams created yet" : "No matching mock exams found"}
                         </h2>
-                        <p className="text-xs font-medium text-muted-foreground">
+                        <p className="text-xs text-[#696969]/80 max-w-sm mx-auto">
                             {exams.length === 0 
-                                ? "Click on the create new exam button to begin creating a new exam."
-                                : "Try adjusting your filter criteria to view other mock exams."}
+                                ? "Click on the ADD MOCK EXAM button above to begin creating an exam."
+                                : "Try adjusting your search or active filter criteria."}
                         </p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto flex-1">
-                        <table className="w-full text-left border-collapse min-w-[760px]">
-                            <thead>
-                                <tr className="border-b border-border bg-muted/50 text-xs font-semibold text-muted-foreground">
-                                    <th className="py-2.5 px-4 whitespace-nowrap min-w-[180px]" scope="col">
-                                        <SortButton label="Mock Exam Title" field="title" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                    <div className="max-h-[920px] overflow-y-auto overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[760px]" aria-label="Mock exams table">
+                            <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
+                                <tr className="h-11 text-xs font-semibold text-[#696969]/80 dark:text-gray-400">
+                                    <th className="px-4 py-2.5 max-w-[240px] whitespace-nowrap" scope="col">
+                                        <SortButton label="Title" field="title" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-2.5 px-3 whitespace-nowrap" scope="col">
+                                    <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
                                         <SortButton label="Exam Code" field="exam_code" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-2.5 px-3 whitespace-nowrap" scope="col">
+                                    <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
                                         <SortButton label="Batch" field="batch" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-2.5 px-3 whitespace-nowrap" scope="col">
-                                        <SortButton label="Type" field="type" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                    <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
+                                        <SortButton label="Examination" field="type" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-2.5 px-3 whitespace-nowrap" scope="col">
-                                        <SortButton label="Course" field="course" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                    <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
+                                        <SortButton label="Course / Major" field="course" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-2.5 px-3 whitespace-nowrap" scope="col">
-                                        <SortButton label="Date" field="date" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                                    <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
+                                        <SortButton label="Created" field="created_at" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-2.5 px-3 whitespace-nowrap" scope="col">
+                                    <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
                                         <SortButton label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                     </th>
-                                    <th className="py-2.5 px-4 text-right whitespace-nowrap text-xs font-semibold text-muted-foreground" scope="col">Actions</th>
+                                    <th className="px-4 py-2.5 text-right pr-6 whitespace-nowrap" scope="col">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="text-xs divide-y divide-border/40">
+                            <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
                                 {filteredExams.map((exam) => {
                                     const { batch, type, course } = parseTargets(exam.targets, courseTree, masterData)
+                                    const isLocked = exam.unlock_date && new Date(exam.unlock_date).getTime() > Date.now()
+
                                     return (
-                                        <tr key={exam.id} className="transition-colors">
-                                            <td 
-                                                className="py-2.5 px-4 font-semibold text-blue-600 dark:text-blue-400 cursor-pointer hover:underline whitespace-nowrap" 
-                                                onClick={() => router.push(`/admin/mock-exams/${exam.id}`)}
-                                                title={exam.title}
-                                            >
-                                                {exam.title}
+                                        <tr key={exam.id} className="h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]">
+                                            <td className="px-4 font-semibold max-w-[240px]">
+                                                <button
+                                                    onClick={() => router.push(`/admin/mock-exams/${exam.id}`)}
+                                                    title={exam.title}
+                                                    className="block text-left truncate whitespace-nowrap text-[#696969] dark:text-gray-300 hover:text-[#3B3B3B] dark:hover:text-white hover:underline transition-colors cursor-pointer"
+                                                >
+                                                    {exam.title}
+                                                </button>
                                             </td>
-                                            <td className="py-2.5 px-3 text-foreground/80 whitespace-nowrap font-mono text-[11px]">{exam.exam_code}</td>
-                                            <td className="py-2.5 px-3 text-foreground/80 whitespace-nowrap">{batch}</td>
-                                            <td className="py-2.5 px-3 text-foreground/80 whitespace-nowrap max-w-[200px] truncate" title={type}>{type}</td>
-                                            <td className="py-2.5 px-3 text-foreground/80 whitespace-nowrap max-w-[220px] truncate" title={course}>{course}</td>
-                                            <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">{new Date(exam.created_at).toLocaleDateString()}</td>
-                                            <td className="py-2.5 px-3 whitespace-nowrap">
-                                                {(() => {
-                                                    const isLocked = exam.unlock_date && new Date(exam.unlock_date).getTime() > Date.now()
-                                                    return (
-                                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium ${
-                                                            isLocked 
-                                                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" 
-                                                                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                                        }`}>
-                                                            {isLocked ? "Locked" : "Active"}
-                                                        </span>
-                                                    )
-                                                })()}
+                                            <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-mono text-xs whitespace-nowrap">{exam.exam_code || "—"}</td>
+                                            <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{batch}</td>
+                                            <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap max-w-[200px] truncate" title={type}>{type}</td>
+                                            <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap max-w-[220px] truncate" title={course}>{course}</td>
+                                            <td className="px-4 text-sm text-[#696969] dark:text-gray-400 font-normal whitespace-nowrap">
+                                                {exam.created_at ? new Date(exam.created_at).toLocaleDateString() : "—"}
                                             </td>
-                                            <td className="py-2.5 px-4 text-right whitespace-nowrap">
-                                                <div className="inline-flex items-center justify-end gap-1">
+                                            <td className="px-4 text-sm whitespace-nowrap">
+                                                <span className="font-normal text-[#696969] dark:text-gray-300">
+                                                    {isLocked ? "Locked" : "Active"}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 text-right pr-6 whitespace-nowrap">
+                                                <div className="flex items-center justify-end gap-1">
                                                     <button
                                                         onClick={() => openModal(exam)}
-                                                        className="p-1 text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors cursor-pointer"
-                                                        title="Edit Exam"
+                                                        className="h-7 w-7 flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] hover:bg-black/5 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                                                        title="Edit mock exam details"
                                                     >
                                                         <Pencil className="h-3.5 w-3.5" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteExam(exam)}
-                                                        className="p-1 text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors cursor-pointer"
-                                                        title="Delete Exam"
+                                                        className="h-7 w-7 flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] hover:bg-black/5 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                                                        title="Delete mock exam"
                                                     >
                                                         <Trash className="h-3.5 w-3.5" />
                                                     </button>

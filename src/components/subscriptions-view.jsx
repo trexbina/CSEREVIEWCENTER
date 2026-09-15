@@ -1,9 +1,15 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react"
-import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle } from "lucide-react"
+import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle, Filter } from "lucide-react"
 import { toast } from "@/components/ui/toast"
-import { LordIcon } from "@/components/ui/lord-icon"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export function SubscriptionsView({ initialBatchFilter = "all" }) {
   const [data, setData] = useState({ metrics: {}, batches: [], students: [] })
@@ -58,7 +64,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
     return (data.students || []).filter(s => {
       const matchSearch = !q || 
         (s.name || "").toLowerCase().includes(q) || 
-        (s.email || "").toLowerCase().includes(q) ||
+        (s.login_id || "").toLowerCase().includes(q) ||
         (s.batch_name || "").toLowerCase().includes(q) ||
         (s.exam_name || "").toLowerCase().includes(q)
 
@@ -184,7 +190,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
 
   return (
     <div className="space-y-6">
-      {/* ── Metric Summary Strip (Admin Dashboard Metric Strip Styling) ── */}
+      {/* ── Metric Summary Strip (Admin Dashboard Metric Strip Styling without icons) ── */}
       <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-xs overflow-hidden">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-black/5 dark:divide-white/5">
           {/* 1. Total Reviewees */}
@@ -200,22 +206,13 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                 Total Reviewees
               </span>
             </div>
-            <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                  {Number(data.metrics?.totalStudents || 0).toLocaleString()}
-                </div>
-                <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                  Total student enrollments
-                </p>
+            <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                {Number(data.metrics?.totalStudents || 0).toLocaleString()}
               </div>
-              <div className="shrink-0 transition-transform duration-300 opacity-80 group-hover/card:scale-105">
-                <LordIcon
-                  src="/icons/knowifready.json"
-                  size={38}
-                  trigger="hover"
-                />
-              </div>
+              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                Total student enrollments
+              </p>
             </div>
           </div>
 
@@ -232,22 +229,13 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                 Active Subscriptions
               </span>
             </div>
-            <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                  {Number(data.metrics?.activeCount || 0).toLocaleString()}
-                </div>
-                <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                  Currently active review terms
-                </p>
+            <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                {Number(data.metrics?.activeCount || 0).toLocaleString()}
               </div>
-              <div className="shrink-0 transition-transform duration-300 opacity-80 group-hover/card:scale-105">
-                <LordIcon
-                  src="/icons/allinonespot.json"
-                  size={38}
-                  trigger="hover"
-                />
-              </div>
+              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                Currently active review terms
+              </p>
             </div>
           </div>
 
@@ -264,22 +252,13 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                 Expiring Soon (7d)
               </span>
             </div>
-            <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                  {Number(data.metrics?.expiringCount || 0).toLocaleString()}
-                </div>
-                <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                  Ending within next 7 days
-                </p>
+            <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                {Number(data.metrics?.expiringCount || 0).toLocaleString()}
               </div>
-              <div className="shrink-0 transition-transform duration-300 opacity-80 group-hover/card:scale-105">
-                <LordIcon
-                  src="/icons/knowifready.json"
-                  size={38}
-                  trigger="hover"
-                />
-              </div>
+              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                Ending within next 7 days
+              </p>
             </div>
           </div>
 
@@ -296,22 +275,13 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                 Expired / Inactive
               </span>
             </div>
-            <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                  {Number(data.metrics?.expiredCount || 0).toLocaleString()}
-                </div>
-                <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                  Term ended or disabled
-                </p>
+            <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+              <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                {Number(data.metrics?.expiredCount || 0).toLocaleString()}
               </div>
-              <div className="shrink-0 transition-transform duration-300 opacity-80 group-hover/card:scale-105">
-                <LordIcon
-                  src="/icons/instantresults.json"
-                  size={38}
-                  trigger="hover"
-                />
-              </div>
+              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                Term ended or disabled
+              </p>
             </div>
           </div>
         </div>
@@ -329,7 +299,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                   : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B]"
               }`}
             >
-              Reviewees ({data.students?.length || 0})
+              Reviewees
             </button>
             <button
               onClick={() => setActiveTab("batches")}
@@ -344,29 +314,52 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
           </div>
 
           {activeTab === "students" && (
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 px-3 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300"
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active Only</option>
-              <option value="expiring">Expiring Soon (≤ 7 days)</option>
-              <option value="expired">Expired / Inactive</option>
-            </select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger
+                aria-label="Filter by status"
+                className="h-9 px-3 rounded-xl border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>
+                    {statusFilter === "all" && "All Statuses"}
+                    {statusFilter === "active" && "Active Only"}
+                    {statusFilter === "expiring" && "Expiring Soon (≤ 7 days)"}
+                    {statusFilter === "expired" && "Expired / Inactive"}
+                  </span>
+                </div>
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                <SelectItem value="all" className="text-xs">All Statuses</SelectItem>
+                <SelectItem value="active" className="text-xs">Active Only</SelectItem>
+                <SelectItem value="expiring" className="text-xs">Expiring Soon (≤ 7 days)</SelectItem>
+                <SelectItem value="expired" className="text-xs">Expired / Inactive</SelectItem>
+              </SelectContent>
+            </Select>
           )}
 
           {activeTab === "students" && data.batches?.length > 0 && (
-            <select
-              value={batchFilter}
-              onChange={(e) => setBatchFilter(e.target.value)}
-              className="h-9 px-3 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 max-w-[180px]"
-            >
-              <option value="all">All Batches</option>
-              {data.batches.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
+            <Select value={batchFilter} onValueChange={setBatchFilter}>
+              <SelectTrigger
+                aria-label="Filter by batch"
+                className="h-9 px-3 rounded-xl border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 max-w-[200px] shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="truncate">
+                    {batchFilter === "all"
+                      ? "All Batches"
+                      : data.batches.find((b) => String(b.id) === String(batchFilter))?.name || "All Batches"}
+                  </span>
+                </div>
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-w-sm">
+                <SelectItem value="all" className="text-xs">All Batches</SelectItem>
+                {data.batches.map(b => (
+                  <SelectItem key={b.id} value={String(b.id)} className="text-xs truncate">
+                    {b.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </div>
 
@@ -422,7 +415,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                       <tr key={student.id} className="hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
                         <td className="py-3 px-4">
                           <p className="font-semibold text-[#696969] dark:text-gray-300 text-xs sm:text-sm">{student.name}</p>
-                          <p className="text-xs text-[#696969]/80 dark:text-gray-400 font-normal">{student.email}</p>
+                          <p className="text-xs text-[#696969]/80 dark:text-gray-400 font-normal">{student.login_id || "—"}</p>
                         </td>
                         <td className="py-3 px-4 text-xs">
                           <p className="font-medium text-[#3B3B3B] dark:text-gray-200">{student.batch_name || "—"}</p>

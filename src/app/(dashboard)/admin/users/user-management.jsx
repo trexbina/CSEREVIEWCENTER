@@ -45,16 +45,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 
 // confirmation modal for delete actions
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
@@ -803,8 +793,10 @@ export function UserSearchTable({ users, currentUserId }) {
       list = list.filter((u) =>
         u.name?.toLowerCase().includes(q) ||
         (u.login_id || "").toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        u.role?.toLowerCase().includes(q)
+        (u.email || "").toLowerCase().includes(q) ||
+        (u.role || "").toLowerCase().includes(q) ||
+        (u.batch_name || "").toLowerCase().includes(q) ||
+        (u.exam_name || "").toLowerCase().includes(q)
       )
     }
     return list
@@ -906,7 +898,7 @@ export function UserSearchTable({ users, currentUserId }) {
             <button
               type="button"
               onClick={() => setConfirmDeleteOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/30 hover:bg-rose-100 transition-all shadow-2xs cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+              className="bg-[#ba5a62] hover:bg-[#a64850] text-white font-bold text-xs uppercase px-4 h-9 rounded-xl shadow-xs transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150"
             >
               <Trash className="h-3.5 w-3.5" />
               <span>Delete Selected ({selectedIds.length})</span>
@@ -921,19 +913,19 @@ export function UserSearchTable({ users, currentUserId }) {
             <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
               <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
                 <th className="w-12 px-4 text-center" scope="col"></th>
-                <th className="px-4 py-2.5" scope="col">
+                <th className="px-4 py-2.5 max-w-[200px]" scope="col">
                   <SortButton label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="px-4 py-2.5" scope="col">
+                <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
                   <SortButton label="Login ID" field="login_id" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="px-4 py-2.5" scope="col">
+                <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
                   <SortButton label="Role" field="role" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="px-4 py-2.5" scope="col">
+                <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
                   <SortButton label="Joined" field="created_at" sortField={sortDir === "asc" ? sortField : "created_at"} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="px-4 py-2.5 text-right pr-6" scope="col">Actions</th>
+                <th className="px-4 py-2.5 text-right pr-6 whitespace-nowrap" scope="col">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
@@ -967,7 +959,7 @@ export function UserSearchTable({ users, currentUserId }) {
                           }}
                           className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
                             isChecked
-                              ? "bg-[#3B3B3B] dark:bg-white border-[#3B3B3B] dark:border-white text-white dark:text-gray-900 shadow-xs"
+                              ? "bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 shadow-2xs"
                               : "border-black/20 dark:border-white/20 bg-white/60 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
                           } ${isCurrentAdmin ? "opacity-30 cursor-not-allowed" : ""}`}
                           title={isCurrentAdmin ? "Cannot select yourself" : `Select ${user.name}`}
@@ -975,81 +967,66 @@ export function UserSearchTable({ users, currentUserId }) {
                           {isChecked && <Check className="size-3 stroke-[2.5]" />}
                         </div>
                       </td>
-                      <td className="px-4 font-semibold">
-                        <Link href={`/admin/users/${user.id}`} className="text-[#2563EB] hover:text-[#1D4ED8] dark:text-[#60A5FA] dark:hover:text-[#93C5FD] hover:underline transition-colors">
+                      <td className="px-4 font-semibold max-w-[200px]">
+                        <Link
+                          href={`/admin/users/${user.id}`}
+                          title={user.name}
+                          className="block truncate whitespace-nowrap text-[#696969] dark:text-gray-300 hover:text-[#3B3B3B] dark:hover:text-white hover:underline transition-colors"
+                        >
                           {user.name}
                         </Link>
                       </td>
-                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal">{user.login_id || user.email}</td>
-                      <td className="px-4 text-sm">
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{user.login_id || user.email}</td>
+                      <td className="px-4 text-sm whitespace-nowrap">
                         {(() => {
                           const r = user.role
                           if (r === "super_admin" || r === "admin") {
                             return (
-                              <span className="font-semibold text-[#3B3B3B] dark:text-gray-200">
+                              <span className="font-normal text-[#696969] dark:text-gray-300">
                                 Super Admin
                               </span>
                             )
                           }
                           if (r === "academic_admin") {
                             return (
-                              <span className="font-semibold text-[#3B3B3B] dark:text-gray-200">
+                              <span className="font-normal text-[#696969] dark:text-gray-300">
                                 Academic Coord.
                               </span>
                             )
                           }
                           if (r === "registrar") {
                             return (
-                              <span className="font-semibold text-[#3B3B3B] dark:text-gray-200">
+                              <span className="font-normal text-[#696969] dark:text-gray-300">
                                 Registrar
                               </span>
                             )
                           }
                           if (r === "teacher") {
                             return (
-                              <span className="font-semibold text-[#696969] dark:text-gray-300">
+                              <span className="font-normal text-[#696969] dark:text-gray-300">
                                 Instructor
                               </span>
                             )
                           }
-                          const effectiveEnd = user.subscription_end_date || user.batch_end_date
                           const isManualDisabled = user.is_active === false
-                          let statusText = "Active"
-                          let statusColor = "text-[#696969] dark:text-gray-300"
-                          if (isManualDisabled) {
-                            statusText = "Disabled"
-                            statusColor = "text-[#888888]"
-                          } else if (effectiveEnd) {
-                            const today = new Date()
-                            today.setHours(0,0,0,0)
-                            const expDate = new Date(effectiveEnd)
-                            const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24))
-                            if (diffDays < 0) {
-                              statusText = "Expired"
-                              statusColor = "text-neutral-500 font-medium"
-                            } else if (diffDays <= 7) {
-                              statusText = `${diffDays}d left`
-                              statusColor = "text-neutral-600 dark:text-neutral-300 font-medium"
-                            }
-                          }
                           return (
                             <div className="flex items-center gap-1.5">
-                              <span className="font-medium capitalize text-[#696969] dark:text-gray-300">
+                              <span className="font-normal capitalize text-[#696969] dark:text-gray-300">
                                 Student
                               </span>
-                              {statusText !== "Active" && (
-                                <span className={`text-[11px] px-1.5 py-0.5 rounded border border-border/40 ${statusColor}`}>
-                                  {statusText}
+                              {isManualDisabled && (
+                                <span className="text-[11px] px-1.5 py-0.5 rounded border border-border/40 text-[#888888]">
+                                  Disabled
                                 </span>
                               )}
                             </div>
                           )
                         })()}
                       </td>
-                      <td className="px-4 text-sm text-[#696969] dark:text-gray-400 font-normal">
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-400 font-normal whitespace-nowrap">
                         {user.created_at ? new Date(user.created_at).toLocaleDateString() : ""}
                       </td>
-                      <td className="px-4 text-right pr-6">
+                      <td className="px-4 text-right pr-6 whitespace-nowrap">
                         <div className="flex justify-end">
                           <ActionButtons
                             user={user}
@@ -1079,26 +1056,15 @@ export function UserSearchTable({ users, currentUserId }) {
       )}
 
       {/* Confirmation Dialog for Batch Delete */}
-      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Selected Users</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to permanently delete {selectedIds.length} selected user{selectedIds.length > 1 ? "s" : ""}? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={bulkDeleteLoading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkDelete}
-              disabled={bulkDeleteLoading}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {bulkDeleteLoading ? "Deleting…" : `Delete ${selectedIds.length} User${selectedIds.length > 1 ? "s" : ""}`}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDeleteModal
+        isOpen={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleBulkDelete}
+        title="Delete Selected Users"
+        message={`Are you sure you want to permanently delete ${selectedIds.length} selected user${selectedIds.length > 1 ? "s" : ""}? This action cannot be undone.`}
+        confirmText={bulkDeleteLoading ? "Deleting…" : `Delete ${selectedIds.length} User${selectedIds.length > 1 ? "s" : ""}`}
+        isDeleting={bulkDeleteLoading}
+      />
 
       {selected && (
         <>
@@ -1123,6 +1089,7 @@ export function UserTable({ users, currentUserId }) {
   const router = useRouter()
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState("ALL")
+  const [examFilter, setExamFilter] = useState("ALL")
   const [sortField, setSortField] = useState("created_at")
   const [sortDir, setSortDir] = useState("desc")
 
@@ -1140,6 +1107,17 @@ export function UserTable({ users, currentUserId }) {
     }
   }
 
+  const availableExams = useMemo(() => {
+    const examMap = new Map()
+    users.forEach((u) => {
+      if (u.exam_name) {
+        const count = examMap.get(u.exam_name) || 0
+        examMap.set(u.exam_name, count + 1)
+      }
+    })
+    return Array.from(examMap.entries()).map(([name, count]) => ({ name, count }))
+  }, [users])
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
     return users.filter((u) => {
@@ -1149,6 +1127,10 @@ export function UserTable({ users, currentUserId }) {
           : roleFilter === "admin"
           ? (u.role === "admin" || u.role === "super_admin" || u.role === "academic_admin" || u.role === "registrar")
           : u.role === roleFilter
+      const matchesExam =
+        examFilter === "ALL"
+          ? true
+          : u.exam_name === examFilter
       const fullName = (u.name || "").toLowerCase()
       const matchesSearch =
         !q ||
@@ -1157,11 +1139,13 @@ export function UserTable({ users, currentUserId }) {
         (u.email || "").toLowerCase().includes(q) ||
         (u.academic_course_name || u.course || "").toLowerCase().includes(q) ||
         (u.program_name || "").toLowerCase().includes(q) ||
-        (u.major_name || "").toLowerCase().includes(q)
+        (u.major_name || "").toLowerCase().includes(q) ||
+        (u.exam_name || "").toLowerCase().includes(q) ||
+        (u.batch_name || "").toLowerCase().includes(q)
 
-      return matchesRole && matchesSearch
+      return matchesRole && matchesExam && matchesSearch
     })
-  }, [users, search, roleFilter])
+  }, [users, search, roleFilter, examFilter])
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -1236,7 +1220,7 @@ export function UserTable({ users, currentUserId }) {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#696969]/70 pointer-events-none" />
             <input
               type="search"
-              placeholder="Search user name, login ID, email, course, program..."
+              placeholder="Search user name, login ID, email, exam, batch, course..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
@@ -1268,10 +1252,40 @@ export function UserTable({ users, currentUserId }) {
               </SelectContent>
             </Select>
 
-            {roleFilter !== "ALL" && (
+            {/* Examination Filter Dropdown */}
+            {availableExams.length > 0 && (
+              <Select value={examFilter} onValueChange={setExamFilter}>
+                <SelectTrigger
+                  aria-label="Filter users by examination"
+                  className="w-48 h-10 rounded-xl text-xs font-semibold border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <Filter className="h-3.5 w-3.5 text-[#696969]/70 shrink-0" />
+                    <span className="truncate">
+                      {examFilter === "ALL" ? "All Examinations" : examFilter}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-w-sm">
+                  <SelectItem value="ALL" className="text-xs">
+                    All Examinations ({users.filter((u) => u.exam_name).length})
+                  </SelectItem>
+                  {availableExams.map((exam) => (
+                    <SelectItem key={exam.name} value={exam.name} className="text-xs truncate">
+                      {exam.name} ({exam.count})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {(roleFilter !== "ALL" || examFilter !== "ALL") && (
               <button
                 type="button"
-                onClick={() => setRoleFilter("ALL")}
+                onClick={() => {
+                  setRoleFilter("ALL")
+                  setExamFilter("ALL")
+                }}
                 className="h-10 px-2.5 text-xs text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white underline cursor-pointer"
               >
                 Reset
@@ -1286,7 +1300,7 @@ export function UserTable({ users, currentUserId }) {
             <button
               type="button"
               onClick={() => setConfirmDeleteOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/30 hover:bg-rose-100 transition-all shadow-2xs cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+              className="bg-[#ba5a62] hover:bg-[#a64850] text-white font-bold text-xs uppercase px-4 h-9 rounded-xl shadow-xs transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150"
             >
               <Trash className="h-3.5 w-3.5" />
               <span>Delete Selected ({selectedIds.length})</span>
@@ -1302,34 +1316,31 @@ export function UserTable({ users, currentUserId }) {
             <thead className="sticky top-0 z-10 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs border-b border-black/5 dark:border-white/10">
               <tr className="h-11 text-xs font-semibold uppercase tracking-wider text-[#696969]/80 dark:text-gray-400">
                 <th className="w-12 px-4 text-center" scope="col"></th>
-                <th className="px-4 py-2.5" scope="col">
+                <th className="px-4 py-2.5 max-w-[200px]" scope="col">
                   <SortButton label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="px-4 py-2.5" scope="col">
+                <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
                   <SortButton label="Login ID" field="login_id" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="px-4 py-2.5" scope="col">
-                  <SortButton label="Course" field="academic_course_name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                <th className="px-4 py-2.5 max-w-[260px]" scope="col">
+                  <SortButton label="Examination" field="exam_name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="px-4 py-2.5" scope="col">
-                  <SortButton label="Program" field="program_name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                </th>
-                <th className="px-4 py-2.5" scope="col">
+                <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
                   <SortButton label="Major" field="major_name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="px-4 py-2.5" scope="col">
+                <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
                   <SortButton label="Role" field="role" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="px-4 py-2.5" scope="col">
+                <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
                   <SortButton label="Joined" field="created_at" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
-                <th className="px-4 py-2.5 text-right pr-6" scope="col">Actions</th>
+                <th className="px-4 py-2.5 text-right pr-6 whitespace-nowrap" scope="col">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
               {sorted.length === 0 ? (
                 <tr>
-                  <td className="py-12 text-center text-sm font-medium text-[#696969]" colSpan={9}>
+                  <td className="py-12 text-center text-sm font-medium text-[#696969]" colSpan={8}>
                     {search ? `No users matching "${search}"` : "No users found."}
                   </td>
                 </tr>
@@ -1338,8 +1349,6 @@ export function UserTable({ users, currentUserId }) {
                   const isCurrentAdmin = user.id === currentUserId
                   const isChecked = selectedIds.includes(user.id)
                   const isStudent = user.role === "student"
-                  const courseName = isStudent ? (user.academic_course_name || user.course || "—") : "—"
-                  const programName = isStudent ? (user.program_name || "—") : "—"
                   const majorName = isStudent ? (user.major_name || "—") : "—"
 
                   return (
@@ -1356,7 +1365,7 @@ export function UserTable({ users, currentUserId }) {
                           }}
                           className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
                             isChecked
-                              ? "bg-[#3B3B3B] dark:bg-white border-[#3B3B3B] dark:border-white text-white dark:text-gray-900 shadow-xs"
+                              ? "bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-200 shadow-2xs"
                               : "border-black/20 dark:border-white/20 bg-white/60 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
                           } ${isCurrentAdmin ? "opacity-30 cursor-not-allowed" : ""}`}
                           title={isCurrentAdmin ? "Cannot select yourself" : `Select ${user.name}`}
@@ -1364,85 +1373,81 @@ export function UserTable({ users, currentUserId }) {
                           {isChecked && <Check className="size-3 stroke-[2.5]" />}
                         </div>
                       </td>
-                      <td className="px-4 font-semibold">
+                      <td className="px-4 font-semibold max-w-[200px]">
                         <Link
                           href={`/admin/users/${user.id}`}
-                          className="text-[#2563EB] hover:text-[#1D4ED8] dark:text-[#60A5FA] dark:hover:text-[#93C5FD] hover:underline transition-colors"
+                          title={user.name}
+                          className="block truncate whitespace-nowrap text-[#696969] dark:text-gray-300 hover:text-[#3B3B3B] dark:hover:text-white hover:underline transition-colors"
                         >
                           {user.name}
                         </Link>
                       </td>
-                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal">{user.login_id || user.email}</td>
-                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal max-w-[200px]" title={isStudent && courseName !== "—" ? courseName : undefined}>
-                        <span className="block truncate">
-                          {isStudent ? courseName : ""}
-                        </span>
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{user.login_id || user.email}</td>
+                      <td className="px-4 py-2.5 text-sm max-w-[260px]">
+                        {user.exam_name || (isStudent && (user.program_name || user.academic_course_name)) ? (
+                          <div className="space-y-0.5 min-w-0">
+                            <span
+                              className="block truncate font-medium text-[#3B3B3B] dark:text-gray-200"
+                              title={user.exam_name || "—"}
+                            >
+                              {user.exam_name || "—"}
+                            </span>
+                            {isStudent && (user.program_name || user.academic_course_name) && (
+                              <span
+                                className="block text-xs text-gray-400 dark:text-gray-400 truncate"
+                                title={user.program_name || user.academic_course_name}
+                              >
+                                {user.program_name || user.academic_course_name}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-[#696969] dark:text-gray-400 font-normal">—</span>
+                        )}
                       </td>
                       <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">
-                        {isStudent ? programName : ""}
+                        {isStudent ? majorName : "—"}
                       </td>
-                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">
-                        {isStudent ? majorName : ""}
-                      </td>
-                      <td className="px-4 text-sm">
+                      <td className="px-4 text-sm whitespace-nowrap">
                         {(() => {
                           const r = user.role
                           if (r === "super_admin" || r === "admin") {
                             return (
-                              <span className="font-semibold text-[#3B3B3B] dark:text-gray-200">
+                              <span className="font-normal text-[#696969] dark:text-gray-300">
                                 Super Admin
                               </span>
                             )
                           }
                           if (r === "academic_admin") {
                             return (
-                              <span className="font-semibold text-[#3B3B3B] dark:text-gray-200">
+                              <span className="font-normal text-[#696969] dark:text-gray-300">
                                 Academic Coord.
                               </span>
                             )
                           }
                           if (r === "registrar") {
                             return (
-                              <span className="font-semibold text-[#3B3B3B] dark:text-gray-200">
+                              <span className="font-normal text-[#696969] dark:text-gray-300">
                                 Registrar
                               </span>
                             )
                           }
                           if (r === "teacher") {
                             return (
-                              <span className="font-semibold text-[#696969] dark:text-gray-300">
+                              <span className="font-normal text-[#696969] dark:text-gray-300">
                                 Instructor
                               </span>
                             )
                           }
-                          const effectiveEnd = user.subscription_end_date || user.batch_end_date
                           const isManualDisabled = user.is_active === false
-                          let statusText = "Active"
-                          let statusColor = "text-[#696969] dark:text-gray-300"
-                          if (isManualDisabled) {
-                            statusText = "Disabled"
-                            statusColor = "text-[#888888]"
-                          } else if (effectiveEnd) {
-                            const today = new Date()
-                            today.setHours(0,0,0,0)
-                            const expDate = new Date(effectiveEnd)
-                            const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24))
-                            if (diffDays < 0) {
-                              statusText = "Expired"
-                              statusColor = "text-neutral-500 font-medium"
-                            } else if (diffDays <= 7) {
-                              statusText = `${diffDays}d left`
-                              statusColor = "text-neutral-600 dark:text-neutral-300 font-medium"
-                            }
-                          }
                           return (
                             <div className="flex items-center gap-1.5">
-                              <span className="font-medium capitalize text-[#696969] dark:text-gray-300">
+                              <span className="font-normal capitalize text-[#696969] dark:text-gray-300">
                                 Student
                               </span>
-                              {statusText !== "Active" && (
-                                <span className={`text-[11px] px-1.5 py-0.5 rounded border border-border/40 ${statusColor}`}>
-                                  {statusText}
+                              {isManualDisabled && (
+                                <span className="text-[11px] px-1.5 py-0.5 rounded border border-border/40 text-[#888888]">
+                                  Disabled
                                 </span>
                               )}
                             </div>
@@ -1452,7 +1457,7 @@ export function UserTable({ users, currentUserId }) {
                       <td className="px-4 text-sm text-[#696969] dark:text-gray-400 font-normal whitespace-nowrap">
                         {user.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}
                       </td>
-                      <td className="px-4 text-right pr-6">
+                      <td className="px-4 text-right pr-6 whitespace-nowrap">
                         <div className="flex justify-end">
                           <ActionButtons
                             user={user}

@@ -798,7 +798,7 @@ export default function CurriculumManagerPage() {
                                         title="Filter by Examination"
                                         className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-all duration-300 ease-out shadow-xs shrink-0 cursor-pointer ${
                                             examFilter !== "all"
-                                                ? "border-[#E9C46A] bg-[#E9C46A]/15 text-[#b08828] dark:text-[#E9C46A]"
+                                                ? "border-border bg-muted text-foreground"
                                                 : "border-border/80 bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
                                         }`}
                                     >
@@ -808,52 +808,52 @@ export default function CurriculumManagerPage() {
                                     {showExamFilterDropdown && (
                                         <>
                                             <div className="fixed inset-0 z-30" onClick={() => setShowExamFilterDropdown(false)} />
-                                            <div className="absolute right-0 sm:left-0 sm:right-auto mt-2 z-40 w-64 rounded-xl bg-popover border border-border shadow-xl py-1.5 animate-in fade-in zoom-in-95 duration-150">
-                                                <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border mb-1 flex items-center justify-between">
+                                            <div className="absolute right-0 sm:left-0 sm:right-auto mt-2 z-40 w-64 rounded-xl bg-popover border border-border shadow-lg p-1.5 animate-in fade-in zoom-in-95 duration-150">
+                                                <div className="px-2.5 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
                                                     <span>Filter Examination</span>
                                                     {examFilter !== "all" && (
                                                         <button
                                                             onClick={() => setExamFilter("all")}
-                                                            className="text-[10px] font-semibold text-[#E9C46A] hover:underline normal-case cursor-pointer"
+                                                            className="text-[10px] font-medium text-muted-foreground hover:text-foreground normal-case transition-colors cursor-pointer"
                                                         >
                                                             Reset
                                                         </button>
                                                     )}
                                                 </div>
-                                                <div className="max-h-60 overflow-y-auto space-y-0.5 px-1">
-                                                    <div
+                                                <div className="max-h-60 overflow-y-auto space-y-0.5 pt-1">
+                                                    <button
+                                                        type="button"
                                                         onClick={() => {
                                                             setExamFilter("all")
                                                             setShowExamFilterDropdown(false)
                                                         }}
-                                                        className={`group flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase transition-all duration-150 cursor-pointer ${
+                                                        className={`w-full text-left rounded-lg px-2.5 py-2 text-xs font-semibold uppercase transition-colors cursor-pointer ${
                                                             examFilter === "all"
-                                                                ? "bg-[#E9C46A]/15 text-[#b08828] dark:text-[#E9C46A]"
-                                                                : "text-foreground hover:bg-muted"
+                                                                ? "bg-muted text-foreground"
+                                                                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                                                         }`}
                                                     >
                                                         <span>All Examinations</span>
-                                                        {examFilter === "all" && <Check className="h-3.5 w-3.5 shrink-0" />}
-                                                    </div>
+                                                    </button>
 
                                                     {(masterData.examinations || []).map((exam) => {
                                                         const isSelected = examFilter === exam.name
                                                         return (
-                                                            <div
+                                                            <button
+                                                                type="button"
                                                                 key={exam.id}
                                                                 onClick={() => {
                                                                     setExamFilter(exam.name)
                                                                     setShowExamFilterDropdown(false)
                                                                 }}
-                                                                className={`group flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase transition-all duration-150 cursor-pointer ${
+                                                                className={`w-full text-left rounded-lg px-2.5 py-2 text-xs font-semibold uppercase transition-colors cursor-pointer ${
                                                                     isSelected
-                                                                        ? "bg-[#E9C46A]/15 text-[#b08828] dark:text-[#E9C46A]"
-                                                                        : "text-foreground hover:bg-muted"
+                                                                        ? "bg-muted text-foreground"
+                                                                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                                                                 }`}
                                                             >
-                                                                <span className="truncate pr-2">{exam.name}</span>
-                                                                {isSelected && <Check className="h-3.5 w-3.5 shrink-0" />}
-                                                            </div>
+                                                                <span className="truncate block">{exam.name}</span>
+                                                            </button>
                                                         )
                                                     })}
                                                 </div>

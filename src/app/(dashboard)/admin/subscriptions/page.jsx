@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic"
 export const revalidate = 0
 
 export const metadata = {
-  title: "Subscriptions & Term Monitoring | Admin Dashboard",
-  description: "Monitor and manage student batch subscriptions, deadlines, and renewals.",
+  title: "Manage Subscriptions | Admin Dashboard",
+  description: "View and manage student access and batch review schedules.",
 }
 
 export default async function SubscriptionsPage() {
@@ -21,10 +21,10 @@ export default async function SubscriptionsPage() {
     <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-1 pb-12 space-y-6">
       <div className="border-b border-border/40 pb-4">
         <h1 className="text-xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-          Subscriptions & Review Terms
+          Manage Subscriptions
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Monitor scheduled batch deadlines, active reviewee access, and term extensions.
+          Track student review access, batch schedules, and expiration dates.
         </p>
       </div>
 

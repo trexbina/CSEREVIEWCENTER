@@ -539,9 +539,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                   <th className="py-2.5 px-4 font-semibold">
                     <TableSortButton label="Remaining Term" field="days_remaining" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="number" />
                   </th>
-                  <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Status" field="status" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="alpha" />
-                  </th>
+                  <th className="py-2.5 px-4 font-semibold">Status</th>
                   <th className="py-2.5 px-4 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
@@ -654,9 +652,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                   <th className="py-2.5 px-4 font-semibold">
                     <TableSortButton label="Scheduled End Date" field="end_date" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="date" />
                   </th>
-                  <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Status" field="status" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="alpha" />
-                  </th>
+                  <th className="py-2.5 px-4 font-semibold">Status</th>
                   <th className="py-2.5 px-4 text-right font-semibold">Actions</th>
                 </tr>
               </thead>

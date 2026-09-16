@@ -65,9 +65,9 @@ const DEFAULT_QUIZ_SETTINGS = {
     referencePdfs: []
 }
 
-export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = false, onToggleViewMode, backUrl }) {
+export default function QuizBuilder({ lessonId, subjectId, isStudent = false, onToggleViewMode, backUrl }) {
     const router = useRouter()
-    const [lessonTitle, setLessonTitle] = useState(examId ? "Mock Exam" : "Quiz")
+    const [lessonTitle, setLessonTitle] = useState("Quiz")
     const [questions, setQuestions] = useState([])
     const [fetching, setFetching] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -428,83 +428,12 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
     }, [lessonId])
 
     useEffect(() => {
-        if (examId) {
-            fetchExamData()
-        } else if (lessonId) {
+        if (lessonId) {
             fetchLessonData()
         } else {
             setFetching(false)
         }
-    }, [lessonId, examId, subjectId])
-
-    async function fetchExamData() {
-        setFetching(true)
-        setIsQuizStarted(false)
-        setQuestions([])
-        setQuizSettings(DEFAULT_QUIZ_SETTINGS)
-        setStudentAnswers({})
-        setIsSubmitted(false)
-        setTimeTakenSeconds(null)
-        setTimeRemaining(null)
-        setIsTimeUp(false)
-        try {
-            const endpoint = isStudent
-                ? `/api/student/mock-exams/${examId}`
-                : `/api/admin/mock-exams/${examId}`
-            const res = await fetch(endpoint, { cache: "no-store" })
-            if (res.ok) {
-                const data = await res.json()
-                const exam = data.exam
-                let initialLoadedQuestions = []
-                let initialLoadedSettings = DEFAULT_QUIZ_SETTINGS
-                if (exam) {
-                    if (exam.title) setLessonTitle(exam.title)
-                    if (exam.questions) {
-                        let parsed = exam.questions
-                        if (typeof parsed === "string") {
-                            try { parsed = JSON.parse(parsed) } catch (e) { parsed = [] }
-                        }
-                        if (parsed && !Array.isArray(parsed) && parsed.questions) {
-                            initialLoadedQuestions = parsed.questions || []
-                            setQuestions(initialLoadedQuestions)
-                            if (parsed.settings) {
-                                const rawList = Array.isArray(parsed.settings.referencePdfs)
-                                    ? parsed.settings.referencePdfs
-                                    : (parsed.settings.referencePdf?.url ? [parsed.settings.referencePdf] : [])
-                                initialLoadedSettings = {
-                                    ...DEFAULT_QUIZ_SETTINGS,
-                                    ...parsed.settings,
-                                    referencePdfs: rawList,
-                                    referencePdf: rawList[0] || null,
-                                    maxRetries: Number(parsed.settings.maxRetries ?? 0),
-                                    timeLimitMinutes: Number(parsed.settings.timeLimitMinutes ?? 0)
-                                }
-                                setQuizSettings(initialLoadedSettings)
-                            } else {
-                                setQuizSettings(DEFAULT_QUIZ_SETTINGS)
-                            }
-                        } else {
-                            initialLoadedQuestions = Array.isArray(parsed) ? parsed : []
-                            setQuestions(initialLoadedQuestions)
-                            setQuizSettings(DEFAULT_QUIZ_SETTINGS)
-                        }
-                    } else {
-                        setQuestions([])
-                        setQuizSettings(DEFAULT_QUIZ_SETTINGS)
-                    }
-                    initialDataRef.current = JSON.stringify({
-                        title: exam.title || lessonTitle || "",
-                        settings: initialLoadedSettings,
-                        questions: initialLoadedQuestions
-                    })
-                }
-            }
-        } catch (err) {
-            console.error("Fetch exam error:", err)
-        } finally {
-            setFetching(false)
-        }
-    }
+    }, [lessonId, subjectId])
 
     async function fetchLessonData() {
         setFetching(true)
@@ -612,17 +541,7 @@ export default function QuizBuilder({ lessonId, examId, subjectId, isStudent = f
         if (effectiveIsStudent) return false
         setSaving(true)
         try {
-            if (examId) {
-                const res = await fetch(`/api/admin/mock-exams/${examId}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        title: lessonTitle,
-                        questions: { settings: quizSettings, questions }
-                    })
-                })
-                if (!res.ok) throw new Error("Save failed")
-            } else if (lessonId) {
+            if (lessonId) {
                 const res = await fetch(`/api/admin/subjects/${subjectId}/lessons/${lessonId}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },

@@ -4,18 +4,18 @@
 // helper tool from react to unwrap parameters from the url
 import { use } from "react"
 
-// the main quiz and question builder component
-import QuizBuilder from "@/components/quiz-builder"
+// the main mock exam builder component
+import MockExamBuilder from "@/components/mock-exam-builder"
 
-// loads the quiz builder screen for a specific mock exam id
+// loads the mock exam builder screen for a specific mock exam id
 export default function MockExamBuilderPage({ params }) {
     // get the exam id from the url
     const { examId } = use(params)
 
-    // display the quiz builder component
+    // display the mock exam builder component
     return (
         <div className="w-full min-h-full">
-            <QuizBuilder key={examId} examId={examId} />
+            <MockExamBuilder key={examId} examId={examId} />
         </div>
     )
 }

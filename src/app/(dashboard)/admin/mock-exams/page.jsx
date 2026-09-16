@@ -55,29 +55,31 @@ function SortButton({ label, field, sortField, sortDir, onSort }) {
     : "Sorted descending (Z-A / Newest)"
 
   return (
-    <Tooltip delayDuration={150}>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          onClick={() => onSort(field)}
-          className="flex items-center gap-1.5 text-[#696969]/80 dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white transition-colors font-medium select-none cursor-pointer"
-        >
-          <span>{label}</span>
-          {active ? (
-            sortDir === "asc" ? (
-              <ArrowUp className="h-3.5 w-3.5 text-[#3B3B3B] dark:text-white shrink-0" />
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={() => onSort(field)}
+            className="flex items-center gap-1.5 text-[#696969]/80 dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white transition-colors font-medium select-none cursor-pointer"
+          >
+            <span>{label}</span>
+            {active ? (
+              sortDir === "asc" ? (
+                <ArrowUp className="h-3.5 w-3.5 text-[#3B3B3B] dark:text-white shrink-0" />
+              ) : (
+                <ArrowDown className="h-3.5 w-3.5 text-[#3B3B3B] dark:text-white shrink-0" />
+              )
             ) : (
-              <ArrowDown className="h-3.5 w-3.5 text-[#3B3B3B] dark:text-white shrink-0" />
-            )
-          ) : (
-            <ArrowUpDown className="h-3.5 w-3.5 opacity-40 shrink-0" />
-          )}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent className="bg-white text-gray-800 dark:bg-slate-900 dark:text-slate-100 border border-gray-200 dark:border-slate-800 shadow-md text-xs px-2.5 py-1 rounded-lg">
-        {tooltipText}
-      </TooltipContent>
-    </Tooltip>
+              <ArrowUpDown className="h-3.5 w-3.5 opacity-40 shrink-0" />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent className="bg-white text-gray-800 dark:bg-slate-900 dark:text-slate-100 border border-gray-200 dark:border-slate-800 shadow-md text-xs px-2.5 py-1 rounded-lg">
+          {tooltipText}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
 

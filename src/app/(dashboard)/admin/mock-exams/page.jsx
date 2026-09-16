@@ -20,7 +20,6 @@ import {
     ChevronRight, 
     Pencil, 
     Trash, 
-    PencilLine, 
     X, 
     Loader2,
     Search 
@@ -30,26 +29,55 @@ import {
 import MinimalDatePicker from "@/components/ui/MinimalDatePicker"
 import MinimalTimePicker from "@/components/ui/MinimalTimePicker"
 import MultiSelectDropdown from "@/components/ui/MultiSelectDropdown"
-
-// confirmation modal popup for delete actions
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 import { toast } from "@/components/ui/toast"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip"
 
-// sorting button component for table headers
+// sorting button component for table headers with simple white tooltip
 function SortButton({ label, field, sortField, sortDir, onSort }) {
   const active = sortField === field
+  const tooltipText = !active
+    ? `Sort by ${label}`
+    : sortDir === "asc"
+    ? "Sorted ascending (A-Z / Oldest)"
+    : "Sorted descending (Z-A / Newest)"
+
   return (
-    <button
-      onClick={() => onSort(field)}
-      className="flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white transition-colors font-medium select-none cursor-pointer"
-    >
-      <span>{label}</span>
-      {active ? (
-        sortDir === "asc" ? <ArrowUp className="h-3.5 w-3.5 text-[#E9C46A] shrink-0" /> : <ArrowDown className="h-3.5 w-3.5 text-[#E9C46A] shrink-0" />
-      ) : (
-        <ArrowUpDown className="h-3.5 w-3.5 opacity-40 shrink-0" />
-      )}
-    </button>
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={() => onSort(field)}
+          className="flex items-center gap-1.5 text-[#696969]/80 dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white transition-colors font-medium select-none cursor-pointer"
+        >
+          <span>{label}</span>
+          {active ? (
+            sortDir === "asc" ? (
+              <ArrowUp className="h-3.5 w-3.5 text-[#3B3B3B] dark:text-white shrink-0" />
+            ) : (
+              <ArrowDown className="h-3.5 w-3.5 text-[#3B3B3B] dark:text-white shrink-0" />
+            )
+          ) : (
+            <ArrowUpDown className="h-3.5 w-3.5 opacity-40 shrink-0" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className="bg-white text-gray-800 dark:bg-slate-900 dark:text-slate-100 border border-gray-200 dark:border-slate-800 shadow-md text-xs px-2.5 py-1 rounded-lg">
+        {tooltipText}
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -775,12 +803,9 @@ export default function MockExamsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
                 <div>
-                    <div className="flex items-center gap-2.5 mb-1">
-                        <PencilLine className="h-6 w-6 text-[#E9C46A]" />
-                        <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase">
-                            MOCK EXAMS
-                        </h1>
-                    </div>
+                    <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase mb-1">
+                        MOCK EXAMS
+                    </h1>
                     <p className="text-muted-foreground text-sm font-medium">
                         Create, schedule, and manage board examination mock exams and target courses.
                     </p>
@@ -811,68 +836,88 @@ export default function MockExamsPage() {
                     {/* Filter dropdowns in minimal pill style */}
                     <div className="flex flex-wrap items-center gap-2">
                         {/* Batch Filter */}
-                        <div className="relative inline-flex items-center gap-1.5 h-10 bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 rounded-xl px-3 text-xs text-[#696969] dark:text-gray-300 shadow-2xs">
-                            <span className="text-[#696969]/70 dark:text-gray-400 text-xs font-medium select-none">Batch:</span>
-                            <select
-                                value={selectedBatch}
-                                onChange={(e) => setSelectedBatch(e.target.value)}
-                                className="bg-transparent font-semibold text-[#3B3B3B] dark:text-white outline-none cursor-pointer pr-4 text-xs appearance-none"
+                        <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+                            <SelectTrigger
+                                aria-label="Filter mock exams by batch"
+                                className="h-10 rounded-xl text-xs font-normal border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
                             >
-                                <option value="All">All</option>
+                                <div className="flex items-center gap-1.5 truncate">
+                                    <span className="text-[#696969]/70 dark:text-gray-400 font-medium">Batch:</span>
+                                    <span className="font-normal text-[#696969] dark:text-gray-300 truncate">
+                                        {selectedBatch}
+                                    </span>
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl font-normal text-xs text-[#696969] dark:text-gray-300">
+                                <SelectItem value="All" className="text-xs font-normal text-[#696969] dark:text-gray-300">All</SelectItem>
                                 {masterData.batches.map(b => (
-                                    <option key={b.id} value={b.name} className="dark:bg-[#14161b]">{b.name}</option>
+                                    <SelectItem key={b.id} value={b.name} className="text-xs font-normal text-[#696969] dark:text-gray-300">{b.name}</SelectItem>
                                 ))}
-                            </select>
-                            <ChevronDown className="h-3 w-3 text-[#696969]/60 pointer-events-none absolute right-2" />
-                        </div>
+                            </SelectContent>
+                        </Select>
 
                         {/* Exam Type Filter */}
-                        <div className="relative inline-flex items-center gap-1.5 h-10 bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 rounded-xl px-3 text-xs text-[#696969] dark:text-gray-300 shadow-2xs">
-                            <span className="text-[#696969]/70 dark:text-gray-400 text-xs font-medium select-none">Type:</span>
-                            <select
-                                value={selectedType}
-                                onChange={(e) => setSelectedType(e.target.value)}
-                                className="bg-transparent font-semibold text-[#3B3B3B] dark:text-white outline-none cursor-pointer pr-4 text-xs appearance-none"
+                        <Select value={selectedType} onValueChange={setSelectedType}>
+                            <SelectTrigger
+                                aria-label="Filter mock exams by type"
+                                className="h-10 rounded-xl text-xs font-normal border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
                             >
-                                <option value="All">All</option>
+                                <div className="flex items-center gap-1.5 truncate">
+                                    <span className="text-[#696969]/70 dark:text-gray-400 font-medium">Type:</span>
+                                    <span className="font-normal text-[#696969] dark:text-gray-300 truncate">
+                                        {selectedType}
+                                    </span>
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl font-normal text-xs text-[#696969] dark:text-gray-300">
+                                <SelectItem value="All" className="text-xs font-normal text-[#696969] dark:text-gray-300">All</SelectItem>
                                 {masterData.examinations.map(ex => (
-                                    <option key={ex.id} value={ex.name} className="dark:bg-[#14161b]">{ex.name}</option>
+                                    <SelectItem key={ex.id} value={ex.name} className="text-xs font-normal text-[#696969] dark:text-gray-300">{ex.name}</SelectItem>
                                 ))}
-                            </select>
-                            <ChevronDown className="h-3 w-3 text-[#696969]/60 pointer-events-none absolute right-2" />
-                        </div>
+                            </SelectContent>
+                        </Select>
 
                         {/* Course / Program Filter */}
-                        <div className="relative inline-flex items-center gap-1.5 h-10 bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 rounded-xl px-3 text-xs text-[#696969] dark:text-gray-300 shadow-2xs">
-                            <span className="text-[#696969]/70 dark:text-gray-400 text-xs font-medium select-none">Course:</span>
-                            <select
-                                value={selectedCourse}
-                                onChange={(e) => setSelectedCourse(e.target.value)}
-                                className="bg-transparent font-semibold text-[#3B3B3B] dark:text-white outline-none cursor-pointer pr-4 text-xs appearance-none max-w-[150px] truncate"
+                        <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                            <SelectTrigger
+                                aria-label="Filter mock exams by course"
+                                className="h-10 max-w-[200px] rounded-xl text-xs font-normal border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
                             >
-                                <option value="All">All</option>
+                                <div className="flex items-center gap-1.5 truncate">
+                                    <span className="text-[#696969]/70 dark:text-gray-400 font-medium">Course:</span>
+                                    <span className="font-normal text-[#696969] dark:text-gray-300 truncate">
+                                        {selectedCourse}
+                                    </span>
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-w-sm font-normal text-xs text-[#696969] dark:text-gray-300">
+                                <SelectItem value="All" className="text-xs font-normal text-[#696969] dark:text-gray-300">All</SelectItem>
                                 {masterData.programs.map(pr => (
-                                    <option key={pr.id} value={pr.name} className="dark:bg-[#14161b]">{pr.name}</option>
+                                    <SelectItem key={pr.id} value={pr.name} className="text-xs font-normal text-[#696969] dark:text-gray-300 truncate">{pr.name}</SelectItem>
                                 ))}
-                            </select>
-                            <ChevronDown className="h-3 w-3 text-[#696969]/60 pointer-events-none absolute right-2" />
-                        </div>
+                            </SelectContent>
+                        </Select>
 
                         {/* Year Filter */}
-                        <div className="relative inline-flex items-center gap-1.5 h-10 bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 rounded-xl px-3 text-xs text-[#696969] dark:text-gray-300 shadow-2xs">
-                            <span className="text-[#696969]/70 dark:text-gray-400 text-xs font-medium select-none">Year:</span>
-                            <select
-                                value={selectedYear}
-                                onChange={(e) => setSelectedYear(e.target.value)}
-                                className="bg-transparent font-semibold text-[#3B3B3B] dark:text-white outline-none cursor-pointer pr-4 text-xs appearance-none"
+                        <Select value={selectedYear} onValueChange={setSelectedYear}>
+                            <SelectTrigger
+                                aria-label="Filter mock exams by year"
+                                className="h-10 rounded-xl text-xs font-normal border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
                             >
-                                <option value="All">All</option>
+                                <div className="flex items-center gap-1.5 truncate">
+                                    <span className="text-[#696969]/70 dark:text-gray-400 font-medium">Year:</span>
+                                    <span className="font-normal text-[#696969] dark:text-gray-300 truncate">
+                                        {selectedYear}
+                                    </span>
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl font-normal text-xs text-[#696969] dark:text-gray-300">
+                                <SelectItem value="All" className="text-xs font-normal text-[#696969] dark:text-gray-300">All</SelectItem>
                                 {availableYears.map(yr => (
-                                    <option key={yr} value={yr} className="dark:bg-[#14161b]">{yr}</option>
+                                    <SelectItem key={yr} value={yr} className="text-xs font-normal text-[#696969] dark:text-gray-300">{yr}</SelectItem>
                                 ))}
-                            </select>
-                            <ChevronDown className="h-3 w-3 text-[#696969]/60 pointer-events-none absolute right-2" />
-                        </div>
+                            </SelectContent>
+                        </Select>
 
                         {(selectedBatch !== "All" || selectedType !== "All" || selectedCourse !== "All" || selectedYear !== "All" || searchQuery.trim()) && (
                             <button
@@ -958,7 +1003,7 @@ export default function MockExamsPage() {
                                                     {exam.title}
                                                 </button>
                                             </td>
-                                            <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-mono text-xs whitespace-nowrap">{exam.exam_code || "—"}</td>
+                                            <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{exam.exam_code || "—"}</td>
                                             <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{batch}</td>
                                             <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap max-w-[200px] truncate" title={type}>{type}</td>
                                             <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap max-w-[220px] truncate" title={course}>{course}</td>

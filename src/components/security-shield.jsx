@@ -10,14 +10,19 @@ import { Button } from "@/components/ui/button"
  */
 export function SecurityShield({
     children,
-    blurOnFocusLoss = true,
+    blurOnFocusLoss = false,
     blurOnMouseLeave = false,
     allowInputCopy = true,
+    disableScreenshotProtection = true, // Temporarily disabled as requested
 }) {
     const [isBlurred, setIsBlurred] = useState(false)
     const blurTimeoutRef = useRef(null)
 
     useEffect(() => {
+        if (disableScreenshotProtection) {
+            return
+        }
+
         // Synchronous instant shield activator (0ms response time before OS compositor grabs frame)
         const triggerShieldSync = () => {
             document.documentElement.classList.add("shield-active")
@@ -283,7 +288,11 @@ export function SecurityShield({
             if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current)
             if (debuggerInterval) clearInterval(debuggerInterval)
         }
-    }, [blurOnFocusLoss, blurOnMouseLeave, allowInputCopy])
+    }, [blurOnFocusLoss, blurOnMouseLeave, allowInputCopy, disableScreenshotProtection])
+
+    if (disableScreenshotProtection) {
+        return <div className="security-shield relative">{children}</div>
+    }
 
     return (
         <div
@@ -329,7 +338,7 @@ export function SecurityShield({
                     </div>
 
                     <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-gray-900 mb-2">
-                        Uh-oh! Something's not right!
+                        Uh-oh! Something&apos;s not right!
                     </h2>
 
                     <p className="text-sm md:text-base text-gray-500 font-medium leading-relaxed max-w-md">

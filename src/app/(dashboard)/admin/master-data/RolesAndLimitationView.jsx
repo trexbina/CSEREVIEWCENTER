@@ -219,14 +219,14 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
             <button
               type="button"
               onClick={onCancel}
-              className="px-3.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-xl transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-lg transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
+              className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-2xs transition-all flex items-center justify-center cursor-pointer active:scale-95"
             >
               {isSaving ? "Saving…" : isEdit ? "Save Changes" : "Create Role"}
             </button>
@@ -347,36 +347,36 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
   }
 
   return (
-    <div className="w-full bg-white dark:bg-[#1E1E1E] border border-black/5 dark:border-white/10 rounded-2xl p-5 sm:p-6 shadow-2xs animate-in fade-in duration-200">
+    <div className="w-full bg-card border border-border/40 rounded-2xl p-6 shadow-xs animate-in fade-in duration-200">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-black/5 dark:border-white/5">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-4 pb-4 mb-6 border-b border-border/40">
+        <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={onBack}
-            className="flex items-center justify-center size-9 rounded-xl bg-[#F2F2F2]/60 hover:bg-[#F2F2F2] dark:bg-white/10 dark:hover:bg-white/15 text-[#696969] hover:text-[#3B3B3B] dark:text-gray-300 dark:hover:text-white border border-black/5 dark:border-white/10 shadow-2xs transition-all cursor-pointer"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
             title="Back to Master Data"
           >
-            <ChevronRight className="h-4 w-4 rotate-180" />
+            <ChevronRight className="h-5 w-5 rotate-180" />
           </button>
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-[#3B3B3B] dark:text-white">
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-foreground truncate">
               Roles and Limitation
             </h2>
-            <p className="text-xs text-[#8c8c8c] mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Configure administrative roles and granular dashboard restrictions.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <span className="text-xs font-semibold text-[#8c8c8c] px-1">
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
             {roles.length} {roles.length === 1 ? "Role" : "Roles"}
           </span>
           <button
             type="button"
             onClick={handleOpenAdd}
-            className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-4 rounded-xl shadow-2xs flex items-center gap-1.5 transition-all text-xs cursor-pointer active:scale-95"
+            className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-3.5 rounded-lg flex items-center gap-1.5 transition-all text-xs cursor-pointer active:scale-95"
           >
             Add New Role
           </button>
@@ -384,21 +384,21 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
       </div>
 
       {/* Search Input Bar */}
-      <div className="mb-4 max-w-sm">
+      <div className="mb-6 max-w-sm">
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#696969]/70" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search roles…"
-            className="w-full h-9 pl-9 pr-8 text-xs rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
+            className="w-full h-9 pl-9 pr-8 text-xs rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
           />
           {search && (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -411,18 +411,18 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse" aria-label="Roles list">
             <thead className="bg-[#F2F2F2]/80 dark:bg-white/5 border-b border-black/5 dark:border-white/10">
-              <tr className="h-10 text-xs font-semibold text-[#696969] dark:text-gray-400">
+              <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-400">
                 <th className="py-2.5 px-4 font-semibold">Role Name</th>
                 <th className="py-2.5 px-4 font-semibold">Description</th>
                 <th className="py-2.5 px-4 font-semibold">Accessible Modules</th>
                 <th className="py-2.5 px-4 text-center font-semibold">Users</th>
-                <th className="py-2.5 px-4 text-right font-semibold">Actions</th>
+                <th className="py-2.5 px-4 text-right pr-6 font-semibold">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs text-foreground">
+            <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm text-foreground">
               {filteredRoles.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-muted-foreground text-xs">
+                  <td colSpan={5} className="text-center py-12 text-muted-foreground text-xs">
                     {search ? `No roles matching "${search}"` : "No roles configured."}
                   </td>
                 </tr>
@@ -434,50 +434,43 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                 return (
                   <tr
                     key={role.id}
-                    className="transition-colors"
+                    className="h-13 transition-colors hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
                   >
-                    <td className="py-3 px-4 font-medium whitespace-nowrap">
+                    <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-foreground text-xs">{role.name}</span>
                         {role.is_system && (
-                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-md bg-muted/60 text-muted-foreground">
+                          <span className="text-[11px] font-normal text-muted-foreground">
                             System Default
                           </span>
                         )}
                       </div>
-                      <span className="text-[10px] text-muted-foreground font-mono block mt-0.5">
+                      <span className="text-[11px] text-muted-foreground font-mono block mt-0.5">
                         {role.role_key}
                       </span>
                     </td>
 
-                    <td className="py-3 px-4 text-muted-foreground text-xs max-w-xs">
-                      {role.description || <span className="opacity-50 italic">No description</span>}
+                    <td className="py-3 px-4 text-sm text-[#696969] dark:text-gray-300 font-normal max-w-xs">
+                      {role.description || <span className="opacity-40 italic">—</span>}
                     </td>
 
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 text-sm">
                       {allAccess ? (
-                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                        <span className="font-medium text-emerald-600 dark:text-emerald-400">
                           Full Access (All Modules)
                         </span>
                       ) : perms.length === 0 ? (
-                        <span className="font-semibold text-rose-600 dark:text-rose-400">
+                        <span className="font-medium text-rose-600 dark:text-rose-400">
                           No Dashboard Access
                         </span>
                       ) : (
-                        <div className="flex flex-wrap gap-1 max-w-md">
-                          {perms.slice(0, 3).map((p) => {
-                            const m = DASHBOARD_MODULES.find((mod) => mod.path === p)
-                            return (
-                              <span
-                                key={p}
-                                className="text-[10px] font-medium bg-muted/40 text-foreground px-2 py-0.5 rounded-md border border-black/5 dark:border-white/10"
-                              >
-                                {m?.name || p}
-                              </span>
-                            )
-                          })}
+                        <div className="text-xs text-[#696969] dark:text-gray-300 font-normal leading-relaxed max-w-md">
+                          {perms
+                            .slice(0, 3)
+                            .map((p) => DASHBOARD_MODULES.find((mod) => mod.path === p)?.name || p)
+                            .join(", ")}
                           {perms.length > 3 && (
-                            <span className="text-[10px] font-medium text-muted-foreground self-center px-1">
+                            <span className="text-muted-foreground ml-1">
                               +{perms.length - 3} more
                             </span>
                           )}
@@ -485,12 +478,12 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                       )}
                     </td>
 
-                    <td className="py-3 px-4 text-center font-medium text-xs text-foreground whitespace-nowrap">
+                    <td className="py-3 px-4 text-center font-normal text-sm text-[#696969] dark:text-gray-300 whitespace-nowrap">
                       {role.user_count || 0}
                     </td>
 
-                    <td className="py-3 px-4 text-right whitespace-nowrap">
-                      <div className="inline-flex items-center justify-end gap-1">
+                    <td className="py-3 px-4 text-right pr-6 whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1">
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(role)}

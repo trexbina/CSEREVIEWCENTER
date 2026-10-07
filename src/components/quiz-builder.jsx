@@ -1109,32 +1109,20 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                 {/* Header Actions */}
                 {!effectiveIsStudent && (
                     <div className="border-b border-gray-200/80 pb-3 relative flex items-center justify-between gap-4 flex-wrap">
-                        {/* Left: Mock Exam Title & Settings */}
+                        {/* Left: Quiz Title & Settings */}
                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                            {examId ? (
-                                <input
-                                    type="text"
-                                    value={lessonTitle}
-                                    onChange={(e) => setLessonTitle(e.target.value)}
-                                    className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-slate-400 outline-none pb-0.5 w-full max-w-xl"
-                                    placeholder="Mock Exam Title"
-                                />
-                            ) : (
-                                <h1 className="text-xl font-bold text-gray-800 tracking-tight truncate">
-                                    {lessonTitle}
-                                </h1>
-                            )}
+                            <h1 className="text-xl font-bold text-gray-800 tracking-tight truncate">
+                                {lessonTitle}
+                            </h1>
 
-                            {!examId && (
-                                <button
-                                    type="button"
-                                    onClick={() => setShowSettings(!showSettings)}
-                                    className={`p-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center justify-center shrink-0 ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-600 hover:text-gray-900'}`}
-                                    title="Quiz Settings"
-                                >
-                                    <Settings className="h-4 w-4" />
-                                </button>
-                            )}
+                            <button
+                                type="button"
+                                onClick={() => setShowSettings(!showSettings)}
+                                className={`p-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center justify-center shrink-0 ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-600 hover:text-gray-900'}`}
+                                title="Quiz Settings"
+                            >
+                                <Settings className="h-4 w-4" />
+                            </button>
                         </div>
 
                         {/* Right: Fullscreen + Student View + Save Changes */}
@@ -1188,7 +1176,7 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                 <div className="bg-white border border-gray-200/80 rounded-2xl shadow-xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                                     {/* Modal Header */}
                                     <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-2xl shrink-0">
-                                        <h3 className="font-bold text-gray-800 text-base">{examId ? "Exam Settings" : "Quiz Settings"}</h3>
+                                        <h3 className="font-bold text-gray-800 text-base">Quiz Settings</h3>
                                         <button
                                             onClick={() => setShowSettings(false)}
                                             className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
@@ -1204,12 +1192,11 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                             <h4 className="font-bold text-gray-800 text-xs uppercase tracking-wider mb-3">Access & Schedule</h4>
 
                                             {/* Set as assignment tick checkbox */}
-                                            {!examId && (
-                                                <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-200/80 mb-4 transition-all">
-                                                    <label className="flex items-start gap-3 cursor-pointer select-none">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={!!quizSettings.isAssignment}
+                                            <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-200/80 mb-4 transition-all">
+                                                <label className="flex items-start gap-3 cursor-pointer select-none">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={!!quizSettings.isAssignment}
                                                             onChange={(e) => setQuizSettings({ ...quizSettings, isAssignment: e.target.checked })}
                                                             className="mt-0.5 rounded border-gray-300 text-[#E9C46A] focus:ring-0 h-4 w-4 cursor-pointer accent-[#E9C46A]"
                                                         />
@@ -1223,9 +1210,8 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                                         </div>
                                                     </label>
                                                 </div>
-                                            )}
 
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                                 {/* Start Date */}
                                                 <div className="flex flex-col gap-1.5">
                                                     <label className="font-semibold text-gray-600 text-xs">Start Date</label>
@@ -1278,7 +1264,7 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                             <h4 className="font-bold text-gray-800 text-xs uppercase tracking-wider mb-3">Time Limit & Attempts</h4>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                                 <div className="flex flex-col gap-1.5">
-                                                    <label className="font-semibold text-gray-600 text-xs">{examId ? "Exam Duration (Minutes)" : "Quiz Duration (Minutes)"}</label>
+                                                    <label className="font-semibold text-gray-600 text-xs">Quiz Duration (Minutes)</label>
                                                     <input
                                                         type="number"
                                                         min={0}
@@ -1498,7 +1484,7 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                     {/* Modal Footer */}
                                     <div className="px-6 py-3.5 bg-gray-50/70 border-t border-gray-100 flex items-center justify-between rounded-b-2xl">
                                         <p className="text-[11px] text-gray-400">
-                                            Paste valid JSON and click "Apply JSON" to replace or add to the current exam.
+                                            Paste valid JSON and click &quot;Apply JSON&quot; to replace or add to the current quiz.
                                         </p>
                                         <div className="flex items-center gap-2 shrink-0">
                                             <button
@@ -1556,13 +1542,13 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                     <div className="space-y-4">
                         {isTooEarly && (
                             <div className="inline-block max-w-xl bg-white border border-gray-200/80 rounded-xl px-4 py-3 text-xs text-gray-600 shadow-2xs">
-                                <span className="font-semibold text-gray-800">{examId ? "Exam Not Available Yet:" : "Quiz Not Available Yet:"}</span> Scheduled to open on <span className="font-medium text-gray-900">{startDateTime ? startDateTime.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : ''}</span>.
+                                <span className="font-semibold text-gray-800">Quiz Not Available Yet:</span> Scheduled to open on <span className="font-medium text-gray-900">{startDateTime ? startDateTime.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : ''}</span>.
                             </div>
                         )}
 
                         {isPastDeadline && (
                             <div className="inline-block max-w-xl bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-xs text-rose-800 shadow-2xs">
-                                <span className="font-semibold">{examId ? "Exam Deadline Passed:" : quizSettings.isAssignment ? "Assignment Deadline Passed:" : "Quiz Deadline Passed:"}</span> This {examId ? "exam" : quizSettings.isAssignment ? "assignment" : "quiz"} closed on <span className="font-medium">{endDateTime ? endDateTime.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : ''}</span>.
+                                <span className="font-semibold">{quizSettings.isAssignment ? "Assignment Deadline Passed:" : "Quiz Deadline Passed:"}</span> This {quizSettings.isAssignment ? "assignment" : "quiz"} closed on <span className="font-medium">{endDateTime ? endDateTime.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : ''}</span>.
                             </div>
                         )}
 
@@ -1582,7 +1568,7 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                             <div className="text-center">
                                 <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-600 px-3 py-1 rounded-full border border-gray-200 text-xs font-medium">
                                     <HelpCircle className="h-3.5 w-3.5 text-gray-400" />
-                                    <span>{examId ? "Examination Overview" : "Quiz Overview"}</span>
+                                    <span>Quiz Overview</span>
                                 </span>
                             </div>
 
@@ -1650,7 +1636,7 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                     className="w-full sm:w-auto min-w-[150px] bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-xs px-6 py-2.5 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
                                 >
                                     <Play className="h-3.5 w-3.5 fill-white" />
-                                    <span>Start {examId ? "Exam" : "Quiz"}</span>
+                                    <span>Start Quiz</span>
                                 </button>
 
                                 {isQuizLocked && (
@@ -1698,7 +1684,7 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                 </div>
                                 <h3 className="text-sm font-bold text-gray-700 mb-1">No questions added yet</h3>
                                 <p className="text-xs text-gray-400 max-w-xs">
-                                    Click "Add Question" above to start building your {examId ? "mock exam" : "quiz"}.
+                                    Click &quot;Add Question&quot; above to start building your quiz.
                                 </p>
                             </div>
                         )}
@@ -2109,7 +2095,7 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                     disabled={isQuizLocked}
                                     className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm px-7 py-2.5 rounded-xl transition-colors cursor-pointer"
                                 >
-                                    Submit {examId ? "Exam" : "Quiz"}
+                                    Submit Quiz
                                 </button>
                             </div>
                         )}

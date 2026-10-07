@@ -1457,7 +1457,7 @@ export default function MockExamBuilder({ examId, isStudent = false, onToggleVie
                                     {/* Modal Footer */}
                                     <div className="px-6 py-3.5 bg-gray-50/70 border-t border-gray-100 flex items-center justify-between rounded-b-2xl">
                                         <p className="text-[11px] text-gray-400">
-                                            Paste valid JSON and click "Apply JSON" to replace or add to the current exam.
+                                            Paste valid JSON and click &quot;Apply JSON&quot; to replace or add to the current exam.
                                         </p>
                                         <div className="flex items-center gap-2 shrink-0">
                                             <button
@@ -1657,7 +1657,7 @@ export default function MockExamBuilder({ examId, isStudent = false, onToggleVie
                                 </div>
                                 <h3 className="text-sm font-bold text-gray-700 mb-1">No questions added yet</h3>
                                 <p className="text-xs text-gray-400 max-w-xs">
-                                    Click "Add Question" above to start building your {examId ? "mock exam" : "quiz"}.
+                                    Click &quot;Add Question&quot; above to start building your mock exam.
                                 </p>
                             </div>
                         )}

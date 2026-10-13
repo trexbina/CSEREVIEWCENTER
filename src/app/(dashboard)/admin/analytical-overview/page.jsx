@@ -387,39 +387,39 @@ export default function AnalyticalOverviewPage() {
             ) : (
               <div className="max-h-[720px] overflow-y-auto">
                 <table className="w-full text-left border-collapse" aria-label="Top Students Table">
-                  <thead className="sticky top-0 z-10 bg-[#E9C46A] text-[#1E293B] border-b border-[#E9C46A]/40 shadow-xs">
-                    <tr className="h-11 text-xs font-bold text-[#1E293B]">
-                      <th className="w-16 px-4 py-2.5 text-center text-[#1E293B]/80" scope="col">Rank</th>
+                  <thead className="sticky top-0 z-10 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 backdrop-blur-xs border-b border-[#E9C46A]/30 shadow-2xs">
+                    <tr className="h-11 text-xs font-semibold text-[#3B3B3B] dark:text-gray-200">
+                      <th className="w-16 px-4 py-2.5 text-center text-[#696969] dark:text-gray-400" scope="col">Rank</th>
                       <th className="px-4 py-2.5" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("name")}
-                          className="inline-flex items-center gap-1.5 hover:text-black cursor-pointer font-bold"
+                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold"
                         >
                           <span>Student</span>
-                          <ArrowUpDown className="size-3 text-[#1E293B]/70" />
+                          <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
                       <th className="px-4 py-2.5" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("school")}
-                          className="inline-flex items-center gap-1.5 hover:text-black cursor-pointer font-bold"
+                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold"
                         >
                           <span>Institution</span>
-                          <ArrowUpDown className="size-3 text-[#1E293B]/70" />
+                          <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
-                      <th className="px-4 py-2.5 font-bold" scope="col">Major / Specialization</th>
-                      <th className="px-4 py-2.5 text-center font-bold" scope="col">Exams Completed</th>
+                      <th className="px-4 py-2.5" scope="col">Major / Specialization</th>
+                      <th className="px-4 py-2.5 text-center" scope="col">Exams Completed</th>
                       <th className="px-4 py-2.5 text-right pr-6" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("avgScore")}
-                          className="inline-flex items-center gap-1.5 hover:text-black cursor-pointer font-bold ml-auto"
+                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold ml-auto"
                         >
                           <span>Average Progress</span>
-                          <ArrowUpDown className="size-3 text-[#1E293B]/70" />
+                          <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
                     </tr>
@@ -486,57 +486,57 @@ export default function AnalyticalOverviewPage() {
             ) : (
               <div className="max-h-[720px] overflow-y-auto">
                 <table className="w-full text-left border-collapse" aria-label="Top Schools Table">
-                  <thead className="sticky top-0 z-10 bg-[#E9C46A] text-[#1E293B] border-b border-[#E9C46A]/40 shadow-xs">
-                    <tr className="h-11 text-xs font-bold text-[#1E293B]">
-                      <th className="w-16 px-4 py-2.5 text-center text-[#1E293B]/80" scope="col">Rank</th>
+                  <thead className="sticky top-0 z-10 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 backdrop-blur-xs border-b border-[#E9C46A]/30 shadow-2xs">
+                    <tr className="h-11 text-xs font-semibold text-[#3B3B3B] dark:text-gray-200">
+                      <th className="w-16 px-4 py-2.5 text-center text-[#696969] dark:text-gray-400" scope="col">Rank</th>
                       <th className="px-4 py-2.5" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("schoolName")}
-                          className="inline-flex items-center gap-1.5 hover:text-black cursor-pointer font-bold"
+                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold"
                         >
                           <span>Institution</span>
-                          <ArrowUpDown className="size-3 text-[#1E293B]/70" />
+                          <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
                       <th className="px-4 py-2.5 text-center" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("studentCount")}
-                          className="inline-flex items-center gap-1.5 hover:text-black cursor-pointer mx-auto font-bold"
+                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer mx-auto font-semibold"
                         >
                           <span>Total Students</span>
-                          <ArrowUpDown className="size-3 text-[#1E293B]/70" />
+                          <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
                       <th className="px-4 py-2.5 text-center" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("passedCount")}
-                          className="inline-flex items-center gap-1.5 hover:text-black cursor-pointer mx-auto font-bold"
+                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer mx-auto font-semibold"
                         >
                           <span>Proficient Students</span>
-                          <ArrowUpDown className="size-3 text-[#1E293B]/70" />
+                          <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
                       <th className="px-4 py-2.5 text-center" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("passRate")}
-                          className="inline-flex items-center gap-1.5 hover:text-black cursor-pointer mx-auto font-bold"
+                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer mx-auto font-semibold"
                         >
                           <span>Passing Rate</span>
-                          <ArrowUpDown className="size-3 text-[#1E293B]/70" />
+                          <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
                       <th className="px-4 py-2.5 text-right pr-6" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("avgScore")}
-                          className="inline-flex items-center gap-1.5 hover:text-black cursor-pointer ml-auto font-bold"
+                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer ml-auto font-semibold"
                         >
                           <span>Average Progress</span>
-                          <ArrowUpDown className="size-3 text-[#1E293B]/70" />
+                          <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
                     </tr>
@@ -605,40 +605,40 @@ export default function AnalyticalOverviewPage() {
             ) : (
               <div className="max-h-[720px] overflow-y-auto">
                 <table className="w-full text-left border-collapse" aria-label="Students at Risk Table">
-                  <thead className="sticky top-0 z-10 bg-[#E9C46A] text-[#1E293B] border-b border-[#E9C46A]/40 shadow-xs">
-                    <tr className="h-11 text-xs font-bold text-[#1E293B]">
-                      <th className="w-16 px-4 py-2.5 text-center text-[#1E293B]/80" scope="col">#</th>
+                  <thead className="sticky top-0 z-10 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 backdrop-blur-xs border-b border-[#E9C46A]/30 shadow-2xs">
+                    <tr className="h-11 text-xs font-semibold text-[#3B3B3B] dark:text-gray-200">
+                      <th className="w-16 px-4 py-2.5 text-center text-[#696969] dark:text-gray-400" scope="col">#</th>
                       <th className="px-4 py-2.5" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("name")}
-                          className="inline-flex items-center gap-1.5 hover:text-black cursor-pointer font-bold"
+                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold"
                         >
                           <span>Student</span>
-                          <ArrowUpDown className="size-3 text-[#1E293B]/70" />
+                          <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
                       <th className="px-4 py-2.5" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("school")}
-                          className="inline-flex items-center gap-1.5 hover:text-black cursor-pointer font-bold"
+                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold"
                         >
                           <span>Institution</span>
-                          <ArrowUpDown className="size-3 text-[#1E293B]/70" />
+                          <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
-                      <th className="px-4 py-2.5 font-bold" scope="col">Major / Specialization</th>
-                      <th className="px-4 py-2.5 text-center font-bold" scope="col">Examination</th>
-                      <th className="px-4 py-2.5 text-center font-bold" scope="col">Exams Completed</th>
+                      <th className="px-4 py-2.5" scope="col">Major / Specialization</th>
+                      <th className="px-4 py-2.5 text-center" scope="col">Examination</th>
+                      <th className="px-4 py-2.5 text-center" scope="col">Exams Completed</th>
                       <th className="px-4 py-2.5 text-right pr-6" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("avgScore")}
-                          className="inline-flex items-center gap-1.5 hover:text-black cursor-pointer ml-auto font-bold"
+                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold ml-auto"
                         >
                           <span>Progress Score</span>
-                          <ArrowUpDown className="size-3 text-[#1E293B]/70" />
+                          <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
                     </tr>

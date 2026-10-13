@@ -1,7 +1,7 @@
 "use client"
 
 import { CheckCircle2, Zap, LayoutDashboard } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { LordIcon } from "@/components/ui/lord-icon"
 
 const containerVariants = {

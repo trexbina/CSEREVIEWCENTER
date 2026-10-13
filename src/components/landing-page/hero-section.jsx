@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { LoginDialog } from "@/components/login-dialog"
 import { Button } from "@/components/ui/button"
 import { Phone, Mail, MapPin, X } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 
 // Dedicated banner carousel slides
 // To add or replace photos, just add your files to: /public/banners/

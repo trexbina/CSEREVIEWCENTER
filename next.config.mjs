@@ -39,6 +39,7 @@ const nextConfig = {
       "recharts",
       "class-variance-authority",
       "next-themes",
+      "lottie-web",
     ],
   },
 

@@ -1627,14 +1627,14 @@ export default function AnalyticalOverviewPage() {
 
                 <div>
                   <div className="text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                    {data?.studentActivityAnalytics?.kpis?.activeReviewees || "0 / 0"}
+                    {filteredActivityAnalytics?.kpis?.activeReviewees || "0 / 0"}
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
                   <span className="truncate">Participation Rate</span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-semibold whitespace-nowrap">
-                    {data?.studentActivityAnalytics?.kpis?.participationDeltaText || "0% • 0% vs yesterday"}
+                    {filteredActivityAnalytics?.kpis?.participationDeltaText || "0% • 0% vs yesterday"}
                   </span>
                 </div>
               </div>
@@ -1652,14 +1652,14 @@ export default function AnalyticalOverviewPage() {
 
                 <div>
                   <div className="text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                    {data?.studentActivityAnalytics?.kpis?.totalStudyTime || "0h 0m"}
+                    {filteredActivityAnalytics?.kpis?.totalStudyTime || "0h 0m"}
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
                   <span className="truncate">Active Candidate Average</span>
                   <span className="text-[#3B3B3B] dark:text-white font-semibold whitespace-nowrap">
-                    {data?.studentActivityAnalytics?.kpis?.avgStudyTimePerActive || "Avg 0h 0m per active student"}
+                    {filteredActivityAnalytics?.kpis?.avgStudyTimePerActive || "Avg 0h 0m per active student"}
                   </span>
                 </div>
               </div>
@@ -1677,14 +1677,14 @@ export default function AnalyticalOverviewPage() {
 
                 <div>
                   <div className="text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                    {data?.studentActivityAnalytics?.kpis?.curriculumInteractions || "0 opens"}
+                    {filteredActivityAnalytics?.kpis?.curriculumInteractions || "0 opens"}
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
                   <span className="truncate">Resource Scope</span>
                   <span className="text-[#3B3B3B] dark:text-white font-medium whitespace-nowrap">
-                    {data?.studentActivityAnalytics?.kpis?.activeSubjectsCount || "Across active subjects & modules"}
+                    {filteredActivityAnalytics?.kpis?.activeSubjectsCount || "Across active subjects & modules"}
                   </span>
                 </div>
               </div>
@@ -1702,14 +1702,14 @@ export default function AnalyticalOverviewPage() {
 
                 <div>
                   <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white truncate">
-                    {data?.studentActivityAnalytics?.kpis?.peakActivityWindow || "—"}
+                    {filteredActivityAnalytics?.kpis?.peakActivityWindow || "—"}
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
                   <span className="truncate">Concurrent Load</span>
                   <span className="text-rose-600 dark:text-rose-400 font-semibold whitespace-nowrap">
-                    {data?.studentActivityAnalytics?.kpis?.peakConcurrentText || "No active students online in this period"}
+                    {filteredActivityAnalytics?.kpis?.peakConcurrentText || "No active students online in this period"}
                   </span>
                 </div>
               </div>
@@ -1725,7 +1725,7 @@ export default function AnalyticalOverviewPage() {
                       Daily Study & Peak Hour Distribution
                     </h3>
                     <p className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
-                      {data?.studentActivityAnalytics?.isSingleDay
+                      {filteredActivityAnalytics?.isSingleDay
                         ? "Hourly concurrent active students and cumulative hours (24h)"
                         : "Daily active students (bars) vs. total hours logged (line)"}
                     </p>
@@ -1741,8 +1741,8 @@ export default function AnalyticalOverviewPage() {
                 </div>
 
                 <div className="w-full h-[280px]">
-                  {(data?.studentActivityAnalytics?.chart1Distribution || []).length === 0 ||
-                  (data?.studentActivityAnalytics?.kpis?.activeCount === 0 && (data?.studentActivityAnalytics?.chart1Distribution || []).every((d) => d.active === 0 && d.hours === 0)) ? (
+                  {(filteredActivityAnalytics?.chart1Distribution || []).length === 0 ||
+                  (filteredActivityAnalytics?.kpis?.activeCount === 0 && (filteredActivityAnalytics?.chart1Distribution || []).every((d) => d.active === 0 && d.hours === 0)) ? (
                     <div className="h-full flex flex-col items-center justify-center text-xs text-[#696969] dark:text-gray-400">
                       <Clock className="size-8 stroke-[1.5] mb-2 opacity-30" />
                       <span>No study session distribution recorded for this date.</span>
@@ -1750,7 +1750,7 @@ export default function AnalyticalOverviewPage() {
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
-                        data={data?.studentActivityAnalytics?.chart1Distribution || []}
+                        data={filteredActivityAnalytics?.chart1Distribution || []}
                         margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
@@ -1845,7 +1845,7 @@ export default function AnalyticalOverviewPage() {
                 </div>
 
                 <div className="w-full h-[280px]">
-                  {(data?.studentActivityAnalytics?.chart2SubjectAllocation || []).every((d) => d.totalCategoryHours === 0) ? (
+                  {(filteredActivityAnalytics?.chart2SubjectAllocation || []).every((d) => d.totalCategoryHours === 0) ? (
                     <div className="h-full flex flex-col items-center justify-center text-xs text-[#696969] dark:text-gray-400">
                       <BookOpen className="size-8 stroke-[1.5] mb-2 opacity-30" />
                       <span>No subject study hours logged for this period.</span>
@@ -1854,7 +1854,7 @@ export default function AnalyticalOverviewPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         layout="vertical"
-                        data={data?.studentActivityAnalytics?.chart2SubjectAllocation || []}
+                        data={filteredActivityAnalytics?.chart2SubjectAllocation || []}
                         margin={{ top: 10, right: 30, left: 20, bottom: 0 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.05)" />
@@ -1951,14 +1951,14 @@ export default function AnalyticalOverviewPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                      {(data?.studentActivityAnalytics?.tabA_subjectBreakdown || []).length === 0 ? (
+                      {(filteredActivityAnalytics?.tabA_subjectBreakdown || []).length === 0 ? (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-xs text-[#696969] dark:text-gray-400">
                             No subjects configured or recorded yet.
                           </td>
                         </tr>
                       ) : (
-                        (data?.studentActivityAnalytics?.tabA_subjectBreakdown || []).map((sub) => (
+                        (filteredActivityAnalytics?.tabA_subjectBreakdown || []).map((sub) => (
                           <tr key={sub.id} className="h-12 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
                             <td className="py-3 px-3">
                               <div className="font-semibold text-[#3B3B3B] dark:text-white">
@@ -2017,14 +2017,14 @@ export default function AnalyticalOverviewPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                      {(data?.studentActivityAnalytics?.tabB_studentRoster || []).length === 0 ? (
+                      {(filteredActivityAnalytics?.tabB_studentRoster || []).length === 0 ? (
                         <tr>
                           <td colSpan={7} className="py-8 text-center text-xs text-[#696969] dark:text-gray-400">
                             No student activity records found for this period.
                           </td>
                         </tr>
                       ) : (
-                        (data?.studentActivityAnalytics?.tabB_studentRoster || []).map((st) => (
+                        (filteredActivityAnalytics?.tabB_studentRoster || []).map((st) => (
                           <tr key={st.id} className="h-12 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
                             <td className="py-3 px-3">
                               <div className="font-semibold text-[#3B3B3B] dark:text-white">

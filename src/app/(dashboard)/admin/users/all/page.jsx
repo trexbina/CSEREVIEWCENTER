@@ -62,10 +62,13 @@ export default async function AllUsersPage() {
                     >
                         <ArrowLeft className="size-4" />
                     </Link>
-                    <div>
+                    <div className="flex items-center gap-2.5">
                         <h1 className="text-xl font-bold tracking-wide text-[#3B3B3B] dark:text-white">
                             All Users
                         </h1>
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300">
+                            Total Users: {users.length}
+                        </span>
                     </div>
                 </div>
             </div>

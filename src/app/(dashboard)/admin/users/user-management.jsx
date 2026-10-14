@@ -906,7 +906,14 @@ export function UserSearchTable({ users, currentUserId }) {
           </TooltipProvider>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <div className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 flex items-center gap-1.5 shrink-0">
+            <span>Total Users:</span>
+            <span className="font-bold text-[#3B3B3B] dark:text-white">
+              {hasQuery ? `${filtered.length} of ${users.length}` : users.length}
+            </span>
+          </div>
+
           {selectedIds.length > 0 && (
             <button
               type="button"
@@ -1303,8 +1310,15 @@ export function UserTable({ users, currentUserId }) {
           </div>
         </div>
 
-        {/* Right Action buttons: Delete Selected */}
-        <div className="flex items-center gap-2">
+        {/* Right Action buttons: Total Users display and Delete Selected */}
+        <div className="flex items-center gap-3">
+          <div className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 flex items-center gap-1.5 shrink-0">
+            <span>Total Users:</span>
+            <span className="font-bold text-[#3B3B3B] dark:text-white">
+              {roleFilter !== "ALL" || examFilter !== "ALL" || search.trim() ? `${sorted.length} of ${users.length}` : users.length}
+            </span>
+          </div>
+
           {selectedIds.length > 0 && (
             <button
               type="button"

@@ -25,7 +25,7 @@ export async function GET(request) {
     const [schoolsRes, majorsRes, batchesRes, examinationsRes, mockExamsRes] = await Promise.all([
       pool.query("SELECT id, name FROM schools ORDER BY name ASC").catch(() => ({ rows: [] })),
       pool.query("SELECT id, name FROM majors ORDER BY name ASC").catch(() => ({ rows: [] })),
-      pool.query("SELECT id, name FROM batches ORDER BY name ASC").catch(() => ({ rows: [] })),
+      pool.query("SELECT id, name, exam_id FROM batches ORDER BY name ASC").catch(() => ({ rows: [] })),
       pool.query("SELECT id, name FROM examinations WHERE name NOT ILIKE 'TEST_%' ORDER BY name ASC").catch(() => ({ rows: [] })),
       pool.query("SELECT id, exam_code, title FROM mock_exams ORDER BY created_at ASC").catch(() => ({ rows: [] })),
     ])

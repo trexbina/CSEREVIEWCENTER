@@ -97,7 +97,30 @@ export default function AnalyticalOverviewPage() {
   }, [])
 
   const examinationOptions = data?.filters?.examinations || []
-  const batchOptions = data?.filters?.batches || []
+  const allBatchOptions = data?.filters?.batches || []
+
+  // Filter batches based on selected examination. If ALL examinations, show all batches.
+  const availableBatchOptions = useMemo(() => {
+    if (selectedExaminationId === "ALL") {
+      return allBatchOptions
+    }
+    return allBatchOptions.filter(
+      (b) => String(b.exam_id) === String(selectedExaminationId)
+    )
+  }, [allBatchOptions, selectedExaminationId])
+
+  // Handle examination change: reset batch if current batch isn't in availableBatchOptions
+  const handleExaminationChange = (newExamId) => {
+    setSelectedExaminationId(newExamId)
+    if (newExamId !== "ALL") {
+      const isBatchValid = allBatchOptions.some(
+        (b) => String(b.id) === String(selectedBatchId) && String(b.exam_id) === String(newExamId)
+      )
+      if (!isBatchValid) {
+        setSelectedBatchId("ALL")
+      }
+    }
+  }
 
   // Performance Rating calculation matching Status Reference rules
   const getPerformanceRating = (score) => {
@@ -176,7 +199,7 @@ export default function AnalyticalOverviewPage() {
       result = result.filter(
         (s) =>
           String(s.batchId) === String(selectedBatchId) ||
-          s.batch?.toLowerCase() === batchOptions.find((b) => String(b.id) === String(selectedBatchId))?.name?.toLowerCase()
+          s.batch?.toLowerCase() === allBatchOptions.find((b) => String(b.id) === String(selectedBatchId))?.name?.toLowerCase()
       )
     }
 
@@ -206,7 +229,7 @@ export default function AnalyticalOverviewPage() {
       bVal = bVal ?? 0
       return sortDir === "asc" ? aVal - bVal : bVal - aVal
     })
-  }, [data, search, sortField, sortDir, selectedExaminationId, selectedBatchId, examinationOptions, batchOptions])
+  }, [data, search, sortField, sortDir, selectedExaminationId, selectedBatchId, examinationOptions, allBatchOptions])
 
   // Filter and sort schools (Top Schools)
   const filteredSchools = useMemo(() => {
@@ -225,7 +248,7 @@ export default function AnalyticalOverviewPage() {
         const matchesBatch =
           selectedBatchId === "ALL" ||
           String(s.batchId) === String(selectedBatchId) ||
-          s.batch?.toLowerCase() === batchOptions.find((b) => String(b.id) === String(selectedBatchId))?.name?.toLowerCase()
+          s.batch?.toLowerCase() === allBatchOptions.find((b) => String(b.id) === String(selectedBatchId))?.name?.toLowerCase()
 
         return matchesExam && matchesBatch
       })
@@ -275,7 +298,7 @@ export default function AnalyticalOverviewPage() {
       bVal = bVal ?? 0
       return sortDir === "asc" ? aVal - bVal : bVal - aVal
     })
-  }, [data, search, sortField, sortDir, selectedExaminationId, selectedBatchId, examinationOptions, batchOptions])
+  }, [data, search, sortField, sortDir, selectedExaminationId, selectedBatchId, examinationOptions, allBatchOptions])
 
   // Filter and sort students at risk (avgScore < 75% or low mock exam completion)
   const filteredAtRiskStudents = useMemo(() => {
@@ -298,7 +321,7 @@ export default function AnalyticalOverviewPage() {
       result = result.filter(
         (s) =>
           String(s.batchId) === String(selectedBatchId) ||
-          s.batch?.toLowerCase() === batchOptions.find((b) => String(b.id) === String(selectedBatchId))?.name?.toLowerCase()
+          s.batch?.toLowerCase() === allBatchOptions.find((b) => String(b.id) === String(selectedBatchId))?.name?.toLowerCase()
       )
     }
 
@@ -328,7 +351,7 @@ export default function AnalyticalOverviewPage() {
       bVal = bVal ?? 0
       return sortDir === "asc" ? aVal - bVal : bVal - aVal
     })
-  }, [data, search, sortField, sortDir, selectedExaminationId, examinationOptions])
+  }, [data, search, sortField, sortDir, selectedExaminationId, selectedBatchId, examinationOptions, allBatchOptions])
 
   return (
     <div className="w-full space-y-8 pb-12">
@@ -417,7 +440,7 @@ export default function AnalyticalOverviewPage() {
               <select
                 id="examination-tab-select"
                 value={selectedExaminationId}
-                onChange={(e) => setSelectedExaminationId(e.target.value)}
+                onChange={(e) => handleExaminationChange(e.target.value)}
                 className="h-10 px-3 text-xs font-medium rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[220px] sm:max-w-[260px] truncate"
               >
                 <option value="ALL">All Examinations</option>
@@ -444,7 +467,7 @@ export default function AnalyticalOverviewPage() {
                 className="h-10 px-3 text-xs font-medium rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[180px] truncate"
               >
                 <option value="ALL">All Batches</option>
-                {batchOptions.map((batch) => (
+                {availableBatchOptions.map((batch) => (
                   <option key={batch.id} value={batch.id}>
                     {batch.name}
                   </option>
@@ -494,6 +517,7 @@ export default function AnalyticalOverviewPage() {
                         </button>
                       </th>
                       <th className="px-4 py-2.5" scope="col">Major / Specialization</th>
+                      <th className="px-4 py-2.5 text-center" scope="col">Batch</th>
                       <th className="px-4 py-2.5 text-right pr-6" scope="col">
                         <button
                           type="button"
@@ -540,6 +564,13 @@ export default function AnalyticalOverviewPage() {
                           {/* Major */}
                           <td className="px-4 py-3 text-xs text-[#696969] dark:text-gray-400">
                             {st.major || "—"}
+                          </td>
+
+                          {/* Batch */}
+                          <td className="px-4 py-3 text-xs text-center text-[#696969] dark:text-gray-300">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[11px] font-medium text-[#3B3B3B] dark:text-gray-200">
+                              {st.batch || "—"}
+                            </span>
                           </td>
 
                           {/* Performance Rating */}

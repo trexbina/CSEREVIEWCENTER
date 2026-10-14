@@ -10,11 +10,14 @@ This folder (`.agent`) is the AI Skills Library for the workspace.
 - **No Browser Testing**: Do not start browser subagents or use automated browser tools to test UI functionality. The USER will test it manually.
 
 ## Graphify Rules
-- Consult the graphify knowledge graph at `graphify-out/` for codebase and architecture questions.
-- For codebase or architecture questions, when `graphify-out/graph.json` exists, first run `graphify query "<question>"` (CLI) or `query_graph` (MCP). Use `graphify path "<A>" "<B>"` / `shortest_path` for relationships and `graphify explain "<concept>"` / `get_node` for focused concepts. These return a scoped subgraph, usually much smaller than `GRAPH_REPORT.md` or raw grep output.
-- If `graphify-out/wiki/index.md` exists, navigate it instead of reading raw files.
-- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- Consult the graphify knowledge graph at `.graphify/` using token-budgeted commands to save context and speed up queries:
+  - `graphify query --budget 500 "<question>"` (caps output at 500 tokens instead of default 2000).
+  - Use `graphify minimal-context` for compact first-call changed-file context and routing.
+  - Use `graphify explain "<concept>"` or `graphify path "<A>" "<B>"` for specific relationships.
+  - Use `graphify tree "<node>" --depth 1` for local structure without heavy token payloads.
+- **NEVER** read `.graphify/graph.json` directly (it is ~16MB).
+- Do not read `.graphify/GRAPH_REPORT.md` unless explicitly requested.
+- Run `graphify update .` only when explicitly requested or after significant multi-file refactoring (AST-only, zero API cost). Avoid running updates on minor prompt edits.
 
 ## Prompt Skill Execution Rules
 - **DEFAULT SKILL FOR EVERY PROMPT**: The skill defined below (**Agent Tool Builder**) must be active and applied to every single prompt/interaction.

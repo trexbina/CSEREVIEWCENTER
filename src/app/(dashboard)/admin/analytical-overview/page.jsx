@@ -57,15 +57,17 @@ export default function AnalyticalOverviewPage() {
   const [showStudentActivity, setShowStudentActivity] = useState(true)
   const [showUserRegistration, setShowUserRegistration] = useState(true)
 
+  // Shared: today's date string (must be declared before any useState that uses it)
+  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], [])
+
   // Section 4: User Registration Overview State
-  const [regDate, setRegDate] = useState(todayStr)
+  const [regDate, setRegDate] = useState(() => new Date().toISOString().split("T")[0])
   const [regRange, setRegRange] = useState("today") // 'today' | 'yesterday' | '7days' | '30days' | 'all'
   const [selectedRegExaminationId, setSelectedRegExaminationId] = useState("ALL")
   const [selectedRegBatchId, setSelectedRegBatchId] = useState("ALL")
   const [regTab, setRegTab] = useState("tracks") // 'tracks' | 'log'
 
   // Section 3: Student Activity & Engagement State
-  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], [])
   const [activityDate, setActivityDate] = useState(todayStr)
   const [activityRange, setActivityRange] = useState("today") // 'today' | 'yesterday' | '7days' | 'all'
   const [activityTab, setActivityTab] = useState("subjects") // 'subjects' | 'roster'

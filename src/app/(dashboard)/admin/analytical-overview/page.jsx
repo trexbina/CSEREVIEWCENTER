@@ -20,6 +20,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   FileSpreadsheet,
+  UserPlus,
+  UserCheck,
+  TrendingUp,
+  Award,
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -51,6 +55,14 @@ export default function AnalyticalOverviewPage() {
   const [showPerformanceOverview, setShowPerformanceOverview] = useState(true)
   const [showPassersRate, setShowPassersRate] = useState(true)
   const [showStudentActivity, setShowStudentActivity] = useState(true)
+  const [showUserRegistration, setShowUserRegistration] = useState(true)
+
+  // Section 4: User Registration Overview State
+  const [regDate, setRegDate] = useState(todayStr)
+  const [regRange, setRegRange] = useState("today") // 'today' | 'yesterday' | '7days' | '30days' | 'all'
+  const [selectedRegExaminationId, setSelectedRegExaminationId] = useState("ALL")
+  const [selectedRegBatchId, setSelectedRegBatchId] = useState("ALL")
+  const [regTab, setRegTab] = useState("tracks") // 'tracks' | 'log'
 
   // Section 3: Student Activity & Engagement State
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], [])
@@ -116,6 +128,29 @@ export default function AnalyticalOverviewPage() {
       )
       if (!isBatchValid) {
         setSelectedActivityBatchId("ALL")
+      }
+    }
+  }
+
+  // Dynamic batch options for Section 4 (User Registration Overview)
+  const regBatchOptions = useMemo(() => {
+    if (selectedRegExaminationId === "ALL") {
+      return allBatchOptions
+    }
+    return allBatchOptions.filter(
+      (b) => String(b.exam_id) === String(selectedRegExaminationId)
+    )
+  }, [allBatchOptions, selectedRegExaminationId])
+
+  // Handle Section 4 Examination filter change with batch reset
+  const handleRegExaminationChange = (newExamId) => {
+    setSelectedRegExaminationId(newExamId)
+    if (newExamId !== "ALL") {
+      const isBatchValid = allBatchOptions.some(
+        (b) => String(b.id) === String(selectedRegBatchId) && String(b.exam_id) === String(newExamId)
+      )
+      if (!isBatchValid) {
+        setSelectedRegBatchId("ALL")
       }
     }
   }
@@ -391,10 +426,14 @@ export default function AnalyticalOverviewPage() {
     try {
       const activeDate = customParams.date !== undefined ? customParams.date : activityDate
       const activeRange = customParams.range !== undefined ? customParams.range : activityRange
+      const activeRegDate = customParams.regDate !== undefined ? customParams.regDate : regDate
+      const activeRegRange = customParams.regRange !== undefined ? customParams.regRange : regRange
 
       const q = new URLSearchParams()
       if (activeDate) q.set("activity_date", activeDate)
       if (activeRange) q.set("activity_range", activeRange)
+      if (activeRegDate) q.set("reg_date", activeRegDate)
+      if (activeRegRange) q.set("reg_range", activeRegRange)
 
       const res = await fetch(`/api/admin/analytical-overview?${q.toString()}`)
       const json = await res.json()
@@ -434,6 +473,35 @@ export default function AnalyticalOverviewPage() {
     fetchAnalytics({
       range,
       date: range === "today" ? todayStr : range === "yesterday" ? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0] : "",
+    })
+  }
+
+  // Registration date picker handler
+  const handleRegDateChange = (newDate) => {
+    setRegDate(newDate)
+    setRegRange("")
+    fetchAnalytics({ regDate: newDate, regRange: "" })
+  }
+
+  // Registration quick presets handler (Today | Yesterday | Last 7 Days | Last 30 Days | All-Time)
+  const handleRegRangeChange = (range) => {
+    setRegRange(range)
+    if (range === "today") {
+      setRegDate(todayStr)
+    } else if (range === "yesterday") {
+      const y = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      setRegDate(y)
+    } else {
+      setRegDate("")
+    }
+    fetchAnalytics({
+      regRange: range,
+      regDate:
+        range === "today"
+          ? todayStr
+          : range === "yesterday"
+          ? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+          : "",
     })
   }
 
@@ -504,6 +572,237 @@ export default function AnalyticalOverviewPage() {
     link.click()
     document.body.removeChild(link)
   }
+
+  // Section 4: Export CSV Action for User Registration Overview
+  const exportRegCSV = () => {
+    const reg = filteredRegistrationData
+    if (!reg) return
+
+    let csvRows = []
+    if (regTab === "tracks") {
+      csvRows.push([
+        "Licensure Exam Track",
+        "Full Examination Title",
+        "New Registrations (Period)",
+        "Total Enrolled Candidates",
+        "Active Candidates",
+        "Active Rate (%)",
+        "Cohort Share (%)",
+      ])
+      ;(reg.tabA_examTracks || []).forEach((row) => {
+        csvRows.push([
+          `"${(row.trackCode || "").replace(/"/g, '""')}"`,
+          `"${(row.trackName || "").replace(/"/g, '""')}"`,
+          row.newRegistrations,
+          row.totalCandidates,
+          row.activeCandidates,
+          `${row.activePercentage}%`,
+          `${row.shareRate}%`,
+        ])
+      })
+    } else {
+      csvRows.push([
+        "Candidate Name",
+        "Email",
+        "Login ID",
+        "Role",
+        "Target Examination",
+        "Batch",
+        "School",
+        "Status",
+        "Registration Date",
+      ])
+      ;(reg.tabB_candidateLog || []).forEach((c) => {
+        csvRows.push([
+          `"${(c.name || "").replace(/"/g, '""')}"`,
+          `"${(c.email || "").replace(/"/g, '""')}"`,
+          `"${(c.login_id || "").replace(/"/g, '""')}"`,
+          `"${(c.role || "").replace(/"/g, '""')}"`,
+          `"${(c.target_exam || "").replace(/"/g, '""')}"`,
+          `"${(c.batch_name || "").replace(/"/g, '""')}"`,
+          `"${(c.school_name || "").replace(/"/g, '""')}"`,
+          `"${(c.status || "").replace(/"/g, '""')}"`,
+          `"${(c.created_formatted || "").replace(/"/g, '""')}"`,
+        ])
+      })
+    }
+
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.map((e) => e.join(",")).join("\n")
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", `user_registrations_${regTab}_${regRange || regDate || "export"}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  // Section 4: Filtered User Registration Overview Data based on Examination and Batch
+  const filteredRegistrationData = useMemo(() => {
+    const raw = data?.userRegistrationOverview
+    if (!raw) return null
+
+    const allCandidates = raw.allCandidates || []
+    const isSingleDay = raw.isSingleDay
+
+    // Filter candidates by selected examination and batch
+    const filteredCandidates = allCandidates.filter((c) => {
+      if (selectedRegExaminationId !== "ALL") {
+        const matchId = String(c.exam_id) === String(selectedRegExaminationId)
+        const foundExam = examinationOptions.find((e) => String(e.id) === String(selectedRegExaminationId))
+        const matchTrack = foundExam && (
+          c.target_exam?.toLowerCase() === foundExam.name?.toLowerCase() ||
+          foundExam.name?.toLowerCase().includes(c.target_exam?.toLowerCase())
+        )
+        if (!matchId && !matchTrack) return false
+      }
+      if (selectedRegBatchId !== "ALL" && String(c.batch_id) !== String(selectedRegBatchId)) {
+        return false
+      }
+      return true
+    })
+
+    const selDate = raw.selectedDate
+    const inPeriod = (c) => {
+      if (raw.selectedRange === "all") return true
+      if (isSingleDay) return c.created_date === selDate
+      return c.created_date >= raw.selectedDate && c.created_date <= todayStr
+    }
+
+    const periodCandidates = filteredCandidates.filter(inPeriod)
+    const newCount = periodCandidates.length
+    const totalScoped = filteredCandidates.length
+    const platformTotal = allCandidates.length
+    const reachPct = platformTotal > 0 ? Math.round((totalScoped / platformTotal) * 100) : 0
+
+    const activeCandidates = filteredCandidates.filter((c) => c.status === "active")
+    const activeRate = totalScoped > 0 ? Math.round((activeCandidates.length / totalScoped) * 100) : 0
+
+    // Leading Exam Track in this filtered view
+    const examCountMap = {}
+    periodCandidates.forEach((c) => {
+      const ex = c.target_exam || "General"
+      examCountMap[ex] = (examCountMap[ex] || 0) + 1
+    })
+    let leadingTrack = "—"
+    let leadingShare = 0
+    const sortedTracks = Object.entries(examCountMap).sort((a, b) => b[1] - a[1])
+    if (sortedTracks.length > 0) {
+      leadingTrack = sortedTracks[0][0]
+      leadingShare = newCount > 0 ? Math.round((sortedTracks[0][1] / newCount) * 100) : 0
+    } else if (totalScoped > 0) {
+      const totalExamMap = {}
+      filteredCandidates.forEach((c) => {
+        const ex = c.target_exam || "General"
+        totalExamMap[ex] = (totalExamMap[ex] || 0) + 1
+      })
+      const sortedTotal = Object.entries(totalExamMap).sort((a, b) => b[1] - a[1])
+      if (sortedTotal.length > 0) {
+        leadingTrack = sortedTotal[0][0]
+        leadingShare = Math.round((sortedTotal[0][1] / totalScoped) * 100)
+      }
+    }
+
+    // Licensure Examination Distribution Chart
+    const distinctExams = Array.from(new Set(allCandidates.map((c) => c.target_exam || "General")))
+    const colors = ["#3B3B3B", "#E9C46A", "#2A9D8F", "#E76F51", "#8338EC", "#3A86FF"]
+    const distributionChart = distinctExams.map((exName, idx) => {
+      const count = filteredCandidates.filter((c) => (c.target_exam || "General") === exName).length
+      const pct = totalScoped > 0 ? Math.round((count / totalScoped) * 1000) / 10 : 0
+      return {
+        name: exName,
+        count,
+        percentage: pct,
+        fill: colors[idx % colors.length],
+      }
+    }).filter((e) => e.count > 0 || totalScoped === 0)
+
+    // Historical Sign-Up Trends Chart
+    let trendChart = raw.trendChart || []
+    if (selectedRegExaminationId !== "ALL" || selectedRegBatchId !== "ALL") {
+      if (isSingleDay) {
+        const hourBuckets = Array.from({ length: 24 }).map((_, h) => ({
+          hour: `${String(h).padStart(2, "0")}:00`,
+          registrations: 0,
+          cumulative: 0,
+        }))
+        periodCandidates.forEach((c) => {
+          if (c.created_hour >= 0 && c.created_hour < 24) {
+            hourBuckets[c.created_hour].registrations += 1
+          }
+        })
+        let cum = 0
+        trendChart = hourBuckets.map((b) => {
+          cum += b.registrations
+          return {
+            hour: b.hour,
+            date: b.hour,
+            registrations: b.registrations,
+            cumulative: cum,
+          }
+        })
+      } else {
+        const dateMap = {}
+        periodCandidates.forEach((c) => {
+          dateMap[c.created_date] = (dateMap[c.created_date] || 0) + 1
+        })
+        let running = 0
+        trendChart = (raw.trendChart || []).map((slot) => {
+          const matchCount = Object.keys(dateMap).find((k) => slot.date?.includes(k) || slot.hour?.includes(k))
+          const regs = matchCount ? dateMap[matchCount] : 0
+          running += regs
+          return {
+            ...slot,
+            registrations: regs,
+            cumulative: running,
+          }
+        })
+      }
+    }
+
+    // Tab A: Exam Tracks Breakdown
+    const examTracks = distinctExams.map((track) => {
+      const trackUsers = filteredCandidates.filter((c) => (c.target_exam || "General") === track)
+      const newInPeriod = periodCandidates.filter((c) => (c.target_exam || "General") === track).length
+      const totalInTrack = trackUsers.length
+      const activeInTrack = trackUsers.filter((c) => c.status === "active").length
+      const activePct = totalInTrack > 0 ? Math.round((activeInTrack / totalInTrack) * 100) : 0
+      const shareRate = totalScoped > 0 ? Math.round((totalInTrack / totalScoped) * 100) : 0
+
+      const foundExam = examinationOptions.find((e) => e.name.toLowerCase().includes(track.toLowerCase()))
+      const fullTitle = foundExam ? foundExam.name : `${track} Licensure Review`
+
+      return {
+        trackCode: track,
+        trackName: fullTitle,
+        newRegistrations: newInPeriod,
+        totalCandidates: totalInTrack,
+        activeCandidates: activeInTrack,
+        activePercentage: activePct,
+        shareRate,
+      }
+    })
+
+    return {
+      kpis: {
+        newRegistrations: `+${newCount} ${isSingleDay ? (raw.selectedRange === "today" ? "Today" : "on Date") : "in Period"}`,
+        newRegistrationsCount: newCount,
+        registrationDeltaText: raw.kpis?.registrationDeltaText || `${newCount} accounts in period`,
+        totalRegisteredReach: `${totalScoped} Candidates`,
+        totalRegisteredCount: totalScoped,
+        reachSubtext: `${reachPct}% of platform reach (${platformTotal} total)`,
+        leadingExamTrack: leadingTrack !== "—" ? `${leadingTrack} (${leadingShare}%)` : "—",
+        leadingExamSubtext: "Highest volume of candidate registrations",
+        activeCandidatesRate: `${activeRate}% Active`,
+        activeCandidatesCount: `${activeCandidates.length} of ${totalScoped} active accounts`,
+      },
+      trendChart,
+      distributionChart,
+      tabA_examTracks: examTracks,
+      tabB_candidateLog: periodCandidates.length > 0 ? periodCandidates : filteredCandidates,
+      isSingleDay,
+    }
+  }, [data, selectedRegExaminationId, selectedRegBatchId, examinationOptions, todayStr])
 
   // Filter batches based on selected examination. If ALL examinations, show all batches.
   const availableBatchOptions = useMemo(() => {
@@ -2069,6 +2368,599 @@ export default function AnalyticalOverviewPage() {
                                 className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-[#3B3B3B] dark:text-white transition-all cursor-pointer whitespace-nowrap"
                               >
                                 View Profile / Study Log
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ═══ SECTION 4: User Registration Overview ═══ */}
+      <div className="space-y-5 pt-4 border-t border-black/5 dark:border-white/10">
+        {/* Section Header & Interactive Controls */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={() => setShowUserRegistration((prev) => !prev)}
+            className="group inline-flex items-center gap-2.5 text-left cursor-pointer focus:outline-none"
+            title={showUserRegistration ? "Hide User Registration Overview" : "Show User Registration Overview"}
+          >
+            <span className="p-1 rounded-lg bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-400 group-hover:text-[#3B3B3B] dark:group-hover:text-white transition-colors">
+              {showUserRegistration ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-semibold tracking-wide text-[#3B3B3B] dark:text-white group-hover:underline">
+                  User Registration Overview
+                </h2>
+                <span className="text-[10px] font-medium text-[#696969] dark:text-gray-400">
+                  {showUserRegistration ? "(Click to hide)" : "(Click to expand)"}
+                </span>
+              </div>
+              <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
+                Track new candidate sign-ups, total platform reach, and enrollment distribution across licensure examination categories.
+              </p>
+            </div>
+          </button>
+
+          {/* Right-aligned Controls: Exam Filter, Batch Filter, Date Picker, Quick Presets, Export CSV */}
+          {showUserRegistration && (
+            <div className="flex flex-wrap items-center gap-2.5 self-end lg:self-auto">
+              {/* Exam Track Filter */}
+              <div className="flex items-center gap-1.5">
+                <label
+                  htmlFor="reg-examination-select"
+                  className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
+                >
+                  Exam:
+                </label>
+                <select
+                  id="reg-examination-select"
+                  value={selectedRegExaminationId}
+                  onChange={(e) => handleRegExaminationChange(e.target.value)}
+                  className="h-9 px-3 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[200px] sm:max-w-[230px] truncate"
+                  title="Filter by Examination Category"
+                >
+                  <option value="ALL">All Examinations</option>
+                  {examinationOptions.map((exam) => (
+                    <option key={exam.id} value={exam.id}>
+                      {exam.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Batch Filter (dynamically reflects selected examination) */}
+              <div className="flex items-center gap-1.5">
+                <label
+                  htmlFor="reg-batch-select"
+                  className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
+                >
+                  Batch:
+                </label>
+                <select
+                  id="reg-batch-select"
+                  value={selectedRegBatchId}
+                  onChange={(e) => setSelectedRegBatchId(e.target.value)}
+                  className="h-9 px-3 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[150px] sm:max-w-[170px] truncate"
+                  title="Filter by Batch"
+                >
+                  <option value="ALL">All Batches</option>
+                  {regBatchOptions.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Calendar Date Picker: Single-day lookup and custom dates */}
+              <div className="relative flex items-center">
+                <input
+                  type="date"
+                  id="reg-date-picker"
+                  value={regDate || todayStr}
+                  onChange={(e) => handleRegDateChange(e.target.value)}
+                  className="h-9 pl-3 pr-2.5 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer"
+                  title="Select registration date"
+                />
+              </div>
+
+              {/* Quick Presets: Segmented Pill Buttons */}
+              <div className="inline-flex items-center gap-1 p-1 bg-[#F2F2F2]/80 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
+                {[
+                  { id: "today", label: "Today" },
+                  { id: "yesterday", label: "Yesterday" },
+                  { id: "7days", label: "Last 7 Days" },
+                  { id: "30days", label: "Last 30 Days" },
+                  { id: "all", label: "All-Time" },
+                ].map((pill) => (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => handleRegRangeChange(pill.id)}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                      regRange === pill.id
+                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
+                        : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Export CSV Action */}
+              <button
+                type="button"
+                onClick={exportRegCSV}
+                className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 hover:bg-black/5 dark:hover:bg-white/15 border border-black/10 dark:border-white/15 transition-all shadow-2xs cursor-pointer"
+                title="Export User Registration data to CSV"
+              >
+                <Download className="size-3.5 text-[#696969] dark:text-gray-400" />
+                <span>Export CSV</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ══ Collapsible Content ══ */}
+        {showUserRegistration && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Phase 3: Top-Level KPI Summary Cards (4-Card Responsive Grid) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Card 1: New Registrations */}
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs flex flex-col justify-between space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+                    New Registrations
+                  </span>
+                  <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <UserPlus className="size-4" />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                    {filteredRegistrationData?.kpis?.newRegistrations || "+0 in Period"}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
+                  <span className="truncate">Period Comparison</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-semibold whitespace-nowrap">
+                    {filteredRegistrationData?.kpis?.registrationDeltaText || "0 accounts"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 2: Total Registered Reach */}
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs flex flex-col justify-between space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+                    Total Registered Reach
+                  </span>
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <Users className="size-4" />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                    {filteredRegistrationData?.kpis?.totalRegisteredReach || "0 Candidates"}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
+                  <span className="truncate">Platform Share</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold whitespace-nowrap">
+                    {filteredRegistrationData?.kpis?.reachSubtext || "100% of platform reach"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 3: Leading Exam Track */}
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs flex flex-col justify-between space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+                    Leading Exam Track
+                  </span>
+                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                    <Award className="size-4" />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-2xl font-bold tracking-tight text-[#3B3B3B] dark:text-white truncate">
+                    {filteredRegistrationData?.kpis?.leadingExamTrack || "—"}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
+                  <span className="truncate">Examination Category</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-semibold whitespace-nowrap">
+                    {filteredRegistrationData?.kpis?.leadingExamSubtext || "Highest volume"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 4: Active Account Rate */}
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs flex flex-col justify-between space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+                    Active Account Rate
+                  </span>
+                  <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                    <UserCheck className="size-4" />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                    {filteredRegistrationData?.kpis?.activeCandidatesRate || "0% Active"}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
+                  <span className="truncate">Account Health</span>
+                  <span className="text-[#3B3B3B] dark:text-white font-semibold whitespace-nowrap">
+                    {filteredRegistrationData?.kpis?.activeCandidatesCount || "0 active accounts"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Charts: 2-Column Responsive Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Chart 1: Historical Sign-Up Trends (2 Columns on large screens) */}
+              <div className="lg:col-span-2 rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
+                      Historical Sign-Up Trends
+                    </h3>
+                    <p className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
+                      New candidate registrations and cumulative volume over the selected timeframe
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px] text-[#696969] dark:text-gray-400">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="size-2.5 rounded-sm bg-[#E9C46A]" /> New Registrations
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="size-2.5 rounded-sm bg-[#3B3B3B] dark:bg-white" /> Cumulative Total
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-full h-[280px]">
+                  {(filteredRegistrationData?.trendChart || []).length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-xs text-[#696969] dark:text-gray-400">
+                      <Clock className="size-8 stroke-[1.5] mb-2 opacity-30" />
+                      <span>No registration trends recorded for this period.</span>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart
+                        data={filteredRegistrationData?.trendChart || []}
+                        margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                        <XAxis
+                          dataKey={filteredRegistrationData?.isSingleDay ? "hour" : "date"}
+                          tick={{ fontSize: 10, fill: "#888888" }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          yAxisId="left"
+                          tick={{ fontSize: 10, fill: "#888888" }}
+                          tickLine={false}
+                          axisLine={false}
+                          allowDecimals={false}
+                        />
+                        <YAxis
+                          yAxisId="right"
+                          orientation="right"
+                          tick={{ fontSize: 10, fill: "#888888" }}
+                          tickLine={false}
+                          axisLine={false}
+                          allowDecimals={false}
+                        />
+                        <Tooltip
+                          content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                              const item = payload[0].payload
+                              return (
+                                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-3 shadow-lg text-xs space-y-1">
+                                  <div className="font-semibold text-[#3B3B3B] dark:text-white border-b border-black/5 dark:border-white/10 pb-1">
+                                    {item.date || label}
+                                  </div>
+                                  <div className="flex items-center justify-between gap-4 text-[#696969] dark:text-gray-300">
+                                    <span>New Registrations:</span>
+                                    <span className="font-bold text-[#E9C46A]">{item.registrations}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-4 text-[#696969] dark:text-gray-300">
+                                    <span>Cumulative:</span>
+                                    <span className="font-bold text-[#3B3B3B] dark:text-white">{item.cumulative}</span>
+                                  </div>
+                                </div>
+                              )
+                            }
+                            return null
+                          }}
+                        />
+                        <Bar
+                          yAxisId="left"
+                          dataKey="registrations"
+                          fill="#E9C46A"
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={40}
+                        />
+                        <Line
+                          yAxisId="right"
+                          type="monotone"
+                          dataKey="cumulative"
+                          stroke="#3B3B3B"
+                          strokeWidth={2}
+                          dot={{ r: 3, fill: "#3B3B3B" }}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+
+              {/* Chart 2: Licensure Examination Distribution (1 Column Donut) */}
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs space-y-4">
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
+                    Licensure Examination Distribution
+                  </h3>
+                  <p className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
+                    Candidate allocation across board exam tracks
+                  </p>
+                </div>
+
+                <div className="w-full h-[180px] relative">
+                  {(filteredRegistrationData?.distributionChart || []).length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-xs text-[#696969] dark:text-gray-400">
+                      <span>No exam distribution data.</span>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={filteredRegistrationData?.distributionChart || []}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={48}
+                          outerRadius={75}
+                          paddingAngle={3}
+                          dataKey="count"
+                        >
+                          {(filteredRegistrationData?.distributionChart || []).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const d = payload[0].payload
+                              return (
+                                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-2.5 shadow-lg text-xs space-y-0.5">
+                                  <div className="font-semibold text-[#3B3B3B] dark:text-white">{d.name}</div>
+                                  <div className="text-[11px] text-[#696969] dark:text-gray-300">
+                                    {d.count} candidates ({d.percentage}%)
+                                  </div>
+                                </div>
+                              )
+                            }
+                            return null
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+
+                {/* Legend List */}
+                <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
+                  {(filteredRegistrationData?.distributionChart || []).map((item) => (
+                    <div key={item.name} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
+                        <span className="font-medium text-[#3B3B3B] dark:text-gray-200 truncate" title={item.name}>
+                          {item.name}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 shrink-0 ml-2">
+                        {item.count} ({item.percentage}%)
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Tabbed Data Tables: Tab A (Tracks Breakdown) vs Tab B (Candidate Log) */}
+            <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs space-y-4">
+              {/* Tab Selector Toolbar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/5 dark:border-white/10 pb-3">
+                <div className="inline-flex items-center gap-1 p-1 bg-[#F2F2F2]/80 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setRegTab("tracks")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                      regTab === "tracks"
+                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
+                        : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                    }`}
+                  >
+                    Licensure Track Breakdown
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRegTab("log")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                      regTab === "log"
+                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
+                        : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                    }`}
+                  >
+                    Candidate Sign-Ups Log
+                  </button>
+                </div>
+
+                <div className="text-xs text-[#696969] dark:text-gray-400">
+                  {regTab === "tracks"
+                    ? `${(filteredRegistrationData?.tabA_examTracks || []).length} Examination tracks active`
+                    : `${(filteredRegistrationData?.tabB_candidateLog || []).length} Candidates listed`}
+                </div>
+              </div>
+
+              {/* Tab A: Licensure Exam Track Breakdown Table */}
+              {regTab === "tracks" && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-black/5 dark:border-white/10 text-[#696969] dark:text-gray-400 font-semibold">
+                        <th className="py-2.5 px-3">Licensure Exam Track</th>
+                        <th className="py-2.5 px-3 text-center">New in Period</th>
+                        <th className="py-2.5 px-3">Total Candidates</th>
+                        <th className="py-2.5 px-3">Active Candidates</th>
+                        <th className="py-2.5 px-3">Active Rate</th>
+                        <th className="py-2.5 px-3 pr-4 text-right">Cohort Share</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                      {(filteredRegistrationData?.tabA_examTracks || []).length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-xs text-[#696969] dark:text-gray-400">
+                            No exam tracks configured or registered yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        (filteredRegistrationData?.tabA_examTracks || []).map((track) => (
+                          <tr key={track.trackCode} className="h-12 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                            <td className="py-3 px-3">
+                              <div className="font-semibold text-[#3B3B3B] dark:text-white">
+                                {track.trackCode}
+                              </div>
+                              <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-medium bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300">
+                                {track.trackName}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-center font-bold text-[#E9C46A]">
+                              +{track.newRegistrations}
+                            </td>
+                            <td className="py-3 px-3 font-semibold text-[#3B3B3B] dark:text-white">
+                              {track.totalCandidates}
+                            </td>
+                            <td className="py-3 px-3 text-[#3B3B3B] dark:text-gray-200">
+                              {track.activeCandidates}
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-20 h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
+                                  <div
+                                    className="h-full bg-emerald-500 rounded-full transition-all"
+                                    style={{ width: `${track.activePercentage}%` }}
+                                  />
+                                </div>
+                                <span className="font-medium text-[#3B3B3B] dark:text-white text-xs">
+                                  {track.activePercentage}%
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 pr-4 text-right font-bold text-[#3B3B3B] dark:text-white">
+                              {track.shareRate}%
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Tab B: Candidate Sign-Ups Log Table */}
+              {regTab === "log" && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-black/5 dark:border-white/10 text-[#696969] dark:text-gray-400 font-semibold">
+                        <th className="py-2.5 px-3">Candidate Name & Email</th>
+                        <th className="py-2.5 px-3">Target Exam Track</th>
+                        <th className="py-2.5 px-3">Batch</th>
+                        <th className="py-2.5 px-3">School / Affiliation</th>
+                        <th className="py-2.5 px-3">Status</th>
+                        <th className="py-2.5 px-3">Registered At</th>
+                        <th className="py-2.5 px-3 pr-4 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                      {(filteredRegistrationData?.tabB_candidateLog || []).length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-xs text-[#696969] dark:text-gray-400">
+                            No candidate registrations found for this filter.
+                          </td>
+                        </tr>
+                      ) : (
+                        (filteredRegistrationData?.tabB_candidateLog || []).map((cand) => (
+                          <tr key={cand.id} className="h-12 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                            <td className="py-3 px-3">
+                              <div className="font-semibold text-[#3B3B3B] dark:text-white">
+                                {cand.name}
+                              </div>
+                              <div className="text-[11px] text-[#696969] dark:text-gray-400">
+                                {cand.email} • ID: {cand.login_id || cand.id}
+                              </div>
+                            </td>
+                            <td className="py-3 px-3">
+                              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                                {cand.target_exam || "General"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 font-medium text-[#3B3B3B] dark:text-gray-200">
+                              {cand.batch_name || "—"}
+                            </td>
+                            <td className="py-3 px-3 text-[#696969] dark:text-gray-400">
+                              {cand.school_name || "—"}
+                            </td>
+                            <td className="py-3 px-3">
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                                  cand.status === "active"
+                                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                                    : cand.status === "pending"
+                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20"
+                                    : "bg-gray-500/10 text-gray-700 dark:text-gray-300 border-gray-500/20"
+                                }`}
+                              >
+                                {cand.status || "active"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-[#696969] dark:text-gray-400 whitespace-nowrap">
+                              {cand.created_formatted || "—"}
+                            </td>
+                            <td className="py-3 px-3 pr-4 text-right">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSearch(cand.name)
+                                  window.scrollTo({ top: 0, behavior: "smooth" })
+                                }}
+                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-[#3B3B3B] dark:text-white transition-all cursor-pointer whitespace-nowrap"
+                              >
+                                View Profile
                               </button>
                             </td>
                           </tr>

@@ -3,10 +3,11 @@ import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { ADMIN_ROLES } from "@/lib/auth"
 import { ensureStudentActivityTables } from "@/lib/student-activity-db"
+import { ensureUserRegistrationTables } from "@/lib/user-registration-db"
 
 /**
  * GET /api/admin/analytical-overview
- * Query params: ?school_id=...&major_id=...&batch_id=...&student_id=...&activity_date=...&activity_range=...
+ * Query params: ?school_id=...&major_id=...&batch_id=...&student_id=...&exam_id=...&activity_date=...&activity_range=...&reg_date=...&reg_range=...&reg_exam=...&reg_batch=...
  */
 export async function GET(request) {
   try {
@@ -23,8 +24,13 @@ export async function GET(request) {
     const examFilter = searchParams.get("exam_id") || ""
     const activityDateParam = searchParams.get("activity_date") || ""
     const activityRangeParam = searchParams.get("activity_range") || "today" // 'today' | 'yesterday' | '7days' | 'all'
+    const regDateParam = searchParams.get("reg_date") || ""
+    const regRangeParam = searchParams.get("reg_range") || "today" // 'today' | 'yesterday' | '7days' | '30days' | 'all'
+    const regExamParam = searchParams.get("reg_exam") || "ALL"
+    const regBatchParam = searchParams.get("reg_batch") || "ALL"
 
     await ensureStudentActivityTables()
+    await ensureUserRegistrationTables()
 
     // 1. Fetch Master Data, Examinations, and Mock Exams for filters and analytics
     const [schoolsRes, majorsRes, batchesRes, examinationsRes, mockExamsRes] = await Promise.all([
@@ -832,6 +838,323 @@ export async function GET(request) {
       tabB_studentRoster: studentRosterTable,
     }
 
+    // ── 10. User Registration Overview ────────────────────────────
+    const [allUsersRes, dailyRegStatsRes] = await Promise.all([
+      pool.query(`
+        SELECT 
+          u.id, u.name, u.email, u.login_id, u.role, u.created_at,
+          COALESCE(u.target_exam, 'General') AS target_exam,
+          u.target_exam_date,
+          COALESCE(u.status, CASE WHEN u.is_active = false THEN 'expired' ELSE 'active' END) AS status,
+          u.is_active,
+          u.exam_id,
+          e.name AS exam_name,
+          u.batch_id,
+          b.name AS batch_name,
+          COALESCE(s.name, u.school, '—') AS school_name
+        FROM users u
+        LEFT JOIN examinations e ON u.exam_id = e.id
+        LEFT JOIN batches b ON u.batch_id = b.id
+        LEFT JOIN schools s ON u.school_id = s.id
+        ORDER BY u.created_at DESC
+      `).catch(() => ({ rows: [] })),
+      pool.query(`
+        SELECT date, exam_type, batch_id, new_registrations_count, active_users_count
+        FROM daily_registration_stats
+        ORDER BY date ASC
+      `).catch(() => ({ rows: [] })),
+    ])
+
+    const allUsersList = allUsersRes.rows || []
+
+    // Determine date window for User Registration
+    const regToday = new Date()
+    const regTodayStr = regToday.toISOString().split("T")[0]
+
+    let regStartDateStr = regTodayStr
+    let regEndDateStr = regTodayStr
+    let regPrevStartDateStr = ""
+    let regPrevEndDateStr = ""
+    let regIsSingleDay = true
+
+    if (regDateParam) {
+      regStartDateStr = regDateParam
+      regEndDateStr = regDateParam
+      regIsSingleDay = true
+      const prev = new Date(new Date(regDateParam).getTime() - 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      regPrevStartDateStr = prev
+      regPrevEndDateStr = prev
+    } else if (regRangeParam === "yesterday") {
+      const y = new Date(regToday.getTime() - 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      regStartDateStr = y
+      regEndDateStr = y
+      regIsSingleDay = true
+      const prevY = new Date(regToday.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      regPrevStartDateStr = prevY
+      regPrevEndDateStr = prevY
+    } else if (regRangeParam === "7days") {
+      const d7 = new Date(regToday.getTime() - 6 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      regStartDateStr = d7
+      regEndDateStr = regTodayStr
+      regIsSingleDay = false
+      const pStart = new Date(regToday.getTime() - 13 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      const pEnd = new Date(regToday.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      regPrevStartDateStr = pStart
+      regPrevEndDateStr = pEnd
+    } else if (regRangeParam === "30days") {
+      const d30 = new Date(regToday.getTime() - 29 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      regStartDateStr = d30
+      regEndDateStr = regTodayStr
+      regIsSingleDay = false
+      const pStart = new Date(regToday.getTime() - 59 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      const pEnd = new Date(regToday.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      regPrevStartDateStr = pStart
+      regPrevEndDateStr = pEnd
+    } else if (regRangeParam === "all") {
+      regStartDateStr = "2020-01-01"
+      regEndDateStr = regTodayStr
+      regIsSingleDay = false
+      regPrevStartDateStr = ""
+      regPrevEndDateStr = ""
+    }
+
+    // User-level mapping & formatting
+    const allCandidatesFormatted = allUsersList.map((u) => {
+      const d = u.created_at ? new Date(u.created_at) : null
+      const dStr = d ? d.toISOString().split("T")[0] : ""
+      const hour = d ? d.getHours() : 0
+      const timeFormatted = d
+        ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
+          " " +
+          d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+        : "—"
+
+      let statusBadge = "Active"
+      let statusColor = "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
+      if (u.status === "expired" || u.is_active === false) {
+        statusBadge = "Expired"
+        statusColor = "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800"
+      } else if (u.status === "pending") {
+        statusBadge = "Pending"
+        statusColor = "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+      }
+
+      return {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        login_id: u.login_id || u.email,
+        role: u.role,
+        target_exam: u.target_exam || "General",
+        target_exam_date: u.target_exam_date || null,
+        exam_id: u.exam_id,
+        exam_name: u.exam_name || "General",
+        batch_id: u.batch_id,
+        batch_name: u.batch_name || "Unassigned",
+        school_name: u.school_name || "—",
+        status: u.status || "active",
+        statusBadge,
+        statusColor,
+        created_at: u.created_at,
+        created_date: dStr,
+        created_hour: hour,
+        created_formatted: timeFormatted,
+      }
+    })
+
+    // Filter by server params if provided
+    const matchesExamFilter = (c) =>
+      regExamParam === "ALL" ||
+      String(c.exam_id) === String(regExamParam) ||
+      c.target_exam.toUpperCase() === regExamParam.toUpperCase()
+
+    const matchesBatchFilter = (c) =>
+      regBatchParam === "ALL" || String(c.batch_id) === String(regBatchParam)
+
+    const scopedCandidates = allCandidatesFormatted.filter((c) => matchesExamFilter(c) && matchesBatchFilter(c))
+
+    // Period filtering
+    const currentPeriodCandidates = scopedCandidates.filter(
+      (c) => c.created_date >= regStartDateStr && c.created_date <= regEndDateStr
+    )
+    const prevPeriodCandidates = regPrevStartDateStr
+      ? scopedCandidates.filter((c) => c.created_date >= regPrevStartDateStr && c.created_date <= regPrevEndDateStr)
+      : []
+
+    const newRegCount = currentPeriodCandidates.length
+    const prevRegCount = prevPeriodCandidates.length
+
+    let deltaPct = 0
+    let deltaText = "0% vs previous period"
+    if (regPrevStartDateStr) {
+      if (prevRegCount > 0) {
+        deltaPct = Math.round(((newRegCount - prevRegCount) / prevRegCount) * 100)
+        deltaText = deltaPct >= 0 ? `+${deltaPct}% vs previous period` : `${deltaPct}% vs previous period`
+      } else if (newRegCount > 0) {
+        deltaPct = 100
+        deltaText = `+100% vs previous period`
+      }
+      if (regIsSingleDay) {
+        deltaText = deltaPct >= 0 ? `+${deltaPct}% vs yesterday` : `${deltaPct}% vs yesterday`
+      }
+    } else {
+      deltaText = `${newRegCount} total accounts enrolled`
+    }
+
+    const totalScopedCount = scopedCandidates.length
+    const platformTotal = allCandidatesFormatted.length
+    const reachPct = platformTotal > 0 ? Math.round((totalScopedCount / platformTotal) * 100) : 0
+
+    // Group by target exam
+    const examGroups = {}
+    const currentExamCounts = {}
+
+    scopedCandidates.forEach((c) => {
+      const ex = c.target_exam || "General"
+      examGroups[ex] = (examGroups[ex] || 0) + 1
+    })
+
+    currentPeriodCandidates.forEach((c) => {
+      const ex = c.target_exam || "General"
+      currentExamCounts[ex] = (currentExamCounts[ex] || 0) + 1
+    })
+
+    // Leading exam calculation
+    let topExamName = "—"
+    let topExamShare = 0
+    const topEntries = Object.entries(currentPeriodCandidates.length > 0 ? currentExamCounts : examGroups)
+    if (topEntries.length > 0) {
+      topEntries.sort((a, b) => b[1] - a[1])
+      topExamName = topEntries[0][0]
+      const baseCount = currentPeriodCandidates.length > 0 ? currentPeriodCandidates.length : totalScopedCount
+      topExamShare = baseCount > 0 ? Math.round((topEntries[0][1] / baseCount) * 100) : 0
+    }
+
+    // Active users in scope
+    const activeScopedCount = scopedCandidates.filter((c) => c.status === "active").length
+    const activeRatePct = totalScopedCount > 0 ? Math.round((activeScopedCount / totalScopedCount) * 100) : 0
+
+    // Chart 1: Historical Sign-Up Trends
+    let trendChartData = []
+    if (regIsSingleDay) {
+      const hourBuckets = Array.from({ length: 24 }).map((_, h) => ({
+        hour: `${String(h).padStart(2, "0")}:00`,
+        registrations: 0,
+        cumulative: 0,
+      }))
+      currentPeriodCandidates.forEach((c) => {
+        if (c.created_hour >= 0 && c.created_hour < 24) {
+          hourBuckets[c.created_hour].registrations += 1
+        }
+      })
+      let cum = 0
+      trendChartData = hourBuckets.map((b) => {
+        cum += b.registrations
+        return {
+          hour: b.hour,
+          date: b.hour,
+          registrations: b.registrations,
+          cumulative: cum,
+        }
+      })
+    } else {
+      const dateMap = {}
+      const startD = new Date(regStartDateStr)
+      const endD = new Date(regEndDateStr)
+      const diffDays = Math.min(365, Math.max(1, Math.round((endD - startD) / (24 * 60 * 60 * 1000)) + 1))
+      for (let i = 0; i < diffDays; i++) {
+        const cur = new Date(startD.getTime() + i * 24 * 60 * 60 * 1000)
+        const ds = cur.toISOString().split("T")[0]
+        dateMap[ds] = {
+          date: cur.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          registrations: 0,
+          cumulative: 0,
+        }
+      }
+      currentPeriodCandidates.forEach((c) => {
+        if (dateMap[c.created_date]) {
+          dateMap[c.created_date].registrations += 1
+        }
+      })
+      let runningCum = 0
+      trendChartData = Object.keys(dateMap)
+        .sort()
+        .map((k) => {
+          runningCum += dateMap[k].registrations
+          return {
+            hour: dateMap[k].date,
+            date: dateMap[k].date,
+            registrations: dateMap[k].registrations,
+            cumulative: runningCum,
+          }
+        })
+    }
+
+    // Chart 2: Licensure Examination Distribution
+    const distinctExamsList = Array.from(new Set(allCandidatesFormatted.map((c) => c.target_exam || "General")))
+    const examColors = ["#3B3B3B", "#E9C46A", "#2A9D8F", "#E76F51", "#8338EC", "#3A86FF"]
+    const examDistributionChart = distinctExamsList
+      .map((exName, idx) => {
+        const count = scopedCandidates.filter((c) => (c.target_exam || "General") === exName).length
+        const pct = totalScopedCount > 0 ? Math.round((count / totalScopedCount) * 1000) / 10 : 0
+        return {
+          name: exName,
+          count,
+          percentage: pct,
+          fill: examColors[idx % examColors.length],
+        }
+      })
+      .filter((e) => e.count > 0 || totalScopedCount === 0)
+
+    // Tab A: Exam Track Breakdown
+    const examTracksBreakdown = distinctExamsList.map((track) => {
+      const trackCandidates = scopedCandidates.filter((c) => (c.target_exam || "General") === track)
+      const newInPeriod = currentPeriodCandidates.filter((c) => (c.target_exam || "General") === track).length
+      const totalInTrack = trackCandidates.length
+      const activeInTrack = trackCandidates.filter((c) => c.status === "active").length
+      const activePct = totalInTrack > 0 ? Math.round((activeInTrack / totalInTrack) * 100) : 0
+      const shareOfCohort = totalScopedCount > 0 ? Math.round((totalInTrack / totalScopedCount) * 100) : 0
+
+      const foundExam = examinationsList.find((e) => e.name.toLowerCase().includes(track.toLowerCase()))
+      const fullTitle = foundExam ? foundExam.name : `${track} Licensure Review`
+
+      return {
+        trackCode: track,
+        trackName: fullTitle,
+        newRegistrations: newInPeriod,
+        totalCandidates: totalInTrack,
+        activeCandidates: activeInTrack,
+        activePercentage: activePct,
+        shareRate: shareOfCohort,
+      }
+    })
+
+    // Tab B: Candidate Log
+    const candidateLogTable = scopedCandidates.slice(0, 100)
+
+    const userRegistrationOverview = {
+      selectedDate: regStartDateStr,
+      selectedRange: regRangeParam,
+      isSingleDay: regIsSingleDay,
+      kpis: {
+        newRegistrations: `+${newRegCount} ${regIsSingleDay ? (regRangeParam === "today" ? "Today" : "on Date") : "in Period"}`,
+        newRegistrationsCount: newRegCount,
+        registrationDeltaText: deltaText,
+        totalRegisteredReach: `${totalScopedCount} Candidates`,
+        totalRegisteredCount: totalScopedCount,
+        reachSubtext: `${reachPct}% of platform reach (${platformTotal} total)`,
+        leadingExamTrack: topExamName !== "—" ? `${topExamName} (${topExamShare}%)` : "—",
+        leadingExamSubtext: "Highest volume of candidate registrations",
+        activeCandidatesRate: `${activeRatePct}% Active`,
+        activeCandidatesCount: `${activeScopedCount} of ${totalScopedCount} active accounts`,
+      },
+      trendChart: trendChartData,
+      distributionChart: examDistributionChart,
+      tabA_examTracks: examTracksBreakdown,
+      tabB_candidateLog: candidateLogTable,
+      allCandidates: allCandidatesFormatted,
+    }
+
     return NextResponse.json({
       success: true,
       filters: {
@@ -841,6 +1164,7 @@ export async function GET(request) {
         examinations: examinationsList,
         mockExams: mockExamsList,
       },
+      userRegistrationOverview,
       kpis: {
         totalStudents,
         overallMeanScore,

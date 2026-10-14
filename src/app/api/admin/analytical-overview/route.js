@@ -984,21 +984,21 @@ export async function GET(request) {
     const newRegCount = currentPeriodCandidates.length
     const prevRegCount = prevPeriodCandidates.length
 
-    let deltaPct = 0
-    let deltaText = "0% vs previous period"
+    let regDeltaPct = 0
+    let regDeltaText = "0% vs previous period"
     if (regPrevStartDateStr) {
       if (prevRegCount > 0) {
-        deltaPct = Math.round(((newRegCount - prevRegCount) / prevRegCount) * 100)
-        deltaText = deltaPct >= 0 ? `+${deltaPct}% vs previous period` : `${deltaPct}% vs previous period`
+        regDeltaPct = Math.round(((newRegCount - prevRegCount) / prevRegCount) * 100)
+        regDeltaText = regDeltaPct >= 0 ? `+${regDeltaPct}% vs previous period` : `${regDeltaPct}% vs previous period`
       } else if (newRegCount > 0) {
-        deltaPct = 100
-        deltaText = `+100% vs previous period`
+        regDeltaPct = 100
+        regDeltaText = `+100% vs previous period`
       }
       if (regIsSingleDay) {
-        deltaText = deltaPct >= 0 ? `+${deltaPct}% vs yesterday` : `${deltaPct}% vs yesterday`
+        regDeltaText = regDeltaPct >= 0 ? `+${regDeltaPct}% vs yesterday` : `${regDeltaPct}% vs yesterday`
       }
     } else {
-      deltaText = `${newRegCount} total accounts enrolled`
+      regDeltaText = `${newRegCount} total accounts enrolled`
     }
 
     const totalScopedCount = scopedCandidates.length
@@ -1139,7 +1139,7 @@ export async function GET(request) {
       kpis: {
         newRegistrations: `+${newRegCount} ${regIsSingleDay ? (regRangeParam === "today" ? "Today" : "on Date") : "in Period"}`,
         newRegistrationsCount: newRegCount,
-        registrationDeltaText: deltaText,
+        registrationDeltaText: regDeltaText,
         totalRegisteredReach: `${totalScopedCount} Candidates`,
         totalRegisteredCount: totalScopedCount,
         reachSubtext: `${reachPct}% of platform reach (${platformTotal} total)`,

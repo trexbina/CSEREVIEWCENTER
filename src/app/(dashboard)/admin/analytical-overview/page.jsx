@@ -18,6 +18,7 @@ export default function AnalyticalOverviewPage() {
   const [sortField, setSortField] = useState("avgScore")
   const [sortDir, setSortDir] = useState("desc")
   const [selectedExaminationId, setSelectedExaminationId] = useState("ALL")
+  const [selectedBatchId, setSelectedBatchId] = useState("ALL")
 
   const mockExamOptions = data?.filters?.mockExams || []
   const [selectedExamId, setSelectedExamId] = useState("ALL")
@@ -96,6 +97,34 @@ export default function AnalyticalOverviewPage() {
   }, [])
 
   const examinationOptions = data?.filters?.examinations || []
+  const batchOptions = data?.filters?.batches || []
+
+  // Performance Rating calculation matching Status Reference rules
+  const getPerformanceRating = (score) => {
+    const val = Number(score) || 0
+    if (val >= 80) {
+      return {
+        label: "SUPERIOR / IT PREPARED",
+        badgeBg: "bg-[#fbcfe8] text-[#be185d] border-[#f472b6]/30 dark:bg-[#be185d]/20 dark:text-[#f472b6]",
+      }
+    }
+    if (val >= 70) {
+      return {
+        label: "ADEQUATELY PREPARED",
+        badgeBg: "bg-[#bfdbfe] text-[#1d4ed8] border-[#60a5fa]/30 dark:bg-[#1d4ed8]/20 dark:text-[#93c5fd]",
+      }
+    }
+    if (val >= 60) {
+      return {
+        label: "NEEDS REINFORCEMENT",
+        badgeBg: "bg-[#bbf7d0] text-[#15803d] border-[#4ade80]/30 dark:bg-[#15803d]/20 dark:text-[#86efac]",
+      }
+    }
+    return {
+      label: "FOR MONITORING",
+      badgeBg: "bg-[#fef08a] text-[#a16207] border-[#facc15]/30 dark:bg-[#a16207]/20 dark:text-[#fde047]",
+    }
+  }
 
   // Reset sorting when switching tabs
   const handleTabChange = (tab) => {
@@ -142,6 +171,15 @@ export default function AnalyticalOverviewPage() {
       )
     }
 
+    // Filter by batch
+    if (selectedBatchId !== "ALL") {
+      result = result.filter(
+        (s) =>
+          String(s.batchId) === String(selectedBatchId) ||
+          s.batch?.toLowerCase() === batchOptions.find((b) => String(b.id) === String(selectedBatchId))?.name?.toLowerCase()
+      )
+    }
+
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       result = result.filter(
@@ -150,7 +188,8 @@ export default function AnalyticalOverviewPage() {
           s.email?.toLowerCase().includes(q) ||
           s.school?.toLowerCase().includes(q) ||
           s.major?.toLowerCase().includes(q) ||
-          s.examination?.toLowerCase().includes(q)
+          s.examination?.toLowerCase().includes(q) ||
+          s.batch?.toLowerCase().includes(q)
       )
     }
 
@@ -167,21 +206,29 @@ export default function AnalyticalOverviewPage() {
       bVal = bVal ?? 0
       return sortDir === "asc" ? aVal - bVal : bVal - aVal
     })
-  }, [data, search, sortField, sortDir, selectedExaminationId, examinationOptions])
+  }, [data, search, sortField, sortDir, selectedExaminationId, selectedBatchId, examinationOptions, batchOptions])
 
   // Filter and sort schools (Top Schools)
   const filteredSchools = useMemo(() => {
     const studentsList = data?.comparativeLeaderboards?.students || []
     let result = []
 
-    if (selectedExaminationId !== "ALL") {
-      // Re-aggregate school statistics for the selected examination
-      const matchedStudents = studentsList.filter(
-        (s) =>
+    if (selectedExaminationId !== "ALL" || selectedBatchId !== "ALL") {
+      // Re-aggregate school statistics for the selected examination & batch
+      const matchedStudents = studentsList.filter((s) => {
+        const matchesExam =
+          selectedExaminationId === "ALL" ||
           String(s.examId) === String(selectedExaminationId) ||
           String(s.examinationId) === String(selectedExaminationId) ||
           s.examination?.toLowerCase() === examinationOptions.find((e) => String(e.id) === String(selectedExaminationId))?.name?.toLowerCase()
-      )
+
+        const matchesBatch =
+          selectedBatchId === "ALL" ||
+          String(s.batchId) === String(selectedBatchId) ||
+          s.batch?.toLowerCase() === batchOptions.find((b) => String(b.id) === String(selectedBatchId))?.name?.toLowerCase()
+
+        return matchesExam && matchesBatch
+      })
 
       const schMap = {}
       matchedStudents.forEach((st) => {
@@ -228,7 +275,7 @@ export default function AnalyticalOverviewPage() {
       bVal = bVal ?? 0
       return sortDir === "asc" ? aVal - bVal : bVal - aVal
     })
-  }, [data, search, sortField, sortDir, selectedExaminationId, examinationOptions])
+  }, [data, search, sortField, sortDir, selectedExaminationId, selectedBatchId, examinationOptions, batchOptions])
 
   // Filter and sort students at risk (avgScore < 75% or low mock exam completion)
   const filteredAtRiskStudents = useMemo(() => {
@@ -246,6 +293,15 @@ export default function AnalyticalOverviewPage() {
       )
     }
 
+    // Filter by batch
+    if (selectedBatchId !== "ALL") {
+      result = result.filter(
+        (s) =>
+          String(s.batchId) === String(selectedBatchId) ||
+          s.batch?.toLowerCase() === batchOptions.find((b) => String(b.id) === String(selectedBatchId))?.name?.toLowerCase()
+      )
+    }
+
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       result = result.filter(
@@ -254,7 +310,8 @@ export default function AnalyticalOverviewPage() {
           s.email?.toLowerCase().includes(q) ||
           s.school?.toLowerCase().includes(q) ||
           s.major?.toLowerCase().includes(q) ||
-          s.examination?.toLowerCase().includes(q)
+          s.examination?.toLowerCase().includes(q) ||
+          s.batch?.toLowerCase().includes(q)
       )
     }
 
@@ -347,27 +404,53 @@ export default function AnalyticalOverviewPage() {
             />
           </div>
 
-          {/* Examination Filter Dropdown for all tabs */}
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            <label
-              htmlFor="examination-tab-select"
-              className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
-            >
-              Examination:
-            </label>
-            <select
-              id="examination-tab-select"
-              value={selectedExaminationId}
-              onChange={(e) => setSelectedExaminationId(e.target.value)}
-              className="h-10 px-3 text-xs font-medium rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[280px] truncate"
-            >
-              <option value="ALL">All Examinations</option>
-              {examinationOptions.map((exam) => (
-                <option key={exam.id} value={exam.id}>
-                  {exam.name}
-                </option>
-              ))}
-            </select>
+          {/* Filter Dropdowns: Examination & Batch */}
+          <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
+            {/* Examination Filter */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="examination-tab-select"
+                className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
+              >
+                Examination:
+              </label>
+              <select
+                id="examination-tab-select"
+                value={selectedExaminationId}
+                onChange={(e) => setSelectedExaminationId(e.target.value)}
+                className="h-10 px-3 text-xs font-medium rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[220px] sm:max-w-[260px] truncate"
+              >
+                <option value="ALL">All Examinations</option>
+                {examinationOptions.map((exam) => (
+                  <option key={exam.id} value={exam.id}>
+                    {exam.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Batch Filter */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="batch-tab-select"
+                className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
+              >
+                Batch:
+              </label>
+              <select
+                id="batch-tab-select"
+                value={selectedBatchId}
+                onChange={(e) => setSelectedBatchId(e.target.value)}
+                className="h-10 px-3 text-xs font-medium rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[180px] truncate"
+              >
+                <option value="ALL">All Batches</option>
+                {batchOptions.map((batch) => (
+                  <option key={batch.id} value={batch.id}>
+                    {batch.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -411,14 +494,13 @@ export default function AnalyticalOverviewPage() {
                         </button>
                       </th>
                       <th className="px-4 py-2.5" scope="col">Major / Specialization</th>
-                      <th className="px-4 py-2.5 text-center" scope="col">Exams Completed</th>
                       <th className="px-4 py-2.5 text-right pr-6" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("avgScore")}
                           className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold ml-auto"
                         >
-                          <span>Average Progress</span>
+                          <span>Performance Rating</span>
                           <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
@@ -427,6 +509,7 @@ export default function AnalyticalOverviewPage() {
                   <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
                     {filteredStudents.map((st, idx) => {
                       const displayRank = idx + 1
+                      const rating = getPerformanceRating(st.avgScore)
                       return (
                         <tr
                           key={st.id}
@@ -459,16 +542,18 @@ export default function AnalyticalOverviewPage() {
                             {st.major || "—"}
                           </td>
 
-                          {/* Completed Count */}
-                          <td className="px-4 py-3 text-xs text-center text-[#696969] dark:text-gray-300">
-                            {st.attemptCount || 0}
-                          </td>
-
-                          {/* Average Progress */}
+                          {/* Performance Rating */}
                           <td className="px-4 py-3 text-right pr-6 text-xs whitespace-nowrap">
-                            <span className="font-semibold text-[#3B3B3B] dark:text-gray-100">
-                              {st.avgScore ? `${st.avgScore}%` : "0%"}
-                            </span>
+                            <div className="inline-flex items-center justify-end gap-2.5">
+                              <span
+                                className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider border uppercase ${rating.badgeBg}`}
+                              >
+                                {rating.label}
+                              </span>
+                              <span className="font-bold text-[#3B3B3B] dark:text-gray-100 text-xs min-w-[42px] text-right">
+                                {st.avgScore ? `${Number(st.avgScore).toFixed(1)}%` : "0.0%"}
+                              </span>
+                            </div>
                           </td>
                         </tr>
                       )

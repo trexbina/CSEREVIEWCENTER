@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { ensureStudentSubjectProgressTable } from "@/lib/student-progress-db"
 
 /**
  * GET /api/student/progress
- * Fetches all student scores across:
- * 1. Quizzes (from student_quiz_submissions & subject_contents)
- * 2. Assignments (from student_quiz_submissions / submissions)
- * 3. Mock Exams (from mock_exam_scores & mock_exams)
+ * Fetches:
+ * 1. User Subject Progression (with %, completed/total items, active study days, and study streaks)
+ *    Dynamically calculated and synced to student_subject_progress in DB.
+ * 2. Quizzes (from student_quiz_submissions & subject_contents)
+ * 3. Assignments (from student_quiz_submissions / submissions)
+ * 4. Mock Exams (from mock_exam_scores & mock_exams)
  */
 export async function GET() {
   try {
@@ -17,6 +20,7 @@ export async function GET() {
     }
 
     const studentId = session.userId
+    await ensureStudentSubjectProgressTable()
 
     // 1. Fetch Quizzes & Assignments from subject_contents + student_quiz_submissions
     const [quizAssignmentRes, mockExamRes] = await Promise.all([
@@ -147,12 +151,205 @@ export async function GET() {
       }
     })
 
+    // 3. Compute dynamic User Subject Progression, Active Study Days, and Study Streak
+    const [subjectsRes, subjectItemsRes, completedLessonsRes, completedQuizzesRes, studentActivityDatesRes, nowRes] = await Promise.all([
+      // A. All active subjects accessible to student
+      pool.query(
+        `SELECT 
+           s.id,
+           s.title,
+           s.code,
+           s.description,
+           s.category,
+           s.image_url,
+           COALESCE(cat.name, s.category, 'General Education') AS category_name,
+           subcat.name AS subcategory_name
+         FROM subjects s
+         LEFT JOIN categories cat ON cat.id = s.category_id OR LOWER(cat.name) = LOWER(s.category)
+         LEFT JOIN subcategories subcat ON subcat.id = s.subcategory_id
+         WHERE s.status = 'active'
+         ORDER BY s.id ASC`
+      ).catch(() => ({ rows: [] })),
+
+      // B. Total content items (lessons + quizzes) per subject
+      pool.query(
+        `SELECT 
+           sm.subject_id,
+           COUNT(sc.id) AS total_items,
+           COUNT(sc.id) FILTER (WHERE LOWER(COALESCE(sc.lesson_type, '')) != 'quiz') AS total_lessons,
+           COUNT(sc.id) FILTER (WHERE LOWER(COALESCE(sc.lesson_type, '')) = 'quiz') AS total_quizzes
+         FROM subject_contents sc
+         JOIN subject_modules sm ON sm.id = sc.module_id
+         GROUP BY sm.subject_id`
+      ).catch(() => ({ rows: [] })),
+
+      // C. Lessons opened/completed by student per subject
+      pool.query(
+        `SELECT 
+           COALESCE(
+             SUBSTRING(details FROM 'SubjectID: ([0-9]+)'),
+             sm.subject_id::text
+           ) AS subject_id,
+           COUNT(DISTINCT SUBSTRING(details FROM 'LessonID: ([0-9]+)')) AS opened_lessons
+         FROM student_activities sa
+         LEFT JOIN subject_contents sc ON sc.id = (
+           CASE WHEN SUBSTRING(sa.details FROM 'LessonID: ([0-9]+)') ~ '^[0-9]+$' 
+                THEN SUBSTRING(sa.details FROM 'LessonID: ([0-9]+)')::int 
+                ELSE NULL END
+         )
+         LEFT JOIN subject_modules sm ON sm.id = sc.module_id
+         WHERE sa.student_id = $1 
+           AND sa.activity_type IN ('lesson_open', 'module_complete')
+         GROUP BY 1`,
+        [studentId]
+      ).catch(() => ({ rows: [] })),
+
+      // D. Quizzes completed by student per subject
+      pool.query(
+        `SELECT 
+           sm.subject_id,
+           COUNT(DISTINCT sqs.content_id) AS completed_quizzes
+         FROM student_quiz_submissions sqs
+         JOIN subject_contents sc ON sc.id = sqs.content_id
+         JOIN subject_modules sm ON sm.id = sc.module_id
+         WHERE sqs.student_id = $1
+         GROUP BY sm.subject_id`,
+        [studentId]
+      ).catch(() => ({ rows: [] })),
+
+      // E. Unique activity dates for this student (across activities, quizzes, exams, sessions)
+      pool.query(
+        `SELECT DISTINCT to_char(act_timestamp AT TIME ZONE 'Asia/Manila', 'YYYY-MM-DD') AS act_date
+         FROM (
+           SELECT created_at AS act_timestamp FROM student_activities WHERE student_id = $1
+           UNION ALL
+           SELECT submitted_at AS act_timestamp FROM student_quiz_submissions WHERE student_id = $1
+           UNION ALL
+           SELECT completed_at AS act_timestamp FROM mock_exam_scores WHERE student_id = $1
+           UNION ALL
+           SELECT session_start AS act_timestamp FROM study_sessions WHERE user_id = $1
+         ) t
+         WHERE act_timestamp IS NOT NULL
+         ORDER BY act_date DESC`,
+        [studentId]
+      ).catch(() => ({ rows: [] })),
+
+      // F. Current Manila today and yesterday dates
+      pool.query(
+        `SELECT 
+           to_char(NOW() AT TIME ZONE 'Asia/Manila', 'YYYY-MM-DD') AS today,
+           to_char((NOW() AT TIME ZONE 'Asia/Manila') - INTERVAL '1 day', 'YYYY-MM-DD') AS yesterday`
+      ).catch(() => ({ rows: [{ today: new Date().toISOString().slice(0, 10), yesterday: "" }] }))
+    ])
+
+    // Compute Overall Active Study Days & Study Streak
+    const { today, yesterday } = nowRes.rows[0] || {}
+    const activeDatesList = studentActivityDatesRes.rows.map(r => r.act_date).filter(Boolean)
+    const activeDatesSet = new Set(activeDatesList)
+    const totalActiveDays = activeDatesSet.size
+
+    let studyStreak = 0
+    let checkDateStr = null
+
+    if (activeDatesSet.has(today)) {
+      checkDateStr = today
+    } else if (activeDatesSet.has(yesterday)) {
+      checkDateStr = yesterday
+    }
+
+    if (checkDateStr) {
+      let currentCheck = new Date(checkDateStr)
+      while (activeDatesSet.has(currentCheck.toISOString().slice(0, 10))) {
+        studyStreak++
+        currentCheck.setDate(currentCheck.getDate() - 1)
+      }
+    }
+
+    // Maps for fast subject lookup
+    const subjectItemCounts = {}
+    subjectItemsRes.rows.forEach(r => {
+      subjectItemCounts[String(r.subject_id)] = {
+        totalItems: parseInt(r.total_items || "0", 10),
+        totalLessons: parseInt(r.total_lessons || "0", 10),
+        totalQuizzes: parseInt(r.total_quizzes || "0", 10),
+      }
+    })
+
+    const openedLessonsMap = {}
+    completedLessonsRes.rows.forEach(r => {
+      if (r.subject_id) {
+        openedLessonsMap[String(r.subject_id)] = parseInt(r.opened_lessons || "0", 10)
+      }
+    })
+
+    const completedQuizzesMap = {}
+    completedQuizzesRes.rows.forEach(r => {
+      if (r.subject_id) {
+        completedQuizzesMap[String(r.subject_id)] = parseInt(r.completed_quizzes || "0", 10)
+      }
+    })
+
+    // Compute progression per subject & persist into student_subject_progress in DB
+    const subjectProgression = []
+    const upsertPromises = []
+
+    for (const sub of subjectsRes.rows) {
+      const sid = String(sub.id)
+      const counts = subjectItemCounts[sid] || { totalItems: 0, totalLessons: 0, totalQuizzes: 0 }
+      const totalItems = counts.totalItems || 0
+
+      const openedLessons = openedLessonsMap[sid] || 0
+      const doneQuizzes = completedQuizzesMap[sid] || 0
+      const completedItems = Math.min(totalItems, openedLessons + doneQuizzes)
+
+      const progressPct = totalItems > 0 ? Math.min(100, Math.round((completedItems / totalItems) * 100)) : (completedItems > 0 ? 100 : 0)
+
+      upsertPromises.push(
+        pool.query(
+          `INSERT INTO student_subject_progress 
+             (student_id, subject_id, completed_items, total_items, progress_pct, active_days, study_streak, last_activity_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+           ON CONFLICT (student_id, subject_id) DO UPDATE SET
+             completed_items = EXCLUDED.completed_items,
+             total_items = EXCLUDED.total_items,
+             progress_pct = EXCLUDED.progress_pct,
+             active_days = EXCLUDED.active_days,
+             study_streak = EXCLUDED.study_streak,
+             updated_at = NOW()`,
+          [studentId, sub.id, completedItems, totalItems, progressPct, totalActiveDays, studyStreak]
+        ).catch(err => console.error("Error upserting student_subject_progress:", err))
+      )
+
+      subjectProgression.push({
+        id: sub.id,
+        title: sub.title,
+        code: sub.code,
+        categoryName: sub.category_name,
+        subcategoryName: sub.subcategory_name,
+        imageUrl: sub.image_url,
+        completedItems,
+        totalItems,
+        progressPct,
+        activeDays: totalActiveDays,
+        studyStreak,
+      })
+    }
+
+    if (upsertPromises.length > 0) {
+      await Promise.all(upsertPromises)
+    }
+
     return NextResponse.json(
       {
         success: true,
         quizzes,
         assignments,
         mockExams,
+        subjects: subjectProgression,
+        overallStats: {
+          totalActiveDays,
+          studyStreak,
+        },
       },
       {
         headers: {

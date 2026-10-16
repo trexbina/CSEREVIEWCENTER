@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { EyeOff } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { EyeOff, ShieldAlert, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 /**
@@ -13,9 +14,14 @@ export function SecurityShield({
     blurOnFocusLoss = true,
     blurOnMouseLeave = false,
     allowInputCopy = true,
+    blockDevTools = false,
+    redirectToOnDevTools = "",
 }) {
+    const router = useRouter()
     const [isBlurred, setIsBlurred] = useState(false)
+    const [isDestroyed, setIsDestroyed] = useState(false)
     const blurTimeoutRef = useRef(null)
+    const isRedirectingRef = useRef(false)
 
     useEffect(() => {
         // Synchronous instant shield activator (0ms response time before OS compositor grabs frame)
@@ -25,8 +31,37 @@ export function SecurityShield({
         }
 
         const releaseShieldSync = () => {
+            if (isDestroyed) return
             document.documentElement.classList.remove("shield-active")
             setIsBlurred(false)
+        }
+
+        /* ──────── 8. Anti-debugging & Instant Frontend Destruction ──────────── */
+        const triggerDestructionAndRedirect = () => {
+            // Immediate synchronous wipe of child DOM to prevent DevTools inspection/source extraction
+            setIsDestroyed(true)
+            document.documentElement.classList.add("shield-active")
+
+            try {
+                // Wipe session storage indicators or state if needed
+                const contentEl = document.getElementById("security-shield-content")
+                if (contentEl) {
+                    contentEl.innerHTML = ""
+                }
+            } catch {
+                // Ignore DOM manipulation errors
+            }
+
+            if (!isRedirectingRef.current) {
+                isRedirectingRef.current = true
+                if (redirectToOnDevTools) {
+                    setTimeout(() => {
+                        if (typeof window !== "undefined" && window.location.pathname !== redirectToOnDevTools) {
+                            window.location.replace(redirectToOnDevTools)
+                        }
+                    }, 1200)
+                }
+            }
         }
 
         /* ───────────────── 1. Block Right-Click ───────────────── */
@@ -74,6 +109,9 @@ export function SecurityShield({
                 e.preventDefault()
                 e.stopPropagation()
                 e.stopImmediatePropagation()
+                if (blockDevTools) {
+                    triggerDestructionAndRedirect()
+                }
                 return false
             }
 
@@ -98,6 +136,9 @@ export function SecurityShield({
                 e.preventDefault()
                 e.stopPropagation()
                 e.stopImmediatePropagation()
+                if (blockDevTools) {
+                    triggerDestructionAndRedirect()
+                }
                 return false
             }
 
@@ -113,6 +154,9 @@ export function SecurityShield({
                 e.preventDefault()
                 e.stopPropagation()
                 e.stopImmediatePropagation()
+                if (blockDevTools) {
+                    triggerDestructionAndRedirect()
+                }
                 return false
             }
 
@@ -246,18 +290,48 @@ export function SecurityShield({
             document.addEventListener("mouseenter", handleMouseEnter)
         }
 
-        /* ──────── 8. Anti-debugging: debugger-loop in production ──────────── */
-        let debuggerInterval = null
-        if (process.env.NODE_ENV === "production") {
-            debuggerInterval = setInterval(() => {
-                const before = performance.now()
-                // eslint-disable-next-line no-debugger
-                debugger
-                const after = performance.now()
-                if (after - before > 100) {
-                    // DevTools was opened
+        /* ──────── 8. Anti-debugging & DevTools Detection ──────────── */
+        let devToolsCheckInterval = null
+        if (blockDevTools) {
+            // Check threshold for outer vs inner dimensions (docked DevTools)
+            const checkWindowDimensions = () => {
+                const threshold = 160
+                const widthThreshold = window.outerWidth - window.innerWidth > threshold
+                const heightThreshold = window.outerHeight - window.innerHeight > threshold
+                if (widthThreshold || heightThreshold) {
+                    triggerDestructionAndRedirect()
                 }
-            }, 2000)
+            }
+
+            // Periodic inspection detection (window size + console/timing inspection)
+            devToolsCheckInterval = setInterval(() => {
+                checkWindowDimensions()
+
+                // Console logging object getter trick without freezing execution
+                const div = document.createElement("div")
+                let detected = false
+                Object.defineProperty(div, "id", {
+                    get: () => {
+                        detected = true
+                        triggerDestructionAndRedirect()
+                        return ""
+                    },
+                    configurable: true,
+                })
+                // Trigger inspection check silently
+                try {
+                    console.debug(div)
+                    console.clear()
+                } catch {
+                    // Ignore console errors
+                }
+
+                if (detected) {
+                    triggerDestructionAndRedirect()
+                }
+            }, 1000)
+
+            window.addEventListener("resize", checkWindowDimensions)
         }
 
         /* ──────────────── Cleanup ──────────────── */
@@ -281,9 +355,42 @@ export function SecurityShield({
                 document.removeEventListener("mouseenter", handleMouseEnter)
             }
             if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current)
-            if (debuggerInterval) clearInterval(debuggerInterval)
+            if (devToolsCheckInterval) clearInterval(devToolsCheckInterval)
+            if (blockDevTools) {
+                window.removeEventListener("resize", checkWindowDimensions)
+            }
         }
-    }, [blurOnFocusLoss, blurOnMouseLeave, allowInputCopy])
+    }, [blurOnFocusLoss, blurOnMouseLeave, allowInputCopy, blockDevTools, redirectToOnDevTools, router])
+
+    if (isDestroyed) {
+        return (
+            <div className="fixed inset-0 z-[9999999] bg-white flex flex-col items-center justify-center p-6 text-center select-none">
+                <div className="flex flex-col items-center max-w-md w-full animate-in fade-in zoom-in-95 duration-200">
+                    <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mb-5 shadow-sm">
+                        <ShieldAlert className="w-10 h-10 stroke-[2.2]" />
+                    </div>
+
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200 mb-3">
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                        Security Violation Detected
+                    </div>
+
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-2">
+                        Developer Tools Detected
+                    </h1>
+
+                    <p className="text-sm text-gray-600 leading-relaxed mb-6">
+                        Inspecting source code or opening developer tools is strictly prohibited. The current session has been dismantled to protect student test material.
+                    </p>
+
+                    <div className="flex items-center gap-2 text-xs font-medium text-gray-500 bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-lg">
+                        <Loader2 className="w-4 h-4 animate-spin text-red-600" />
+                        Redirecting to security incident page...
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div

@@ -5,7 +5,6 @@ import pool from "@/lib/db"
 import {
   CalendarDays,
   Play,
-  BookOpen,
   ArrowRight,
   Clock,
   Flame,
@@ -14,9 +13,9 @@ import {
   TrendingUp,
   RotateCcw,
   Sparkles,
-  Layers,
   ChevronRight,
-  Compass
+  Target,
+  CheckCircle2
 } from "lucide-react"
 import { LETCountdownInline } from "@/components/let-countdown-inline"
 
@@ -56,7 +55,9 @@ async function getStudentDashboardData(userId) {
     overviewStatsRes,
     activeSubjectsRes,
     activityResult,
-    activeMockExamRes
+    mockExamsProgressRes,
+    sevenDayPerformanceRes,
+    subjectFocusRes
   ] = await Promise.all([
     // 1. Where the student last left off (last opened lesson or subject)
     pool.query(
@@ -109,7 +110,7 @@ async function getStudentDashboardData(userId) {
       [userId]
     ).catch(() => ({ rows: [{}] })),
 
-    // 3. User Subjects with Progression (for quick curriculum jump)
+    // 3. User Subjects with Progression (for curriculum overview)
     pool.query(
       `SELECT 
          s.id,
@@ -152,13 +153,77 @@ async function getStudentDashboardData(userId) {
       [userId]
     ).catch(() => ({ rows: [] })),
 
-    // 5. Active Mock Exam for Shortcut
+    // 5. Dynamic Mock Exam Progress
     pool.query(
-      `SELECT me.id, me.title, me.exam_code 
-       FROM mock_exams me 
-       WHERE me.status = 'active' 
-       ORDER BY me.id ASC 
-       LIMIT 1`
+      `SELECT 
+         me.id,
+         me.title,
+         me.exam_code,
+         (SELECT COUNT(*) FROM jsonb_array_elements(
+            CASE WHEN jsonb_typeof(me.questions::jsonb->'questions') = 'array' 
+                 THEN me.questions::jsonb->'questions' 
+                 ELSE '[]'::jsonb END
+         )) AS question_count,
+         mes.score,
+         mes.max_score,
+         mes.completed_at,
+         COALESCE(mes.attempts_count, CASE WHEN mes.score IS NOT NULL THEN 1 ELSE 0 END) AS attempts_count
+       FROM mock_exams me
+       LEFT JOIN mock_exam_scores mes ON mes.mock_exam_id = me.id AND mes.student_id = $1
+       WHERE me.status = 'active'
+       ORDER BY me.id ASC
+       LIMIT 4`,
+      [userId]
+    ).catch(() => ({ rows: [] })),
+
+    // 6. 7-Day Performance Trend (Daily scores from quizzes & exams)
+    pool.query(
+      `SELECT 
+         to_char(d, 'Dy') AS day,
+         to_char(d, 'YYYY-MM-DD') AS date_str,
+         COALESCE(
+           ROUND(AVG(
+             CASE WHEN scores.total_points > 0 
+                  THEN (scores.earned_points::numeric / scores.total_points::numeric) * 100 
+                  ELSE NULL END
+           ), 0),
+           0
+         ) AS avg_score
+       FROM generate_series(
+         (NOW() AT TIME ZONE 'Asia/Manila')::date - INTERVAL '6 days',
+         (NOW() AT TIME ZONE 'Asia/Manila')::date,
+         INTERVAL '1 day'
+       ) d
+       LEFT JOIN (
+         SELECT submitted_at AS act_time, earned_points, total_points
+         FROM student_quiz_submissions
+         WHERE student_id = $1
+         UNION ALL
+         SELECT completed_at AS act_time, score AS earned_points, max_score AS total_points
+         FROM mock_exam_scores
+         WHERE student_id = $1
+       ) scores ON to_char(scores.act_time AT TIME ZONE 'Asia/Manila', 'YYYY-MM-DD') = to_char(d, 'YYYY-MM-DD')
+       GROUP BY d
+       ORDER BY d ASC`,
+      [userId]
+    ).catch(() => ({ rows: [] })),
+
+    // 7. Dynamic Subject Focus Allocation (Study seconds & activity hits per subject)
+    pool.query(
+      `SELECT 
+         s.id,
+         s.title,
+         s.code,
+         COALESCE(SUM(dss.total_seconds), 0) AS total_seconds,
+         COALESCE(ssp.progress_pct, 0) AS progress_pct,
+         (SELECT COUNT(sa.id) FROM student_activities sa WHERE sa.student_id = $1 AND sa.details LIKE '%SubjectID: ' || s.id || '%') AS hits
+       FROM subjects s
+       LEFT JOIN daily_student_stats dss ON dss.subject_id = s.id AND dss.user_id = $1
+       LEFT JOIN student_subject_progress ssp ON ssp.subject_id = s.id AND ssp.student_id = $1
+       WHERE s.status = 'active'
+       GROUP BY s.id, s.title, s.code, ssp.progress_pct
+       ORDER BY s.id ASC`,
+      [userId]
     ).catch(() => ({ rows: [] }))
   ])
 
@@ -166,7 +231,28 @@ async function getStudentDashboardData(userId) {
   const overview = overviewStatsRes.rows[0] || {}
   const subjects = activeSubjectsRes.rows || []
   const activities = activityResult.rows || []
-  const activeExam = activeMockExamRes.rows[0] || null
+  const mockExams = mockExamsProgressRes.rows || []
+
+  // Format 7-Day Performance
+  const performanceData = (sevenDayPerformanceRes.rows || []).map(r => ({
+    day: r.day,
+    score: Number(r.avg_score || 0)
+  }))
+
+  // Format Subject Focus Donut data
+  const rawFocus = subjectFocusRes.rows || []
+  let totalWeight = 0
+  const focusList = rawFocus.map(sub => {
+    // Weight by seconds spent + activity hits + progress %
+    const weight = Math.max(1, Number(sub.total_seconds || 0) + (Number(sub.hits || 0) * 60) + Number(sub.progress_pct || 0))
+    totalWeight += weight
+    return { name: sub.title || sub.code || "Subject", rawWeight: weight }
+  })
+
+  const focusData = focusList.map(f => ({
+    name: f.name,
+    value: totalWeight > 0 ? Math.max(1, Math.round((f.rawWeight / totalWeight) * 100)) : 100
+  }))
 
   return {
     resume,
@@ -182,7 +268,27 @@ async function getStudentDashboardData(userId) {
       total_items: Math.max(Number(s.total_items || 0), Number(s.real_total_items || 0))
     })),
     activities,
-    activeExam
+    mockExams: mockExams.map(m => {
+      const hasCompleted = m.completed_at != null
+      const score = m.score != null ? Number(m.score) : null
+      const maxScore = m.max_score != null ? Number(m.max_score) : (Number(m.question_count) || 100)
+      const percentage = hasCompleted && maxScore > 0 ? Math.round((score / maxScore) * 100) : null
+      return {
+        id: m.id,
+        title: m.title,
+        exam_code: m.exam_code,
+        questionCount: Number(m.question_count || 0),
+        isCompleted: hasCompleted,
+        score,
+        maxScore,
+        percentage,
+        attemptsCount: Number(m.attempts_count || (hasCompleted ? 1 : 0)),
+        completedAt: m.completed_at,
+        passed: percentage != null ? percentage >= 75 : null,
+      }
+    }),
+    performanceData,
+    focusData
   }
 }
 
@@ -195,14 +301,16 @@ export default async function StudentDashboard() {
     overview: { completedQuizzes: 0, completedExams: 0, studyStreak: 0, activeDays: 0, avgQuizScore: null },
     subjects: [],
     activities: [],
-    activeExam: null,
+    mockExams: [],
+    performanceData: [],
+    focusData: []
   }
 
   if (session?.userId) {
     data = await getStudentDashboardData(session.userId)
   }
 
-  const { resume, overview, subjects, activities, activeExam } = data
+  const { resume, overview, subjects, activities, mockExams, performanceData, focusData } = data
 
   // Resume URL builder
   let resumeUrl = "/student/subjects"
@@ -219,12 +327,12 @@ export default async function StudentDashboard() {
       {/* ── Hero Banner / Carousel ── */}
       <DashboardCarousel />
 
-      {/* ── Dashboard heading row with Shortcuts ── */}
+      {/* ── Dashboard heading row ── */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="mt-1 text-muted-foreground text-sm">
-            Welcome back, {firstName}. Here is your learning progress and shortcuts.
+            Welcome back, {firstName}. Here is your live learning progress and curriculum overview.
           </p>
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
@@ -239,68 +347,13 @@ export default async function StudentDashboard() {
           </Link>
 
           <Link
-            href={activeExam ? `/student/mock-exams` : "/student/mock-exams"}
+            href="/student/mock-exams"
             className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-4 py-2 text-xs font-bold hover:bg-primary/90 transition-all shadow-2xs"
           >
             <Play className="h-3.5 w-3.5 fill-current" />
             Mock Exams
           </Link>
         </div>
-      </div>
-
-      {/* ── Quick Navigation Shortcuts Bar ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Link
-          href="/student/subjects"
-          className="group flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border/80 hover:border-primary/40 hover:bg-primary/[0.03] transition-all shadow-2xs"
-        >
-          <div className="size-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <BookOpen className="size-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-foreground truncate">Curriculum</p>
-            <p className="text-[11px] text-muted-foreground truncate">All Subjects</p>
-          </div>
-        </Link>
-
-        <Link
-          href="/student/progress"
-          className="group flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border/80 hover:border-primary/40 hover:bg-primary/[0.03] transition-all shadow-2xs"
-        >
-          <div className="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <TrendingUp className="size-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-foreground truncate">My Progress</p>
-            <p className="text-[11px] text-muted-foreground truncate">Scores & Streaks</p>
-          </div>
-        </Link>
-
-        <Link
-          href="/student/mock-exams"
-          className="group flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border/80 hover:border-primary/40 hover:bg-primary/[0.03] transition-all shadow-2xs"
-        >
-          <div className="size-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <Award className="size-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-foreground truncate">Mock Tests</p>
-            <p className="text-[11px] text-muted-foreground truncate">Full Simulations</p>
-          </div>
-        </Link>
-
-        <Link
-          href="/student/calendar"
-          className="group flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border/80 hover:border-primary/40 hover:bg-primary/[0.03] transition-all shadow-2xs"
-        >
-          <div className="size-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-            <CalendarDays className="size-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-foreground truncate">Calendar</p>
-            <p className="text-[11px] text-muted-foreground truncate">Upcoming Tasks</p>
-          </div>
-        </Link>
       </div>
 
       {/* ── Hero "Resume Where You Left Off" Navigation Banner ── */}
@@ -391,11 +444,99 @@ export default async function StudentDashboard() {
               {overview.avgQuizScore != null ? `${overview.avgQuizScore}%` : "—"}
             </span>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Average quiz proficiency</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Average quiz score</p>
         </div>
       </div>
 
-      {/* ── Active Subjects Curriculum Quick Jump ── */}
+      {/* ── SECTION: Mock Exam Progress ── */}
+      <div className="space-y-3.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="size-2 rounded-full bg-blue-500" />
+            <h2 className="text-base font-bold text-foreground tracking-tight">
+              Mock Exam Progress
+            </h2>
+          </div>
+          <Link
+            href="/student/mock-exams"
+            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+          >
+            <span>All Mock Exams</span>
+            <ChevronRight className="size-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {mockExams.length === 0 ? (
+            <div className="col-span-full rounded-2xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+              No mock examinations currently scheduled or active.
+            </div>
+          ) : (
+            mockExams.map((exam) => {
+              const isDone = exam.isCompleted
+              return (
+                <div
+                  key={exam.id}
+                  className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-2xs flex flex-col justify-between gap-4"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-0.5 min-w-0">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
+                          {exam.exam_code || `MOCK-${exam.id}`}
+                        </span>
+                        <h3 className="text-xs sm:text-sm font-bold text-foreground line-clamp-1 mt-1">
+                          {exam.title}
+                        </h3>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-sm sm:text-base font-extrabold text-foreground">
+                          {exam.percentage != null ? `${exam.percentage}%` : "Pending"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar or Status */}
+                    <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          isDone ? "bg-emerald-500" : "bg-primary/50"
+                        }`}
+                        style={{ width: `${exam.percentage != null ? exam.percentage : (isDone ? 100 : 0)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-border/70 flex items-center justify-between text-xs">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] text-muted-foreground block">
+                        {exam.questionCount} Questions
+                      </span>
+                      <span className="text-[11px] font-semibold text-foreground block">
+                        {isDone ? `${exam.score} / ${exam.maxScore} pts` : "Not attempted"}
+                      </span>
+                    </div>
+
+                    <Link
+                      href="/student/mock-exams"
+                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                        isDone
+                          ? "bg-muted hover:bg-muted/80 text-foreground"
+                          : "bg-primary text-primary-foreground hover:bg-primary/90"
+                      }`}
+                    >
+                      {isDone ? "Review" : "Take Exam"}
+                      <ArrowRight className="size-3" />
+                    </Link>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </div>
+
+      {/* ── Active Subjects Curriculum Section ── */}
       <div className="space-y-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -463,10 +604,14 @@ export default async function StudentDashboard() {
         </div>
       </div>
 
-      {/* ── Charts row ── */}
+      {/* ── Dynamic Charts Row (Live Performance Trend & Dynamic Subject Focus) ── */}
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <LearningPerformanceChart />
-        <SubjectFocusChart />
+        <LearningPerformanceChart
+          performanceData={performanceData}
+          overallAverage={overview.avgQuizScore}
+          trendLabel={overview.completedQuizzes > 0 ? "7-Day score trend" : "Start quizzes to track score trajectory"}
+        />
+        <SubjectFocusChart focusData={focusData} />
       </div>
 
       {/* ── Dynamic Recent Student Learning Activity ── */}
@@ -483,7 +628,6 @@ export default async function StudentDashboard() {
             <p className="text-sm text-muted-foreground text-center py-4">No recent learning activity recorded yet.</p>
           ) : (
             activities.map((act) => {
-              const hasSubjectLink = !!act.subject_id
               const linkUrl = act.subject_id
                 ? (act.lesson_id ? `/student/subjects/${act.subject_id}?lessonId=${act.lesson_id}` : `/student/subjects/${act.subject_id}`)
                 : null

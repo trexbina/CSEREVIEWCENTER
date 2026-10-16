@@ -46,6 +46,15 @@ const SubjectFocusChart = dynamic(
   }
 )
 
+const RecentLearningActivityList = dynamic(
+  () => import("@/components/recent-learning-activity-list").then((m) => m.RecentLearningActivityList),
+  {
+    loading: () => (
+      <div className="rounded-2xl border border-border bg-card p-6 h-[200px] animate-pulse" />
+    ),
+  }
+)
+
 // LET Examination date — April 1, 2026
 const LET_EXAM_DATE = "2026-04-01T08:00:00"
 
@@ -149,7 +158,7 @@ async function getStudentDashboardData(userId) {
        LEFT JOIN subjects s ON s.id = NULLIF(SUBSTRING(sa.details FROM 'SubjectID: ([0-9]+)'), '')::int
        WHERE sa.student_id = $1
        ORDER BY sa.created_at DESC
-       LIMIT 8`,
+       LIMIT 20`,
       [userId]
     ).catch(() => ({ rows: [] })),
 
@@ -614,70 +623,8 @@ export default async function StudentDashboard() {
         <SubjectFocusChart focusData={focusData} />
       </div>
 
-      {/* ── Dynamic Recent Student Learning Activity ── */}
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-foreground tracking-tight">Recent Learning Activity</h2>
-          </div>
-          <span className="text-xs text-muted-foreground">Live activity logs</span>
-        </div>
-
-        <div className="space-y-3">
-          {activities.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">No recent learning activity recorded yet.</p>
-          ) : (
-            activities.map((act) => {
-              const linkUrl = act.subject_id
-                ? (act.lesson_id ? `/student/subjects/${act.subject_id}?lessonId=${act.lesson_id}` : `/student/subjects/${act.subject_id}`)
-                : null
-
-              return (
-                <div
-                  key={act.id}
-                  className="flex items-center justify-between gap-3 border-b border-border pb-3 last:border-0 last:pb-0"
-                >
-                  <div className="space-y-0.5 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-xs sm:text-sm text-foreground truncate">
-                        {act.title}
-                      </p>
-                      {act.subject_code && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-muted text-muted-foreground">
-                          {act.subject_code}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {new Date(act.created_at).toLocaleString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit"
-                      })}
-                      {act.details && ` · ${act.details}`}
-                    </p>
-                  </div>
-
-                  {linkUrl ? (
-                    <Link
-                      href={linkUrl}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-primary hover:bg-primary/10 transition-colors shrink-0"
-                    >
-                      <span>Jump</span>
-                      <ChevronRight className="size-3.5" />
-                    </Link>
-                  ) : (
-                    <span className="rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground shrink-0">
-                      Viewed
-                    </span>
-                  )}
-                </div>
-              )
-            })
-          )}
-        </div>
-      </div>
+      {/* ── Dynamic Recent Student Learning Activity (Collapsible & Expandable) ── */}
+      <RecentLearningActivityList activities={activities} />
     </div>
   )
 }

@@ -437,10 +437,24 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[13px] text-muted-foreground font-medium">Email Address</p>
-                    <a href={`mailto:${user.email}`} className="text-[15px] font-semibold text-[#4382DF] hover:underline break-all block">
-                      {user.email}
+                    <a
+                      href={user.personal_email || user.email ? `mailto:${user.personal_email || user.email}` : undefined}
+                      className="text-[15px] font-semibold text-[#4382DF] hover:underline break-all block"
+                    >
+                      {user.personal_email || user.email || "—"}
                     </a>
                   </div>
+                  {user.personal_email && user.email && user.personal_email.toLowerCase().trim() !== user.email.toLowerCase().trim() && (
+                    <div className="space-y-1">
+                      <p className="text-[13px] text-muted-foreground font-medium">Institutional Email</p>
+                      <a
+                        href={`mailto:${user.email}`}
+                        className="text-[15px] font-semibold text-muted-foreground hover:text-foreground hover:underline break-all block"
+                      >
+                        {user.email}
+                      </a>
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <p className="text-[13px] text-muted-foreground font-medium">Phone Number</p>
                     <p className="text-[15px] font-semibold text-foreground">{user.phone || "—"}</p>

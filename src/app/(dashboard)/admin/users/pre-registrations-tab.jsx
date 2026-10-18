@@ -45,6 +45,7 @@ export function PreRegistrationsTab() {
   const [editForm, setEditForm] = useState({})
   const [customAccountEmail, setCustomAccountEmail] = useState("")
   const [customPassword, setCustomPassword] = useState("Student@123")
+  const [approvalBatchId, setApprovalBatchId] = useState("")
   const [previewLoginId, setPreviewLoginId] = useState("")
   const [actionLoading, setActionLoading] = useState(false)
   const [actionMsg, setActionMsg] = useState(null)
@@ -102,6 +103,7 @@ export function PreRegistrationsTab() {
     setIsEditing(false)
     setCustomAccountEmail(app.email || "")
     setCustomPassword("Student@123")
+    setApprovalBatchId(app.batch_id ? app.batch_id.toString() : "")
     setPreviewLoginId("")
     const fullName = [app.first_name, app.middle_name, app.last_name, app.suffix].filter(Boolean).join(" ")
     const params = new URLSearchParams({
@@ -266,6 +268,7 @@ export function PreRegistrationsTab() {
           action: "APPROVE",
           accountEmail: customAccountEmail?.trim() || selectedApp?.email,
           customPassword: customPassword,
+          batch_id: approvalBatchId ? parseInt(approvalBatchId, 10) : null,
         }),
       })
       const data = await res.json()
@@ -341,6 +344,15 @@ export function PreRegistrationsTab() {
   const pendingListCount = applications.filter((a) => a.status === "PENDING").length
   const approvedListCount = applications.filter((a) => a.status === "APPROVED").length
   const rejectedListCount = applications.filter((a) => a.status === "REJECTED").length
+
+  // Filter batches by the applicant's chosen examination
+  const availableApprovalBatches = useMemo(() => {
+    if (!dropdownData?.batches) return []
+    if (!selectedApp?.exam_id) return dropdownData.batches
+    return dropdownData.batches.filter(
+      (b) => b.exam_id?.toString() === selectedApp.exam_id?.toString()
+    )
+  }, [dropdownData?.batches, selectedApp?.exam_id])
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -1004,7 +1016,7 @@ export function PreRegistrationsTab() {
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400 pt-1">
                       Student Account Setup
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-[#3B3B3B] dark:text-white block">
                           Student Login ID (Auto-Generated)
@@ -1016,8 +1028,36 @@ export function PreRegistrationsTab() {
                           value={previewLoginId || "Generating..."}
                           className="text-sm h-9 rounded-xl border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 cursor-not-allowed"
                         />
-                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block">
+                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block truncate">
                           Permanent identifier for portal login.
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-[#3B3B3B] dark:text-white block">
+                          Assign Batch (Optional)
+                        </label>
+                        <Select
+                          value={approvalBatchId || "none"}
+                          onValueChange={(val) => setApprovalBatchId(val === "none" ? "" : val)}
+                        >
+                          <SelectTrigger className="text-xs h-9 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10 w-full cursor-pointer">
+                            <SelectValue placeholder="— No Batch / Leave Blank —" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 text-xs shadow-xl">
+                            <SelectItem value="none" className="text-xs py-1.5 cursor-pointer text-[#696969]">
+                              — No Batch / Leave Blank —
+                            </SelectItem>
+                            {availableApprovalBatches.map((b) => (
+                              <SelectItem key={b.id} value={b.id.toString()} className="text-xs py-1.5 cursor-pointer">
+                                {b.name} {b.target_year ? `(${b.target_year})` : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block truncate">
+                          {availableApprovalBatches.length > 0
+                            ? `Batches for ${selectedApp.exam_name || "chosen exam"}.`
+                            : "No active batches for this exam."}
                         </span>
                       </div>
                       <div className="space-y-1">
@@ -1030,7 +1070,7 @@ export function PreRegistrationsTab() {
                           placeholder="Student@123"
                           className="text-sm h-9 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10"
                         />
-                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block">
+                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block truncate">
                           Temporary initial password.
                         </span>
                       </div>

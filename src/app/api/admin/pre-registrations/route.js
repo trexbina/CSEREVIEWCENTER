@@ -211,6 +211,9 @@ export async function PATCH(request) {
     )
 
     const accountEmail = (body.accountEmail || body.customEmail || app.email || `${generated.login_id}@peak.edu.ph`).toLowerCase().trim()
+    const chosenBatchId = body.batch_id !== undefined
+      ? (body.batch_id ? parseInt(body.batch_id, 10) : null)
+      : (body.batchId !== undefined ? (body.batchId ? parseInt(body.batchId, 10) : null) : (app.batch_id || null))
 
     const insertUserRes = await pool.query(
       `INSERT INTO users (
@@ -274,7 +277,7 @@ export async function PATCH(request) {
         app.year_graduated,
         app.highest_education,
         app.exam_id,
-        app.batch_id,
+        chosenBatchId,
         app.program_id,
         app.major_id,
         app.school_id,
@@ -285,10 +288,10 @@ export async function PATCH(request) {
       ]
     )
 
-    // Mark application as APPROVED
+    // Mark application as APPROVED and sync chosen batch
     await pool.query(
-      "UPDATE pre_registrations SET status = 'APPROVED', reviewed_at = NOW(), reviewed_by = $1 WHERE id = $2",
-      [session.userId, id]
+      "UPDATE pre_registrations SET status = 'APPROVED', reviewed_at = NOW(), reviewed_by = $1, batch_id = COALESCE($3, batch_id) WHERE id = $2",
+      [session.userId, id, chosenBatchId]
     )
 
     revalidatePath("/admin/users")

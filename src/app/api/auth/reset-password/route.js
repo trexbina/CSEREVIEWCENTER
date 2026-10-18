@@ -4,6 +4,8 @@ import pool from "@/lib/db"
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 
+export const runtime = "nodejs"
+
 /**
  * Validate token state
  */

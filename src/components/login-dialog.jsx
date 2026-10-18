@@ -225,6 +225,9 @@ function LoginFormInner({ initialMode = "login" }) {
         <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
           Sign In
         </DialogTitle>
+        <DialogDescription className="sr-only">
+          Sign in to your PEAK Review Center account
+        </DialogDescription>
       </div>
 
       {error && (

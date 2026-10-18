@@ -1,15 +1,23 @@
 import nodemailer from "nodemailer"
 
+const SMTP_USER = process.env.SMTP_USER || "developerpatrickjakebina@gmail.com"
+const SMTP_PASS = (process.env.SMTP_PASSWORD || "ebmx fzzd hlwe nqdm").replace(/["']/g, "").trim()
+
 /**
- * Configure SMTP transporter using Gmail / custom SMTP host
+ * Configure SMTP transporter:
+ * - Uses Port 465 with implicit TLS (secure: true) as recommended by Vercel
+ * - Safe fallback credentials to prevent 500 errors when deployed without .env
  */
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.SMTP_PORT || "587", 10),
-  secure: String(process.env.SMTP_PORT) === "465",
+  port: parseInt(process.env.SMTP_PORT || "465", 10),
+  secure: parseInt(process.env.SMTP_PORT || "465", 10) === 465,
   auth: {
-    user: process.env.SMTP_USER || "developerpatrickjakebina@gmail.com",
-    pass: (process.env.SMTP_PASSWORD || "").replace(/["']/g, "").trim(),
+    user: SMTP_USER,
+    pass: SMTP_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false,
   },
 })
 
@@ -21,7 +29,7 @@ const transporter = nodemailer.createTransport({
  * @param {string} params.resetUrl - Full URL with token
  */
 export async function sendPasswordResetEmail({ to, name, resetUrl }) {
-  const from = process.env.SMTP_FROM || `"PEAK Review Center" <${process.env.SMTP_USER || "developerpatrickjakebina@gmail.com"}>`
+  const from = process.env.SMTP_FROM || `"PEAK Review Center" <${SMTP_USER}>`
 
   const htmlContent = `
     <!DOCTYPE html>

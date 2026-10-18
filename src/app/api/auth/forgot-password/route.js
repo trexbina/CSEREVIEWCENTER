@@ -5,6 +5,8 @@ import { sendPasswordResetEmail } from "@/lib/email"
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 
+export const runtime = "nodejs"
+
 export async function POST(request) {
   try {
     const body = await request.json()
@@ -95,11 +97,11 @@ export async function POST(request) {
     )
 
     // Determine app origin for the reset link
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host")
+    const proto = request.headers.get("x-forwarded-proto") || (host?.includes("localhost") ? "http" : "https")
     const origin =
       request.headers.get("origin") ||
-      (request.headers.get("x-forwarded-proto")
-        ? `${request.headers.get("x-forwarded-proto")}://${request.headers.get("host")}`
-        : null) ||
+      (host ? `${proto}://${host}` : null) ||
       process.env.NEXT_PUBLIC_APP_URL ||
       "http://localhost:3000"
 
@@ -119,7 +121,7 @@ export async function POST(request) {
   } catch (error) {
     console.error("[forgot-password] Error:", error)
     return NextResponse.json(
-      { error: "An unexpected error occurred while processing your request. Please try again later." },
+      { error: error?.message || "An unexpected error occurred while processing your request. Please try again later." },
       { status: 500 }
     )
   }

@@ -73,7 +73,7 @@ export async function GET() {
         pr.created_at DESC
     `)
 
-    return NextResponse.json({ preRegistrations: rows })
+    return NextResponse.json({ preRegistrations: rows, applications: rows })
   } catch (err) {
     console.error("[admin/pre-registrations GET] error:", err)
     return NextResponse.json({ error: "Internal server error." }, { status: 500 })

@@ -71,7 +71,7 @@ export function PreRegistrationsTab() {
       const res = await fetch("/api/admin/pre-registrations")
       const data = await res.json()
       if (res.ok) {
-        setApplications(data.applications || [])
+        setApplications(data.applications || data.preRegistrations || [])
       }
     } catch {
       toast("Failed to load pre-registrations.")

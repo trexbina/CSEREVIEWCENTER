@@ -25,8 +25,6 @@ const ROLE_ROUTES = {
     "/admin/users",
     "/admin/master-data",
     "/admin/analytical-overview",
-    "/admin/financials",
-    "/admin/reports",
     "/admin/notifications",
     "/admin/settings",
   ],

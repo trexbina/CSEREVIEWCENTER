@@ -7,11 +7,21 @@ if (!process.env.DATABASE_URL) {
 }
 
 const { Pool } = pg;
+const cloudUrl = 'postgres://d1f728379b70c227e9665d0157a02039f9cdea920d3e48202a4ea36d40482e01:sk_dFxUy0xqZtKe-9RilpDcr@db.prisma.io:5432/postgres';
+
+const targetUrl = process.env.TARGET === 'local' 
+  ? (process.env.DATABASE_URL || process.env.POSTGRES_URL)
+  : cloudUrl;
+
+const isCloud = targetUrl.includes('prisma.io') || targetUrl.includes('supabase');
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL,
+  connectionString: targetUrl,
+  ssl: isCloud ? { rejectUnauthorized: false } : undefined,
 });
 
 async function main() {
+  console.log(`Connecting to: ${isCloud ? 'CLOUD DB (db.prisma.io)' : 'LOCAL DB'}`);
   const res = await pool.query(`
     SELECT 
       pr.id, 
@@ -31,7 +41,7 @@ async function main() {
   `);
 
   console.table(res.rows);
-  console.log(`Total pre-registrations in database: ${res.rows.length}`);
+  console.log(`Total pre-registrations: ${res.rows.length}`);
   await pool.end();
 }
 

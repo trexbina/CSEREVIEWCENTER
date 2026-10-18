@@ -51,9 +51,9 @@ export default function PreRegisterPage() {
   const [birthday, setBirthday] = useState("")
   const [gender, setGender] = useState("")
   const [address, setAddress] = useState("")
-  const [city, setCity] = useState("")
-  const [province, setProvince] = useState("")
-  const [zipCode, setZipCode] = useState("")
+  const [city, setCity] = useState("Cagayan de Oro")
+  const [province, setProvince] = useState("Misamis Oriental")
+  const [zipCode, setZipCode] = useState("9000")
 
   // Academic
   const [schoolId, setSchoolId] = useState("")
@@ -81,6 +81,15 @@ export default function PreRegisterPage() {
         if (res.ok) {
           const data = await res.json()
           setDropdownData(data)
+          // Auto-select LEPT or single exam so Program/Level is immediately visible
+          if (data.examinations?.length === 1) {
+            setExamId(data.examinations[0].id.toString())
+          } else if (data.examinations?.length > 1) {
+            const lept = data.examinations.find(
+              (e) => e.name?.includes("LEPT") || e.name?.includes("Teachers")
+            )
+            if (lept) setExamId(lept.id.toString())
+          }
         }
       } catch (err) {
         console.error("Failed to load registration dropdowns:", err)
@@ -124,9 +133,9 @@ export default function PreRegisterPage() {
         birthday: birthday || null,
         gender: gender || null,
         address: address,
-        city: city,
-        province: province,
-        zip_code: zipCode,
+        city: city?.trim() || "Cagayan de Oro",
+        province: province?.trim() || "Misamis Oriental",
+        zip_code: zipCode?.trim() || "9000",
         school: selectedSchoolObj ? selectedSchoolObj.name : customSchool,
         school_id: schoolId && schoolId !== "custom" ? schoolId : null,
         course: selectedCourseObj ? selectedCourseObj.name : customCourse,

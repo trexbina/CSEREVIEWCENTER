@@ -8,7 +8,14 @@ const { Pool } = pg
 
 // CRITICAL: Disable Node.js strict TLS certificate validation for cloud-hosted databases
 // (Prisma Postgres, Supabase, Neon, etc. use internal/self-signed certificates)
-if (process.env.NODE_ENV === "production") {
+if (
+  process.env.NODE_ENV === "production" ||
+  process.env.DATABASE_URL?.includes("prisma.io") ||
+  process.env.POSTGRES_URL?.includes("prisma.io") ||
+  process.env.Database_URL1_DATABASE_URL?.includes("prisma.io") ||
+  process.env.DATABASE_URL?.includes("supabase") ||
+  process.env.POSTGRES_URL?.includes("supabase")
+) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 }
 

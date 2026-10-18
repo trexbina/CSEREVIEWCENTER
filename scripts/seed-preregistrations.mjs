@@ -7,8 +7,17 @@ if (!process.env.DATABASE_URL) {
 }
 
 const { Pool } = pg;
+const CLOUD_URL = 'postgres://d1f728379b70c227e9665d0157a02039f9cdea920d3e48202a4ea36d40482e01:sk_dFxUy0xqZtKe-9RilpDcr@db.prisma.io:5432/postgres';
+
+const targetUrl = process.argv.includes('--cloud') || process.env.TARGET === 'cloud'
+  ? CLOUD_URL
+  : (process.env.DATABASE_URL || process.env.POSTGRES_URL || CLOUD_URL);
+
+const isCloud = targetUrl.includes('prisma.io') || targetUrl.includes('supabase');
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL,
+  connectionString: targetUrl,
+  ssl: isCloud ? { rejectUnauthorized: false } : undefined,
 });
 
 const CDO_SCHOOLS = [

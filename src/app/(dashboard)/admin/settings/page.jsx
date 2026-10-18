@@ -8,8 +8,15 @@ import {
     X,
     Loader2,
     Laptop,
-    Smartphone
+    Smartphone,
+    KeyRound,
+    Eye,
+    EyeOff,
+    CheckCircle2,
+    AlertCircle
 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 export default function SystemSettingsPage() {
     const [loading, setLoading] = useState(true)
@@ -23,6 +30,16 @@ export default function SystemSettingsPage() {
     })
     const [auditLogs, setAuditLogs] = useState([])
     const [sessions, setSessions] = useState([])
+
+    // Change Password States
+    const [currentPassword, setCurrentPassword] = useState("")
+    const [newPassword, setNewPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+    const [showNewPassword, setShowNewPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const [passwordLoading, setPasswordLoading] = useState(false)
+    const [passwordFeedback, setPasswordFeedback] = useState(null)
 
     // Active Modals
     const [activeModal, setActiveModal] = useState(null) // 'sessions' | 'logs' | 'watermark' | null
@@ -116,6 +133,74 @@ export default function SystemSettingsPage() {
             fetchSecurityData()
         } catch (err) {
             console.error("Failed to terminate session:", err)
+        }
+    }
+
+    // Handle Password Change
+    const handleChangePassword = async (e) => {
+        e.preventDefault()
+        setPasswordFeedback(null)
+
+        if (!currentPassword || !currentPassword.trim()) {
+            setPasswordFeedback({
+                type: "error",
+                message: "Current password is required."
+            })
+            return
+        }
+
+        if (!newPassword || newPassword.trim().length < 6) {
+            setPasswordFeedback({
+                type: "error",
+                message: "New password must be at least 6 characters long."
+            })
+            return
+        }
+
+        if (newPassword !== confirmPassword) {
+            setPasswordFeedback({
+                type: "error",
+                message: "New password and retype password do not match."
+            })
+            return
+        }
+
+        setPasswordLoading(true)
+        try {
+            const res = await fetch("/api/user/change-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    currentPassword: currentPassword.trim(),
+                    newPassword: newPassword.trim(),
+                    confirmPassword: confirmPassword.trim()
+                })
+            })
+
+            const data = await res.json()
+
+            if (!res.ok) {
+                setPasswordFeedback({
+                    type: "error",
+                    message: data.error || "Failed to update password."
+                })
+                return
+            }
+
+            setPasswordFeedback({
+                type: "success",
+                message: "Password changed successfully."
+            })
+            setCurrentPassword("")
+            setNewPassword("")
+            setConfirmPassword("")
+        } catch {
+            setPasswordFeedback({
+                type: "error",
+                message: "Network error occurred. Please try again."
+            })
+        } finally {
+            setPasswordLoading(false)
         }
     }
 
@@ -228,7 +313,7 @@ export default function SystemSettingsPage() {
                                     />
                                 </div>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Adds the student's name on handouts and reviewer files to prevent unauthorized leaks.
+                                    Adds the student&apos;s name on handouts and reviewer files to prevent unauthorized leaks.
                                 </p>
                             </div>
 
@@ -242,6 +327,161 @@ export default function SystemSettingsPage() {
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Account Security: Change Password */}
+                <div className="pb-8">
+                    <div className="mb-4">
+                        <div className="flex items-center gap-2">
+                            <KeyRound className="h-4.5 w-4.5 text-[#E9C46A]" />
+                            <h2 className="text-base font-bold uppercase tracking-wider text-foreground">
+                                Account Password
+                            </h2>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                            Update your login password. Enter your new password and retype it to confirm.
+                        </p>
+                    </div>
+
+                    <div className="max-w-2xl rounded-2xl border border-border/80 bg-card p-6 shadow-xs">
+                        <form onSubmit={handleChangePassword} className="space-y-4">
+                            {/* Feedback Banner */}
+                            {passwordFeedback && (
+                                <div
+                                    className={`p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 animate-in fade-in duration-150 ${
+                                        passwordFeedback.type === "success"
+                                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                                            : "bg-destructive/10 border-destructive/20 text-destructive"
+                                    }`}
+                                >
+                                    {passwordFeedback.type === "success" ? (
+                                        <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                    ) : (
+                                        <AlertCircle className="size-4 shrink-0 text-destructive" />
+                                    )}
+                                    <span>{passwordFeedback.message}</span>
+                                </div>
+                            )}
+
+                            {/* Current Password (Required) */}
+                            <div className="space-y-1.5">
+                                <Label htmlFor="current-password" className="text-xs font-semibold text-foreground">
+                                    Current Password <span className="text-destructive">*</span>
+                                </Label>
+                                <div className="relative">
+                                    <Input
+                                        id="current-password"
+                                        required
+                                        type={showCurrentPassword ? "text" : "password"}
+                                        value={currentPassword}
+                                        onChange={(e) => setCurrentPassword(e.target.value)}
+                                        placeholder="Enter your current password"
+                                        className="h-10 pr-10 text-xs rounded-xl border-border/70"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                        tabIndex={-1}
+                                    >
+                                        {showCurrentPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                                    </button>
+                                </div>
+                                <span className="text-[11px] text-muted-foreground block">
+                                    Required to confirm your identity. If forgotten, only IT or an administrator with User Management access can reset your password.
+                                </span>
+                            </div>
+
+                            {/* New Password & Retype Password Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="new-password" className="text-xs font-semibold text-foreground">
+                                        New Password <span className="text-destructive">*</span>
+                                    </Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="new-password"
+                                            required
+                                            type={showNewPassword ? "text" : "password"}
+                                            value={newPassword}
+                                            onChange={(e) => setNewPassword(e.target.value)}
+                                            placeholder="Minimum 6 characters"
+                                            className="h-10 pr-10 text-xs rounded-xl border-border/70"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewPassword(!showNewPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                            tabIndex={-1}
+                                        >
+                                            {showNewPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                                        </button>
+                                    </div>
+                                    <span className="text-[11px] text-muted-foreground block">
+                                        At least 6 characters required.
+                                    </span>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="confirm-password" className="text-xs font-semibold text-foreground">
+                                        Retype New Password <span className="text-destructive">*</span>
+                                    </Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="confirm-password"
+                                            required
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            placeholder="Retype your new password"
+                                            className="h-10 pr-10 text-xs rounded-xl border-border/70"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                            tabIndex={-1}
+                                        >
+                                            {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                                        </button>
+                                    </div>
+
+                                    {/* Password match indicator */}
+                                    {confirmPassword.length > 0 && (
+                                        <div className="pt-0.5">
+                                            {newPassword === confirmPassword ? (
+                                                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                                                    <CheckCircle2 className="size-3" /> Passwords match
+                                                </span>
+                                            ) : (
+                                                <span className="text-[11px] text-rose-500 dark:text-rose-400 font-semibold flex items-center gap-1">
+                                                    <AlertCircle className="size-3" /> Passwords do not match
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Submit Button */}
+                            <div className="pt-2 flex items-center justify-end">
+                                <button
+                                    type="submit"
+                                    disabled={passwordLoading || !newPassword || !confirmPassword}
+                                    className="h-10 px-6 rounded-xl bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider shadow-xs transition-all active:scale-95 cursor-pointer flex items-center gap-2"
+                                >
+                                    {passwordLoading ? (
+                                        <>
+                                            <Loader2 className="size-3.5 animate-spin" />
+                                            <span>Updating…</span>
+                                        </>
+                                    ) : (
+                                        <span>Update Password</span>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>

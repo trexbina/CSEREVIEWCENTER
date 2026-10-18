@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { LoginDialog } from "@/components/login-dialog"
+import { LoginDialog, ForgotPasswordDialog } from "@/components/login-dialog"
 import { Button } from "@/components/ui/button"
 import { Phone, Mail, MapPin, X } from "lucide-react"
 import { motion } from "motion/react"
@@ -147,6 +147,15 @@ export function HeroSection() {
               >
                 Pre-Register
               </a>
+
+              <ForgotPasswordDialog>
+                <button
+                  type="button"
+                  className="text-xs md:text-sm font-medium tracking-wide text-[#808489] hover:text-[#1e293b] dark:text-slate-300 dark:hover:text-white transition-colors duration-300 ease-in-out py-1.5 cursor-pointer"
+                >
+                  Forgot Password?
+                </button>
+              </ForgotPasswordDialog>
             </nav>
 
             <LoginDialog>

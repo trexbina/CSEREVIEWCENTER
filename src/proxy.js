@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server"
 import { verifyToken } from "@/lib/auth"
+import {
+  getClientIp,
+  checkRateLimit,
+  RATE_LIMIT_CONFIG,
+} from "@/lib/rate-limiter"
 
-// Proxy — RBAC (Next.js 16 convention, replaces middleware.js)
-// Runs BEFORE every matched request. JWT-only — no DB.
-// Session = 1 hour. Expired/invalid token → cookie cleared → login.
+// Proxy — RBAC & Hybrid Rate Limiting (Next.js 16 convention)
+// Runs BEFORE every matched request. JWT-only for pages, Rate-limiter for Auth APIs.
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 
@@ -60,6 +64,83 @@ async function getSession(request) {
 
 export default async function proxy(request) {
   const { pathname } = request.nextUrl
+
+  // ── Rate Limiting for Auth APIs (Cloudflare-Aware Hybrid Strategy) ──
+  if (
+    pathname === "/api/auth/signup" ||
+    pathname === "/api/auth/login" ||
+    pathname === "/api/auth/forgot-password"
+  ) {
+    if (request.method.toUpperCase() === "POST") {
+      const clientIp = getClientIp(request)
+
+      if (pathname === "/api/auth/signup") {
+        // Strict IP limit: 3 requests per hour
+        const key = `signup:${clientIp}`
+        const result = await checkRateLimit(
+          key,
+          RATE_LIMIT_CONFIG.signup.limit,
+          RATE_LIMIT_CONFIG.signup.windowMs
+        )
+
+        if (!result.success) {
+          return NextResponse.json(
+            { error: "Too many sign-up requests from this IP. Please try again later." },
+            {
+              status: 429,
+              headers: {
+                "Retry-After": String(result.retryAfterSec),
+                "X-RateLimit-Limit": String(RATE_LIMIT_CONFIG.signup.limit),
+                "X-RateLimit-Remaining": "0",
+              },
+            }
+          )
+        }
+      } else {
+        // Compound key strategy for login and forgot-password: IP + normalized email/account
+        let identifier = "anonymous"
+        try {
+          // Stream preservation: clone request before reading JSON body
+          const clonedRequest = request.clone()
+          const body = await clonedRequest.json()
+          const rawTarget =
+            body.loginId || body.login_id || body.email || body.username || ""
+          if (rawTarget) {
+            identifier = String(rawTarget).toLowerCase().trim()
+          }
+        } catch (_) {
+          // Fallback if body parsing fails
+        }
+
+        const routePrefix = pathname === "/api/auth/login" ? "login" : "forgot-password"
+        const key = `${routePrefix}:${clientIp}:${identifier}`
+        const config =
+          pathname === "/api/auth/login"
+            ? RATE_LIMIT_CONFIG.login
+            : RATE_LIMIT_CONFIG.forgotPassword
+
+        const result = await checkRateLimit(key, config.limit, config.windowMs)
+
+        if (!result.success) {
+          return NextResponse.json(
+            { error: "Too many attempts. Please try again after 15 minutes." },
+            {
+              status: 429,
+              headers: {
+                "Retry-After": String(result.retryAfterSec),
+                "X-RateLimit-Limit": String(config.limit),
+                "X-RateLimit-Remaining": "0",
+              },
+            }
+          )
+        }
+      }
+    }
+
+    return NextResponse.next()
+  }
+
+  // ── Page RBAC & Session Management ─────────────────────
   const { session, staleToken } = await getSession(request)
 
   // ── No valid session ──────────────────────────────────
@@ -106,5 +187,8 @@ export const config = {
     "/teacher/:path*",
     "/admin/:path*",
     "/login",
+    "/api/auth/signup",
+    "/api/auth/login",
+    "/api/auth/forgot-password",
   ],
 }

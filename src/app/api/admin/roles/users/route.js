@@ -105,9 +105,26 @@ export async function PATCH(req) {
       return NextResponse.json({ error: "User ID is required." }, { status: 400 })
     }
 
-    const userRes = await pool.query("SELECT id, name, role, is_active, email FROM users WHERE id = $1", [parseInt(userId)])
+    const userRes = await pool.query("SELECT id, name, role, is_active, email, login_id FROM users WHERE id = $1", [parseInt(userId)])
     if (userRes.rows.length === 0) {
       return NextResponse.json({ error: "User not found." }, { status: 404 })
+    }
+
+    const targetUser = userRes.rows[0]
+    const isProtectedSuperAdmin = targetUser.login_id?.toLowerCase() === "admin00001" || targetUser.id === 1
+
+    // Prevent transferring or disabling default Super Admin (admin00001)
+    if (isProtectedSuperAdmin) {
+      if (role !== undefined && role !== "super_admin" && role !== "admin") {
+        return NextResponse.json({
+          error: "The default system Super Admin (admin00001) is protected and cannot be transferred to another role."
+        }, { status: 400 })
+      }
+      if (is_active === false) {
+        return NextResponse.json({
+          error: "The default system Super Admin (admin00001) is protected and cannot be disabled."
+        }, { status: 400 })
+      }
     }
 
     // Prevent administrator from disabling their own account

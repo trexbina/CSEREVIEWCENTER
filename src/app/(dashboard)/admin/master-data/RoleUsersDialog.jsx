@@ -399,6 +399,8 @@ export default function RoleUsersDialog({
                 <div className="divide-y divide-border/30">
                   {filteredUsers.map((user) => {
                     const isActive = user.is_active !== false
+                    const isProtectedSuperAdmin = user.login_id?.toLowerCase() === "admin00001" || user.id === 1
+
                     return (
                       <div
                         key={user.id}
@@ -423,6 +425,12 @@ export default function RoleUsersDialog({
                               <span className="font-semibold text-xs text-foreground truncate">
                                 {user.name}
                               </span>
+                              {isProtectedSuperAdmin && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                                  <Shield className="h-2.5 w-2.5" />
+                                  Default Super Admin
+                                </span>
+                              )}
                               {/* Status badge */}
                               <span
                                 className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${
@@ -455,72 +463,91 @@ export default function RoleUsersDialog({
 
                         {/* Actions: Transfer Role & Disable/Enable */}
                         <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                          {/* Transfer Role Dropdown */}
-                          <div className="flex items-center gap-1.5">
-                            <label className="text-[11px] text-muted-foreground font-medium hidden md:inline">
-                              Transfer:
-                            </label>
-                            <select
-                              value={user.role || role.role_key}
-                              onChange={(e) => {
-                                const newKey = e.target.value
-                                if (newKey !== user.role) {
-                                  const targetObj = destinationRoles.find((r) => r.role_key === newKey)
-                                  setConfirmTransfer({
+                          {isProtectedSuperAdmin ? (
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 flex items-center gap-1.5"
+                                title="The default Super Admin account is permanently assigned as Super Admin"
+                              >
+                                <Shield className="h-3 w-3" /> Fixed Role
+                              </span>
+                              <span
+                                className="text-[11px] font-medium text-muted-foreground bg-muted/40 px-2 py-1 rounded-lg border border-border/30 cursor-not-allowed opacity-60"
+                                title="Default Super Admin cannot be disabled"
+                              >
+                                Permanent Access
+                              </span>
+                            </div>
+                          ) : (
+                            <>
+                              {/* Transfer Role Dropdown */}
+                              <div className="flex items-center gap-1.5">
+                                <label className="text-[11px] text-muted-foreground font-medium hidden md:inline">
+                                  Transfer:
+                                </label>
+                                <select
+                                  value={user.role || role.role_key}
+                                  onChange={(e) => {
+                                    const newKey = e.target.value
+                                    if (newKey !== user.role) {
+                                      const targetObj = destinationRoles.find((r) => r.role_key === newKey)
+                                      setConfirmTransfer({
+                                        isOpen: true,
+                                        user,
+                                        targetRoleKey: newKey,
+                                        targetRoleName: targetObj?.name || newKey
+                                      })
+                                    }
+                                  }}
+                                  className="h-8 text-xs px-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-background text-foreground shadow-2xs focus:outline-none focus:ring-1 focus:ring-[#E9C46A] cursor-pointer"
+                                  title="Transfer user to another role"
+                                >
+                                  <option value={role.role_key} disabled>
+                                    (Current: {role.name})
+                                  </option>
+                                  <optgroup label="Available Roles">
+                                    {destinationRoles
+                                      .filter((r) => r.role_key !== role.role_key)
+                                      .map((r) => (
+                                        <option key={r.role_key} value={r.role_key}>
+                                          {r.name}
+                                        </option>
+                                      ))}
+                                  </optgroup>
+                                </select>
+                              </div>
+
+                              {/* Disable / Enable Button */}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setConfirmDisable({
                                     isOpen: true,
                                     user,
-                                    targetRoleKey: newKey,
-                                    targetRoleName: targetObj?.name || newKey
+                                    willBeActive: !isActive
                                   })
                                 }
-                              }}
-                              className="h-8 text-xs px-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-background text-foreground shadow-2xs focus:outline-none focus:ring-1 focus:ring-[#E9C46A] cursor-pointer"
-                              title="Transfer user to another role"
-                            >
-                              <option value={role.role_key} disabled>
-                                (Current: {role.name})
-                              </option>
-                              <optgroup label="Available Roles">
-                                {destinationRoles
-                                  .filter((r) => r.role_key !== role.role_key)
-                                  .map((r) => (
-                                    <option key={r.role_key} value={r.role_key}>
-                                      {r.name}
-                                    </option>
-                                  ))}
-                              </optgroup>
-                            </select>
-                          </div>
-
-                          {/* Disable / Enable Button */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setConfirmDisable({
-                                isOpen: true,
-                                user,
-                                willBeActive: !isActive
-                              })
-                            }
-                            className={`h-8 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border ${
-                              isActive
-                                ? "border-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 active:scale-95"
-                                : "border-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 active:scale-95"
-                            }`}
-                            title={isActive ? "Disable user login access" : "Enable user login access"}
-                          >
-                            {isActive ? (
-                              <>
-                                <UserX className="h-3.5 w-3.5" />
-                                <span>Disable</span>
-                              </>
-                            ) : (
-                              <>
-                                <UserCheck className="h-3.5 w-3.5" />
-                                <span>Enable</span>
-                              </>
-                            )}
-                          </button>
+                                className={`h-8 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                                  isActive
+                                    ? "border-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 active:scale-95"
+                                    : "border-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 active:scale-95"
+                                }`}
+                                title={isActive ? "Disable user login access" : "Enable user login access"}
+                              >
+                                {isActive ? (
+                                  <>
+                                    <UserX className="h-3.5 w-3.5" />
+                                    <span>Disable</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserCheck className="h-3.5 w-3.5" />
+                                    <span>Enable</span>
+                                  </>
+                                )}
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     )
@@ -623,7 +650,12 @@ export default function RoleUsersDialog({
                         </div>
 
                         <div className="shrink-0">
-                          {isAlreadyInThisRole ? (
+                          {user.login_id?.toLowerCase() === "admin00001" || user.id === 1 ? (
+                            <span className="text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 flex items-center gap-1">
+                              <Shield className="h-3 w-3" />
+                              Primary Super Admin (Protected)
+                            </span>
+                          ) : isAlreadyInThisRole ? (
                             <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-1">
                               <Check className="h-3 w-3 stroke-[3]" />
                               Already in this role

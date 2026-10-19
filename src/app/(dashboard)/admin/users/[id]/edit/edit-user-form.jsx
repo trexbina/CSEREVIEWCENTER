@@ -747,8 +747,16 @@ export default function EditUserForm({ initialUser }) {
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-sm font-semibold text-[#696969]">User Role *</Label>
+                            <div className="flex items-center justify-between">
+                                <Label className="text-sm font-semibold text-[#696969]">User Role *</Label>
+                                {(initialUser.login_id?.toLowerCase() === "admin00001" || initialUser.id === 1) && (
+                                    <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                                        <Shield className="h-3 w-3" /> Protected
+                                    </span>
+                                )}
+                            </div>
                             <Select 
+                                disabled={initialUser.login_id?.toLowerCase() === "admin00001" || initialUser.id === 1}
                                 value={
                                     role !== "student" && role !== "teacher"
                                         ? "admin_group"
@@ -770,23 +778,29 @@ export default function EditUserForm({ initialUser }) {
                                     }
                                 }}
                             >
-                                <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs disabled:opacity-75 disabled:cursor-not-allowed"><SelectValue /></SelectTrigger>
                                 <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                     <SelectItem value="student">Student</SelectItem>
                                     <SelectItem value="teacher">Teacher (Instructor)</SelectItem>
                                     <SelectItem value="admin_group">Administrator</SelectItem>
                                 </SelectContent>
                             </Select>
+                            {(initialUser.login_id?.toLowerCase() === "admin00001" || initialUser.id === 1) && (
+                                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                                    <Shield className="h-3 w-3" /> Default Super Admin account is permanently assigned as Super Admin.
+                                </p>
+                            )}
                         </div>
 
                         {role !== "student" && role !== "teacher" && (
                             <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-150">
                                 <Label className="text-sm font-semibold text-[#696969]">Admin Role *</Label>
                                 <Select 
+                                    disabled={initialUser.login_id?.toLowerCase() === "admin00001" || initialUser.id === 1}
                                     value={role === "admin" ? "super_admin" : role} 
                                     onValueChange={(val) => setRole(val)}
                                 >
-                                    <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue /></SelectTrigger>
+                                    <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs disabled:opacity-75 disabled:cursor-not-allowed"><SelectValue /></SelectTrigger>
                                     <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                         <SelectItem value="super_admin">Super Admin (System Owner)</SelectItem>
                                         <SelectItem value="academic_admin">Academic Coordinator (Curriculum & Exams)</SelectItem>

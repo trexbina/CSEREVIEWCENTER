@@ -192,11 +192,22 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "User id(s) required." }, { status: 400 })
     }
 
-    // Exclude current session admin from deletion
-    const validIdsToDelete = targetIds.filter((id) => id !== Number(session.userId))
+    // Check for default system Super Admin (admin00001 or id=1)
+    const protectedUsers = await pool.query(
+      "SELECT id, login_id FROM users WHERE id = ANY($1::int[]) AND (LOWER(login_id) = 'admin00001' OR id = 1)",
+      [targetIds]
+    )
+
+    if (protectedUsers.rows.length > 0 && targetIds.length === 1) {
+      return NextResponse.json({ error: "The default system Super Admin (admin00001) is protected and cannot be deleted." }, { status: 400 })
+    }
+
+    const protectedIds = new Set(protectedUsers.rows.map((u) => u.id))
+    // Exclude current session admin and protected admin from deletion
+    const validIdsToDelete = targetIds.filter((id) => id !== Number(session.userId) && !protectedIds.has(id))
 
     if (validIdsToDelete.length === 0) {
-      return NextResponse.json({ error: "Cannot delete yourself." }, { status: 400 })
+      return NextResponse.json({ error: "Cannot delete yourself or the default system Super Admin." }, { status: 400 })
     }
 
     // Fetch user records before deletion so they can be saved to trash
@@ -264,14 +275,26 @@ export async function PUT(request) {
     }
 
     // Fetch existing user to preserve fields if needed
-    const existingUserRes = await pool.query("SELECT email, login_id FROM users WHERE id = $1", [userId])
+    const existingUserRes = await pool.query("SELECT id, email, login_id, role, is_active FROM users WHERE id = $1", [userId])
     if (existingUserRes.rows.length === 0) {
       return NextResponse.json({ error: "User not found." }, { status: 404 })
     }
     const currentUser = existingUserRes.rows[0]
     const userEmail = (body.email || currentUser.email || `${currentUser.login_id}@peak.edu.ph`).toLowerCase().trim()
 
-    if (role) {
+    // Protection for default Super Admin account (admin00001 or id=1)
+    const isProtectedSuperAdmin = currentUser.login_id?.toLowerCase() === "admin00001" || currentUser.id === 1
+
+    let finalRole = role || currentUser.role || "student"
+    if (isProtectedSuperAdmin) {
+      if (role && role !== "super_admin" && role !== "admin") {
+        return NextResponse.json(
+          { error: "The default system Super Admin (admin00001) is protected and cannot be changed to another role." },
+          { status: 400 }
+        )
+      }
+      finalRole = "super_admin"
+    } else if (role) {
       let isValidRole = VALID_ROLES.includes(role)
       if (!isValidRole) {
         const customRoleCheck = await pool.query("SELECT id FROM custom_roles WHERE role_key = $1", [role])
@@ -300,7 +323,16 @@ export async function PUT(request) {
     }
 
     let result
-    const isActiveVal = body.is_active !== undefined ? Boolean(body.is_active) : true
+    let isActiveVal = body.is_active !== undefined ? Boolean(body.is_active) : true
+    if (isProtectedSuperAdmin) {
+      if (body.is_active === false) {
+        return NextResponse.json(
+          { error: "The default system Super Admin (admin00001) is protected and cannot be disabled." },
+          { status: 400 }
+        )
+      }
+      isActiveVal = true
+    }
     const subEndDateVal = body.subscription_end_date ? body.subscription_end_date : null
 
     if (password?.trim()) {
@@ -319,7 +351,7 @@ export async function PUT(request) {
         [
           name.trim(),
           userEmail,
-          role || "student",
+          finalRole,
           hash,
           body.first_name?.trim() || null,
           body.middle_name?.trim() || null,
@@ -366,7 +398,7 @@ export async function PUT(request) {
         [
           name.trim(),
           userEmail,
-          role || "student",
+          finalRole,
           body.first_name?.trim() || null,
           body.middle_name?.trim() || null,
           body.last_name?.trim() || null,

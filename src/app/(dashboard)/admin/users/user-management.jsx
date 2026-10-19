@@ -513,8 +513,16 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                 <p className="text-[10px] text-muted-foreground">Min. 6 characters. Only fill this if you want to reset this user's password.</p>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">User Role *</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">User Role *</Label>
+                  {(user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001") && (
+                    <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                      <Shield className="h-2.5 w-2.5" /> Protected
+                    </span>
+                  )}
+                </div>
                 <Select 
+                  disabled={user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001"}
                   value={
                     role !== "student" && role !== "teacher"
                       ? "admin_group"
@@ -536,23 +544,29 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                     }
                   }}
                 >
-                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full disabled:opacity-75 disabled:cursor-not-allowed"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="student">Student</SelectItem>
                     <SelectItem value="teacher">Teacher (Instructor)</SelectItem>
                     <SelectItem value="admin_group">Administrator</SelectItem>
                   </SelectContent>
                 </Select>
+                {(user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001") && (
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1 mt-0.5">
+                    <Shield className="h-3 w-3" /> Default Super Admin account cannot have their role changed.
+                  </p>
+                )}
               </div>
 
               {role !== "student" && role !== "teacher" && (
                 <div className="space-y-1 animate-in fade-in zoom-in-95 duration-150">
                   <Label className="text-xs">Admin Role *</Label>
                   <Select 
+                    disabled={user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001"}
                     value={role === "admin" ? "super_admin" : role} 
                     onValueChange={(val) => setRole(val)}
                   >
-                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-full disabled:opacity-75 disabled:cursor-not-allowed"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="super_admin">Super Admin (System Owner)</SelectItem>
                       <SelectItem value="academic_admin">Academic Coordinator (Curriculum & Exams)</SelectItem>
@@ -671,9 +685,10 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                     <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-foreground">
                       <input
                         type="checkbox"
-                        checked={isActive}
+                        disabled={user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001"}
+                        checked={user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001" ? true : isActive}
                         onChange={(e) => setIsActive(e.target.checked)}
-                        className="h-3.5 w-3.5 rounded border-black/20"
+                        className="h-3.5 w-3.5 rounded border-black/20 disabled:opacity-50"
                       />
                       <span>Account is active (Uncheck to manually disable student access)</span>
                     </label>
@@ -734,7 +749,9 @@ function SortButton({ label, field, sortField, sortDir, onSort }) {
 
 function ActionButtons({ user, currentUserId }) {
   const router = useRouter()
-  if (user.id === currentUserId) return <div className="h-7 w-7" />
+  const isProtectedAdmin = user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001"
+  const isSelf = user?.id === currentUserId
+
   return (
     <TooltipProvider>
       <div className="flex items-center gap-1 h-7">
@@ -752,14 +769,30 @@ function ActionButtons({ user, currentUserId }) {
           <TooltipContent>Edit user details</TooltipContent>
         </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span>
-              <DeleteUserButton userId={user.id} userName={user.name} />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>Permanently delete this user</TooltipContent>
-        </Tooltip>
+        {!isSelf && !isProtectedAdmin && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <DeleteUserButton userId={user.id} userName={user.name} />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>Permanently delete this user</TooltipContent>
+          </Tooltip>
+        )}
+
+        {isProtectedAdmin && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className="h-7 w-7 flex items-center justify-center text-amber-600 dark:text-amber-400 cursor-help"
+                title="Default System Super Admin cannot be deleted"
+              >
+                <Shield className="h-3.5 w-3.5" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Default Super Admin (Protected)</TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </TooltipProvider>
   )
@@ -828,7 +861,16 @@ export function UserSearchTable({ users, currentUserId }) {
       .slice(0, 8)
   }, [users, debouncedQuery, hasQuery, sortField, sortDir])
 
-  const selectableUsers = useMemo(() => filtered.filter((u) => u.id !== currentUserId), [filtered, currentUserId])
+  const selectableUsers = useMemo(
+    () =>
+      filtered.filter(
+        (u) =>
+          u.id !== currentUserId &&
+          u.id !== 1 &&
+          u.login_id?.toLowerCase() !== "admin00001"
+      ),
+    [filtered, currentUserId]
+  )
   const isAllSelected = selectableUsers.length > 0 && selectableUsers.every((u) => selectedIds.includes(u.id))
   const isSomeSelected = selectableUsers.some((u) => selectedIds.includes(u.id))
 
@@ -969,20 +1011,30 @@ export function UserSearchTable({ users, currentUserId }) {
               ) : (
                 filtered.map((user) => {
                   const isCurrentAdmin = user.id === currentUserId
+                  const isProtectedAdmin = user.id === 1 || user.login_id?.toLowerCase() === "admin00001"
+                  const isSelectDisabled = isCurrentAdmin || isProtectedAdmin
                   const isChecked = selectedIds.includes(user.id)
                   return (
                     <tr className={`h-13 transition-colors ${isChecked ? "bg-black/[0.02] dark:bg-white/[0.03]" : ""}`} key={user.id}>
                       <td className="px-4 text-center">
                         <div
                           onClick={() => {
-                            if (!isCurrentAdmin) handleToggleUser(user.id)
+                            if (!isSelectDisabled) handleToggleUser(user.id)
                           }}
-                          className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
+                          className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all select-none ${
+                            isSelectDisabled ? "opacity-30 cursor-not-allowed" : "cursor-pointer"
+                          } ${
                             isChecked
                               ? "bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 shadow-2xs"
                               : "border-black/20 dark:border-white/20 bg-white/60 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
-                          } ${isCurrentAdmin ? "opacity-30 cursor-not-allowed" : ""}`}
-                          title={isCurrentAdmin ? "Cannot select yourself" : `Select ${user.name}`}
+                          }`}
+                          title={
+                            isProtectedAdmin
+                              ? "Default Super Admin cannot be deleted"
+                              : isCurrentAdmin
+                              ? "Cannot select yourself"
+                              : `Select ${user.name}`
+                          }
                         />
                       </td>
                       <td className="px-4 font-semibold max-w-[200px]">
@@ -1180,7 +1232,16 @@ export function UserTable({ users, currentUserId }) {
     })
   }, [filtered, sortField, sortDir])
 
-  const selectableUsers = useMemo(() => sorted.filter((u) => u.id !== currentUserId), [sorted, currentUserId])
+  const selectableUsers = useMemo(
+    () =>
+      sorted.filter(
+        (u) =>
+          u.id !== currentUserId &&
+          u.id !== 1 &&
+          u.login_id?.toLowerCase() !== "admin00001"
+      ),
+    [sorted, currentUserId]
+  )
   const isAllSelected = selectableUsers.length > 0 && selectableUsers.every((u) => selectedIds.includes(u.id))
   const isSomeSelected = selectableUsers.some((u) => selectedIds.includes(u.id))
 
@@ -1370,6 +1431,8 @@ export function UserTable({ users, currentUserId }) {
               ) : (
                 sorted.map((user) => {
                   const isCurrentAdmin = user.id === currentUserId
+                  const isProtectedAdmin = user.id === 1 || user.login_id?.toLowerCase() === "admin00001"
+                  const isSelectDisabled = isCurrentAdmin || isProtectedAdmin
                   const isChecked = selectedIds.includes(user.id)
                   const isStudent = user.role === "student"
                   const majorName = isStudent ? (user.major_name || "—") : "—"
@@ -1384,14 +1447,22 @@ export function UserTable({ users, currentUserId }) {
                       <td className="px-4 text-center">
                         <div
                           onClick={() => {
-                            if (!isCurrentAdmin) handleToggleUser(user.id)
+                            if (!isSelectDisabled) handleToggleUser(user.id)
                           }}
-                          className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all cursor-pointer select-none ${
+                          className={`mx-auto size-4.5 rounded-md border flex items-center justify-center transition-all select-none ${
+                            isSelectDisabled ? "opacity-30 cursor-not-allowed" : "cursor-pointer"
+                          } ${
                             isChecked
                               ? "bg-neutral-200 dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 shadow-2xs"
                               : "border-black/20 dark:border-white/20 bg-white/60 dark:bg-white/5 hover:border-black/40 dark:hover:border-white/40"
-                          } ${isCurrentAdmin ? "opacity-30 cursor-not-allowed" : ""}`}
-                          title={isCurrentAdmin ? "Cannot select yourself" : `Select ${user.name}`}
+                          }`}
+                          title={
+                            isProtectedAdmin
+                              ? "Default Super Admin cannot be deleted"
+                              : isCurrentAdmin
+                              ? "Cannot select yourself"
+                              : `Select ${user.name}`
+                          }
                         />
                       </td>
                       <td className="px-4 font-semibold max-w-[200px]">

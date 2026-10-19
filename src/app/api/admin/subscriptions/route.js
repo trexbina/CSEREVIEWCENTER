@@ -116,6 +116,11 @@ export async function GET(request) {
       filteredStudents = processedStudents.filter(s => s.computed_status === "expired" || s.computed_status === "disabled")
     }
 
+    // 3. Fetch all examinations for filtering
+    const examsRes = await pool.query(`
+      SELECT id, name FROM examinations ORDER BY name ASC
+    `)
+
     return NextResponse.json({
       metrics: {
         totalStudents,
@@ -125,7 +130,8 @@ export async function GET(request) {
         totalBatches: batchesRes.rows.length
       },
       batches: batchesRes.rows,
-      students: filteredStudents
+      students: filteredStudents,
+      examinations: examsRes.rows
     })
   } catch (err) {
     console.error("[api/admin/subscriptions GET] error:", err)

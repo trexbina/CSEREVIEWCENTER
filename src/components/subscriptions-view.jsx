@@ -67,11 +67,12 @@ function TableSortButton({ label, field, sortField, sortDir, onSort, type = "alp
 }
 
 export function SubscriptionsView({ initialBatchFilter = "all" }) {
-  const [data, setData] = useState({ metrics: {}, batches: [], students: [] })
+  const [data, setData] = useState({ metrics: {}, batches: [], students: [], examinations: [] })
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all") // all, active, expiring, expired
   const [batchFilter, setBatchFilter] = useState(initialBatchFilter)
+  const [examFilter, setExamFilter] = useState("all")
   const [activeTab, setActiveTab] = useState("students") // students, batches
 
   // Sorting state for students and batches
@@ -140,6 +141,41 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
     fetchData()
   }, [])
 
+  // Available examinations list derived from API response or rows
+  const examinationsList = useMemo(() => {
+    if (Array.isArray(data.examinations) && data.examinations.length > 0) {
+      return data.examinations
+    }
+    const map = new Map()
+    ;(data.batches || []).forEach(b => {
+      if (b.exam_id && b.exam_name) map.set(String(b.exam_id), { id: b.exam_id, name: b.exam_name })
+    })
+    ;(data.students || []).forEach(s => {
+      if (s.exam_id && s.exam_name) map.set(String(s.exam_id), { id: s.exam_id, name: s.exam_name })
+    })
+    return Array.from(map.values()).sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+  }, [data.examinations, data.batches, data.students])
+
+  const selectedExam = useMemo(() => {
+    if (examFilter === "all") return null
+    return examinationsList.find(e => String(e.id) === String(examFilter)) || null
+  }, [examinationsList, examFilter])
+
+  const displayedBatches = useMemo(() => {
+    if (examFilter === "all") return data.batches || []
+    return (data.batches || []).filter(b => String(b.exam_id) === String(examFilter))
+  }, [data.batches, examFilter])
+
+  const handleExamFilterChange = (val) => {
+    setExamFilter(val)
+    if (val !== "all" && batchFilter !== "all") {
+      const b = (data.batches || []).find(x => String(x.id) === String(batchFilter))
+      if (b && String(b.exam_id) !== String(val)) {
+        setBatchFilter("all")
+      }
+    }
+  }
+
   // Filtered & sorted students
   const filteredStudents = useMemo(() => {
     const q = search.toLowerCase().trim()
@@ -157,8 +193,9 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
         statusFilter === "expired" ? (s.computed_status === "expired" || s.computed_status === "disabled") : true
 
       const matchBatch = batchFilter === "all" ? true : String(s.batch_id) === String(batchFilter)
+      const matchExam = examFilter === "all" ? true : String(s.exam_id) === String(examFilter)
 
-      return matchSearch && matchStatus && matchBatch
+      return matchSearch && matchStatus && matchBatch && matchExam
     })
 
     return list.sort((a, b) => {
@@ -191,7 +228,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
       if (av > bv) return studentSortDir === "asc" ? 1 : -1
       return 0
     })
-  }, [data.students, search, statusFilter, batchFilter, studentSortField, studentSortDir])
+  }, [data.students, search, statusFilter, batchFilter, examFilter, studentSortField, studentSortDir])
 
   // Filtered & sorted batches
   const filteredBatches = useMemo(() => {
@@ -207,6 +244,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
         (b.exam_name || "").toLowerCase().includes(q)
 
       const matchBatch = batchFilter === "all" ? true : String(b.id) === String(batchFilter)
+      const matchExam = examFilter === "all" ? true : String(b.exam_id) === String(examFilter)
 
       const isPast = b.end_date ? new Date(b.end_date) < now : false
       const endDate = b.end_date ? new Date(b.end_date) : null
@@ -218,7 +256,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
         statusFilter === "expiring" ? isExpiring :
         statusFilter === "expired" ? (isPast || b.status === "inactive") : true
 
-      return matchSearch && matchBatch && matchStatus
+      return matchSearch && matchBatch && matchExam && matchStatus
     })
 
     return list.sort((a, b) => {
@@ -251,7 +289,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
       if (av > bv) return batchSortDir === "asc" ? 1 : -1
       return 0
     })
-  }, [data.batches, search, batchFilter, statusFilter, batchSortField, batchSortDir])
+  }, [data.batches, search, batchFilter, examFilter, statusFilter, batchSortField, batchSortDir])
 
   // Selected batch for label/subtext display
   const selectedBatch = useMemo(() => {
@@ -263,7 +301,9 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
   const currentMetrics = useMemo(() => {
     if (activeTab === "students") {
       const pool = (data.students || []).filter(s => {
-        return batchFilter === "all" ? true : String(s.batch_id) === String(batchFilter)
+        const matchBatch = batchFilter === "all" ? true : String(s.batch_id) === String(batchFilter)
+        const matchExam = examFilter === "all" ? true : String(s.exam_id) === String(examFilter)
+        return matchBatch && matchExam
       })
 
       const total = pool.length
@@ -271,9 +311,18 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
       const expiring = pool.filter(s => s.computed_status === "expiring").length
       const expired = pool.filter(s => s.computed_status === "expired" || s.computed_status === "disabled").length
 
+      let subtext = "All enrolled students"
+      if (selectedBatch && selectedExam) {
+        subtext = `${selectedBatch.name} • ${selectedExam.name}`
+      } else if (selectedBatch) {
+        subtext = `In ${selectedBatch.name}`
+      } else if (selectedExam) {
+        subtext = `In ${selectedExam.name}`
+      }
+
       return {
         totalLabel: "Total Reviewees",
-        totalSubtext: selectedBatch ? `In ${selectedBatch.name}` : "All enrolled students",
+        totalSubtext: subtext,
         totalCount: total,
 
         activeLabel: "Active",
@@ -290,7 +339,9 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
       }
     } else {
       const pool = (data.batches || []).filter(b => {
-        return batchFilter === "all" ? true : String(b.id) === String(batchFilter)
+        const matchBatch = batchFilter === "all" ? true : String(b.id) === String(batchFilter)
+        const matchExam = examFilter === "all" ? true : String(b.exam_id) === String(examFilter)
+        return matchBatch && matchExam
       })
 
       const now = new Date()
@@ -317,9 +368,18 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
         }
       })
 
+      let subtext = "All review batches"
+      if (selectedBatch && selectedExam) {
+        subtext = `${selectedBatch.name} • ${selectedExam.name}`
+      } else if (selectedBatch) {
+        subtext = selectedBatch.name
+      } else if (selectedExam) {
+        subtext = selectedExam.name
+      }
+
       return {
         totalLabel: "Total Batches",
-        totalSubtext: selectedBatch ? selectedBatch.name : "All review batches",
+        totalSubtext: subtext,
         totalCount: pool.length,
 
         activeLabel: "Active",
@@ -335,7 +395,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
         expiredCount: expired
       }
     }
-  }, [data.students, data.batches, batchFilter, activeTab, selectedBatch])
+  }, [data.students, data.batches, batchFilter, examFilter, activeTab, selectedBatch, selectedExam])
 
   const openMoveBatch = (student) => {
     setMoveModal({
@@ -495,6 +555,31 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
             </SelectContent>
           </Select>
 
+          {examinationsList.length > 0 && (
+            <Select value={examFilter} onValueChange={handleExamFilterChange}>
+              <SelectTrigger
+                aria-label="Filter by examination type"
+                className="h-9 px-3 rounded-xl border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 max-w-[210px] shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="truncate">
+                    {examFilter === "all"
+                      ? "All Exam Types"
+                      : selectedExam?.name || "All Exam Types"}
+                  </span>
+                </div>
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-w-sm">
+                <SelectItem value="all" className="text-xs font-medium">All Exam Types</SelectItem>
+                {examinationsList.map((e) => (
+                  <SelectItem key={e.id} value={String(e.id)} className="text-xs truncate">
+                    {e.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
           {data.batches?.length > 0 && (
             <Select value={batchFilter} onValueChange={setBatchFilter}>
               <SelectTrigger
@@ -511,7 +596,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
               </SelectTrigger>
               <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-w-sm">
                 <SelectItem value="all" className="text-xs font-medium">All Batches</SelectItem>
-                {data.batches.map(b => (
+                {displayedBatches.map(b => (
                   <SelectItem key={b.id} value={String(b.id)} className="text-xs truncate">
                     {b.name}
                   </SelectItem>

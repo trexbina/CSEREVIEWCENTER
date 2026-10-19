@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { ADMIN_ROLES, isAdminRole } from "@/lib/auth"
+import { canManageRoles } from "@/lib/role-permissions"
 
 export async function GET() {
   try {
@@ -9,6 +10,8 @@ export async function GET() {
     if (!session || !isAdminRole(session.role)) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 })
     }
+
+    const canManage = await canManageRoles(session)
 
     const [examsResult, batchesResult, programsResult, majorsResult, schoolsResult, academicCoursesResult, categoriesResult, gradebooksResult, rolesResult] = await Promise.all([
       pool.query("SELECT id, name FROM examinations ORDER BY name ASC"),
@@ -48,7 +51,8 @@ export async function GET() {
       academic_courses: academicCoursesResult.rows,
       categories: categoriesResult.rows,
       gradebooks: gradebooksResult.rows,
-      roles: rolesResult.rows
+      roles: canManage ? rolesResult.rows : [],
+      canManageRoles: canManage
     })
   } catch (err) {
     console.error("[admin/master-data/dropdowns GET] error:", err)

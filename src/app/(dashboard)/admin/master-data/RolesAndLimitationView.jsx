@@ -56,13 +56,8 @@ export const DASHBOARD_MODULES = [
   },
   {
     path: "/admin/master-data",
-    name: "Master Data",
+    name: "Master Data (Academic)",
     description: "Manage board exams, batches, schools, and gradebooks"
-  },
-  {
-    path: "/admin/roles",
-    name: "Roles & Limitations",
-    description: "Configure administrator roles, permissions, and security restrictions"
   },
   {
     path: "/admin/analytical-overview",
@@ -78,6 +73,14 @@ export const DASHBOARD_MODULES = [
     path: "/admin/settings",
     name: "Settings",
     description: "Theme preferences, security protocols, and session controls"
+  }
+]
+
+export const SECURITY_MODULES = [
+  {
+    path: "/admin/master-data/roles",
+    name: "Roles & Limitations (Security)",
+    description: "Access and configure administrative roles, user assignments, and permissions within Master Data"
   }
 ]
 
@@ -132,13 +135,40 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
     }
   }
 
+  const allRegularPaths = DASHBOARD_MODULES.map((m) => m.path)
+  const allRegularSelected = allRegularPaths.every((p) => selectedPerms.includes(p))
+
   const toggleAll = () => {
-    if (selectedPerms.length === DASHBOARD_MODULES.length) {
-      setRoleForm({ ...roleForm, permissions: [] })
+    if (allRegularSelected) {
+      setRoleForm({
+        ...roleForm,
+        permissions: selectedPerms.filter((p) => !allRegularPaths.includes(p))
+      })
     } else {
       setRoleForm({
         ...roleForm,
-        permissions: DASHBOARD_MODULES.map((m) => m.path)
+        permissions: Array.from(new Set([...selectedPerms, ...allRegularPaths]))
+      })
+    }
+  }
+
+  const hasRolesPerm = selectedPerms.includes("/admin/master-data/roles") || selectedPerms.includes("/admin/roles")
+
+  const toggleRolesPerm = () => {
+    const raw = roleForm.permissions || []
+    if (hasRolesPerm) {
+      setRoleForm({
+        ...roleForm,
+        permissions: raw.filter((p) => p !== "/admin/master-data/roles" && p !== "/admin/roles")
+      })
+    } else {
+      setRoleForm({
+        ...roleForm,
+        permissions: [
+          ...raw.filter((p) => p !== "/admin/master-data/roles" && p !== "/admin/roles"),
+          "/admin/master-data/roles",
+          "/admin/roles"
+        ]
       })
     }
   }
@@ -198,14 +228,14 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
           <div className="space-y-2.5 pt-2 border-t border-border/40">
             <div className="flex items-center justify-between">
               <label className="text-xs font-medium text-foreground">
-                Dashboard Permissions ({selectedPerms.length}/{DASHBOARD_MODULES.length})
+                Dashboard Permissions ({selectedPerms.filter((p) => allRegularPaths.includes(p)).length}/{DASHBOARD_MODULES.length})
               </label>
               <button
                 type="button"
                 onClick={toggleAll}
                 className="text-xs text-muted-foreground hover:text-foreground font-medium transition-colors cursor-pointer"
               >
-                {selectedPerms.length === DASHBOARD_MODULES.length ? "Deselect All" : "Select All"}
+                {allRegularSelected ? "Deselect All" : "Select All"}
               </button>
             </div>
 
@@ -219,6 +249,30 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
                   description={mod.description}
                 />
               ))}
+            </div>
+
+            {/* Separate Elevated Security Selection: Roles & Limitations */}
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.04] dark:bg-amber-500/10 p-3 space-y-2 mt-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  <span className="text-xs font-semibold text-foreground">
+                    Roles & Limitation (Access Control)
+                  </span>
+                </div>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                  Separate Restriction
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                Separated from Master Data. Granting &quot;Master Data (Academic)&quot; above only allows managing Exams, Batches, Schools, and Gradebooks. Check this box only to authorize editing and adding administrator roles.
+              </p>
+              <NeutralCheckbox
+                checked={hasRolesPerm}
+                onChange={toggleRolesPerm}
+                label="Allow Editing & Adding Roles"
+                description="Grants permission to configure roles, restrictions, and reassign user roles."
+              />
             </div>
           </div>
 

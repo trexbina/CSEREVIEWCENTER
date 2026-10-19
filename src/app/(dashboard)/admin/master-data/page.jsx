@@ -42,6 +42,9 @@ import {
 // gradebook view component
 import GradebookView from "./GradebookView"
 
+// roles and limitation view component
+import RolesAndLimitationView from "./RolesAndLimitationView"
+
 // modal dialog to confirm deleting items
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 import { toast } from "@/components/ui/toast"
@@ -358,6 +361,7 @@ export default function MasterDataBuilderPage() {
       setAcademicCourses(data.academic_courses || [])
       setGradebooks(data.gradebooks || [])
       setRoles(data.roles || [])
+      setCanManageRoles(Boolean(data.canManageRoles))
       setIsLoading(false)
     } catch (e) {
       console.error("Failed to fetch master data", e)
@@ -508,7 +512,39 @@ export default function MasterDataBuilderPage() {
   }
   const closePrompt = () => setPromptData({ ...promptData, isOpen: false })
 
+  const [canManageRoles, setCanManageRoles] = useState(false)
+
   const apiCall = async (action, entity, payload) => {
+    if (entity === "ROLE") {
+      if (action === "ADD") {
+        const res = await fetch("/api/admin/roles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || "Failed to create role")
+        return data.role
+      }
+      if (action === "UPDATE") {
+        const res = await fetch("/api/admin/roles", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || "Failed to update role")
+        return data.role
+      }
+      if (action === "DELETE") {
+        const res = await fetch(`/api/admin/roles?id=${payload.id}`, {
+          method: "DELETE"
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || "Failed to delete role")
+        return data
+      }
+    }
     const res = await fetch('/api/admin/master-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -880,6 +916,31 @@ export default function MasterDataBuilderPage() {
                     <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </div>
+
+                {/* Roles and Limitation (Only shown if user has separate role management permission) */}
+                {canManageRoles && (
+                  <div
+                    className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group border-t border-border/40"
+                    onClick={() => handleTabChange("roles")}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-[#4d4d4d] dark:text-gray-200 text-base group-hover:text-[#E9C46A] transition-colors truncate">
+                          Roles and Limitation
+                        </h3>
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                          Restricted
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-[#8c8c8c] dark:text-gray-400 mt-0.5 truncate">
+                        Configure administrator roles, permissions, and security restrictions
+                      </p>
+                    </div>
+                    <div className="flex items-center shrink-0 ml-4">
+                      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -1442,6 +1503,29 @@ export default function MasterDataBuilderPage() {
                 programs={tree.flatMap(exam => (exam.programs || []).map(p => ({ ...p, exam_id: exam.id })))}
                 majors={tree.flatMap(exam => (exam.programs || []).flatMap(p => (p.majors || []).map(m => ({ ...m, program_id: p.id }))))}
               />
+            )}
+
+            {/* TAB 5: ROLES AND LIMITATION */}
+            {activeTab === "roles" && (
+              canManageRoles ? (
+                <RolesAndLimitationView
+                  onBack={() => handleTabChange("menu")}
+                  roles={roles}
+                  fetchData={fetchData}
+                  apiCall={apiCall}
+                />
+              ) : (
+                <div className="bg-card border border-border/40 rounded-2xl p-8 text-center space-y-3">
+                  <p className="text-sm font-semibold text-foreground">Access Restricted</p>
+                  <p className="text-xs text-muted-foreground">You do not have permission to configure roles and limitations.</p>
+                  <button
+                    onClick={() => handleTabChange("menu")}
+                    className="px-4 py-1.5 bg-[#E9C46A] text-white text-xs font-semibold rounded-lg"
+                  >
+                    Back to Master Data
+                  </button>
+                </div>
+              )
             )}
 
           </AnimatePresence>

@@ -117,7 +117,6 @@ const superAdminNav = [
     { label: "Curriculum Manager", href: "/admin/curriculum", icon: "FileText", description: "Manage exam programs, subjects, and topics" },
     { label: "Mock Exams", href: "/admin/mock-exams", icon: "PencilLine", description: "Create and configure mock exams" },
     { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "Manage courses, batches, and gradebooks" },
-    { label: "Roles & Limitations", href: "/admin/roles", icon: "Shield", description: "Manage administrative roles and permissions" },
     { label: "Analytical Overview", href: "/admin/analytical-overview", icon: "BarChart3", description: "Performance reports and learning insights" },
     { section: "OTHER" },
     { label: "Trash", href: "/admin/trash", icon: "Trash", description: "Item recovery and recycle bin" },

@@ -38,6 +38,7 @@ const ROUTE_NAME_MAP = {
   curriculum: "Curriculum Manager",
   "mock-exams": "Mock Exams",
   "master-data": "Master Data",
+  roles: "Roles & Limitations",
   "analytical-overview": "Analytical Overview",
   trash: "Trash & Recovery",
   settings: "Settings",

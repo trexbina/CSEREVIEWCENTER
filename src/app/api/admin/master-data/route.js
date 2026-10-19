@@ -13,48 +13,6 @@ export async function POST(req) {
 
     const { action, entity, payload } = await req.json()
 
-    // ── ROLE ──
-    if (entity === "ROLE") {
-      if (action === "ADD") {
-        let key = (payload.role_key || payload.name)
-          .toLowerCase()
-          .trim()
-          .replace(/[^a-z0-9]+/g, "_")
-          .replace(/^_+|_+$/g, "")
-        if (!key) key = `role_${Date.now()}`
-
-        const permsJson = JSON.stringify(Array.isArray(payload.permissions) ? payload.permissions : [])
-        const res = await pool.query(
-          `INSERT INTO custom_roles (role_key, name, description, permissions, is_system)
-           VALUES ($1, $2, $3, $4::jsonb, false)
-           RETURNING *`,
-          [key, payload.name.trim(), payload.description?.trim() || null, permsJson]
-        )
-        return NextResponse.json(res.rows[0])
-      }
-      if (action === "UPDATE") {
-        const permsJson = JSON.stringify(Array.isArray(payload.permissions) ? payload.permissions : [])
-        const res = await pool.query(
-          `UPDATE custom_roles
-           SET name = COALESCE($1, name),
-               description = $2,
-               permissions = $3::jsonb,
-               updated_at = NOW()
-           WHERE id = $4
-           RETURNING *`,
-          [payload.name?.trim() || null, payload.description?.trim() || null, permsJson, parseInt(payload.id)]
-        )
-        return NextResponse.json(res.rows[0] || { success: true })
-      }
-      if (action === "DELETE") {
-        const roleId = parseInt(payload.id)
-        const roleRes = await pool.query("SELECT * FROM custom_roles WHERE id = $1", [roleId])
-        if (roleRes.rows.length > 0 && !roleRes.rows[0].is_system) {
-          await pool.query("DELETE FROM custom_roles WHERE id = $1", [roleId])
-        }
-        return NextResponse.json({ success: true })
-      }
-    }
 
     // ── EXAM ──
     if (entity === "EXAM") {
@@ -487,81 +445,6 @@ export async function POST(req) {
       }
     }
 
-    // ── ROLE ──
-    if (entity === "ROLE") {
-      if (action === "ADD") {
-        const { name, role_key, description, permissions } = payload
-        let key = (role_key || name)
-          .toLowerCase()
-          .trim()
-          .replace(/[^a-z0-9]+/g, "_")
-          .replace(/^_+|_+$/g, "")
-        if (!key) key = `role_${Date.now()}`
-
-        const existing = await pool.query("SELECT id FROM custom_roles WHERE role_key = $1", [key])
-        if (existing.rows.length > 0) {
-          return NextResponse.json({ error: `A role with key "${key}" already exists.` }, { status: 400 })
-        }
-
-        const permsJson = JSON.stringify(Array.isArray(permissions) ? permissions : [])
-        const res = await pool.query(
-          `INSERT INTO custom_roles (role_key, name, description, permissions, is_system)
-           VALUES ($1, $2, $3, $4::jsonb, false)
-           RETURNING *`,
-          [key, name.trim(), description?.trim() || null, permsJson]
-        )
-        return NextResponse.json(res.rows[0])
-      }
-      if (action === "UPDATE") {
-        const { id, name, description, permissions } = payload
-        const permsJson = JSON.stringify(Array.isArray(permissions) ? permissions : [])
-        const res = await pool.query(
-          `UPDATE custom_roles
-           SET name = COALESCE($1, name),
-               description = $2,
-               permissions = $3::jsonb,
-               updated_at = NOW()
-           WHERE id = $4
-           RETURNING *`,
-          [name?.trim() || null, description?.trim() || null, permsJson, parseInt(id)]
-        )
-        if (res.rows.length === 0) {
-          return NextResponse.json({ error: "Role not found." }, { status: 404 })
-        }
-        return NextResponse.json({ success: true, role: res.rows[0] })
-      }
-      if (action === "DELETE") {
-        const roleRes = await pool.query("SELECT * FROM custom_roles WHERE id = $1", [parseInt(payload.id)])
-        if (roleRes.rows.length === 0) {
-          return NextResponse.json({ error: "Role not found." }, { status: 404 })
-        }
-        const r = roleRes.rows[0]
-        if (r.is_system) {
-          return NextResponse.json({ error: "System default roles cannot be deleted." }, { status: 400 })
-        }
-        const countRes = await pool.query("SELECT COUNT(*) as count FROM users WHERE role = $1", [r.role_key])
-        const count = parseInt(countRes.rows[0]?.count || "0", 10)
-        if (count > 0) {
-          return NextResponse.json({
-            error: `Cannot delete role "${r.name}" because ${count} user(s) are currently assigned to it.`
-          }, { status: 400 })
-        }
-
-        await moveToTrash({
-          entity_type: "MASTER_DATA_ROLE",
-          original_id: r.id,
-          item_name: r.name,
-          description: `Custom Role • Key: ${r.role_key}`,
-          original_location: "/admin/master-data",
-          payload: r,
-          deleted_by: session.userId,
-          deleted_by_name: session.name || session.email || null,
-        })
-
-        await pool.query("DELETE FROM custom_roles WHERE id = $1", [parseInt(payload.id)])
-        return NextResponse.json({ success: true })
-      }
-    }
 
     return NextResponse.json({ error: "Invalid action or entity." }, { status: 400 })
   } catch (err) {

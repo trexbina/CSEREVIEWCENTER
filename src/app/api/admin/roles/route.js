@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { ADMIN_ROLES, isAdminRole } from "@/lib/auth"
+import { canManageRoles } from "@/lib/role-permissions"
 
 async function ensureTable() {
   await pool.query(`
@@ -60,8 +61,8 @@ export async function GET() {
 export async function POST(req) {
   try {
     const session = await getSession()
-    if (!session || !isAdminRole(session.role)) {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 })
+    if (!session || !isAdminRole(session.role) || !(await canManageRoles(session))) {
+      return NextResponse.json({ error: "Forbidden: You do not have permission to manage roles and restrictions." }, { status: 403 })
     }
 
     await ensureTable()
@@ -113,8 +114,8 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     const session = await getSession()
-    if (!session || !isAdminRole(session.role)) {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 })
+    if (!session || !isAdminRole(session.role) || !(await canManageRoles(session))) {
+      return NextResponse.json({ error: "Forbidden: You do not have permission to manage roles and restrictions." }, { status: 403 })
     }
 
     await ensureTable()
@@ -157,8 +158,8 @@ export async function PUT(req) {
 export async function DELETE(req) {
   try {
     const session = await getSession()
-    if (!session || !isAdminRole(session.role)) {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 })
+    if (!session || !isAdminRole(session.role) || !(await canManageRoles(session))) {
+      return NextResponse.json({ error: "Forbidden: You do not have permission to manage roles and restrictions." }, { status: 403 })
     }
 
     const { searchParams } = new URL(req.url)

@@ -40,6 +40,7 @@ export function DashboardShell({ role, permissions, roleName, children }) {
             "/admin/curriculum",
             "/admin/mock-exams",
             "/admin/master-data",
+            "/admin/roles",
             "/admin/analytical-overview",
             "/admin/trash",
             "/admin/settings",

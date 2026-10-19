@@ -60,6 +60,11 @@ export const DASHBOARD_MODULES = [
     description: "Manage board exams, batches, schools, and gradebooks"
   },
   {
+    path: "/admin/roles",
+    name: "Roles & Limitations",
+    description: "Configure administrator roles, permissions, and security restrictions"
+  },
+  {
     path: "/admin/analytical-overview",
     name: "Analytical Overview",
     description: "Performance reports, exam charts, and cohort analytics"
@@ -356,14 +361,16 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4 pb-4 mb-6 border-b border-border/40">
         <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={onBack}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
-            title="Back to Master Data"
-          >
-            <ChevronRight className="h-5 w-5 rotate-180" />
-          </button>
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+              title="Back"
+            >
+              <ChevronRight className="h-5 w-5 rotate-180" />
+            </button>
+          )}
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-foreground truncate">
               Roles and Limitation

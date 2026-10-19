@@ -42,9 +42,6 @@ import {
 // gradebook view component
 import GradebookView from "./GradebookView"
 
-// roles and limitation view component
-import RolesAndLimitationView from "./RolesAndLimitationView"
-
 // modal dialog to confirm deleting items
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 import { toast } from "@/components/ui/toast"
@@ -883,24 +880,6 @@ export default function MasterDataBuilderPage() {
                     <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </div>
-
-                {/* Roles and Limitation */}
-                <div
-                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
-                  onClick={() => handleTabChange("roles")}
-                >
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
-                      Roles and Limitation
-                    </h3>
-                    <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
-                      Configure user roles and dashboard access permissions
-                    </p>
-                  </div>
-                  <div className="flex items-center shrink-0 ml-4">
-                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                </div>
               </motion.div>
             )}
 
@@ -1462,15 +1441,6 @@ export default function MasterDataBuilderPage() {
                 apiCall={apiCall}
                 programs={tree.flatMap(exam => (exam.programs || []).map(p => ({ ...p, exam_id: exam.id })))}
                 majors={tree.flatMap(exam => (exam.programs || []).flatMap(p => (p.majors || []).map(m => ({ ...m, program_id: p.id }))))}
-              />
-            )}
-
-            {activeTab === "roles" && (
-              <RolesAndLimitationView
-                onBack={() => handleTabChange("menu")}
-                roles={roles}
-                fetchData={fetchData}
-                apiCall={apiCall}
               />
             )}
 

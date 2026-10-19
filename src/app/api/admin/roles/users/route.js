@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { ADMIN_ROLES, isAdminRole } from "@/lib/auth"
+import { canManageRoles } from "@/lib/role-permissions"
 
 const VALID_STATIC_ROLES = ["super_admin", "admin", "academic_admin", "registrar", "teacher", "student"]
 
@@ -14,8 +15,8 @@ const VALID_STATIC_ROLES = ["super_admin", "admin", "academic_admin", "registrar
 export async function GET(req) {
   try {
     const session = await getSession()
-    if (!session || !isAdminRole(session.role)) {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 })
+    if (!session || !isAdminRole(session.role) || !(await canManageRoles(session))) {
+      return NextResponse.json({ error: "Forbidden: You do not have permission to view or manage roles." }, { status: 403 })
     }
 
     const { searchParams } = new URL(req.url)
@@ -94,8 +95,8 @@ export async function GET(req) {
 export async function PATCH(req) {
   try {
     const session = await getSession()
-    if (!session || !isAdminRole(session.role)) {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 })
+    if (!session || !isAdminRole(session.role) || !(await canManageRoles(session))) {
+      return NextResponse.json({ error: "Forbidden: You do not have permission to modify user roles." }, { status: 403 })
     }
 
     const body = await req.json()

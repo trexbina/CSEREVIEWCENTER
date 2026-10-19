@@ -1130,6 +1130,8 @@ export function PreRegistrationsTab() {
                   </div>
                 )}
               </div>
+            )}
+            </div>
 
             <DialogFooter className="px-6 py-3.5 border-t border-black/5 dark:border-white/10 shrink-0 bg-white dark:bg-[#14161b] flex items-center justify-end gap-2">
               {isEditing ? (
@@ -1199,7 +1201,7 @@ export function PreRegistrationsTab() {
 
       {/* Approval Confirmation & Account Details Dialog */}
       <Dialog open={approveModalOpen} onOpenChange={setApproveModalOpen}>
-        <DialogContent className="max-w-md p-6 bg-white dark:bg-[#14161b] border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl text-[#3B3B3B] dark:text-white" showCloseButton={false}>
+        <DialogContent className="max-w-md p-6 bg-white dark:bg-[#14161b] border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl text-[#3B3B3B] dark:text-white z-[60]" showCloseButton={false}>
           {approvedResult ? (
             /* Success State */
             <div className="space-y-5 animate-in fade-in duration-200">
@@ -1209,12 +1211,12 @@ export function PreRegistrationsTab() {
                     <Check className="w-5 h-5 stroke-[2.5]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-[#3B3B3B] dark:text-white">
+                    <DialogTitle className="text-base font-bold text-[#3B3B3B] dark:text-white">
                       Account Approved!
-                    </h3>
-                    <p className="text-xs text-[#696969] dark:text-gray-400">
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-[#696969] dark:text-gray-400">
                       Student account has been created & activated.
-                    </p>
+                    </DialogDescription>
                   </div>
                 </div>
                 <button
@@ -1297,12 +1299,12 @@ export function PreRegistrationsTab() {
                     <UserCheck className="w-5 h-5 stroke-[2.2]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-[#3B3B3B] dark:text-white">
+                    <DialogTitle className="text-base font-bold text-[#3B3B3B] dark:text-white">
                       Approve Pre-Registration
-                    </h3>
-                    <p className="text-xs text-[#696969] dark:text-gray-400">
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-[#696969] dark:text-gray-400">
                       Confirm student account creation and credential setup.
-                    </p>
+                    </DialogDescription>
                   </div>
                 </div>
                 <button
@@ -1375,7 +1377,6 @@ export function PreRegistrationsTab() {
           )}
         </DialogContent>
       </Dialog>
-      )}
     </div>
     </TooltipProvider>
   )

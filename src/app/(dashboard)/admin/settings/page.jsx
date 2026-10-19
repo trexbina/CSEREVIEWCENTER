@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Settings } from "@/components/animate-ui/icons/settings"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { Switch } from "@/components/ui/switch"
@@ -13,7 +14,8 @@ import {
     Eye,
     EyeOff,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    ArrowRight
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -269,14 +271,17 @@ export default function SystemSettingsPage() {
                                     </p>
                                 </div>
 
-                                <div className="pt-2 flex items-center justify-end border-t border-border/60">
-                                    <button
-                                        type="button"
-                                        onClick={() => setActiveModal("sessions")}
-                                        className="text-xs font-semibold text-foreground hover:underline cursor-pointer"
+                                <div className="pt-2 flex items-center justify-between border-t border-border/60">
+                                    <span className="text-[11px] text-muted-foreground">
+                                        {sessions.length > 0 ? `${sessions.length} active sessions` : "Live monitor"}
+                                    </span>
+                                    <Link
+                                        href="/admin/settings/sessions"
+                                        className="text-xs font-semibold text-foreground hover:underline inline-flex items-center gap-1 cursor-pointer"
                                     >
-                                        Manage Sessions
-                                    </button>
+                                        <span>Manage Sessions</span>
+                                        <ArrowRight className="h-3 w-3" />
+                                    </Link>
                                 </div>
                             </div>
 
@@ -496,118 +501,6 @@ export default function SystemSettingsPage() {
                     </div>
                 </div>
             </div>
-
-            {/* ═════════ ACTIVE SESSIONS MODAL ═════════ */}
-            {canAccessSecurity && activeModal === "sessions" && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="w-full max-w-2xl bg-card rounded-2xl border border-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-                            <div>
-                                <h3 className="text-base font-bold text-foreground">Active User Sessions</h3>
-                                <p className="text-xs text-muted-foreground">Live device connections and active tokens</p>
-                            </div>
-                            <button
-                                onClick={() => setActiveModal(null)}
-                                className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                        </div>
-
-                        {/* Alert header if concurrent accounts detected */}
-                        {(() => {
-                            const userCounts = sessions.reduce((acc, s) => {
-                                acc[s.name] = (acc[s.name] || 0) + 1
-                                return acc
-                            }, {})
-                            const hasConcurrent = Object.values(userCounts).some(count => count > 1)
-
-                            return (
-                                <>
-                                    {hasConcurrent && (
-                                        <div className="mx-6 mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-xs text-amber-700 dark:text-amber-300">
-                                            <div className="flex items-center gap-2">
-                                                <span className="size-2 rounded-full bg-amber-500 animate-ping" />
-                                                <span><strong>Alert:</strong> Multiple simultaneous devices detected on the same account.</span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-2.5">
-                                        {sessions.map((sess) => {
-                                            const isDuplicate = userCounts[sess.name] > 1
-
-                                            return (
-                                                <div
-                                                    key={sess.id}
-                                                    className={`flex items-center justify-between gap-4 p-3 rounded-xl border transition-colors ${
-                                                        isDuplicate && !sess.isCurrent
-                                                            ? "border-amber-500/40 bg-amber-500/5"
-                                                            : "border-border/70 bg-card hover:border-border"
-                                                    }`}
-                                                >
-                                                    <div className="flex items-center gap-3 min-w-0">
-                                                        <div className="size-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                                                            {sess.device.includes("iPhone") || sess.device.includes("Android") ? (
-                                                                <Smartphone className="h-3.5 w-3.5" />
-                                                            ) : (
-                                                                <Laptop className="h-3.5 w-3.5" />
-                                                            )}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-xs font-semibold text-foreground truncate">
-                                                                    {sess.name}
-                                                                </span>
-                                                                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                                                                    {sess.role}
-                                                                </span>
-                                                                {sess.isCurrent && (
-                                                                    <span className="text-[10px] font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                                                                        Current
-                                                                    </span>
-                                                                )}
-                                                                {isDuplicate && !sess.isCurrent && (
-                                                                    <span className="text-[10px] font-bold tracking-wider uppercase text-amber-700 dark:text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded">
-                                                                        Concurrent
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <p className="text-[11px] text-muted-foreground mt-0.5 truncate font-normal">
-                                                                {sess.device} &bull; {sess.ip} &bull; {new Date(sess.loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    {!sess.isCurrent && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleTerminateSession(sess)}
-                                                            className="px-3 py-1 rounded-lg border border-border/80 text-xs font-medium text-muted-foreground hover:text-rose-600 hover:border-rose-300 dark:hover:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors shrink-0 cursor-pointer"
-                                                        >
-                                                            Revoke
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </>
-                            )
-                        })()}
-
-                        {/* Modal Footer */}
-                        <div className="flex justify-between items-center px-6 py-3 border-t border-border bg-muted/20">
-                            <span className="text-xs text-muted-foreground">{sessions.length} active sessions</span>
-                            <button
-                                type="button"
-                                onClick={() => setActiveModal(null)}
-                                className="px-4 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
                 </div>
             )}
 

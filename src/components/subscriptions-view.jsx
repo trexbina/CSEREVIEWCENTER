@@ -110,16 +110,15 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
   const [confirmMoveOpen, setConfirmMoveOpen] = useState(false)
   const [savingMove, setSavingMove] = useState(false)
 
-  // Modal states for extending batch term
-  const [extendBatchModal, setExtendBatchModal] = useState({
+  // Modal states for editing batch subscription
+  const [editSubscriptionModal, setEditSubscriptionModal] = useState({
     isOpen: false,
     batchId: null,
     batchName: "",
-    currentEndDate: "",
-    daysToAdd: 30,
-    customDate: ""
+    startDate: "",
+    endDate: ""
   })
-  const [savingBatchExtension, setSavingBatchExtension] = useState(false)
+  const [savingBatchSubscription, setSavingBatchSubscription] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -197,10 +196,29 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
   // Filtered & sorted batches
   const filteredBatches = useMemo(() => {
     const q = search.toLowerCase().trim()
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    const thirtyDaysLater = new Date(now)
+    thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30)
+
     const list = (data.batches || []).filter(b => {
-      return !q || 
+      const matchSearch = !q || 
         (b.name || "").toLowerCase().includes(q) || 
         (b.exam_name || "").toLowerCase().includes(q)
+
+      const matchBatch = batchFilter === "all" ? true : String(b.id) === String(batchFilter)
+
+      const isPast = b.end_date ? new Date(b.end_date) < now : false
+      const endDate = b.end_date ? new Date(b.end_date) : null
+      const isExpiring = endDate && !isPast && endDate <= thirtyDaysLater
+
+      const matchStatus = 
+        statusFilter === "all" ? true :
+        statusFilter === "active" ? (!isPast && b.status !== "inactive") :
+        statusFilter === "expiring" ? isExpiring :
+        statusFilter === "expired" ? (isPast || b.status === "inactive") : true
+
+      return matchSearch && matchBatch && matchStatus
     })
 
     return list.sort((a, b) => {
@@ -233,7 +251,91 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
       if (av > bv) return batchSortDir === "asc" ? 1 : -1
       return 0
     })
-  }, [data.batches, search, batchSortField, batchSortDir])
+  }, [data.batches, search, batchFilter, statusFilter, batchSortField, batchSortDir])
+
+  // Selected batch for label/subtext display
+  const selectedBatch = useMemo(() => {
+    if (batchFilter === "all") return null
+    return (data.batches || []).find(b => String(b.id) === String(batchFilter))
+  }, [data.batches, batchFilter])
+
+  // Unified dynamic metrics reflecting current tab and active filters
+  const currentMetrics = useMemo(() => {
+    if (activeTab === "students") {
+      const pool = (data.students || []).filter(s => {
+        return batchFilter === "all" ? true : String(s.batch_id) === String(batchFilter)
+      })
+
+      const total = pool.length
+      const active = pool.filter(s => s.computed_status === "active" || s.computed_status === "expiring").length
+      const expiring = pool.filter(s => s.computed_status === "expiring").length
+      const expired = pool.filter(s => s.computed_status === "expired" || s.computed_status === "disabled").length
+
+      return {
+        totalLabel: "Total Reviewees",
+        totalSubtext: selectedBatch ? `In ${selectedBatch.name}` : "All enrolled students",
+        totalCount: total,
+
+        activeLabel: "Active",
+        activeSubtext: "Currently with access",
+        activeCount: active,
+
+        expiringLabel: "Expiring Soon",
+        expiringSubtext: "Ends within 7 days",
+        expiringCount: expiring,
+
+        expiredLabel: "Expired",
+        expiredSubtext: "Access ended or inactive",
+        expiredCount: expired
+      }
+    } else {
+      const pool = (data.batches || []).filter(b => {
+        return batchFilter === "all" ? true : String(b.id) === String(batchFilter)
+      })
+
+      const now = new Date()
+      now.setHours(0, 0, 0, 0)
+      const thirtyDaysLater = new Date(now)
+      thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30)
+
+      let active = 0
+      let expiring = 0
+      let expired = 0
+
+      pool.forEach(b => {
+        const isPast = b.end_date ? new Date(b.end_date) < now : false
+        const endDate = b.end_date ? new Date(b.end_date) : null
+        const isExp = endDate && !isPast && endDate <= thirtyDaysLater
+
+        if (b.status === "inactive" || isPast) {
+          expired++
+        } else if (isExp) {
+          expiring++
+          active++
+        } else {
+          active++
+        }
+      })
+
+      return {
+        totalLabel: "Total Batches",
+        totalSubtext: selectedBatch ? selectedBatch.name : "All review batches",
+        totalCount: pool.length,
+
+        activeLabel: "Active",
+        activeSubtext: "Ongoing review terms",
+        activeCount: active,
+
+        expiringLabel: "Expiring Soon",
+        expiringSubtext: "Term ends within 30 days",
+        expiringCount: expiring,
+
+        expiredLabel: "Term Ended",
+        expiredSubtext: "Schedule ended or inactive",
+        expiredCount: expired
+      }
+    }
+  }, [data.students, data.batches, batchFilter, activeTab, selectedBatch])
 
   const openMoveBatch = (student) => {
     setMoveModal({
@@ -272,26 +374,35 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
     }
   }
 
-  const openExtendBatch = (batch) => {
+  const openEditSubscription = (batch) => {
+    const start = batch.start_date ? new Date(batch.start_date).toISOString().split("T")[0] : ""
     const end = batch.end_date ? new Date(batch.end_date).toISOString().split("T")[0] : ""
-    setExtendBatchModal({
+    setEditSubscriptionModal({
       isOpen: true,
       batchId: batch.id,
       batchName: batch.name,
-      currentEndDate: end,
-      daysToAdd: 30,
-      customDate: ""
+      startDate: start,
+      endDate: end
     })
   }
 
-  const handleApplyBatchExtension = async () => {
-    setSavingBatchExtension(true)
+  const handleSaveBatchSubscription = async () => {
+    if (!editSubscriptionModal.startDate || !editSubscriptionModal.endDate) {
+      toast("Please select both start date and end date.")
+      return
+    }
+    if (new Date(editSubscriptionModal.startDate) > new Date(editSubscriptionModal.endDate)) {
+      toast("Start date cannot be after end date.")
+      return
+    }
+
+    setSavingBatchSubscription(true)
     try {
       const payload = {
-        action: "EXTEND_BATCH",
-        batchId: extendBatchModal.batchId,
-        days: extendBatchModal.customDate ? undefined : extendBatchModal.daysToAdd,
-        newEndDate: extendBatchModal.customDate || undefined
+        action: "EDIT_BATCH_SUBSCRIPTION",
+        batchId: editSubscriptionModal.batchId,
+        startDate: editSubscriptionModal.startDate,
+        endDate: editSubscriptionModal.endDate
       }
 
       const res = await fetch("/api/admin/subscriptions", {
@@ -301,16 +412,17 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
       })
 
       if (res.ok) {
-        toast(`Successfully extended term for ${extendBatchModal.batchName}.`)
-        setExtendBatchModal(prev => ({ ...prev, isOpen: false }))
+        toast(`Successfully updated subscription for ${editSubscriptionModal.batchName}.`)
+        setEditSubscriptionModal(prev => ({ ...prev, isOpen: false }))
         fetchData()
       } else {
-        toast("Failed to update batch subscription.")
+        const errData = await res.json().catch(() => ({}))
+        toast(errData.error || "Failed to update batch subscription.")
       }
     } catch {
       toast("Network error occurred.")
     } finally {
-      setSavingBatchExtension(false)
+      setSavingBatchSubscription(false)
     }
   }
 
@@ -335,104 +447,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
 
   return (
     <div className="space-y-6">
-      {/* ── Metric Summary Strip (Compact, seamless, simpler terms) ── */}
-      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-xs overflow-hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          {/* 1. Total Reviewees */}
-          <div
-            className="flex flex-col justify-between select-none group/card cursor-pointer"
-            onClick={() => {
-              setActiveTab("students")
-              setStatusFilter("all")
-            }}
-          >
-            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                Total Reviewees
-              </span>
-            </div>
-            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(data.metrics?.totalStudents || 0).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                All enrolled students
-              </p>
-            </div>
-          </div>
-
-          {/* 2. Active Reviewees */}
-          <div
-            className="flex flex-col justify-between select-none group/card cursor-pointer"
-            onClick={() => {
-              setActiveTab("students")
-              setStatusFilter("active")
-            }}
-          >
-            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                Active
-              </span>
-            </div>
-            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(data.metrics?.activeCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                Currently with access
-              </p>
-            </div>
-          </div>
-
-          {/* 3. Expiring Soon */}
-          <div
-            className="flex flex-col justify-between select-none group/card cursor-pointer"
-            onClick={() => {
-              setActiveTab("students")
-              setStatusFilter("expiring")
-            }}
-          >
-            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                Expiring Soon
-              </span>
-            </div>
-            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(data.metrics?.expiringCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                Ends within 7 days
-              </p>
-            </div>
-          </div>
-
-          {/* 4. Expired */}
-          <div
-            className="flex flex-col justify-between select-none group/card cursor-pointer"
-            onClick={() => {
-              setActiveTab("students")
-              setStatusFilter("expired")
-            }}
-          >
-            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                Expired
-              </span>
-            </div>
-            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(data.metrics?.expiredCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none">
-                Access ended or inactive
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Sub-tabs & Search Toolbar ── */}
+      {/* ── Sub-tabs & Search Toolbar (Moved above metric summary strip) ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 p-1 bg-[#F2F2F2]/80 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
@@ -458,31 +473,29 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
             </button>
           </div>
 
-          {activeTab === "students" && (
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger
-                aria-label="Filter by status"
-                className="h-9 px-3 rounded-xl border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>
-                    {statusFilter === "all" && "All Statuses"}
-                    {statusFilter === "active" && "Active Only"}
-                    {statusFilter === "expiring" && "Expiring Soon (≤ 7 days)"}
-                    {statusFilter === "expired" && "Expired / Inactive"}
-                  </span>
-                </div>
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                <SelectItem value="all" className="text-xs">All Statuses</SelectItem>
-                <SelectItem value="active" className="text-xs">Active Only</SelectItem>
-                <SelectItem value="expiring" className="text-xs">Expiring Soon (≤ 7 days)</SelectItem>
-                <SelectItem value="expired" className="text-xs">Expired / Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger
+              aria-label="Filter by status"
+              className="h-9 px-3 rounded-xl border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
+            >
+              <div className="flex items-center gap-1.5">
+                <span>
+                  {statusFilter === "all" && "All Statuses"}
+                  {statusFilter === "active" && "Active Only"}
+                  {statusFilter === "expiring" && (activeTab === "students" ? "Expiring Soon (≤ 7 days)" : "Expiring Soon (≤ 30 days)")}
+                  {statusFilter === "expired" && (activeTab === "students" ? "Expired / Inactive" : "Term Ended / Inactive")}
+                </span>
+              </div>
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+              <SelectItem value="all" className="text-xs">All Statuses</SelectItem>
+              <SelectItem value="active" className="text-xs">Active Only</SelectItem>
+              <SelectItem value="expiring" className="text-xs">{activeTab === "students" ? "Expiring Soon (≤ 7 days)" : "Expiring Soon (≤ 30 days)"}</SelectItem>
+              <SelectItem value="expired" className="text-xs">{activeTab === "students" ? "Expired / Inactive" : "Term Ended / Inactive"}</SelectItem>
+            </SelectContent>
+          </Select>
 
-          {activeTab === "students" && data.batches?.length > 0 && (
+          {data.batches?.length > 0 && (
             <Select value={batchFilter} onValueChange={setBatchFilter}>
               <SelectTrigger
                 aria-label="Filter by batch"
@@ -497,7 +510,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                 </div>
               </SelectTrigger>
               <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-w-sm">
-                <SelectItem value="all" className="text-xs">All Batches</SelectItem>
+                <SelectItem value="all" className="text-xs font-medium">All Batches</SelectItem>
                 {data.batches.map(b => (
                   <SelectItem key={b.id} value={String(b.id)} className="text-xs truncate">
                     {b.name}
@@ -517,6 +530,99 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full h-9 pl-9 pr-3 text-xs rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1 focus:ring-neutral-400"
           />
+        </div>
+      </div>
+
+      {/* ── Metric Summary Strip ("div full rounded") ── */}
+      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-xs overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-black/5 dark:divide-white/5">
+          {/* 1. Total */}
+          <div
+            className={`flex flex-col justify-between select-none group/card cursor-pointer transition-colors ${
+              statusFilter === "all" ? "bg-black/[0.03] dark:bg-white/[0.06]" : "hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+            }`}
+            onClick={() => setStatusFilter("all")}
+          >
+            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                {currentMetrics.totalLabel}
+              </span>
+            </div>
+            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                {Number(currentMetrics.totalCount || 0).toLocaleString()}
+              </div>
+              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+                {currentMetrics.totalSubtext}
+              </p>
+            </div>
+          </div>
+
+          {/* 2. Active */}
+          <div
+            className={`flex flex-col justify-between select-none group/card cursor-pointer transition-colors ${
+              statusFilter === "active" ? "bg-black/[0.03] dark:bg-white/[0.06]" : "hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+            }`}
+            onClick={() => setStatusFilter(statusFilter === "active" ? "all" : "active")}
+          >
+            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                {currentMetrics.activeLabel}
+              </span>
+            </div>
+            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                {Number(currentMetrics.activeCount || 0).toLocaleString()}
+              </div>
+              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+                {currentMetrics.activeSubtext}
+              </p>
+            </div>
+          </div>
+
+          {/* 3. Expiring Soon */}
+          <div
+            className={`flex flex-col justify-between select-none group/card cursor-pointer transition-colors ${
+              statusFilter === "expiring" ? "bg-black/[0.03] dark:bg-white/[0.06]" : "hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+            }`}
+            onClick={() => setStatusFilter(statusFilter === "expiring" ? "all" : "expiring")}
+          >
+            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                {currentMetrics.expiringLabel}
+              </span>
+            </div>
+            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                {Number(currentMetrics.expiringCount || 0).toLocaleString()}
+              </div>
+              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+                {currentMetrics.expiringSubtext}
+              </p>
+            </div>
+          </div>
+
+          {/* 4. Expired */}
+          <div
+            className={`flex flex-col justify-between select-none group/card cursor-pointer transition-colors ${
+              statusFilter === "expired" ? "bg-black/[0.03] dark:bg-white/[0.06]" : "hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+            }`}
+            onClick={() => setStatusFilter(statusFilter === "expired" ? "all" : "expired")}
+          >
+            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                {currentMetrics.expiredLabel}
+              </span>
+            </div>
+            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                {Number(currentMetrics.expiredCount || 0).toLocaleString()}
+              </div>
+              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+                {currentMetrics.expiredSubtext}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -685,7 +791,12 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                           )}
                         </td>
                         <td className="py-3 px-4 text-xs text-[#696969] dark:text-gray-300">
-                          {endFormatted}
+                          <div>{endFormatted}</div>
+                          {batch.start_date && (
+                            <div className="text-[11px] text-muted-foreground mt-0.5">
+                              Start: {new Date(batch.start_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                            </div>
+                          )}
                         </td>
                         <td className="py-3 px-4 text-xs">
                           {isPast ? (
@@ -698,10 +809,10 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                         </td>
                         <td className="py-3 px-4 text-right">
                           <button
-                            onClick={() => openExtendBatch(batch)}
+                            onClick={() => openEditSubscription(batch)}
                             className="px-3 py-1 text-xs font-semibold rounded-lg bg-[#F2F2F2] hover:bg-[#E5E5E5] dark:bg-white/10 dark:hover:bg-white/20 text-[#3B3B3B] dark:text-white transition-colors cursor-pointer"
                           >
-                            Extend Batch
+                            Edit Subscription
                           </button>
                         </td>
                       </tr>
@@ -872,16 +983,16 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
         </div>
       )}
 
-      {/* ── Extend Batch Modal Dialog ── */}
-      {extendBatchModal.isOpen && (
+      {/* ── Edit Subscription Modal Dialog ── */}
+      {editSubscriptionModal.isOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-card border border-border/80 rounded-2xl p-5 sm:p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 font-sans">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-foreground text-sm tracking-tight">
-                Extend Batch Term
+                Edit Subscription
               </h3>
               <button 
-                onClick={() => setExtendBatchModal(prev => ({ ...prev, isOpen: false }))}
+                onClick={() => setEditSubscriptionModal(prev => ({ ...prev, isOpen: false }))}
                 className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
@@ -889,37 +1000,27 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
             </div>
 
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Extending schedule for <strong className="text-foreground font-medium">{extendBatchModal.batchName}</strong>.
+              Editing subscription schedule for <strong className="text-foreground font-medium">{editSubscriptionModal.batchName}</strong>.
             </p>
 
             <div className="space-y-3 pt-1">
               <div>
-                <label className="text-xs font-medium text-foreground block mb-1">Quick Add Days</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[15, 30, 60].map(d => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setExtendBatchModal(prev => ({ ...prev, daysToAdd: d, customDate: "" }))}
-                      className={`py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
-                        extendBatchModal.daysToAdd === d && !extendBatchModal.customDate
-                          ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-transparent"
-                          : "border-border/60 hover:bg-muted/40 text-foreground"
-                      }`}
-                    >
-                      +{d} Days
-                    </button>
-                  ))}
-                </div>
+                <label className="text-xs font-medium text-foreground block mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={editSubscriptionModal.startDate}
+                  onChange={(e) => setEditSubscriptionModal(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#E9C46A]"
+                />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-foreground block mb-1">Or Specific End Date</label>
+                <label className="text-xs font-medium text-foreground block mb-1">End Date</label>
                 <input
                   type="date"
-                  value={extendBatchModal.customDate}
-                  onChange={(e) => setExtendBatchModal(prev => ({ ...prev, customDate: e.target.value }))}
-                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground"
+                  value={editSubscriptionModal.endDate}
+                  onChange={(e) => setEditSubscriptionModal(prev => ({ ...prev, endDate: e.target.value }))}
+                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-[#E9C46A]"
                 />
               </div>
             </div>
@@ -927,18 +1028,18 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
             <div className="flex justify-end items-center gap-2 pt-2.5 border-t border-border/40">
               <button
                 type="button"
-                onClick={() => setExtendBatchModal(prev => ({ ...prev, isOpen: false }))}
+                onClick={() => setEditSubscriptionModal(prev => ({ ...prev, isOpen: false }))}
                 className="px-3.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                disabled={savingBatchExtension}
-                onClick={handleApplyBatchExtension}
+                disabled={savingBatchSubscription}
+                onClick={handleSaveBatchSubscription}
                 className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all cursor-pointer"
               >
-                {savingBatchExtension ? "Saving…" : "Save Extension"}
+                {savingBatchSubscription ? "Saving…" : "Save Changes"}
               </button>
             </div>
           </div>

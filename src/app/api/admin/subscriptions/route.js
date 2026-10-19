@@ -183,21 +183,36 @@ export async function POST(request) {
       return NextResponse.json({ success: true })
     }
 
-    // 3. Extend entire batch
-    if (action === "EXTEND_BATCH" && batchId) {
-      let resolvedDate = newEndDate
-      if (!resolvedDate && days) {
+    // 3. Extend / Edit entire batch
+    if ((action === "EXTEND_BATCH" || action === "EDIT_BATCH_SUBSCRIPTION") && batchId) {
+      const { startDate, endDate, newStartDate } = body
+      let resolvedStart = newStartDate || startDate || null
+      let resolvedEnd = newEndDate || endDate || null
+
+      if (!resolvedEnd && days) {
         const bRes = await pool.query(`SELECT end_date FROM batches WHERE id = $1`, [batchId])
         const currentEnd = bRes.rows[0]?.end_date || new Date()
         const baseDate = new Date(currentEnd) > new Date() ? new Date(currentEnd) : new Date()
         baseDate.setDate(baseDate.getDate() + parseInt(days))
-        resolvedDate = baseDate.toISOString().split("T")[0]
+        resolvedEnd = baseDate.toISOString().split("T")[0]
       }
 
-      await pool.query(
-        `UPDATE batches SET end_date = $1 WHERE id = $2`,
-        [resolvedDate, batchId]
-      )
+      if (resolvedStart && resolvedEnd) {
+        await pool.query(
+          `UPDATE batches SET start_date = $1, end_date = $2 WHERE id = $3`,
+          [resolvedStart, resolvedEnd, batchId]
+        )
+      } else if (resolvedEnd) {
+        await pool.query(
+          `UPDATE batches SET end_date = $1 WHERE id = $2`,
+          [resolvedEnd, batchId]
+        )
+      } else if (resolvedStart) {
+        await pool.query(
+          `UPDATE batches SET start_date = $1 WHERE id = $2`,
+          [resolvedStart, batchId]
+        )
+      }
 
       // Also ensure all students in this batch are active
       await pool.query(
@@ -205,7 +220,18 @@ export async function POST(request) {
         [batchId]
       )
 
-      return NextResponse.json({ success: true, updatedEndDate: resolvedDate })
+      if (resolvedEnd) {
+        await pool.query(
+          `UPDATE users SET subscription_end_date = $1 WHERE batch_id = $2 AND role = 'student' AND subscription_end_date IS NOT NULL AND subscription_end_date < $1`,
+          [resolvedEnd, batchId]
+        )
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        updatedStartDate: resolvedStart, 
+        updatedEndDate: resolvedEnd 
+      })
     }
 
     // 4. Bulk extend selected students

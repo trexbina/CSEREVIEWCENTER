@@ -107,9 +107,9 @@ const BLOCK_CATEGORIES = [
         id: "forms",
         label: "Forms",
         items: [
+            { type: "quiz_question", label: "Multiple Choice", icon: CheckCircle2 },
             { type: "button", label: "Button", icon: MousePointerClick },
             { type: "input", label: "Input", icon: TextCursorInput },
-            { type: "textarea", label: "Textarea", icon: TextSelect },
             { type: "checkbox", label: "Checkbox", icon: CheckSquare },
         ]
     },
@@ -164,6 +164,14 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
     const [isModuleCompleted, setIsModuleCompleted] = useState(false)
     const [currentLessonTitle, setCurrentLessonTitle] = useState("")
     const bottomSentinelRef = useRef(null)
+    const [studentAnswers, setStudentAnswers] = useState({})
+
+    function handleStudentSelectOption(questionId, optionId) {
+        setStudentAnswers(prev => ({
+            ...prev,
+            [questionId]: optionId
+        }))
+    }
 
     useEffect(() => {
         const handleGlobalDragEnd = () => {
@@ -579,6 +587,18 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
             newBlock.properties = { backgroundColor: "#E9C46A", color: "#ffffff", borderRadius: "8px", padding: "12px 24px", textAlign: "center" };
             newBlock.content = "Click Me";
         }
+        if (type === "quiz_question") {
+            newBlock.questionType = "Multiple Choice";
+            newBlock.text = "";
+            newBlock.points = 1;
+            newBlock.image = null;
+            newBlock.options = [
+                { id: `${id}_o1`, text: "Option 1", isCorrect: true },
+                { id: `${id}_o2`, text: "Option 2", isCorrect: false },
+                { id: `${id}_o3`, text: "Option 3", isCorrect: false },
+                { id: `${id}_o4`, text: "Option 4", isCorrect: false }
+            ];
+        }
 
         if (type === "2_col") {
             newBlock.children = [
@@ -865,6 +885,146 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
         });
     }
 
+    function updateQuestionField(id, field, value) {
+        setBlocks(prev => {
+            const newBlocks = JSON.parse(JSON.stringify(prev));
+            function update(items) {
+                for (let item of items) {
+                    if (item.id === id) {
+                        item[field] = value;
+                        return true;
+                    }
+                    if (item.children && update(item.children)) return true;
+                }
+                return false;
+            }
+            update(newBlocks);
+            return newBlocks;
+        });
+    }
+
+    function updateQuestionOption(id, optId, newText) {
+        setBlocks(prev => {
+            const newBlocks = JSON.parse(JSON.stringify(prev));
+            function update(items) {
+                for (let item of items) {
+                    if (item.id === id) {
+                        item.options = (item.options || []).map(opt =>
+                            opt.id === optId ? { ...opt, text: newText } : opt
+                        );
+                        return true;
+                    }
+                    if (item.children && update(item.children)) return true;
+                }
+                return false;
+            }
+            update(newBlocks);
+            return newBlocks;
+        });
+    }
+
+    function toggleQuestionCorrectAnswer(id, optId) {
+        setBlocks(prev => {
+            const newBlocks = JSON.parse(JSON.stringify(prev));
+            function update(items) {
+                for (let item of items) {
+                    if (item.id === id) {
+                        item.options = (item.options || []).map(opt => ({
+                            ...opt,
+                            isCorrect: opt.id === optId
+                        }));
+                        return true;
+                    }
+                    if (item.children && update(item.children)) return true;
+                }
+                return false;
+            }
+            update(newBlocks);
+            return newBlocks;
+        });
+    }
+
+    function addQuestionOption(id) {
+        setBlocks(prev => {
+            const newBlocks = JSON.parse(JSON.stringify(prev));
+            function update(items) {
+                for (let item of items) {
+                    if (item.id === id) {
+                        const currentOpts = item.options || [];
+                        if (currentOpts.length >= 8) return true;
+                        const nextNum = currentOpts.length + 1;
+                        const newOpt = {
+                            id: `${id}_opt_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                            text: `Option ${nextNum}`,
+                            isCorrect: currentOpts.length === 0
+                        };
+                        item.options = [...currentOpts, newOpt];
+                        return true;
+                    }
+                    if (item.children && update(item.children)) return true;
+                }
+                return false;
+            }
+            update(newBlocks);
+            return newBlocks;
+        });
+    }
+
+    function removeQuestionOption(id, optId) {
+        setBlocks(prev => {
+            const newBlocks = JSON.parse(JSON.stringify(prev));
+            function update(items) {
+                for (let item of items) {
+                    if (item.id === id) {
+                        const currentOpts = item.options || [];
+                        if (currentOpts.length <= 2) return true;
+                        const remaining = currentOpts.filter(o => o.id !== optId);
+                        if (!remaining.some(o => o.isCorrect) && remaining.length > 0) {
+                            remaining[0].isCorrect = true;
+                        }
+                        item.options = remaining;
+                        return true;
+                    }
+                    if (item.children && update(item.children)) return true;
+                }
+                return false;
+            }
+            update(newBlocks);
+            return newBlocks;
+        });
+    }
+
+    async function handleQuestionImageUpload(e, blockId) {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        if (files[0].size > 50 * 1024 * 1024) {
+            showAlert("File is too large. Maximum allowed file size is 50 MB.");
+            return;
+        }
+        setUploadingBlockId(blockId);
+        try {
+            const formData = new FormData();
+            formData.append("file", files[0]);
+
+            const uploadRes = await fetch('/api/admin/upload', {
+                method: 'POST',
+                body: formData
+            });
+            if (!uploadRes.ok) {
+                const message = await readUploadError(uploadRes);
+                throw new Error(message);
+            }
+            const uploadData = await uploadRes.json();
+            updateQuestionField(blockId, "image", uploadData.url);
+        } catch (err) {
+            console.error(err);
+            showAlert(err?.message || "Failed to upload image");
+        } finally {
+            setUploadingBlockId(null);
+            e.target.value = "";
+        }
+    }
+
     function handleImageResizeStart(e, blockId, direction) {
         e.preventDefault();
         e.stopPropagation();
@@ -1049,6 +1209,219 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                         >
                             {block.content || "Click Me"}
                         </a>
+                    </div>
+                )}
+
+                {/* MULTIPLE CHOICE QUIZ QUESTION BLOCK */}
+                {block.type === "quiz_question" && (
+                    <div className="w-full bg-white border border-gray-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4 my-2">
+                        {isAdmin ? (
+                            /* Admin Builder View */
+                            <div className="space-y-3">
+                                {/* Question Prompt + Points + Image Button */}
+                                <div className="flex items-center gap-2 border-b border-gray-200/80 focus-within:border-gray-400 transition-colors pb-2 pr-12 group/prompt">
+                                    <span className="font-bold text-[#E9C46A] whitespace-nowrap select-none text-sm">
+                                        Q.
+                                    </span>
+                                    <input
+                                        type="text"
+                                        value={block.text || ""}
+                                        onChange={(e) => updateQuestionField(block.id, "text", e.target.value)}
+                                        placeholder="Type question prompt here..."
+                                        className="flex-1 bg-transparent py-1 outline-none text-gray-800 font-medium placeholder-gray-400 text-sm"
+                                    />
+                                    <label className="p-1.5 cursor-pointer hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700 transition-all opacity-70 hover:opacity-100" title="Attach Question Image">
+                                        <ImageIcon className="h-4 w-4" />
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={(e) => handleQuestionImageUpload(e, block.id)}
+                                        />
+                                    </label>
+                                </div>
+
+                                {/* Question Image (if attached) */}
+                                {block.image && (
+                                    <div className="relative inline-block mt-2 max-w-full">
+                                        <img
+                                            src={block.image}
+                                            alt="Question media"
+                                            className="max-h-60 rounded-xl border border-gray-200 object-contain"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => updateQuestionField(block.id, "image", null)}
+                                            className="absolute top-2 right-2 bg-black/60 hover:bg-black text-white p-1.5 rounded-lg shadow-sm transition-colors cursor-pointer"
+                                            title="Remove image"
+                                        >
+                                            <Trash className="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Multiple Choice Options List */}
+                                <div className="space-y-2 mt-2 pl-1 sm:pl-3">
+                                    {(block.options || []).map((option, oIdx) => {
+                                        const letter = String.fromCharCode(65 + oIdx);
+                                        const isCorrect = !!option.isCorrect;
+
+                                        return (
+                                            <div
+                                                key={option.id || oIdx}
+                                                className={`flex items-center gap-2.5 group/opt py-1 px-2 rounded-xl transition-all border ${
+                                                    isCorrect ? 'border-emerald-200 bg-emerald-50/40' : 'border-transparent hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleQuestionCorrectAnswer(block.id, option.id)}
+                                                    title={isCorrect ? "Correct answer (click another to change)" : "Click to mark as correct answer"}
+                                                    className={`w-5 h-5 flex items-center justify-center rounded-full border flex-shrink-0 transition-all cursor-pointer ${
+                                                        isCorrect
+                                                            ? "border-emerald-500 bg-emerald-500 text-white shadow-2xs"
+                                                            : "border-gray-300 bg-white hover:border-[#E9C46A]"
+                                                    }`}
+                                                >
+                                                    {isCorrect ? (
+                                                        <div className="w-2 h-2 rounded-full bg-white" />
+                                                    ) : null}
+                                                </button>
+
+                                                <span className={`text-xs font-bold w-4 shrink-0 select-none ${isCorrect ? 'text-emerald-700' : 'text-gray-400'}`}>
+                                                    {letter}.
+                                                </span>
+
+                                                <input
+                                                    type="text"
+                                                    value={option.text || ""}
+                                                    onChange={(e) => updateQuestionOption(block.id, option.id, e.target.value)}
+                                                    placeholder={`Option ${oIdx + 1}`}
+                                                    className={`flex-1 bg-transparent py-1 px-1.5 text-xs font-normal outline-none rounded-md transition-colors placeholder-gray-400 ${
+                                                        isCorrect ? 'text-emerald-900 font-medium' : 'text-gray-700'
+                                                    }`}
+                                                />
+
+                                                {(block.options || []).length > 2 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeQuestionOption(block.id, option.id)}
+                                                        className="text-gray-400 hover:text-red-500 p-1 rounded-md transition-all opacity-0 group-hover/opt:opacity-100 cursor-pointer"
+                                                        title="Remove option"
+                                                    >
+                                                        <Trash className="h-3.5 w-3.5" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+
+                                    {!(block.options || []).some(o => o.isCorrect) && (
+                                        <p className="text-xs text-amber-500 pt-1 italic">
+                                            * Select a correct answer by clicking an empty circle above.
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Bottom Controls: Add Option + Points */}
+                                <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-xs">
+                                    <div className="flex items-center gap-3">
+                                        {(block.options || []).length < 8 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => addQuestionOption(block.id)}
+                                                className="text-[#E9C46A] hover:text-[#dfb550] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                                            >
+                                                <Plus className="h-3.5 w-3.5" />
+                                                <span>Add Option</span>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 text-gray-500 font-medium">
+                                        <span>Points:</span>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={100}
+                                            value={block.points === "" ? "" : (block.points !== undefined ? block.points : 1)}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                updateQuestionField(block.id, "points", val === "" ? "" : Math.max(1, Number(val)));
+                                            }}
+                                            onBlur={() => {
+                                                if (block.points === "" || block.points === undefined) {
+                                                    updateQuestionField(block.id, "points", 1);
+                                                }
+                                            }}
+                                            className="w-8 h-7 bg-white border border-gray-200 rounded-md text-center text-gray-700 font-semibold text-xs outline-none focus:border-gray-400 shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Student View */
+                            <div className="space-y-3">
+                                <div className="flex items-start justify-between gap-3 pb-2 border-b border-gray-100">
+                                    <div className="flex items-start gap-2 flex-1">
+                                        <span className="font-bold text-[#E9C46A] select-none text-sm pt-0.5">
+                                            Q.
+                                        </span>
+                                        <span className="font-medium text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">
+                                            {block.text || "Multiple choice question"}
+                                        </span>
+                                    </div>
+                                    <span className="shrink-0 text-gray-500 font-semibold text-[11px] bg-gray-100 px-2.5 py-0.5 rounded-full border border-gray-200/60">
+                                        {block.points || 1} pt{(block.points || 1) !== 1 ? 's' : ''}
+                                    </span>
+                                </div>
+
+                                {block.image && (
+                                    <div className="my-2 max-w-full">
+                                        <img
+                                            src={block.image}
+                                            alt="Question media"
+                                            className="max-h-64 rounded-xl border border-gray-200 object-contain"
+                                        />
+                                    </div>
+                                )}
+
+                                <div className="space-y-2 pt-1 pl-1 sm:pl-3">
+                                    {(block.options || []).map((option, oIdx) => {
+                                        const letter = String.fromCharCode(65 + oIdx);
+                                        const isSelected = studentAnswers[block.id] === option.id;
+
+                                        return (
+                                            <div
+                                                key={option.id || oIdx}
+                                                onClick={() => handleStudentSelectOption(block.id, option.id)}
+                                                className={`flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                                                    isSelected
+                                                        ? 'border-[#E9C46A] bg-[#E9C46A]/10 shadow-2xs'
+                                                        : 'border-gray-200/80 bg-white hover:bg-gray-50 hover:border-gray-300'
+                                                }`}
+                                            >
+                                                <div
+                                                    className={`w-5 h-5 flex items-center justify-center rounded-full border flex-shrink-0 transition-colors ${
+                                                        isSelected
+                                                            ? 'border-[#E9C46A] bg-[#E9C46A] text-white shadow-2xs'
+                                                            : 'border-gray-300 bg-white'
+                                                    }`}
+                                                >
+                                                    {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                                                </div>
+                                                <span className={`text-xs font-bold w-4 shrink-0 select-none ${isSelected ? 'text-[#a77f1f]' : 'text-gray-400'}`}>
+                                                    {letter}.
+                                                </span>
+                                                <span className={`flex-1 text-xs leading-relaxed ${isSelected ? 'text-gray-900 font-semibold' : 'text-gray-700'}`}>
+                                                    {option.text}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -2235,6 +2608,29 @@ function ElementSkeletonPreview({ type, className = "" }) {
             return (
                 <div className={`w-full py-4 px-5 bg-gray-50/80 border border-dashed border-gray-300 rounded-xl flex items-center justify-center animate-pulse ${className}`}>
                     <div className="h-9 w-36 bg-gray-200/90 rounded-lg" />
+                </div>
+            );
+        case "quiz_question":
+            return (
+                <div className={`w-full py-4 px-5 bg-gray-50/80 border border-dashed border-gray-300 rounded-xl flex flex-col gap-3 animate-pulse ${className}`}>
+                    <div className="flex items-center justify-between pb-2 border-b border-gray-200/80">
+                        <div className="h-4 bg-gray-200/90 rounded-md w-3/4" />
+                        <div className="h-4 bg-gray-200/70 rounded-md w-12" />
+                    </div>
+                    <div className="space-y-2 pl-3">
+                        <div className="flex items-center gap-2.5">
+                            <div className="h-3.5 w-3.5 rounded-full bg-emerald-400/70 shrink-0" />
+                            <div className="h-3 bg-gray-200/90 rounded-md w-2/5" />
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                            <div className="h-3.5 w-3.5 rounded-full bg-gray-300 shrink-0" />
+                            <div className="h-3 bg-gray-200/80 rounded-md w-1/2" />
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                            <div className="h-3.5 w-3.5 rounded-full bg-gray-300 shrink-0" />
+                            <div className="h-3 bg-gray-200/80 rounded-md w-1/3" />
+                        </div>
+                    </div>
                 </div>
             );
         case "2_col":

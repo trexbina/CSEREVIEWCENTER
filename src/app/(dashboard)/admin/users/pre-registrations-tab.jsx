@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Check, Minus, X, Eye, Trash, Pencil } from "lucide-react"
+import { Search, Check, Minus, X, Eye, Trash, Pencil, Copy, CheckCheck, UserCheck, ShieldCheck } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -49,6 +49,11 @@ export function PreRegistrationsTab() {
   const [previewLoginId, setPreviewLoginId] = useState("")
   const [actionLoading, setActionLoading] = useState(false)
   const [actionMsg, setActionMsg] = useState(null)
+
+  // Approval Dialog States
+  const [approveModalOpen, setApproveModalOpen] = useState(false)
+  const [approvedResult, setApprovedResult] = useState(null)
+  const [copiedField, setCopiedField] = useState(null)
 
   // Delete Modal States
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -256,7 +261,21 @@ export function PreRegistrationsTab() {
     )
   }
 
-  async function handleApprove(appId) {
+  function handleCopy(text, field) {
+    if (!text) return
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedField(field)
+      setTimeout(() => setCopiedField(null), 2000)
+    })
+  }
+
+  function openApproveModal() {
+    setApprovedResult(null)
+    setApproveModalOpen(true)
+  }
+
+  async function handleConfirmApprove() {
+    if (!selectedApp) return
     setActionLoading(true)
     setActionMsg(null)
     try {
@@ -264,7 +283,7 @@ export function PreRegistrationsTab() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: appId,
+          id: selectedApp.id,
           action: "APPROVE",
           accountEmail: customAccountEmail?.trim() || selectedApp?.email,
           customPassword: customPassword,
@@ -273,20 +292,29 @@ export function PreRegistrationsTab() {
       })
       const data = await res.json()
       if (res.ok) {
-        setActionMsg({
-          type: "success",
-          text: `Approved! Account created with Login ID: ${data.loginId || 'assigned'} and password: ${data.initialPassword}`,
+        const fullName = [selectedApp.first_name, selectedApp.middle_name, selectedApp.last_name, selectedApp.suffix].filter(Boolean).join(" ")
+        const batchObj = dropdownData.batches?.find((b) => b.id.toString() === approvalBatchId)
+        setApprovedResult({
+          loginId: data.loginId || previewLoginId || "assigned",
+          initialPassword: data.initialPassword || customPassword,
+          accountEmail: data.accountEmail || customAccountEmail?.trim() || selectedApp?.email,
+          name: fullName,
+          batchName: batchObj ? `${batchObj.name}${batchObj.target_year ? ` (${batchObj.target_year})` : ""}` : "No batch assigned",
         })
         loadApplications()
         router.refresh()
       } else {
-        setActionMsg({ type: "error", text: data.error || "Failed to approve." })
+        toast(data.error || "Failed to approve account.")
       }
     } catch {
-      setActionMsg({ type: "error", text: "Network error occurred." })
+      toast("Network error occurred while approving.")
     } finally {
       setActionLoading(false)
     }
+  }
+
+  async function handleApprove(appId) {
+    openApproveModal()
   }
 
   async function handleReject(appId) {
@@ -594,8 +622,9 @@ export function PreRegistrationsTab() {
       {/* Review & Details Dialog */}
       {selectedApp && (
         <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
-          <DialogContent className="max-w-2xl max-h-[88vh] overflow-y-auto p-6 sm:p-7 bg-white dark:bg-[#14161b] border border-black/10 dark:border-white/10 rounded-2xl shadow-xl text-[#3B3B3B] dark:text-white">
-            <DialogHeader className="border-b border-black/5 dark:border-white/10 pb-4">
+          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 bg-white dark:bg-[#14161b] border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl text-[#3B3B3B] dark:text-white overflow-hidden" showCloseButton={false}>
+            {/* Sticky Header */}
+            <DialogHeader className="px-6 py-4 border-b border-black/5 dark:border-white/10 shrink-0 bg-white dark:bg-[#14161b]">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <DialogTitle className="text-base font-bold text-[#3B3B3B] dark:text-white">
@@ -605,33 +634,45 @@ export function PreRegistrationsTab() {
                     Submitted on {new Date(selectedApp.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </DialogDescription>
                 </div>
-                {selectedApp.status === "PENDING" && (
+                <div className="flex items-center gap-2">
+                  {selectedApp.status === "PENDING" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditing(!isEditing)
+                        setActionMsg(null)
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 h-8 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-300 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-black/5 dark:hover:bg-white/15 border border-black/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span>{isEditing ? "Cancel Edit" : "Edit Details"}</span>
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => {
-                      setIsEditing(!isEditing)
-                      setActionMsg(null)
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 h-8 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-300 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-black/5 dark:hover:bg-white/15 border border-black/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
+                    onClick={() => setReviewOpen(false)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                    title="Close dialog"
                   >
-                    <Pencil className="w-3.5 h-3.5" />
-                    <span>{isEditing ? "Cancel Edit" : "Edit Details"}</span>
+                    <X className="h-4 w-4" />
                   </button>
-                )}
+                </div>
               </div>
             </DialogHeader>
 
-            {actionMsg && (
-              <div
-                className={`p-3 rounded-xl text-xs font-medium text-center ${
-                  actionMsg.type === "success"
-                    ? "bg-black/5 dark:bg-white/10 text-[#3B3B3B] dark:text-white border border-black/10 dark:border-white/10"
-                    : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                }`}
-              >
-                {actionMsg.text}
-              </div>
-            )}
+            {/* Scrollable Body Content */}
+            <div className="overflow-y-auto px-6 py-4 flex-1 space-y-6">
+              {actionMsg && (
+                <div
+                  className={`p-3 rounded-xl text-xs font-medium text-center ${
+                    actionMsg.type === "success"
+                      ? "bg-black/5 dark:bg-white/10 text-[#3B3B3B] dark:text-white border border-black/10 dark:border-white/10"
+                      : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                  }`}
+                >
+                  {actionMsg.text}
+                </div>
+              )}
 
             {isEditing ? (
               /* ── EDIT MODE FORM ── */
@@ -1016,34 +1057,41 @@ export function PreRegistrationsTab() {
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400 pt-1">
                       Student Account Setup
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 bg-black/[0.02] dark:bg-white/[0.02] p-3 rounded-xl border border-black/5 dark:border-white/5">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-[#3B3B3B] dark:text-white block">
-                          Student Login ID (Auto-Generated)
-                        </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 bg-black/[0.02] dark:bg-white/[0.02] p-3.5 rounded-2xl border border-black/5 dark:border-white/5">
+                      {/* Col 1: Student Login ID */}
+                      <div className="flex flex-col justify-between space-y-1.5">
+                        <div className="min-h-[32px] sm:min-h-[36px] flex items-end pb-0.5">
+                          <label className="text-xs font-semibold text-[#3B3B3B] dark:text-white leading-tight">
+                            Student Login ID <span className="font-normal text-[11px] text-[#696969] dark:text-gray-400 block sm:inline">(Auto-Generated)</span>
+                          </label>
+                        </div>
                         <Input
                           type="text"
                           readOnly
                           disabled
                           value={previewLoginId || "Generating..."}
-                          className="text-sm h-9 rounded-xl border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 cursor-not-allowed"
+                          className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 cursor-not-allowed font-mono font-medium"
                         />
-                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block truncate">
+                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block truncate min-h-[16px]">
                           Permanent identifier for portal login.
                         </span>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-[#3B3B3B] dark:text-white block">
-                          Assign Batch (Optional)
-                        </label>
+
+                      {/* Col 2: Assign Batch */}
+                      <div className="flex flex-col justify-between space-y-1.5">
+                        <div className="min-h-[32px] sm:min-h-[36px] flex items-end pb-0.5">
+                          <label className="text-xs font-semibold text-[#3B3B3B] dark:text-white leading-tight">
+                            Assign Batch <span className="font-normal text-[11px] text-[#696969] dark:text-gray-400 block sm:inline">(Optional)</span>
+                          </label>
+                        </div>
                         <Select
                           value={approvalBatchId || "none"}
                           onValueChange={(val) => setApprovalBatchId(val === "none" ? "" : val)}
                         >
-                          <SelectTrigger className="text-xs h-9 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10 w-full cursor-pointer">
+                          <SelectTrigger className="text-xs h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10 w-full cursor-pointer">
                             <SelectValue placeholder="— No Batch / Leave Blank —" />
                           </SelectTrigger>
-                          <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 text-xs shadow-xl">
+                          <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 text-xs shadow-xl max-h-56">
                             <SelectItem value="none" className="text-xs py-1.5 cursor-pointer text-[#696969]">
                               — No Batch / Leave Blank —
                             </SelectItem>
@@ -1054,23 +1102,27 @@ export function PreRegistrationsTab() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block truncate">
+                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block truncate min-h-[16px]">
                           {availableApprovalBatches.length > 0
                             ? `Batches for ${selectedApp.exam_name || "chosen exam"}.`
                             : "No active batches for this exam."}
                         </span>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-[#3B3B3B] dark:text-white block">
-                          Initial Password *
-                        </label>
+
+                      {/* Col 3: Initial Password */}
+                      <div className="flex flex-col justify-between space-y-1.5">
+                        <div className="min-h-[32px] sm:min-h-[36px] flex items-end pb-0.5">
+                          <label className="text-xs font-semibold text-[#3B3B3B] dark:text-white leading-tight">
+                            Initial Password <span className="text-amber-500 font-bold">*</span>
+                          </label>
+                        </div>
                         <Input
                           value={customPassword}
                           onChange={(e) => setCustomPassword(e.target.value)}
                           placeholder="Student@123"
-                          className="text-sm h-9 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10"
+                          className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10 font-mono"
                         />
-                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block truncate">
+                        <span className="text-[11px] text-[#696969] dark:text-gray-400 block truncate min-h-[16px]">
                           Temporary initial password.
                         </span>
                       </div>
@@ -1078,9 +1130,8 @@ export function PreRegistrationsTab() {
                   </div>
                 )}
               </div>
-            )}
 
-            <DialogFooter className="border-t border-black/5 dark:border-white/10 pt-4 flex items-center justify-end gap-2">
+            <DialogFooter className="px-6 py-3.5 border-t border-black/5 dark:border-white/10 shrink-0 bg-white dark:bg-[#14161b] flex items-center justify-end gap-2">
               {isEditing ? (
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                   <button
@@ -1110,6 +1161,13 @@ export function PreRegistrationsTab() {
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                   <button
                     type="button"
+                    onClick={() => setReviewOpen(false)}
+                    className="px-4 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-black/5 dark:hover:bg-white/15 border border-black/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
                     disabled={actionLoading}
                     onClick={() => handleReject(selectedApp.id)}
                     className="px-3.5 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-rose-600 dark:text-gray-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-black/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
@@ -1119,25 +1177,204 @@ export function PreRegistrationsTab() {
                   <button
                     type="button"
                     disabled={actionLoading}
-                    onClick={() => handleApprove(selectedApp.id)}
+                    onClick={openApproveModal}
                     className="px-4 h-9 rounded-xl text-xs font-bold uppercase tracking-wide text-white bg-[#E9C46A] hover:bg-[#dfb550] transition-all cursor-pointer shadow-xs disabled:opacity-50"
                   >
                     {actionLoading ? "Processing…" : "Approve Account"}
                   </button>
                 </div>
               ) : (
-                <DialogClose asChild>
-                  <button
-                    type="button"
-                    className="px-4 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-black/5 dark:hover:bg-white/15 border border-black/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
-                  >
-                    Close
-                  </button>
-                </DialogClose>
+                <button
+                  type="button"
+                  onClick={() => setReviewOpen(false)}
+                  className="px-4 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-black/5 dark:hover:bg-white/15 border border-black/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
+                >
+                  Close
+                </button>
               )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Approval Confirmation & Account Details Dialog */}
+      <Dialog open={approveModalOpen} onOpenChange={setApproveModalOpen}>
+        <DialogContent className="max-w-md p-6 bg-white dark:bg-[#14161b] border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl text-[#3B3B3B] dark:text-white" showCloseButton={false}>
+          {approvedResult ? (
+            /* Success State */
+            <div className="space-y-5 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                    <Check className="w-5 h-5 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#3B3B3B] dark:text-white">
+                      Account Approved!
+                    </h3>
+                    <p className="text-xs text-[#696969] dark:text-gray-400">
+                      Student account has been created & activated.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApproveModalOpen(false)
+                    setReviewOpen(false)
+                    setApprovedResult(null)
+                  }}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Close dialog"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="p-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[#696969] dark:text-gray-400">Student Name</span>
+                  <span className="font-semibold text-[#3B3B3B] dark:text-white">{approvedResult.name}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs pt-2 border-t border-black/5 dark:border-white/5">
+                  <span className="text-[#696969] dark:text-gray-400">Student Login ID</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-[#3B3B3B] dark:text-white">{approvedResult.loginId}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(approvedResult.loginId, "loginId")}
+                      className="p-1 text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors cursor-pointer"
+                      title="Copy Login ID"
+                    >
+                      {copiedField === "loginId" ? <CheckCheck className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-xs pt-2 border-t border-black/5 dark:border-white/5">
+                  <span className="text-[#696969] dark:text-gray-400">Initial Password</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-[#3B3B3B] dark:text-white">{approvedResult.initialPassword}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(approvedResult.initialPassword, "password")}
+                      className="p-1 text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors cursor-pointer"
+                      title="Copy Password"
+                    >
+                      {copiedField === "password" ? <CheckCheck className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-xs pt-2 border-t border-black/5 dark:border-white/5">
+                  <span className="text-[#696969] dark:text-gray-400">Assigned Batch</span>
+                  <span className="font-medium text-[#3B3B3B] dark:text-white">{approvedResult.batchName}</span>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-700 dark:text-blue-300">
+                Login instructions and credentials were automatically dispatched to <span className="font-semibold">{approvedResult.accountEmail}</span>.
+              </div>
+
+              <div className="flex items-center justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApproveModalOpen(false)
+                    setReviewOpen(false)
+                    setApprovedResult(null)
+                  }}
+                  className="w-full sm:w-auto px-6 h-9 rounded-xl text-xs font-semibold bg-[#E9C46A] hover:bg-[#dfb550] text-white shadow-2xs transition-all flex items-center justify-center cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Confirmation State */
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#E9C46A]/20 flex items-center justify-center text-[#B8860B] dark:text-[#E9C46A]">
+                    <UserCheck className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#3B3B3B] dark:text-white">
+                      Approve Pre-Registration
+                    </h3>
+                    <p className="text-xs text-[#696969] dark:text-gray-400">
+                      Confirm student account creation and credential setup.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setApproveModalOpen(false)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Close dialog"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="p-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] space-y-2.5 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-[#696969] dark:text-gray-400">Applicant</span>
+                  <span className="font-semibold text-[#3B3B3B] dark:text-white">
+                    {[selectedApp?.first_name, selectedApp?.middle_name, selectedApp?.last_name, selectedApp?.suffix].filter(Boolean).join(" ")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#696969] dark:text-gray-400">Login ID (Assigned)</span>
+                  <span className="font-mono font-bold text-[#3B3B3B] dark:text-white">{previewLoginId || "Auto-assigned"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#696969] dark:text-gray-400">Account Email</span>
+                  <span className="font-medium text-[#3B3B3B] dark:text-white">{customAccountEmail?.trim() || selectedApp?.email}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#696969] dark:text-gray-400">Initial Password</span>
+                  <span className="font-mono font-medium text-[#3B3B3B] dark:text-white">{customPassword}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#696969] dark:text-gray-400">Assigned Batch</span>
+                  <span className="font-medium text-[#3B3B3B] dark:text-white">
+                    {approvalBatchId ? (dropdownData.batches?.find(b => b.id.toString() === approvalBatchId)?.name || "Selected Batch") : "No batch assigned"}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-[#696969] dark:text-gray-400 leading-relaxed">
+                Approving will create an active student account in the system and automatically send a welcome email with these login details.
+              </p>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-black/5 dark:border-white/10">
+                <button
+                  type="button"
+                  disabled={actionLoading}
+                  onClick={() => setApproveModalOpen(false)}
+                  className="px-4 h-9 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-black/5 dark:hover:bg-white/15 border border-black/10 dark:border-white/10 transition-all cursor-pointer shadow-2xs"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  disabled={actionLoading}
+                  onClick={handleConfirmApprove}
+                  className="px-4 h-9 rounded-xl text-xs font-bold uppercase tracking-wide text-white bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
+                >
+                  {actionLoading ? (
+                    <>
+                      <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Approving…
+                    </>
+                  ) : (
+                    "Confirm & Approve"
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       )}
     </div>
     </TooltipProvider>

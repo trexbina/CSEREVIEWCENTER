@@ -25,6 +25,8 @@ import {
   TrendingUp,
   Award,
   Filter,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -51,11 +53,18 @@ export default function AnalyticalOverviewPage() {
   const [search, setSearch] = useState("")
   const [sortField, setSortField] = useState("avgScore")
   const [sortDir, setSortDir] = useState("desc")
-  // Section 1 filter state
+  // Section 1 filter & selection state
   const [selectedExamIds, setSelectedExamIds] = useState([])
   const [selectedBatchIds, setSelectedBatchIds] = useState([])
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isSection1SearchOpen, setIsSection1SearchOpen] = useState(false)
+  const [selectedRowKeys, setSelectedRowKeys] = useState([])
   const filterDropdownRef = useRef(null)
+  const section1SearchRef = useRef(null)
+  const [perfStudentsPage, setPerfStudentsPage] = useState(1)
+  const [perfSchoolsPage, setPerfSchoolsPage] = useState(1)
+  const [perfAtRiskPage, setPerfAtRiskPage] = useState(1)
+  const PERF_PAGE_SIZE = 8
 
   // Section 2: Mock Exam Passers Rate Filters
   const [selectedPassersExamIds, setSelectedPassersExamIds] = useState([])
@@ -75,11 +84,22 @@ export default function AnalyticalOverviewPage() {
   const [selectedRegBatchIds, setSelectedRegBatchIds] = useState([])
   const [isRegFilterOpen, setIsRegFilterOpen] = useState(false)
   const regFilterRef = useRef(null)
+  const [isRegTableFilterOpen, setIsRegTableFilterOpen] = useState(false)
+  const regTableFilterRef = useRef(null)
+  const [regSearch, setRegSearch] = useState("")
+  const [isRegSearchOpen, setIsRegSearchOpen] = useState(false)
+  const regSearchRef = useRef(null)
+  const [regTracksPage, setRegTracksPage] = useState(1)
+  const [regLogPage, setRegLogPage] = useState(1)
+  const REG_PAGE_SIZE = 8
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target)) {
         setIsFilterOpen(false)
+      }
+      if (section1SearchRef.current && !section1SearchRef.current.contains(e.target)) {
+        setIsSection1SearchOpen(false)
       }
       if (passersFilterRef.current && !passersFilterRef.current.contains(e.target)) {
         setIsPassersFilterOpen(false)
@@ -87,8 +107,20 @@ export default function AnalyticalOverviewPage() {
       if (activityFilterRef.current && !activityFilterRef.current.contains(e.target)) {
         setIsActivityFilterOpen(false)
       }
+      if (activitySearchRef.current && !activitySearchRef.current.contains(e.target)) {
+        setIsActivitySearchOpen(false)
+      }
+      if (activityTableFilterRef.current && !activityTableFilterRef.current.contains(e.target)) {
+        setIsActivityTableFilterOpen(false)
+      }
       if (regFilterRef.current && !regFilterRef.current.contains(e.target)) {
         setIsRegFilterOpen(false)
+      }
+      if (regTableFilterRef.current && !regTableFilterRef.current.contains(e.target)) {
+        setIsRegTableFilterOpen(false)
+      }
+      if (regSearchRef.current && !regSearchRef.current.contains(e.target)) {
+        setIsRegSearchOpen(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
@@ -113,6 +145,14 @@ export default function AnalyticalOverviewPage() {
   const [activityDate, setActivityDate] = useState(todayStr)
   const [activityRange, setActivityRange] = useState("today") // 'today' | 'yesterday' | '7days' | 'all'
   const [activityTab, setActivityTab] = useState("subjects") // 'subjects' | 'roster'
+  const [activitySearch, setActivitySearch] = useState("")
+  const [isActivitySearchOpen, setIsActivitySearchOpen] = useState(false)
+  const activitySearchRef = useRef(null)
+  const [isActivityTableFilterOpen, setIsActivityTableFilterOpen] = useState(false)
+  const activityTableFilterRef = useRef(null)
+  const [activitySubjectPage, setActivitySubjectPage] = useState(1)
+  const [activityRosterPage, setActivityRosterPage] = useState(1)
+  const ACTIVITY_PAGE_SIZE = 8
   const [subjectSortField, setSubjectSortField] = useState("totalHoursDecimal")
   const [subjectSortDir, setSubjectSortDir] = useState("desc")
   const [rosterSortField, setRosterSortField] = useState("name")
@@ -822,11 +862,14 @@ export default function AnalyticalOverviewPage() {
         registrationDeltaText: raw.kpis?.registrationDeltaText || `${newCount} accounts in period`,
         totalRegisteredReach: `${totalScoped} Candidates`,
         totalRegisteredCount: totalScoped,
-        reachSubtext: `${reachPct}% of platform reach (${platformTotal} total)`,
+        reachSubtext:
+          totalScoped === platformTotal
+            ? "Total registered students"
+            : `${reachPct}% of all students (${totalScoped} of ${platformTotal})`,
         leadingExamTrack: leadingTrack !== "—" ? `${leadingTrack} (${leadingShare}%)` : "—",
-        leadingExamSubtext: "Highest volume of candidate registrations",
-        activeCandidatesRate: `${activeRate}% Active`,
-        activeCandidatesCount: `${activeCandidates.length} of ${totalScoped} active accounts`,
+        leadingExamSubtext: "Most popular examination chosen",
+        activeCandidatesRate: `${activeRate}%`,
+        activeCandidatesCount: `${activeCandidates.length} of ${totalScoped} active students`,
       },
       trendChart,
       distributionChart,
@@ -867,24 +910,24 @@ export default function AnalyticalOverviewPage() {
     if (val >= 80) {
       return {
         label: "SUPERIOR / IT PREPARED",
-        badgeBg: "bg-[#E17055]/20 text-[#b33920] border-[#E17055]/35 dark:bg-[#E17055]/25 dark:text-[#f89b87]",
+        badgeBg: "bg-[#E17055]/20 text-[#b33920] dark:bg-[#E17055]/25 dark:text-[#f89b87]",
       }
     }
     if (val >= 70) {
       return {
         label: "ADEQUATELY PREPARED",
-        badgeBg: "bg-[#3B82F6]/20 text-[#1d4ed8] border-[#3B82F6]/35 dark:bg-[#3B82F6]/25 dark:text-[#93c5fd]",
+        badgeBg: "bg-[#3B82F6]/20 text-[#1d4ed8] dark:bg-[#3B82F6]/25 dark:text-[#93c5fd]",
       }
     }
     if (val >= 60) {
       return {
         label: "NEEDS REINFORCEMENT",
-        badgeBg: "bg-[#2A9D8F]/20 text-[#1b6b61] border-[#2A9D8F]/35 dark:bg-[#2A9D8F]/25 dark:text-[#68c9be]",
+        badgeBg: "bg-[#2A9D8F]/20 text-[#1b6b61] dark:bg-[#2A9D8F]/25 dark:text-[#68c9be]",
       }
     }
     return {
       label: "FOR MONITORING",
-      badgeBg: "bg-[#E9C46A]/20 text-[#a16207] border-[#E9C46A]/35 dark:bg-[#E9C46A]/25 dark:text-[#facc15]",
+      badgeBg: "bg-[#E9C46A]/20 text-[#a16207] dark:bg-[#E9C46A]/25 dark:text-[#facc15]",
     }
   }
 
@@ -904,6 +947,10 @@ export default function AnalyticalOverviewPage() {
   const handleTabChange = (tab) => {
     setActiveTab(tab)
     setSearch("")
+    setSelectedRowKeys([])
+    setPerfStudentsPage(1)
+    setPerfSchoolsPage(1)
+    setPerfAtRiskPage(1)
     if (tab === "students") {
       setSortField("avgScore")
       setSortDir("desc")
@@ -1138,9 +1185,9 @@ export default function AnalyticalOverviewPage() {
   }, [data, search, sortField, sortDir, selectedExamIds, selectedBatchIds, examinationOptions, allBatchOptions])
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 space-y-9 sm:space-y-10 pb-10">
+    <div className="space-y-9 sm:space-y-10 pb-10">
       {/* ═══ SECTION 1: Performance Rating Overview (Top Students, Schools, At-Risk) ═══ */}
-      <div className="space-y-4">
+      <div className={`space-y-4 ${isFilterOpen ? "relative z-50" : "relative z-10"}`}>
         {/* Section Header & Hide/Unhide Toggle */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <button
@@ -1173,572 +1220,719 @@ export default function AnalyticalOverviewPage() {
 
         {/* Collapsible Content */}
         {showPerformanceOverview && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            {/* Top: Minimal Tab Switcher */}
-            <div className="inline-flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10 shrink-0 self-start">
-              <button
-                type="button"
-                onClick={() => handleTabChange("students")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
-                  activeTab === "students"
-                    ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
-                    : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
-                }`}
-              >
-                Top Students
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTabChange("schools")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
-                  activeTab === "schools"
-                    ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
-                    : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
-                }`}
-              >
-                Top Schools
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTabChange("at-risk")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
-                  activeTab === "at-risk"
-                    ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
-                    : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
-                }`}
-              >
-                Students at Risk
-              </button>
-            </div>
+          <div className={`space-y-4 animate-in fade-in duration-200 ${isFilterOpen ? "relative z-50" : "relative z-10"}`}>
+            {/* Shopify-Style Unified Table Card */}
+            <div className={`w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs relative ${isFilterOpen ? "z-50" : "z-10"}`}>
+              {/* Card Top Header: Tabs (left) + Search & Filter Controls (right) */}
+              <div className={`px-4 py-3 border-b border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 bg-white/40 dark:bg-white/[0.02] rounded-t-2xl relative ${isFilterOpen ? "z-50" : "z-20"}`}>
+                {/* Left: Tab Pills */}
+                <div className="flex items-center gap-1 overflow-x-auto py-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange("students")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                      activeTab === "students"
+                        ? "bg-black/[0.07] dark:bg-white/15 text-[#3B3B3B] dark:text-white font-semibold shadow-2xs"
+                        : "text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white"
+                    }`}
+                  >
+                    Top Students
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange("schools")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                      activeTab === "schools"
+                        ? "bg-black/[0.07] dark:bg-white/15 text-[#3B3B3B] dark:text-white font-semibold shadow-2xs"
+                        : "text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white"
+                    }`}
+                  >
+                    Top Schools
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange("at-risk")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                      activeTab === "at-risk"
+                        ? "bg-black/[0.07] dark:bg-white/15 text-[#3B3B3B] dark:text-white font-semibold shadow-2xs"
+                        : "text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white"
+                    }`}
+                  >
+                    Students at Risk
+                  </button>
+                </div>
 
-            {/* Table Container with Integrated Toolbar */}
-            <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs">
-              {/* Table Top Toolbar: Integrated Search & Filter Controls */}
-              <div className="p-3 sm:p-3.5 border-b border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 bg-white/40 dark:bg-white/[0.02] rounded-t-2xl">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {/* Search Input */}
-                  <div className="relative w-full sm:w-64 lg:w-72">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400 pointer-events-none" />
-                    <input
-                      type="search"
-                      placeholder={
-                        activeTab === "schools"
-                          ? "Search school…"
-                          : "Search student by name, ID…"
-                      }
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="w-full h-8.5 sm:h-9 pl-9 pr-3 text-xs rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
-                    />
-                  </div>
-
-                  {/* Beside the button, add a label "Filter" */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-normal text-[#696969] dark:text-gray-400 select-none">
-                      Filter
-                    </span>
-                    <div className="relative" ref={filterDropdownRef}>
+                {/* Right: Search & Filter/Sort Icons */}
+                <div className="flex items-center gap-2 ml-auto">
+                  {/* Search Control */}
+                  <div className="relative" ref={section1SearchRef}>
+                    {isSection1SearchOpen ? (
+                      <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400 pointer-events-none" />
+                          <input
+                            type="search"
+                            autoFocus
+                            placeholder={
+                              activeTab === "schools"
+                                ? "Search school…"
+                                : "Search student…"
+                            }
+                            value={search}
+                            onChange={(e) => {
+                              setSearch(e.target.value)
+                              setPerfStudentsPage(1)
+                              setPerfSchoolsPage(1)
+                              setPerfAtRiskPage(1)
+                            }}
+                            className="w-44 sm:w-56 h-8 pl-8 pr-2.5 text-xs rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearch("")
+                            setPerfStudentsPage(1)
+                            setPerfSchoolsPage(1)
+                            setPerfAtRiskPage(1)
+                            setIsSection1SearchOpen(false)
+                          }}
+                          className="h-8 px-2 text-[11px] text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => setIsFilterOpen((prev) => !prev)}
-                        className="h-8.5 sm:h-9 px-3 text-xs font-normal rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-2 select-none"
-                        aria-expanded={isFilterOpen}
-                        aria-haspopup="true"
+                        onClick={() => setIsSection1SearchOpen(true)}
+                        className={`size-8 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center justify-center text-neutral-600 dark:text-neutral-300 ${
+                          search ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white" : ""
+                        }`}
+                        title="Search"
                       >
-                        <Filter className="size-3.5 opacity-60 shrink-0" />
-                        <span className="truncate max-w-[140px] sm:max-w-[180px]">
-                          {filterButtonLabel}
-                        </span>
-                        <ChevronDown
-                          className={`size-3 opacity-60 shrink-0 transition-transform duration-200 ${
-                            isFilterOpen ? "rotate-180" : ""
-                          }`}
-                        />
+                        <Search className="size-3.5" />
                       </button>
+                    )}
+                  </div>
 
-                      {/* Dropdown Menu */}
-                      {isFilterOpen && (
-                        <div className="absolute left-0 sm:left-auto top-full mt-1.5 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-3 max-h-[400px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
-                          {/* Section 1: Examinations */}
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between px-1">
-                              <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
-                                Examinations
-                              </span>
-                              {selectedExamIds.length > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedExamIds([])}
-                                  className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
-                                >
-                                  Clear
-                                </button>
-                              )}
-                            </div>
+                  {/* Filter Popover Button */}
+                  <div className="relative" ref={filterDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsFilterOpen((prev) => !prev)}
+                      className={`h-8 px-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300 select-none ${
+                        (selectedExamIds.length > 0 || selectedBatchIds.length > 0)
+                          ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white font-medium"
+                          : ""
+                      }`}
+                      aria-expanded={isFilterOpen}
+                      aria-haspopup="true"
+                      title="Filter examinations & batches"
+                    >
+                      <Filter className="size-3.5" />
+                      {(selectedExamIds.length > 0 || selectedBatchIds.length > 0) && (
+                        <span className="text-[11px]">
+                          {selectedExamIds.length + selectedBatchIds.length}
+                        </span>
+                      )}
+                    </button>
 
-                            <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
-                              <input
-                                type="checkbox"
-                                checked={selectedExamIds.length === 0}
-                                onChange={() => setSelectedExamIds([])}
-                                className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
-                              />
-                              <span>All Examinations</span>
-                            </label>
-
-                            <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
-                              {examinationOptions.map((exam) => {
-                                const isChecked = selectedExamIds.includes(String(exam.id))
-                                return (
-                                  <label
-                                    key={exam.id}
-                                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={isChecked}
-                                      onChange={() => {
-                                        if (isChecked) {
-                                          setSelectedExamIds(selectedExamIds.filter((id) => id !== String(exam.id)))
-                                        } else {
-                                          setSelectedExamIds([...selectedExamIds, String(exam.id)])
-                                        }
-                                      }}
-                                      className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
-                                    />
-                                    <span className="truncate">{exam.name}</span>
-                                  </label>
-                                )
-                              })}
-                            </div>
+                    {/* Dropdown Menu */}
+                    {isFilterOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-2xl z-[100] p-3 space-y-3 max-h-[460px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                        {/* Section 1: Examinations */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                              Examinations
+                            </span>
+                            {selectedExamIds.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedExamIds([])
+                                  setPerfStudentsPage(1)
+                                  setPerfSchoolsPage(1)
+                                  setPerfAtRiskPage(1)
+                                }}
+                                className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                              >
+                                Clear
+                              </button>
+                            )}
                           </div>
 
-                          {/* Section Divider */}
-                          <div className="border-t border-black/5 dark:border-white/10" />
+                          <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                            <input
+                              type="checkbox"
+                              checked={selectedExamIds.length === 0}
+                              onChange={() => {
+                                setSelectedExamIds([])
+                                setPerfStudentsPage(1)
+                                setPerfSchoolsPage(1)
+                                setPerfAtRiskPage(1)
+                              }}
+                              className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                            />
+                            <span>All Examinations</span>
+                          </label>
 
-                          {/* Section 2: Batches */}
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between px-1">
-                              <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
-                                Batches
-                              </span>
-                              {selectedBatchIds.length > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedBatchIds([])}
-                                  className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                          <div className="space-y-0.5 max-h-40 overflow-y-auto pr-1">
+                            {examinationOptions.map((exam) => {
+                              const isChecked = selectedExamIds.includes(String(exam.id))
+                              return (
+                                <label
+                                  key={exam.id}
+                                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
                                 >
-                                  Clear
-                                </button>
-                              )}
-                            </div>
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {
+                                      setPerfStudentsPage(1)
+                                      setPerfSchoolsPage(1)
+                                      setPerfAtRiskPage(1)
+                                      if (isChecked) {
+                                        setSelectedExamIds(selectedExamIds.filter((id) => id !== String(exam.id)))
+                                      } else {
+                                        setSelectedExamIds([...selectedExamIds, String(exam.id)])
+                                      }
+                                    }}
+                                    className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                                  />
+                                  <span className="truncate">{exam.name}</span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
 
-                            <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
-                              <input
-                                type="checkbox"
-                                checked={selectedBatchIds.length === 0}
-                                onChange={() => setSelectedBatchIds([])}
-                                className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
-                              />
-                              <span>All Batches</span>
-                            </label>
+                        {/* Section Divider */}
+                        <div className="border-t border-black/5 dark:border-white/10" />
 
-                            <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
-                              {availableBatchOptions.map((batch) => {
-                                const isChecked = selectedBatchIds.includes(String(batch.id))
-                                return (
-                                  <label
-                                    key={batch.id}
-                                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={isChecked}
-                                      onChange={() => {
-                                        if (isChecked) {
-                                          setSelectedBatchIds(selectedBatchIds.filter((id) => id !== String(batch.id)))
-                                        } else {
-                                          setSelectedBatchIds([...selectedBatchIds, String(batch.id)])
-                                        }
-                                      }}
-                                      className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
-                                    />
-                                    <span className="truncate">{batch.name}</span>
-                                  </label>
-                                )
-                              })}
-                            </div>
+                        {/* Section 2: Batches */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                              Batches
+                            </span>
+                            {selectedBatchIds.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedBatchIds([])
+                                  setPerfStudentsPage(1)
+                                  setPerfSchoolsPage(1)
+                                  setPerfAtRiskPage(1)
+                                }}
+                                className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                              >
+                                Clear
+                              </button>
+                            )}
                           </div>
 
-                          {/* Bottom Reset Strip */}
-                          {(selectedExamIds.length > 0 || selectedBatchIds.length > 0) && (
-                            <>
-                              <div className="border-t border-black/5 dark:border-white/10" />
-                              <div className="flex items-center justify-between px-1 pt-0.5 text-xs">
-                                <span className="text-neutral-400">
-                                  {selectedExamIds.length + selectedBatchIds.length} active
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedExamIds([])
-                                    setSelectedBatchIds([])
-                                  }}
-                                  className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
+                          <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                            <input
+                              type="checkbox"
+                              checked={selectedBatchIds.length === 0}
+                              onChange={() => {
+                                setSelectedBatchIds([])
+                                setPerfStudentsPage(1)
+                                setPerfSchoolsPage(1)
+                                setPerfAtRiskPage(1)
+                              }}
+                              className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                            />
+                            <span>All Batches</span>
+                          </label>
+
+                          <div className="space-y-0.5 max-h-40 overflow-y-auto pr-1">
+                            {availableBatchOptions.map((batch) => {
+                              const isChecked = selectedBatchIds.includes(String(batch.id))
+                              return (
+                                <label
+                                  key={batch.id}
+                                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
                                 >
-                                  Reset all
-                                </button>
-                              </div>
-                            </>
-                          )}
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {
+                                      setPerfStudentsPage(1)
+                                      setPerfSchoolsPage(1)
+                                      setPerfAtRiskPage(1)
+                                      if (isChecked) {
+                                        setSelectedBatchIds(selectedBatchIds.filter((id) => id !== String(batch.id)))
+                                      } else {
+                                        setSelectedBatchIds([...selectedBatchIds, String(batch.id)])
+                                      }
+                                    }}
+                                    className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                                  />
+                                  <span className="truncate">{batch.name}</span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Bottom Reset Strip */}
+                        {(selectedExamIds.length > 0 || selectedBatchIds.length > 0) && (
+                          <>
+                            <div className="border-t border-black/5 dark:border-white/10" />
+                            <div className="flex items-center justify-between px-1 pt-0.5 text-xs">
+                              <span className="text-neutral-400">
+                                {selectedExamIds.length + selectedBatchIds.length} active
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedExamIds([])
+                                  setSelectedBatchIds([])
+                                  setPerfStudentsPage(1)
+                                  setPerfSchoolsPage(1)
+                                  setPerfAtRiskPage(1)
+                                }}
+                                className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
+                              >
+                                Reset all
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Table Body Area */}
+              {loading ? (
+                <div className="py-20 text-center flex flex-col items-center justify-center space-y-2">
+                  <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs font-normal text-neutral-400 dark:text-neutral-500">Loading ranking data…</p>
+                </div>
+              ) : activeTab === "students" ? (
+                /* ── Top Students Table ── */
+                (() => {
+                  const totalStudents = filteredStudents.length
+                  const totalPages = Math.max(1, Math.ceil(totalStudents / PERF_PAGE_SIZE))
+                  const currentPage = Math.min(Math.max(1, perfStudentsPage), totalPages)
+                  const startIndex = (currentPage - 1) * PERF_PAGE_SIZE
+                  const paginatedStudents = filteredStudents.slice(startIndex, startIndex + PERF_PAGE_SIZE)
+
+                  return totalStudents === 0 ? (
+                    <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                      {search ? `No students found matching "${search}"` : "No student performance records available."}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse" aria-label="Top Students Table">
+                          <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                            <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                              {/* Rank Column */}
+                              <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
+                                Rank
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Student
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Performance Rating
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Institution
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Major / Specialization
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-right pr-6" scope="col">
+                                Batch
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
+                            {paginatedStudents.map((st, idx) => {
+                              const displayRank = startIndex + idx + 1
+                              const rating = getPerformanceRating(st.avgScore)
+                              return (
+                                <tr
+                                  key={st.id}
+                                  className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
+                                >
+                                  {/* Rank */}
+                                  <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
+                                    {displayRank}
+                                  </td>
+
+                                  {/* Student Name with Avatar & Login ID */}
+                                  <td className="px-4 py-2.5 text-left">
+                                    <div className="flex items-center gap-3">
+                                      <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
+                                        {(st.avatarUrl || st.avatar_url) ? (
+                                          <img
+                                            src={st.avatarUrl || st.avatar_url}
+                                            alt={st.name || "Student"}
+                                            className="size-full object-cover rounded-full"
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = "none"
+                                              if (e.currentTarget.nextElementSibling) {
+                                                e.currentTarget.nextElementSibling.style.display = "flex"
+                                              }
+                                            }}
+                                          />
+                                        ) : null}
+                                        <span
+                                          className={`size-full flex items-center justify-center ${(st.avatarUrl || st.avatar_url) ? "hidden" : ""}`}
+                                        >
+                                          {(st.name || "U").charAt(0).toUpperCase()}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                          {st.name || "—"}
+                                        </div>
+                                        <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
+                                          {formatLoginId(st)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+
+                                  {/* Performance Rating Status Pill */}
+                                  <td className="px-4 py-2.5 text-center whitespace-nowrap">
+                                    <div className="inline-flex items-center gap-2">
+                                      <span
+                                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide ${rating.badgeBg}`}
+                                      >
+                                        {rating.label}
+                                      </span>
+                                      <span className="font-medium text-xs text-[#3B3B3B] dark:text-gray-100">
+                                        {st.avgScore ? `${Number(st.avgScore).toFixed(1)}%` : "0.0%"}
+                                      </span>
+                                    </div>
+                                  </td>
+
+                                  {/* Institution */}
+                                  <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300 font-normal">
+                                    {st.school || "—"}
+                                  </td>
+
+                                  {/* Major */}
+                                  <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-400 font-normal">
+                                    {st.major || "—"}
+                                  </td>
+
+                                  {/* Batch */}
+                                  <td className="px-4 py-2.5 text-right pr-6 text-xs text-[#696969] dark:text-gray-300 font-normal">
+                                    {st.batch || "—"}
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Pagination Controls */}
+                      {totalPages >= 1 && (
+                        <div className="px-4 py-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-center gap-3 bg-white/20 dark:bg-white/[0.01] rounded-b-2xl">
+                          <div className="flex items-center gap-3">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                              <button
+                                key={pageNum}
+                                type="button"
+                                onClick={() => setPerfStudentsPage(pageNum)}
+                                className={`text-xs transition-colors cursor-pointer ${
+                                  pageNum === currentPage
+                                    ? "font-semibold text-[#3B3B3B] dark:text-white"
+                                    : "font-normal text-neutral-400 hover:text-[#3B3B3B] dark:text-neutral-500 dark:hover:text-white"
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
-                  </div>
-                </div>
+                  )
+                })()
+              ) : activeTab === "schools" ? (
+                /* ── Top Schools Table ── */
+                (() => {
+                  const totalSchools = filteredSchools.length
+                  const totalPages = Math.max(1, Math.ceil(totalSchools / PERF_PAGE_SIZE))
+                  const currentPage = Math.min(Math.max(1, perfSchoolsPage), totalPages)
+                  const startIndex = (currentPage - 1) * PERF_PAGE_SIZE
+                  const paginatedSchools = filteredSchools.slice(startIndex, startIndex + PERF_PAGE_SIZE)
 
-                {/* Showing count indicator on the right */}
-                <div className="text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none pr-1">
-                  {activeTab === "students" && `${filteredStudents.length} ${filteredStudents.length === 1 ? "student" : "students"}`}
-                  {activeTab === "schools" && `${filteredSchools.length} ${filteredSchools.length === 1 ? "institution" : "institutions"}`}
-                  {activeTab === "at-risk" && `${filteredAtRiskStudents.length} ${filteredAtRiskStudents.length === 1 ? "student at risk" : "students at risk"}`}
-                </div>
-              </div>
-          {loading ? (
-            <div className="py-20 text-center flex flex-col items-center justify-center space-y-2">
-              <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs font-normal text-neutral-400 dark:text-neutral-500">Loading ranking data…</p>
-            </div>
-          ) : activeTab === "students" ? (
-            /* ── Top Students Table ── */
-            filteredStudents.length === 0 ? (
-              <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
-                {search ? `No students found matching "${search}"` : "No student performance records available."}
-              </div>
-            ) : (
-              <div className="max-h-[720px] overflow-y-auto rounded-b-2xl">
-                <table className="w-full text-left border-collapse" aria-label="Top Students Table">
-                  <thead className="sticky top-0 z-10 bg-neutral-50/60 dark:bg-[#14161b]/80 backdrop-blur-md border-b border-black/5 dark:border-white/10">
-                    <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
-                      <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">Rank</th>
-                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">
-                        <button
-                          type="button"
-                          onClick={() => handleSort("name")}
-                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer font-semibold text-xs"
-                        >
-                          <span>Student</span>
-                          <ArrowUpDown className="size-3 opacity-60" />
-                        </button>
-                      </th>
-                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">
-                        <button
-                          type="button"
-                          onClick={() => handleSort("school")}
-                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer font-semibold text-xs"
-                        >
-                          <span>Institution</span>
-                          <ArrowUpDown className="size-3 opacity-60" />
-                        </button>
-                      </th>
-                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">Major / Specialization</th>
-                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">Batch</th>
-                      <th className="px-4 py-2.5 font-semibold text-right pr-6" scope="col">
-                        <button
-                          type="button"
-                          onClick={() => handleSort("avgScore")}
-                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer ml-auto font-semibold text-xs"
-                        >
-                          <span>Performance Rating</span>
-                          <ArrowUpDown className="size-3 opacity-60" />
-                        </button>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
-                    {filteredStudents.map((st, idx) => {
-                      const displayRank = idx + 1
-                      const rating = getPerformanceRating(st.avgScore)
-                      return (
-                        <tr
-                          key={st.id}
-                          className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
-                        >
-                          {/* Rank */}
-                          <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
-                            {displayRank}
-                          </td>
+                  return totalSchools === 0 ? (
+                    <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                      {search ? `No schools found matching "${search}"` : "No institutional performance records available."}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse" aria-label="Top Schools Table">
+                          <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                            <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                              {/* Rank Column */}
+                              <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
+                                Rank
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Institution
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Total Students
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Proficient Students
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Passing Rate
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-right pr-6" scope="col">
+                                Average Progress
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
+                            {paginatedSchools.map((sch, idx) => {
+                              const displayRank = startIndex + idx + 1
+                              return (
+                                <tr
+                                  key={sch.schoolName}
+                                  className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
+                                >
+                                  {/* Rank */}
+                                  <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
+                                    {displayRank}
+                                  </td>
 
-                          {/* Student Name & Login ID */}
-                          <td className="px-4 py-2.5 text-left">
-                            <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
-                              {st.name || "—"}
-                            </div>
-                            <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
-                              {formatLoginId(st)}
-                            </div>
-                          </td>
+                                  {/* School Name with Icon */}
+                                  <td className="px-4 py-2.5 text-left">
+                                    <div className="flex items-center gap-3">
+                                      <div className="size-9 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0">
+                                        {(sch.schoolName || "S").charAt(0).toUpperCase()}
+                                      </div>
+                                      <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                        {sch.schoolName || "—"}
+                                      </div>
+                                    </div>
+                                  </td>
 
-                          {/* Institution */}
-                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300 font-normal">
-                            {st.school || "—"}
-                          </td>
+                                  {/* Total Students */}
+                                  <td className="px-4 py-2.5 text-center text-xs text-[#696969] dark:text-gray-300 font-normal">
+                                    {sch.studentCount || 0}
+                                  </td>
 
-                          {/* Major */}
-                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-400 font-normal">
-                            {st.major || "—"}
-                          </td>
+                                  {/* Proficient Students */}
+                                  <td className="px-4 py-2.5 text-center text-xs text-[#696969] dark:text-gray-300 font-normal">
+                                    <span className="font-normal text-[#3B3B3B] dark:text-gray-200">
+                                      {sch.passedCount || 0}
+                                    </span>
+                                    <span className="text-[11px] text-[#696969]/80 dark:text-gray-400 ml-1 font-normal">
+                                      / {sch.studentCount || 0}
+                                    </span>
+                                  </td>
 
-                          {/* Batch */}
-                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300 font-normal">
-                            {st.batch || "—"}
-                          </td>
+                                  {/* Passing Rate */}
+                                  <td className="px-4 py-2.5 text-center text-xs text-[#696969] dark:text-gray-300 font-normal">
+                                    {sch.passRate ?? 0}%
+                                  </td>
 
-                          {/* Performance Rating */}
-                          <td className="px-4 py-2.5 text-right pr-6 whitespace-nowrap">
-                            <div className="inline-flex items-center justify-end gap-2.5">
-                              <span
-                                className={`px-2.5 py-1 rounded-md text-[10px] font-medium tracking-wide border uppercase ${rating.badgeBg}`}
+                                  {/* Average Progress */}
+                                  <td className="px-4 py-2.5 pr-6 text-right text-xs whitespace-nowrap font-normal">
+                                    <span className="font-normal text-[#3B3B3B] dark:text-gray-100">
+                                      {sch.avgScore ? `${sch.avgScore}%` : "0%"}
+                                    </span>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Pagination Controls */}
+                      {totalPages >= 1 && (
+                        <div className="px-4 py-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-center gap-3 bg-white/20 dark:bg-white/[0.01] rounded-b-2xl">
+                          <div className="flex items-center gap-3">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                              <button
+                                key={pageNum}
+                                type="button"
+                                onClick={() => setPerfSchoolsPage(pageNum)}
+                                className={`text-xs transition-colors cursor-pointer ${
+                                  pageNum === currentPage
+                                    ? "font-semibold text-[#3B3B3B] dark:text-white"
+                                    : "font-normal text-neutral-400 hover:text-[#3B3B3B] dark:text-neutral-500 dark:hover:text-white"
+                                }`}
                               >
-                                {rating.label}
-                              </span>
-                              <span className="font-normal text-xs text-[#3B3B3B] dark:text-gray-100 min-w-[42px] text-right">
-                                {st.avgScore ? `${Number(st.avgScore).toFixed(1)}%` : "0.0%"}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )
-          ) : activeTab === "schools" ? (
-            /* ── Top Schools Table ── */
-            filteredSchools.length === 0 ? (
-              <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
-                {search ? `No schools found matching "${search}"` : "No institutional performance records available."}
-              </div>
-            ) : (
-              <div className="max-h-[720px] overflow-y-auto rounded-b-2xl">
-                <table className="w-full text-left border-collapse" aria-label="Top Schools Table">
-                  <thead className="sticky top-0 z-10 bg-neutral-50/60 dark:bg-[#14161b]/80 backdrop-blur-md border-b border-black/5 dark:border-white/10">
-                    <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
-                      <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">Rank</th>
-                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">
-                        <button
-                          type="button"
-                          onClick={() => handleSort("schoolName")}
-                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer font-semibold text-xs"
-                        >
-                          <span>Institution</span>
-                          <ArrowUpDown className="size-3 opacity-60" />
-                        </button>
-                      </th>
-                      <th className="px-4 py-2.5 font-semibold text-center" scope="col">
-                        <button
-                          type="button"
-                          onClick={() => handleSort("studentCount")}
-                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer mx-auto font-semibold text-xs"
-                        >
-                          <span>Total Students</span>
-                          <ArrowUpDown className="size-3 opacity-60" />
-                        </button>
-                      </th>
-                      <th className="px-4 py-2.5 font-semibold text-center" scope="col">
-                        <button
-                          type="button"
-                          onClick={() => handleSort("passedCount")}
-                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer mx-auto font-semibold text-xs"
-                        >
-                          <span>Proficient Students</span>
-                          <ArrowUpDown className="size-3 opacity-60" />
-                        </button>
-                      </th>
-                      <th className="px-4 py-2.5 font-semibold text-center" scope="col">
-                        <button
-                          type="button"
-                          onClick={() => handleSort("passRate")}
-                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer mx-auto font-semibold text-xs"
-                        >
-                          <span>Passing Rate</span>
-                          <ArrowUpDown className="size-3 opacity-60" />
-                        </button>
-                      </th>
-                      <th className="px-4 py-2.5 font-semibold text-right pr-6" scope="col">
-                        <button
-                          type="button"
-                          onClick={() => handleSort("avgScore")}
-                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer ml-auto font-semibold text-xs"
-                        >
-                          <span>Average Progress</span>
-                          <ArrowUpDown className="size-3 opacity-60" />
-                        </button>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
-                    {filteredSchools.map((sch, idx) => {
-                      const displayRank = idx + 1
-                      return (
-                        <tr
-                          key={sch.schoolName}
-                          className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
-                        >
-                          {/* Rank */}
-                          <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
-                            {displayRank}
-                          </td>
+                                {pageNum}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()
+              ) : (
+                /* ── Students at Risk Table ── */
+                (() => {
+                  const totalAtRisk = filteredAtRiskStudents.length
+                  const totalPages = Math.max(1, Math.ceil(totalAtRisk / PERF_PAGE_SIZE))
+                  const currentPage = Math.min(Math.max(1, perfAtRiskPage), totalPages)
+                  const startIndex = (currentPage - 1) * PERF_PAGE_SIZE
+                  const paginatedAtRisk = filteredAtRiskStudents.slice(startIndex, startIndex + PERF_PAGE_SIZE)
 
-                          {/* School Name */}
-                          <td className="px-4 py-2.5 text-left">
-                            <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
-                              {sch.schoolName || "—"}
-                            </div>
-                          </td>
+                  return totalAtRisk === 0 ? (
+                    <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                      {search
+                        ? `No at-risk students found matching "${search}"`
+                        : "No students currently identified as at-risk in this scope."}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse" aria-label="Students at Risk Table">
+                          <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                            <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                              {/* Rank Column */}
+                              <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
+                                Rank
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Student
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Performance Rating
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Institution
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Major / Specialization
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-right pr-6" scope="col">
+                                Batch
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
+                            {paginatedAtRisk.map((st, idx) => {
+                              const displayRank = startIndex + idx + 1
+                              const rating = getPerformanceRating(st.avgScore)
+                              return (
+                                <tr
+                                  key={st.id}
+                                  className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
+                                >
+                                  {/* Rank */}
+                                  <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
+                                    {displayRank}
+                                  </td>
 
-                          {/* Total Students */}
-                          <td className="px-4 py-2.5 text-center text-xs text-[#696969] dark:text-gray-300 font-normal">
-                            {sch.studentCount || 0}
-                          </td>
+                                  {/* Student Name with Avatar & Login ID */}
+                                  <td className="px-4 py-2.5 text-left">
+                                    <div className="flex items-center gap-3">
+                                      <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
+                                        {(st.avatarUrl || st.avatar_url) ? (
+                                          <img
+                                            src={st.avatarUrl || st.avatar_url}
+                                            alt={st.name || "Student"}
+                                            className="size-full object-cover rounded-full"
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = "none"
+                                              if (e.currentTarget.nextElementSibling) {
+                                                e.currentTarget.nextElementSibling.style.display = "flex"
+                                              }
+                                            }}
+                                          />
+                                        ) : null}
+                                        <span
+                                          className={`size-full flex items-center justify-center ${(st.avatarUrl || st.avatar_url) ? "hidden" : ""}`}
+                                        >
+                                          {(st.name || "U").charAt(0).toUpperCase()}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                          {st.name || "—"}
+                                        </div>
+                                        <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
+                                          {formatLoginId(st)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
 
-                          {/* Proficient Students */}
-                          <td className="px-4 py-2.5 text-center text-xs text-[#696969] dark:text-gray-300 font-normal">
-                            <span className="font-normal text-[#3B3B3B] dark:text-gray-200">
-                              {sch.passedCount || 0}
-                            </span>
-                            <span className="text-[11px] text-[#696969]/80 dark:text-gray-400 ml-1 font-normal">
-                              / {sch.studentCount || 0}
-                            </span>
-                          </td>
+                                  {/* Performance Rating Status Pill */}
+                                  <td className="px-4 py-2.5 text-center whitespace-nowrap">
+                                    <div className="inline-flex items-center gap-2">
+                                      <span
+                                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide ${rating.badgeBg}`}
+                                      >
+                                        {rating.label}
+                                      </span>
+                                      <span className="font-medium text-xs text-[#3B3B3B] dark:text-gray-100">
+                                        {st.avgScore ? `${Number(st.avgScore).toFixed(1)}%` : "0.0%"}
+                                      </span>
+                                    </div>
+                                  </td>
 
-                          {/* Passing Rate */}
-                          <td className="px-4 py-2.5 text-center text-xs text-[#696969] dark:text-gray-300 font-normal">
-                            {sch.passRate ?? 0}%
-                          </td>
+                                  {/* Institution */}
+                                  <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300 font-normal">
+                                    {st.school || "—"}
+                                  </td>
 
-                          {/* Average Progress */}
-                          <td className="px-4 py-2.5 pr-6 text-right text-xs whitespace-nowrap font-normal">
-                            <span className="font-normal text-[#3B3B3B] dark:text-gray-100">
-                              {sch.avgScore ? `${sch.avgScore}%` : "0%"}
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )
-          ) : (
-            /* ── Students at Risk Table ── */
-            filteredAtRiskStudents.length === 0 ? (
-              <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
-                {search
-                  ? `No at-risk students found matching "${search}"`
-                  : "No students currently identified as at-risk in this scope."}
-              </div>
-            ) : (
-              <div className="max-h-[720px] overflow-y-auto rounded-b-2xl">
-                <table className="w-full text-left border-collapse" aria-label="Students at Risk Table">
-                  <thead className="sticky top-0 z-10 bg-neutral-50/60 dark:bg-[#14161b]/80 backdrop-blur-md border-b border-black/5 dark:border-white/10">
-                    <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
-                      <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">Rank</th>
-                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">
-                        <button
-                          type="button"
-                          onClick={() => handleSort("name")}
-                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer font-semibold text-xs"
-                        >
-                          <span>Student</span>
-                          <ArrowUpDown className="size-3 opacity-60" />
-                        </button>
-                      </th>
-                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">
-                        <button
-                          type="button"
-                          onClick={() => handleSort("school")}
-                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer font-semibold text-xs"
-                        >
-                          <span>Institution</span>
-                          <ArrowUpDown className="size-3 opacity-60" />
-                        </button>
-                      </th>
-                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">Major / Specialization</th>
-                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">Batch</th>
-                      <th className="px-4 py-2.5 font-semibold text-right pr-6" scope="col">
-                        <button
-                          type="button"
-                          onClick={() => handleSort("avgScore")}
-                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer ml-auto font-semibold text-xs"
-                        >
-                          <span>Performance Rating</span>
-                          <ArrowUpDown className="size-3 opacity-60" />
-                        </button>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
-                    {filteredAtRiskStudents.map((st, idx) => {
-                      const displayIndex = idx + 1
-                      const rating = getPerformanceRating(st.avgScore)
-                      return (
-                        <tr
-                          key={st.id}
-                          className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
-                        >
-                          {/* Index */}
-                          <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
-                            {displayIndex}
-                          </td>
+                                  {/* Major */}
+                                  <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-400 font-normal">
+                                    {st.major || "—"}
+                                  </td>
 
-                          {/* Student Name & Login ID */}
-                          <td className="px-4 py-2.5 text-left">
-                            <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
-                              {st.name || "—"}
-                            </div>
-                            <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
-                              {formatLoginId(st)}
-                            </div>
-                          </td>
+                                  {/* Batch */}
+                                  <td className="px-4 py-2.5 text-right pr-6 text-xs text-[#696969] dark:text-gray-300 font-normal">
+                                    {st.batch || "—"}
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
 
-                          {/* Institution */}
-                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300 font-normal">
-                            {st.school || "—"}
-                          </td>
-
-                          {/* Major */}
-                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-400 font-normal">
-                            {st.major || "—"}
-                          </td>
-
-                          {/* Batch */}
-                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300 font-normal">
-                            {st.batch || "—"}
-                          </td>
-
-                          {/* Performance Rating */}
-                          <td className="px-4 py-2.5 text-right pr-6 whitespace-nowrap">
-                            <div className="inline-flex items-center justify-end gap-2.5">
-                              <span
-                                className={`px-2.5 py-1 rounded-md text-[10px] font-medium tracking-wide border uppercase ${rating.badgeBg}`}
+                      {/* Pagination Controls */}
+                      {totalPages >= 1 && (
+                        <div className="px-4 py-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-center gap-3 bg-white/20 dark:bg-white/[0.01] rounded-b-2xl">
+                          <div className="flex items-center gap-3">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                              <button
+                                key={pageNum}
+                                type="button"
+                                onClick={() => setPerfAtRiskPage(pageNum)}
+                                className={`text-xs transition-colors cursor-pointer ${
+                                  pageNum === currentPage
+                                    ? "font-semibold text-[#3B3B3B] dark:text-white"
+                                    : "font-normal text-neutral-400 hover:text-[#3B3B3B] dark:text-neutral-500 dark:hover:text-white"
+                                }`}
                               >
-                                {rating.label}
-                              </span>
-                              <span className="font-normal text-xs text-[#3B3B3B] dark:text-gray-100 min-w-[42px] text-right">
-                                {st.avgScore ? `${Number(st.avgScore).toFixed(1)}%` : "0.0%"}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )
-          )}
+                                {pageNum}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()
+              )}
             </div>
           </div>
         )}
@@ -1765,38 +1959,33 @@ export default function AnalyticalOverviewPage() {
               </div>
             </div>
           </button>
-        </div>
 
-        {/* Collapsible Content */}
-        {showPassersRate && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            {/* Beside the button, add a label "Filter" */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-normal text-[#696969] dark:text-gray-400 select-none">
-                Filter
-              </span>
+          {showPassersRate && (
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               <div className="relative" ref={passersFilterRef}>
                 <button
                   type="button"
                   onClick={() => setIsPassersFilterOpen((prev) => !prev)}
-                  className="h-8.5 sm:h-9 px-3 text-xs font-normal rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-2 select-none"
+                  className={`h-8 px-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300 select-none ${
+                    (selectedPassersExamIds.length > 0 || selectedPassersBatchIds.length > 0 || selectedMockExamIds.length > 0)
+                      ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white font-medium"
+                      : ""
+                  }`}
                   aria-expanded={isPassersFilterOpen}
                   aria-haspopup="true"
+                  title="Filter examinations, batches & mock exams"
                 >
-                  <Filter className="size-3.5 opacity-60 shrink-0" />
-                  <span className="truncate max-w-[140px] sm:max-w-[180px]">
-                    {passersFilterButtonLabel}
-                  </span>
-                  <ChevronDown
-                    className={`size-3 opacity-60 shrink-0 transition-transform duration-200 ${
-                      isPassersFilterOpen ? "rotate-180" : ""
-                    }`}
-                  />
+                  <Filter className="size-3.5" />
+                  {(selectedPassersExamIds.length > 0 || selectedPassersBatchIds.length > 0 || selectedMockExamIds.length > 0) && (
+                    <span className="text-[11px]">
+                      {selectedPassersExamIds.length + selectedPassersBatchIds.length + selectedMockExamIds.length}
+                    </span>
+                  )}
                 </button>
 
                 {/* Dropdown Menu */}
                 {isPassersFilterOpen && (
-                  <div className="absolute left-0 sm:left-auto top-full mt-1.5 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-3 max-h-[440px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-3 max-h-[440px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
                     {/* Section 1: Examinations */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between px-1">
@@ -1993,7 +2182,12 @@ export default function AnalyticalOverviewPage() {
                 )}
               </div>
             </div>
+          )}
+        </div>
 
+        {/* Collapsible Content */}
+        {showPassersRate && (
+          <div className="space-y-4 animate-in fade-in duration-200">
             {/* Graphical Summary Cards & Visual Charts */}
             <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 sm:p-6 shadow-2xs space-y-6">
               {/* Selected Exam Title & Stats Metrics */}
@@ -2114,13 +2308,14 @@ export default function AnalyticalOverviewPage() {
       <div className="border-t border-black/5 dark:border-white/10" />
 
       {/* ═══ SECTION 3: Student Activity & Engagement Analytics ═══ */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Section Header & Interactive Controls */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <button
             type="button"
             onClick={() => setShowStudentActivity((prev) => !prev)}
             className="group text-left cursor-pointer focus:outline-none"
+            title={showStudentActivity ? "Hide Student Activity & Engagement" : "Show Student Activity & Engagement"}
           >
             <div className="inline-flex items-center gap-2">
               <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
@@ -2130,16 +2325,16 @@ export default function AnalyticalOverviewPage() {
                 {showStudentActivity ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
               </div>
             </div>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5 font-normal">
+              Track daily study time, student attendance, and subject engagement.
+            </p>
           </button>
-        </div>
 
-        {/* ══ Collapsible Content ══ */}
-        {showStudentActivity && (
-          <div className="space-y-4 animate-in fade-in duration-200">
-            {/* Unified Controls Toolbar: Preset Range on top, Filters underneath */}
-            <div className="flex flex-col gap-3">
-              {/* Preset Quick Filters Buttons */}
-              <div className="inline-flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10 shrink-0 self-start">
+          {/* Right-aligned Controls: Preset Range, Exam/Batch Filter, Date Picker, Export CSV */}
+          {showStudentActivity && (
+            <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+              {/* Presets: Segmented Pill Buttons */}
+              <div className="inline-flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
                 {[
                   { id: "today", label: "Today" },
                   { id: "yesterday", label: "Yesterday" },
@@ -2162,169 +2357,165 @@ export default function AnalyticalOverviewPage() {
               </div>
 
               {/* Filters Row: Filter Dropdown, Date Picker, Export CSV */}
-              <div className="flex flex-wrap items-center gap-2.5">
-                {/* Beside the button, add a label "Filter" */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-normal text-[#696969] dark:text-gray-400 select-none">
-                    Filter
-                  </span>
-                  <div className="relative" ref={activityFilterRef}>
-                    <button
-                      type="button"
-                      onClick={() => setIsActivityFilterOpen((prev) => !prev)}
-                      className="h-8.5 sm:h-9 px-3 text-xs font-normal rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-2 select-none"
-                      aria-expanded={isActivityFilterOpen}
-                      aria-haspopup="true"
-                    >
-                      <Filter className="size-3.5 opacity-60 shrink-0" />
-                      <span className="truncate max-w-[140px] sm:max-w-[180px]">
-                        {activityFilterButtonLabel}
+              <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+                <div className="relative" ref={activityFilterRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsActivityFilterOpen((prev) => !prev)}
+                    className={`h-8 px-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300 select-none ${
+                      (selectedActivityExamIds.length > 0 || selectedActivityBatchIds.length > 0)
+                        ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white font-medium"
+                        : ""
+                    }`}
+                    aria-expanded={isActivityFilterOpen}
+                    aria-haspopup="true"
+                    title="Filter examinations & batches"
+                  >
+                    <Filter className="size-3.5" />
+                    {(selectedActivityExamIds.length > 0 || selectedActivityBatchIds.length > 0) && (
+                      <span className="text-[11px]">
+                        {selectedActivityExamIds.length + selectedActivityBatchIds.length}
                       </span>
-                      <ChevronDown
-                        className={`size-3 opacity-60 shrink-0 transition-transform duration-200 ${
-                          isActivityFilterOpen ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    {isActivityFilterOpen && (
-                      <div className="absolute left-0 sm:left-auto top-full mt-1.5 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-3 max-h-[440px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
-                        {/* Section 1: Examinations */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between px-1">
-                            <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
-                              Examinations
-                            </span>
-                            {selectedActivityExamIds.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => setSelectedActivityExamIds([])}
-                                className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
-                              >
-                                Clear
-                              </button>
-                            )}
-                          </div>
-
-                          <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
-                            <input
-                              type="checkbox"
-                              checked={selectedActivityExamIds.length === 0}
-                              onChange={() => setSelectedActivityExamIds([])}
-                              className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
-                            />
-                            <span>All Examinations</span>
-                          </label>
-
-                          <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
-                            {examinationOptions.map((exam) => {
-                              const isChecked = selectedActivityExamIds.includes(String(exam.id))
-                              return (
-                                <label
-                                  key={exam.id}
-                                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    onChange={() => {
-                                      if (isChecked) {
-                                        setSelectedActivityExamIds(selectedActivityExamIds.filter((id) => id !== String(exam.id)))
-                                      } else {
-                                        setSelectedActivityExamIds([...selectedActivityExamIds, String(exam.id)])
-                                      }
-                                    }}
-                                    className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
-                                  />
-                                  <span className="truncate">{exam.name}</span>
-                                </label>
-                              )
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Section Divider */}
-                        <div className="border-t border-black/5 dark:border-white/10" />
-
-                        {/* Section 2: Batches */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between px-1">
-                            <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
-                              Batches
-                            </span>
-                            {selectedActivityBatchIds.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => setSelectedActivityBatchIds([])}
-                                className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
-                              >
-                                Clear
-                              </button>
-                            )}
-                          </div>
-
-                          <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
-                            <input
-                              type="checkbox"
-                              checked={selectedActivityBatchIds.length === 0}
-                              onChange={() => setSelectedActivityBatchIds([])}
-                              className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
-                            />
-                            <span>All Batches</span>
-                          </label>
-
-                          <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
-                            {activityBatchOptions.map((batch) => {
-                              const isChecked = selectedActivityBatchIds.includes(String(batch.id))
-                              return (
-                                <label
-                                  key={batch.id}
-                                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    onChange={() => {
-                                      if (isChecked) {
-                                        setSelectedActivityBatchIds(selectedActivityBatchIds.filter((id) => id !== String(batch.id)))
-                                      } else {
-                                        setSelectedActivityBatchIds([...selectedActivityBatchIds, String(batch.id)])
-                                      }
-                                    }}
-                                    className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
-                                  />
-                                  <span className="truncate">{batch.name}</span>
-                                </label>
-                              )
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Bottom Reset Strip */}
-                        {(selectedActivityExamIds.length > 0 || selectedActivityBatchIds.length > 0) && (
-                          <>
-                            <div className="border-t border-black/5 dark:border-white/10" />
-                            <div className="flex items-center justify-between px-1 pt-0.5 text-xs">
-                              <span className="text-neutral-400">
-                                {selectedActivityExamIds.length + selectedActivityBatchIds.length} active
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedActivityExamIds([])
-                                  setSelectedActivityBatchIds([])
-                                }}
-                                className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
-                              >
-                                Reset all
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
                     )}
-                  </div>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isActivityFilterOpen && (
+                    <div className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-3 max-h-[440px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                      {/* Section 1: Examinations */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between px-1">
+                          <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                            Examinations
+                          </span>
+                          {selectedActivityExamIds.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedActivityExamIds([])}
+                              className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+
+                        <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                          <input
+                            type="checkbox"
+                            checked={selectedActivityExamIds.length === 0}
+                            onChange={() => setSelectedActivityExamIds([])}
+                            className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                          />
+                          <span>All Examinations</span>
+                        </label>
+
+                        <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                          {examinationOptions.map((exam) => {
+                            const isChecked = selectedActivityExamIds.includes(String(exam.id))
+                            return (
+                              <label
+                                key={exam.id}
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    if (isChecked) {
+                                      setSelectedActivityExamIds(selectedActivityExamIds.filter((id) => id !== String(exam.id)))
+                                    } else {
+                                      setSelectedActivityExamIds([...selectedActivityExamIds, String(exam.id)])
+                                    }
+                                  }}
+                                  className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                                />
+                                <span className="truncate">{exam.name}</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Section Divider */}
+                      <div className="border-t border-black/5 dark:border-white/10" />
+
+                      {/* Section 2: Batches */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between px-1">
+                          <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                            Batches
+                          </span>
+                          {selectedActivityBatchIds.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedActivityBatchIds([])}
+                              className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+
+                        <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                          <input
+                            type="checkbox"
+                            checked={selectedActivityBatchIds.length === 0}
+                            onChange={() => setSelectedActivityBatchIds([])}
+                            className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                          />
+                          <span>All Batches</span>
+                        </label>
+
+                        <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                          {activityBatchOptions.map((batch) => {
+                            const isChecked = selectedActivityBatchIds.includes(String(batch.id))
+                            return (
+                              <label
+                                key={batch.id}
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    if (isChecked) {
+                                      setSelectedActivityBatchIds(selectedActivityBatchIds.filter((id) => id !== String(batch.id)))
+                                    } else {
+                                      setSelectedActivityBatchIds([...selectedActivityBatchIds, String(batch.id)])
+                                    }
+                                  }}
+                                  className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                                />
+                                <span className="truncate">{batch.name}</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Bottom Reset Strip */}
+                      {(selectedActivityExamIds.length > 0 || selectedActivityBatchIds.length > 0) && (
+                        <>
+                          <div className="border-t border-black/5 dark:border-white/10" />
+                          <div className="flex items-center justify-between px-1 pt-0.5 text-xs">
+                            <span className="text-neutral-400">
+                              {selectedActivityExamIds.length + selectedActivityBatchIds.length} active
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedActivityExamIds([])
+                                setSelectedActivityBatchIds([])
+                              }}
+                              className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
+                            >
+                              Reset all
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Calendar Date Picker: Single-day selector */}
@@ -2350,18 +2541,24 @@ export default function AnalyticalOverviewPage() {
                 </button>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* ══ Collapsible Content ══ */}
+        {showStudentActivity && (
+          <div className="space-y-4 animate-in fade-in duration-200">
 
             {/* 1. Top-Level Metric Summary Cards (4-Column Grid styled like Student Dashboard) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-              {/* Card 1: Active Reviewees */}
+              {/* Card 1: Active Students */}
               <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
                 <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
                   <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                    Active Reviewees
+                    Active Students
                   </span>
                 </div>
                 <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-                  <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                     {filteredActivityAnalytics?.kpis?.activeReviewees || "0 / 0"}
                   </div>
                   <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
@@ -2370,15 +2567,15 @@ export default function AnalyticalOverviewPage() {
                 </div>
               </div>
 
-              {/* Card 2: Total Study Time */}
+              {/* Card 2: Study Time */}
               <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
                 <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#2A9D8F]/20 dark:bg-[#2A9D8F]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
                   <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                    Total Study Time
+                    Study Time
                   </span>
                 </div>
                 <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-                  <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                     {filteredActivityAnalytics?.kpis?.totalStudyTime || "0h 0m"}
                   </div>
                   <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
@@ -2387,15 +2584,15 @@ export default function AnalyticalOverviewPage() {
                 </div>
               </div>
 
-              {/* Card 3: Curriculum Interactions */}
+              {/* Card 3: Lessons Opened */}
               <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
                 <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E17055]/20 dark:bg-[#E17055]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
                   <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                    Curriculum Interactions
+                    Lessons Opened
                   </span>
                 </div>
                 <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-                  <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                     {filteredActivityAnalytics?.kpis?.curriculumInteractions || "0 opens"}
                   </div>
                   <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
@@ -2404,15 +2601,15 @@ export default function AnalyticalOverviewPage() {
                 </div>
               </div>
 
-              {/* Card 4: Peak Activity Window */}
+              {/* Card 4: Peak Study Hours */}
               <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
                 <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#3B82F6]/20 dark:bg-[#3B82F6]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
                   <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                    Peak Activity Window
+                    Peak Study Hours
                   </span>
                 </div>
                 <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white truncate">
+                  <div className="text-xl sm:text-2xl font-bold tracking-tight text-[#3B3B3B] dark:text-white truncate">
                     {filteredActivityAnalytics?.kpis?.peakActivityWindow || "—"}
                   </div>
                   <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
@@ -2423,189 +2620,191 @@ export default function AnalyticalOverviewPage() {
             </div>
 
             {/* 2. Combined Analytics Visualizations & Performance Breakdown Card */}
-            <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden">
+            <div className="relative z-20 w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs">
               {/* Top: 2-Column Analytics Visualizations Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-black/5 dark:divide-white/10">
-                {/* Chart 1: Daily Study & Peak Hour Distribution */}
+                {/* Chart 1: Study Hours & Peak Times */}
                 <div className="p-5 sm:p-6 flex flex-col justify-between space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/5 dark:border-white/5">
-                  <div>
-                    <h3 className="text-xs font-normal text-[#3B3B3B] dark:text-white">
-                      Daily Study & Peak Hour Distribution
-                    </h3>
-                    <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5 font-normal">
-                      {filteredActivityAnalytics?.isSingleDay
-                        ? "Hourly concurrent active students and cumulative hours (24h)"
-                        : "Daily active students (bars) vs. total hours logged (line)"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400 font-normal">
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="size-2 rounded-sm bg-[#E9C46A]" /> Concurrent Students
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="size-2 rounded-sm bg-[#3B3B3B] dark:bg-white" /> Hours Logged
-                    </span>
-                  </div>
-                </div>
-
-                <div className="w-full h-[280px]">
-                  {(filteredActivityAnalytics?.chart1Distribution || []).length === 0 ||
-                  (filteredActivityAnalytics?.kpis?.activeCount === 0 && (filteredActivityAnalytics?.chart1Distribution || []).every((d) => d.active === 0 && d.hours === 0)) ? (
-                    <div className="h-full flex flex-col items-center justify-center text-xs text-neutral-400 dark:text-neutral-500 font-normal">
-                      <Clock className="size-8 stroke-[1.5] mb-2 opacity-30" />
-                      <span>No study session distribution recorded for this date.</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/5 dark:border-white/5">
+                    <div>
+                      <h3 className="text-xs font-normal text-[#3B3B3B] dark:text-white">
+                        Study Hours & Peak Times
+                      </h3>
+                      <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5 font-normal">
+                        {filteredActivityAnalytics?.isSingleDay
+                          ? "Active students and study hours throughout the day"
+                          : "Daily active students and total study hours"}
+                      </p>
                     </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart
-                        data={filteredActivityAnalytics?.chart1Distribution || []}
-                        margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                        <XAxis
-                          dataKey="hour"
-                          tick={{ fontSize: 10, fill: "#888888" }}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          yAxisId="left"
-                          tick={{ fontSize: 10, fill: "#888888" }}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          yAxisId="right"
-                          orientation="right"
-                          tick={{ fontSize: 10, fill: "#888888" }}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <Tooltip
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              const item = payload[0].payload
-                              return (
-                                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-3 shadow-lg text-xs space-y-1 font-normal">
-                                  <div className="text-[#3B3B3B] dark:text-white font-normal">
-                                    {label}
-                                  </div>
-                                  <div className="text-amber-600 dark:text-amber-400 font-normal">
-                                    Concurrent Students: {item.active}
-                                  </div>
-                                  <div className="text-[#3B3B3B] dark:text-gray-200 font-normal">
-                                    Total Hours: {item.hours}h
-                                  </div>
-                                  {item.topSubject && item.topSubject !== "—" && (
-                                    <div className="text-[11px] text-[#696969] dark:text-gray-400 pt-1 border-t border-black/5 dark:border-white/10 font-normal">
-                                      Top Subject: {item.topSubject}
+                    <div className="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400 font-normal">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="size-2 rounded-sm bg-[#CBD5E1] dark:bg-slate-500" /> Active Students
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="size-2 rounded-sm bg-[#E9C46A]" /> Study Hours
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="w-full h-[280px]">
+                    {(filteredActivityAnalytics?.chart1Distribution || []).length === 0 ||
+                    (filteredActivityAnalytics?.kpis?.activeCount === 0 && (filteredActivityAnalytics?.chart1Distribution || []).every((d) => d.active === 0 && d.hours === 0)) ? (
+                      <div className="h-full flex flex-col items-center justify-center text-xs text-neutral-400 dark:text-neutral-500 font-normal">
+                        <Clock className="size-8 stroke-[1.5] mb-2 opacity-30" />
+                        <span>No study activity recorded for this period.</span>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart
+                          data={filteredActivityAnalytics?.chart1Distribution || []}
+                          margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                          <XAxis
+                            dataKey="hour"
+                            tick={{ fontSize: 10, fill: "#888888" }}
+                            tickLine={false}
+                            axisLine={false}
+                            interval={filteredActivityAnalytics?.isSingleDay ? 2 : 0}
+                          />
+                          <YAxis
+                            yAxisId="left"
+                            allowDecimals={false}
+                            tick={{ fontSize: 10, fill: "#888888" }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis
+                            yAxisId="right"
+                            orientation="right"
+                            allowDecimals={false}
+                            tick={{ fontSize: 10, fill: "#888888" }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <Tooltip
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                const item = payload[0].payload
+                                return (
+                                  <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-3 shadow-lg text-xs space-y-1 font-normal">
+                                    <div className="text-[#3B3B3B] dark:text-white font-normal">
+                                      {label}
                                     </div>
-                                  )}
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                        <Bar
-                          yAxisId="left"
-                          dataKey="active"
-                          name="Active Students"
-                          fill="#E9C46A"
-                          radius={[4, 4, 0, 0]}
-                          maxBarSize={28}
-                        />
-                        <Line
-                          yAxisId="right"
-                          type="monotone"
-                          dataKey="hours"
-                          name="Hours Logged"
-                          stroke="#3B3B3B"
-                          className="dark:stroke-white"
-                          strokeWidth={2}
-                          dot={{ r: 3, fill: "#3B3B3B" }}
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
+                                    <div className="text-slate-500 dark:text-slate-400 font-normal">
+                                      Active Students: {item.active}
+                                    </div>
+                                    <div className="text-amber-600 dark:text-amber-400 font-normal">
+                                      Study Hours: {item.hours}h
+                                    </div>
+                                    {item.topSubject && item.topSubject !== "—" && (
+                                      <div className="text-[11px] text-[#696969] dark:text-gray-400 pt-1 border-t border-black/5 dark:border-white/10 font-normal">
+                                        Top Subject: {item.topSubject}
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              }
+                              return null
+                            }}
+                          />
+                          <Bar
+                            yAxisId="left"
+                            dataKey="active"
+                            name="Active Students"
+                            fill="#CBD5E1"
+                            radius={[4, 4, 0, 0]}
+                            maxBarSize={28}
+                          />
+                          <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="hours"
+                            name="Study Hours"
+                            stroke="#E9C46A"
+                            strokeWidth={2}
+                            dot={{ r: 3, fill: "#E9C46A" }}
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
                 </div>
 
-                {/* Chart 2: Subject Time Allocation (Horizontal Stacked Bar Chart) */}
+                {/* Chart 2: Time Spent per Subject */}
                 <div className="p-5 sm:p-6 flex flex-col justify-between space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/5 dark:border-white/5">
-                  <div>
-                    <h3 className="text-xs font-normal text-[#3B3B3B] dark:text-white">
-                      Subject Time Allocation
-                    </h3>
-                    <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5 font-normal">
-                      Lectures & reading vs. quizzes & mock exams per review domain
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400 font-normal">
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="size-2 rounded-sm bg-[#3B3B3B] dark:bg-white" /> Lecture & Notes
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="size-2 rounded-sm bg-[#E9C46A]" /> Tests & Quizzes
-                    </span>
-                  </div>
-                </div>
-
-                <div className="w-full h-[280px]">
-                  {(filteredActivityAnalytics?.chart2SubjectAllocation || []).every((d) => d.totalCategoryHours === 0) ? (
-                    <div className="h-full flex flex-col items-center justify-center text-xs text-neutral-400 dark:text-neutral-500 font-normal">
-                      <BookOpen className="size-8 stroke-[1.5] mb-2 opacity-30" />
-                      <span>No subject study hours logged for this period.</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/5 dark:border-white/5">
+                    <div>
+                      <h3 className="text-xs font-normal text-[#3B3B3B] dark:text-white">
+                        Time Spent per Subject
+                      </h3>
+                      <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5 font-normal">
+                        Breakdown between reading lessons and taking tests
+                      </p>
                     </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        layout="vertical"
-                        data={filteredActivityAnalytics?.chart2SubjectAllocation || []}
-                        margin={{ top: 10, right: 30, left: 20, bottom: 0 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.05)" />
-                        <XAxis type="number" tick={{ fontSize: 10, fill: "#888888" }} tickLine={false} axisLine={false} unit="h" />
-                        <YAxis
-                          type="category"
-                          dataKey="category"
-                          tick={{ fontSize: 11, fill: "#3B3B3B" }}
-                          tickLine={false}
-                          axisLine={false}
-                          width={130}
-                        />
-                        <Tooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const d = payload[0].payload
-                              return (
-                                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-3 shadow-lg text-xs space-y-1 font-normal">
-                                  <div className="text-[#3B3B3B] dark:text-white font-normal">
-                                    {d.category}
+                    <div className="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400 font-normal">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="size-2 rounded-sm bg-[#E9C46A]" /> Lessons & Reading
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="size-2 rounded-sm bg-[#CBD5E1] dark:bg-slate-500" /> Tests & Quizzes
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="w-full h-[280px]">
+                    {(filteredActivityAnalytics?.chart2SubjectAllocation || []).every((d) => d.totalCategoryHours === 0) ? (
+                      <div className="h-full flex flex-col items-center justify-center text-xs text-neutral-400 dark:text-neutral-500 font-normal">
+                        <BookOpen className="size-8 stroke-[1.5] mb-2 opacity-30" />
+                        <span>No study time recorded yet for this period.</span>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          layout="vertical"
+                          data={filteredActivityAnalytics?.chart2SubjectAllocation || []}
+                          margin={{ top: 10, right: 30, left: 20, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.05)" />
+                          <XAxis type="number" tick={{ fontSize: 10, fill: "#888888" }} tickLine={false} axisLine={false} unit="h" />
+                          <YAxis
+                            type="category"
+                            dataKey="category"
+                            tick={{ fontSize: 11, fill: "#3B3B3B" }}
+                            tickLine={false}
+                            axisLine={false}
+                            width={130}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const d = payload[0].payload
+                                return (
+                                  <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-3 shadow-lg text-xs space-y-1 font-normal">
+                                    <div className="text-[#3B3B3B] dark:text-white font-normal">
+                                      {d.category}
+                                    </div>
+                                    <div className="text-amber-600 dark:text-amber-400 font-normal">
+                                      Lessons & Reading: {d.lectureHours}h
+                                    </div>
+                                    <div className="text-slate-500 dark:text-slate-400 font-normal">
+                                      Tests & Quizzes: {d.testHours}h
+                                    </div>
+                                    <div className="text-[11px] text-[#696969] dark:text-gray-400 pt-1 border-t border-black/5 dark:border-white/10 font-normal">
+                                      Share of Total Study: {d.sharePct}%
+                                    </div>
                                   </div>
-                                  <div className="text-[#3B3B3B] dark:text-gray-200 font-normal">
-                                    Lecture & Reading: {d.lectureHours}h
-                                  </div>
-                                  <div className="text-amber-600 dark:text-amber-400 font-normal">
-                                    Practice Tests & Quizzes: {d.testHours}h
-                                  </div>
-                                  <div className="text-[11px] text-[#696969] dark:text-gray-400 pt-1 border-t border-black/5 dark:border-white/10 font-normal">
-                                    Cohort Study Share: {d.sharePct}%
-                                  </div>
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                        <Bar dataKey="lectureHours" name="Lecture & Reading" stackId="a" fill="#3B3B3B" className="dark:fill-white" radius={[4, 0, 0, 4]} />
-                        <Bar dataKey="testHours" name="Practice Tests & Quizzes" stackId="a" fill="#E9C46A" radius={[0, 4, 4, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
+                                )
+                              }
+                              return null
+                            }}
+                          />
+                          <Bar dataKey="lectureHours" name="Lessons & Reading" stackId="a" fill="#E9C46A" radius={[4, 0, 0, 4]} />
+                          <Bar dataKey="testHours" name="Tests & Quizzes" stackId="a" fill="#CBD5E1" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -2613,184 +2812,485 @@ export default function AnalyticalOverviewPage() {
               <div className="border-t border-black/5 dark:border-white/10" />
 
               {/* Bottom: Deep-Dive Curriculum & Student Accountability Tabs */}
-              <div className="p-5 sm:p-6 space-y-4">
-              {/* Tab Navigation */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/5 dark:border-white/5">
-                <div className="inline-flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setActivityTab("subjects")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
-                      activityTab === "subjects"
-                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
-                        : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
-                    }`}
-                  >
-                    Subject Performance Breakdown
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActivityTab("roster")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
-                      activityTab === "roster"
-                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
-                        : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
-                    }`}
-                  >
-                    Student Accountability & Roster
-                  </button>
-                </div>
+              <div className="p-0 rounded-b-2xl">
+                {/* Unified Card Header: Tabs (Left) + Search Control (Right) */}
+                <div className="relative z-30 px-4 py-3 border-b border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 bg-white/40 dark:bg-white/[0.02]">
+                  {/* Left: Tab Pills */}
+                  <div className="flex items-center gap-1 overflow-x-auto py-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActivityTab("subjects")
+                        setActivitySearch("")
+                        setActivitySubjectPage(1)
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                        activityTab === "subjects"
+                          ? "bg-black/[0.07] dark:bg-white/15 text-[#3B3B3B] dark:text-white font-semibold shadow-2xs"
+                          : "text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white"
+                      }`}
+                    >
+                      Subject Progress
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActivityTab("roster")
+                        setActivitySearch("")
+                        setActivityRosterPage(1)
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                        activityTab === "roster"
+                          ? "bg-black/[0.07] dark:bg-white/15 text-[#3B3B3B] dark:text-white font-semibold shadow-2xs"
+                          : "text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white"
+                      }`}
+                    >
+                      Student Activity List
+                    </button>
+                  </div>
 
-                <div className="text-xs text-neutral-400 dark:text-neutral-500 font-normal">
-                  {activityTab === "subjects"
-                    ? "Curriculum domain engagement and completion rates"
-                    : "Identify active candidates and intervene with at-risk students"}
-                </div>
-              </div>
+                  {/* Right: Filter & Search Controls */}
+                  <div className="flex items-center gap-2 ml-auto">
+                    {/* Examination Filter Button & Dropdown */}
+                    <div className="relative" ref={activityTableFilterRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsActivityTableFilterOpen((prev) => !prev)}
+                        className={`size-8 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center justify-center text-neutral-600 dark:text-neutral-300 ${
+                          selectedActivityExamIds.length > 0
+                            ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white font-medium"
+                            : ""
+                        }`}
+                        aria-expanded={isActivityTableFilterOpen}
+                        aria-haspopup="true"
+                        title="Filter examinations"
+                      >
+                        <Filter className="size-3.5" />
+                        {selectedActivityExamIds.length > 0 && (
+                          <span className="sr-only">({selectedActivityExamIds.length} active)</span>
+                        )}
+                      </button>
 
-              {/* Tab A: Subject Performance Breakdown Table */}
-              {activityTab === "subjects" && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="sticky top-0 z-10 bg-neutral-50/60 dark:bg-[#14161b]/80 backdrop-blur-md border-b border-black/5 dark:border-white/10">
-                      <tr className="h-11 text-xs font-normal text-[#696969] dark:text-gray-300">
-                        <th className="py-2.5 px-3 font-normal">Subject / Module Name</th>
-                        <th className="py-2.5 px-3 font-normal">Active Reviewees</th>
-                        <th className="py-2.5 px-3 font-normal">Total Hours Spent</th>
-                        <th className="py-2.5 px-3 font-normal">Avg. Session Length</th>
-                        <th className="py-2.5 px-3 text-center font-normal">Practice Tests Taken</th>
-                        <th className="py-2.5 px-3 pr-4 text-right font-normal">Cohort Completion Rate</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs font-normal">
-                      {(filteredActivityAnalytics?.tabA_subjectBreakdown || []).length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-8 text-center text-xs text-neutral-400 dark:text-neutral-500 font-normal">
-                            No subjects configured or recorded yet.
-                          </td>
-                        </tr>
-                      ) : (
-                        (filteredActivityAnalytics?.tabA_subjectBreakdown || []).map((sub) => (
-                          <tr key={sub.id} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
-                            <td className="py-2.5 px-3">
-                              <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
-                                {sub.name}
-                              </div>
-                              <span className="inline-block mt-0.5 text-[11px] text-[#696969] dark:text-gray-400 font-normal">
-                                {sub.category}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-3 text-neutral-600 dark:text-neutral-300 font-normal">
-                              {sub.activeReviewees} of {sub.totalEnrolled} students
-                            </td>
-                            <td className="py-2.5 px-3 text-[#3B3B3B] dark:text-white font-normal">
-                              {sub.totalHoursStr}
-                            </td>
-                            <td className="py-2.5 px-3 text-neutral-500 dark:text-neutral-400 font-normal">
-                              {sub.avgSessionLength}
-                            </td>
-                            <td className="py-2.5 px-3 text-center text-[#3B3B3B] dark:text-neutral-200 font-normal">
-                              {sub.practiceTestsTaken}
-                            </td>
-                            <td className="py-2.5 px-3 pr-4 text-right">
-                              <div className="flex items-center justify-end gap-2.5">
-                                <div className="w-24 h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-[#E9C46A] rounded-full transition-all"
-                                    style={{ width: `${sub.completionRate}%` }}
-                                  />
-                                </div>
-                                <span className="font-normal text-[#3B3B3B] dark:text-white text-xs min-w-[34px]">
-                                  {sub.completionRate}%
-                                </span>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* Tab B: Student Accountability & Roster Table */}
-              {activityTab === "roster" && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="sticky top-0 z-10 bg-neutral-50/60 dark:bg-[#14161b]/80 backdrop-blur-md border-b border-black/5 dark:border-white/10">
-                      <tr className="h-11 text-xs font-normal text-[#696969] dark:text-gray-300">
-                        <th className="py-2.5 px-3 font-normal">Student & Login ID</th>
-                        <th className="py-2.5 px-3 font-normal">Status</th>
-                        <th className="py-2.5 px-3 font-normal">Time Spent (Period)</th>
-                        <th className="py-2.5 px-3 text-center font-normal">Modules Accessed</th>
-                        <th className="py-2.5 px-3 text-center font-normal">Mock Tests Completed</th>
-                        <th className="py-2.5 px-3 font-normal">Last Active</th>
-                        <th className="py-2.5 px-3 text-right pr-4 font-normal">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs font-normal">
-                      {(filteredActivityAnalytics?.tabB_studentRoster || []).length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="py-8 text-center text-xs text-neutral-400 dark:text-neutral-500 font-normal">
-                            No student activity records found for this period.
-                          </td>
-                        </tr>
-                      ) : (
-                        (filteredActivityAnalytics?.tabB_studentRoster || []).map((st) => (
-                          <tr key={st.id} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
-                            <td className="py-2.5 px-3">
-                              {/* Bold ONLY on student name */}
-                              <div className="font-semibold text-[13px] text-[#3B3B3B] dark:text-gray-100">
-                                {st.name}
-                              </div>
-                              {/* No font-mono, single font style */}
-                              <div className="text-[11px] text-[#696969] dark:text-gray-400 font-normal mt-0.5">
-                                {formatLoginId(st)} • {st.school}
-                              </div>
-                            </td>
-                            <td className="py-2.5 px-3">
-                              <span className="text-[11px] font-normal text-neutral-600 dark:text-neutral-300">
-                                {st.statusBadge}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-3 text-[#3B3B3B] dark:text-white font-normal">
-                              {st.timeSpentStr}
-                            </td>
-                            <td className="py-2.5 px-3 text-center text-[#3B3B3B] dark:text-neutral-200 font-normal">
-                              {st.modulesAccessed}
-                            </td>
-                            <td className="py-2.5 px-3 text-center">
-                              <span className="font-normal text-[#3B3B3B] dark:text-white">
-                                {st.mockTestsCompleted}
-                              </span>
-                              <span className="text-[11px] text-neutral-400 dark:text-neutral-500 block font-normal">
-                                avg. {st.avgScore}%
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-3 text-neutral-500 dark:text-neutral-400 whitespace-nowrap font-normal">
-                              {st.lastActiveText}
-                            </td>
-                            <td className="py-2.5 px-3 pr-4 text-right">
+                      {/* Examination Filter Dropdown */}
+                      {isActivityTableFilterOpen && (
+                        <div className="absolute right-0 top-full mt-1.5 w-64 sm:w-72 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                              Filter Examinations
+                            </span>
+                            {selectedActivityExamIds.length > 0 && (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setSearch(st.name)
-                                  window.scrollTo({ top: 0, behavior: "smooth" })
+                                  setSelectedActivityExamIds([])
+                                  setActivitySubjectPage(1)
+                                  setActivityRosterPage(1)
                                 }}
-                                className="inline-flex items-center justify-center px-3 h-7 rounded-xl text-[11px] font-normal text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 shadow-2xs hover:bg-neutral-50 dark:hover:bg-white/15 transition-all cursor-pointer whitespace-nowrap"
+                                className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
                               >
-                                View Profile / Study Log
+                                Clear
                               </button>
-                            </td>
-                          </tr>
-                        ))
+                            )}
+                          </div>
+
+                          <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                            <input
+                              type="checkbox"
+                              checked={selectedActivityExamIds.length === 0}
+                              onChange={() => {
+                                setSelectedActivityExamIds([])
+                                setActivitySubjectPage(1)
+                                setActivityRosterPage(1)
+                              }}
+                              className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                            />
+                            <span>All Examinations</span>
+                          </label>
+
+                          <div className="space-y-0.5 max-h-44 overflow-y-auto pr-1">
+                            {examinationOptions.map((exam) => {
+                              const isChecked = selectedActivityExamIds.includes(String(exam.id))
+                              return (
+                                <label
+                                  key={exam.id}
+                                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {
+                                      setActivitySubjectPage(1)
+                                      setActivityRosterPage(1)
+                                      if (isChecked) {
+                                        setSelectedActivityExamIds(
+                                          selectedActivityExamIds.filter((id) => id !== String(exam.id))
+                                        )
+                                      } else {
+                                        setSelectedActivityExamIds([...selectedActivityExamIds, String(exam.id)])
+                                      }
+                                    }}
+                                    className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                                  />
+                                  <span className="truncate">{exam.name}</span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
                       )}
-                    </tbody>
-                  </table>
+                    </div>
+
+                    {/* Search Control */}
+                    <div className="flex items-center" ref={activitySearchRef}>
+                      {isActivitySearchOpen ? (
+                        <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                          <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400 pointer-events-none" />
+                            <input
+                              type="search"
+                              autoFocus
+                              placeholder={
+                                activityTab === "subjects"
+                                  ? "Search subject or category…"
+                                  : "Search student, ID, or school…"
+                              }
+                              value={activitySearch}
+                              onChange={(e) => {
+                                setActivitySearch(e.target.value)
+                                setActivitySubjectPage(1)
+                                setActivityRosterPage(1)
+                              }}
+                              className="w-48 sm:w-60 h-8 pl-8 pr-2.5 text-xs rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActivitySearch("")
+                              setActivitySubjectPage(1)
+                              setActivityRosterPage(1)
+                              setIsActivitySearchOpen(false)
+                            }}
+                            className="h-8 px-2 text-[11px] text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setIsActivitySearchOpen(true)}
+                          className={`size-8 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center justify-center text-neutral-600 dark:text-neutral-300 ${
+                            activitySearch ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white" : ""
+                          }`}
+                          title="Search"
+                        >
+                          <Search className="size-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
+
+                {/* Tab A: Subject Performance Breakdown Table */}
+                {activityTab === "subjects" && (() => {
+                  const subjectList = (filteredActivityAnalytics?.tabA_subjectBreakdown || []).filter((sub) => {
+                    if (!activitySearch.trim()) return true
+                    const q = activitySearch.trim().toLowerCase()
+                    return (
+                      (sub.name || "").toLowerCase().includes(q) ||
+                      (sub.category || "").toLowerCase().includes(q)
+                    )
+                  })
+
+                  const totalSubjects = subjectList.length
+                  const totalPages = Math.max(1, Math.ceil(totalSubjects / ACTIVITY_PAGE_SIZE))
+                  const currentPage = Math.min(Math.max(1, activitySubjectPage), totalPages)
+                  const startIndex = (currentPage - 1) * ACTIVITY_PAGE_SIZE
+                  const paginatedSubjects = subjectList.slice(startIndex, startIndex + ACTIVITY_PAGE_SIZE)
+
+                  return totalSubjects === 0 ? (
+                    <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                      {activitySearch ? `No subjects found matching "${activitySearch}"` : "No subjects configured or recorded yet."}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse" aria-label="Subject Performance Table">
+                          <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                            <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                              <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
+                                Rank
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Subject
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Active Students
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Total Time
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Avg. Session
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Practice Tests
+                              </th>
+                              <th className="px-4 py-2.5 pr-6 font-semibold text-right" scope="col">
+                                Completion
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
+                            {paginatedSubjects.map((sub, idx) => {
+                              const rankNumber = startIndex + idx + 1
+                              return (
+                                <tr key={sub.id || idx} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                                  {/* Rank */}
+                                  <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
+                                    {rankNumber}
+                                  </td>
+
+                                  {/* Subject & Category */}
+                                  <td className="px-4 py-2.5 text-left">
+                                    <div>
+                                      <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                        {sub.name || "—"}
+                                      </div>
+                                      <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
+                                        {sub.category || "General"}
+                                      </div>
+                                    </div>
+                                  </td>
+
+                                  {/* Active Students */}
+                                  <td className="px-4 py-2.5 text-center text-xs text-neutral-600 dark:text-neutral-300 font-normal">
+                                    <span className="font-normal text-[#3B3B3B] dark:text-gray-200">
+                                      {sub.activeReviewees || 0}
+                                    </span>
+                                    <span className="text-[11px] text-[#696969]/80 dark:text-gray-400 ml-1 font-normal">
+                                      / {sub.totalEnrolled || 0}
+                                    </span>
+                                  </td>
+
+                                  {/* Total Time */}
+                                  <td className="px-4 py-2.5 text-center text-xs text-[#3B3B3B] dark:text-white font-normal whitespace-nowrap">
+                                    {sub.totalHoursStr || "0h 0m"}
+                                  </td>
+
+                                  {/* Avg. Session */}
+                                  <td className="px-4 py-2.5 text-center text-xs text-neutral-500 dark:text-neutral-400 font-normal whitespace-nowrap">
+                                    {sub.avgSessionLength || "0m"}
+                                  </td>
+
+                                  {/* Practice Tests */}
+                                  <td className="px-4 py-2.5 text-center text-xs text-[#3B3B3B] dark:text-neutral-200 font-normal">
+                                    {sub.practiceTestsTaken || 0}
+                                  </td>
+
+                                  {/* Completion */}
+                                  <td className="px-4 py-2.5 pr-6 text-right whitespace-nowrap">
+                                    <div className="flex items-center justify-end gap-2.5">
+                                      <div className="w-20 sm:w-24 h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
+                                        <div
+                                          className="h-full bg-[#E9C46A] rounded-full transition-all"
+                                          style={{ width: `${Math.min(100, sub.completionRate || 0)}%` }}
+                                        />
+                                      </div>
+                                      <span className="font-normal text-[#3B3B3B] dark:text-white text-xs min-w-[34px]">
+                                        {sub.completionRate || 0}%
+                                      </span>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Pagination Controls */}
+                      {totalPages >= 1 && (
+                        <div className="px-4 py-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-center gap-3 bg-white/20 dark:bg-white/[0.01] rounded-b-2xl">
+
+                          <div className="flex items-center gap-3">{Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (<button key={pageNum} type="button" onClick={() => setActivitySubjectPage(pageNum)} className={`text-xs transition-colors cursor-pointer ${pageNum === currentPage ? "font-semibold text-[#3B3B3B] dark:text-white" : "font-normal text-neutral-400 hover:text-[#3B3B3B] dark:text-neutral-500 dark:hover:text-white"}`}>{pageNum}</button>))}</div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+
+                {/* Tab B: Student Accountability & Roster Table */}
+                {activityTab === "roster" && (() => {
+                  const rosterList = (filteredActivityAnalytics?.tabB_studentRoster || []).filter((st) => {
+                    if (!activitySearch.trim()) return true
+                    const q = activitySearch.trim().toLowerCase()
+                    return (
+                      (st.name || "").toLowerCase().includes(q) ||
+                      formatLoginId(st).toLowerCase().includes(q) ||
+                      (st.school || "").toLowerCase().includes(q) ||
+                      (st.major || "").toLowerCase().includes(q) ||
+                      (st.batch || "").toLowerCase().includes(q)
+                    )
+                  })
+
+                  const totalStudents = rosterList.length
+                  const totalPages = Math.max(1, Math.ceil(totalStudents / ACTIVITY_PAGE_SIZE))
+                  const currentPage = Math.min(Math.max(1, activityRosterPage), totalPages)
+                  const startIndex = (currentPage - 1) * ACTIVITY_PAGE_SIZE
+                  const paginatedRoster = rosterList.slice(startIndex, startIndex + ACTIVITY_PAGE_SIZE)
+
+                  return totalStudents === 0 ? (
+                    <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                      {activitySearch ? `No students found matching "${activitySearch}"` : "No student activity records found for this period."}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse" aria-label="Student Activity Roster Table">
+                          <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                            <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                              <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
+                                Rank
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Student
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Status
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Time Spent
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Lessons Opened
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Tests Completed
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Last Active
+                              </th>
+                              <th className="px-4 py-2.5 pr-6 font-semibold text-right" scope="col">
+                                Action
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
+                            {paginatedRoster.map((st, idx) => {
+                              const rankNumber = startIndex + idx + 1
+                              return (
+                                <tr key={st.id || idx} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                                  {/* Rank */}
+                                  <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
+                                    {rankNumber}
+                                  </td>
+
+                                  {/* Student Name with Avatar & Login ID */}
+                                  <td className="px-4 py-2.5 text-left">
+                                    <div className="flex items-center gap-3">
+                                      <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
+                                        {(st.avatarUrl || st.avatar_url) ? (
+                                          <img
+                                            src={st.avatarUrl || st.avatar_url}
+                                            alt={st.name || "Student"}
+                                            className="size-full object-cover rounded-full"
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = "none"
+                                              if (e.currentTarget.nextElementSibling) {
+                                                e.currentTarget.nextElementSibling.style.display = "flex"
+                                              }
+                                            }}
+                                          />
+                                        ) : null}
+                                        <span
+                                          className={`size-full flex items-center justify-center ${(st.avatarUrl || st.avatar_url) ? "hidden" : ""}`}
+                                        >
+                                          {(st.name || "U").charAt(0).toUpperCase()}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                          {st.name || "—"}
+                                        </div>
+                                        <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
+                                          {formatLoginId(st)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+
+                                  {/* Status Badge */}
+                                  <td className="px-4 py-2.5 text-center whitespace-nowrap">
+                                    <span
+                                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide ${
+                                        st.statusBadge === "Active This Week" || st.statusBadge === "Active Today"
+                                          ? "bg-[#2A9D8F]/20 text-[#1b6b61] dark:bg-[#2A9D8F]/25 dark:text-[#68c9be]"
+                                          : "bg-[#E17055]/20 text-[#b33920] dark:bg-[#E17055]/25 dark:text-[#f89b87]"
+                                      }`}
+                                    >
+                                      {st.statusBadge}
+                                    </span>
+                                  </td>
+
+                                  {/* Time Spent */}
+                                  <td className="px-4 py-2.5 text-center text-xs text-[#3B3B3B] dark:text-white font-normal whitespace-nowrap">
+                                    {st.timeSpentStr || "0h 0m"}
+                                  </td>
+
+                                  {/* Lessons Opened */}
+                                  <td className="px-4 py-2.5 text-center text-xs text-[#3B3B3B] dark:text-neutral-200 font-normal">
+                                    {st.modulesAccessed || 0}
+                                  </td>
+
+                                  {/* Tests Completed */}
+                                  <td className="px-4 py-2.5 text-center">
+                                    <span className="font-normal text-[#3B3B3B] dark:text-white text-xs">
+                                      {st.mockTestsCompleted || 0}
+                                    </span>
+                                    <span className="text-[11px] text-neutral-400 dark:text-neutral-500 block font-normal">
+                                      avg. {st.avgScore || 0}%
+                                    </span>
+                                  </td>
+
+                                  {/* Last Active */}
+                                  <td className="px-4 py-2.5 text-left text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap font-normal">
+                                    {st.lastActiveText || "—"}
+                                  </td>
+
+                                  {/* Action */}
+                                  <td className="px-4 py-2.5 pr-6 text-right whitespace-nowrap">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSearch(st.name)
+                                        window.scrollTo({ top: 0, behavior: "smooth" })
+                                      }}
+                                      className="inline-flex items-center justify-center px-3 h-7 rounded-xl text-[11px] font-normal text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 shadow-2xs hover:bg-neutral-50 dark:hover:bg-white/15 transition-all cursor-pointer whitespace-nowrap"
+                                    >
+                                      View Log
+                                    </button>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Pagination Controls */}
+                      {totalPages >= 1 && (
+                        <div className="px-4 py-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-center gap-3 bg-white/20 dark:bg-white/[0.01] rounded-b-2xl">
+
+                          <div className="flex items-center gap-3">{Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (<button key={pageNum} type="button" onClick={() => setActivityRosterPage(pageNum)} className={`text-xs transition-colors cursor-pointer ${pageNum === currentPage ? "font-semibold text-[#3B3B3B] dark:text-white" : "font-normal text-neutral-400 hover:text-[#3B3B3B] dark:text-neutral-500 dark:hover:text-white"}`}>{pageNum}</button>))}</div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+              </div>
             </div>
-          </div>
         </div>
       )}
     </div>
@@ -2819,36 +3319,59 @@ export default function AnalyticalOverviewPage() {
             </p>
           </button>
 
-          {/* Right-aligned Controls: Exam Filter, Batch Filter, Date Picker, Quick Presets, Export CSV */}
+          {/* Right-aligned Controls: Preset Range, Exam/Batch Filter, Date Picker, Export CSV */}
           {showUserRegistration && (
-            <div className="flex flex-wrap items-center gap-2.5 self-end lg:self-auto">
-              {/* Beside the button, add a label "Filter" */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-normal text-[#696969] dark:text-gray-400 select-none">
-                  Filter
-                </span>
+            <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+              {/* Presets: Segmented Pill Buttons */}
+              <div className="inline-flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
+                {[
+                  { id: "today", label: "Today" },
+                  { id: "yesterday", label: "Yesterday" },
+                  { id: "7days", label: "Last 7 Days" },
+                  { id: "30days", label: "Last 30 Days" },
+                  { id: "all", label: "All-Time" },
+                ].map((pill) => (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => handleRegRangeChange(pill.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                      regRange === pill.id
+                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                        : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Filters Row: Filter Dropdown, Date Picker, Export CSV */}
+              <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
                 <div className="relative" ref={regFilterRef}>
                   <button
                     type="button"
                     onClick={() => setIsRegFilterOpen((prev) => !prev)}
-                    className="h-8 sm:h-9 px-3 text-xs font-normal rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-2 select-none"
+                    className={`h-8 px-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300 select-none ${
+                      (selectedRegExamIds.length > 0 || selectedRegBatchIds.length > 0)
+                        ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white font-medium"
+                        : ""
+                    }`}
                     aria-expanded={isRegFilterOpen}
                     aria-haspopup="true"
+                    title="Filter examinations & batches"
                   >
-                    <Filter className="size-3.5 opacity-60 shrink-0" />
-                    <span className="truncate max-w-[140px] sm:max-w-[180px]">
-                      {regFilterButtonLabel}
-                    </span>
-                    <ChevronDown
-                      className={`size-3 opacity-60 shrink-0 transition-transform duration-200 ${
-                        isRegFilterOpen ? "rotate-180" : ""
-                      }`}
-                    />
+                    <Filter className="size-3.5" />
+                    {(selectedRegExamIds.length > 0 || selectedRegBatchIds.length > 0) && (
+                      <span className="text-[11px]">
+                        {selectedRegExamIds.length + selectedRegBatchIds.length}
+                      </span>
+                    )}
                   </button>
 
                   {/* Dropdown Menu */}
                   {isRegFilterOpen && (
-                    <div className="absolute left-0 sm:left-auto top-full mt-1.5 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-3 max-h-[440px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                    <div className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-3 max-h-[440px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
                       {/* Section 1: Examinations */}
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between px-1">
@@ -2858,7 +3381,11 @@ export default function AnalyticalOverviewPage() {
                           {selectedRegExamIds.length > 0 && (
                             <button
                               type="button"
-                              onClick={() => setSelectedRegExamIds([])}
+                              onClick={() => {
+                                setSelectedRegExamIds([])
+                                setRegTracksPage(1)
+                                setRegLogPage(1)
+                              }}
                               className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
                             >
                               Clear
@@ -2870,7 +3397,11 @@ export default function AnalyticalOverviewPage() {
                           <input
                             type="checkbox"
                             checked={selectedRegExamIds.length === 0}
-                            onChange={() => setSelectedRegExamIds([])}
+                            onChange={() => {
+                              setSelectedRegExamIds([])
+                              setRegTracksPage(1)
+                              setRegLogPage(1)
+                            }}
                             className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
                           />
                           <span>All Examinations</span>
@@ -2888,6 +3419,8 @@ export default function AnalyticalOverviewPage() {
                                   type="checkbox"
                                   checked={isChecked}
                                   onChange={() => {
+                                    setRegTracksPage(1)
+                                    setRegLogPage(1)
                                     if (isChecked) {
                                       setSelectedRegExamIds(selectedRegExamIds.filter((id) => id !== String(exam.id)))
                                     } else {
@@ -2915,7 +3448,11 @@ export default function AnalyticalOverviewPage() {
                           {selectedRegBatchIds.length > 0 && (
                             <button
                               type="button"
-                              onClick={() => setSelectedRegBatchIds([])}
+                              onClick={() => {
+                                setSelectedRegBatchIds([])
+                                setRegTracksPage(1)
+                                setRegLogPage(1)
+                              }}
                               className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
                             >
                               Clear
@@ -2927,7 +3464,11 @@ export default function AnalyticalOverviewPage() {
                           <input
                             type="checkbox"
                             checked={selectedRegBatchIds.length === 0}
-                            onChange={() => setSelectedRegBatchIds([])}
+                            onChange={() => {
+                              setSelectedRegBatchIds([])
+                              setRegTracksPage(1)
+                              setRegLogPage(1)
+                            }}
                             className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
                           />
                           <span>All Batches</span>
@@ -2945,6 +3486,8 @@ export default function AnalyticalOverviewPage() {
                                   type="checkbox"
                                   checked={isChecked}
                                   onChange={() => {
+                                    setRegTracksPage(1)
+                                    setRegLogPage(1)
                                     if (isChecked) {
                                       setSelectedRegBatchIds(selectedRegBatchIds.filter((id) => id !== String(batch.id)))
                                     } else {
@@ -2973,6 +3516,8 @@ export default function AnalyticalOverviewPage() {
                               onClick={() => {
                                 setSelectedRegExamIds([])
                                 setSelectedRegBatchIds([])
+                                setRegTracksPage(1)
+                                setRegLogPage(1)
                               }}
                               className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
                             >
@@ -2984,499 +3529,772 @@ export default function AnalyticalOverviewPage() {
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* Calendar Date Picker: Single-day lookup and custom dates */}
-              <div className="relative flex items-center">
+                {/* Calendar Date Picker: Single-day selector */}
                 <input
                   type="date"
                   id="reg-date-picker"
+                  aria-label="Filter by date"
                   value={regDate || todayStr}
                   onChange={(e) => handleRegDateChange(e.target.value)}
-                  className="h-8 sm:h-9 px-3 text-xs font-medium rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1 focus:ring-black/10 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer"
-                  title="Select registration date"
+                  className="h-8.5 sm:h-9 px-3 text-xs font-normal rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer"
+                  title="Select specific date"
                 />
-              </div>
 
-              {/* Quick Presets: Segmented Pill Buttons */}
-              <div className="inline-flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
-                {[
-                  { id: "today", label: "Today" },
-                  { id: "yesterday", label: "Yesterday" },
-                  { id: "7days", label: "Last 7 Days" },
-                  { id: "30days", label: "Last 30 Days" },
-                  { id: "all", label: "All-Time" },
-                ].map((pill) => (
-                  <button
-                    key={pill.id}
-                    type="button"
-                    onClick={() => handleRegRangeChange(pill.id)}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold tracking-wide whitespace-nowrap transition-all cursor-pointer ${
-                      regRange === pill.id
-                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
-                        : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
-                    }`}
-                  >
-                    {pill.label}
-                  </button>
-                ))}
+                {/* Export CSV Action */}
+                <button
+                  type="button"
+                  onClick={exportRegCSV}
+                  className="inline-flex items-center gap-1.5 px-3.5 h-8.5 sm:h-9 rounded-xl text-xs font-normal text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer"
+                  title="Export currently filtered metrics to CSV"
+                >
+                  <Download className="size-3.5 text-neutral-400" />
+                  <span>Export CSV</span>
+                </button>
               </div>
-
-              {/* Export CSV Action */}
-              <button
-                type="button"
-                onClick={exportRegCSV}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 h-8 sm:h-9 rounded-xl text-xs font-semibold text-[#696969] dark:text-neutral-300 bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 shadow-2xs hover:bg-neutral-50 dark:hover:bg-white/15 transition-all cursor-pointer"
-                title="Export User Registration data to CSV"
-              >
-                <Download className="size-3.5 text-neutral-400 dark:text-neutral-500" />
-                <span>Export CSV</span>
-              </button>
             </div>
           )}
         </div>
 
         {/* ══ Collapsible Content ══ */}
         {showUserRegistration && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            {/* Phase 3: Top-Level KPI Summary Cards (4-Card Responsive Grid) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Card 1: New Registrations */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 shadow-2xs flex flex-col justify-between space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                    New Registrations
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* 1. Top-Level Metric Summary Cards (4-Column Grid matching Student Activity style) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+              {/* Card 1: New Students */}
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
+                <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+                  <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                    New Students
                   </span>
-                  <UserPlus className="size-4 text-neutral-400 dark:text-neutral-500" />
                 </div>
-
-                <div>
+                <div className="p-5 sm:p-6 pt-4 sm:pt-4">
                   <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                    {filteredRegistrationData?.kpis?.newRegistrations || "+0 in Period"}
+                    {filteredRegistrationData?.kpis?.newRegistrationsCount !== undefined
+                      ? `+${filteredRegistrationData.kpis.newRegistrationsCount}`
+                      : "+0"}
                   </div>
-                </div>
-
-                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500">
-                  <span className="truncate">Period Comparison</span>
-                  <span className="text-neutral-600 dark:text-neutral-300 font-medium whitespace-nowrap">
-                    {filteredRegistrationData?.kpis?.registrationDeltaText || "0 accounts"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Card 2: Total Registered Reach */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 shadow-2xs flex flex-col justify-between space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                    Total Registered Reach
-                  </span>
-                  <Users className="size-4 text-neutral-400 dark:text-neutral-500" />
-                </div>
-
-                <div>
-                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                    {filteredRegistrationData?.kpis?.totalRegisteredReach || "0 Candidates"}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500">
-                  <span className="truncate">Platform Share</span>
-                  <span className="text-neutral-600 dark:text-neutral-300 font-medium whitespace-nowrap">
-                    {filteredRegistrationData?.kpis?.reachSubtext || "100% of platform reach"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Card 3: Leading Exam Track */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 shadow-2xs flex flex-col justify-between space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                    Leading Exam Track
-                  </span>
-                  <Award className="size-4 text-neutral-400 dark:text-neutral-500" />
-                </div>
-
-                <div>
-                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white truncate">
-                    {filteredRegistrationData?.kpis?.leadingExamTrack || "—"}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500">
-                  <span className="truncate">Examination Category</span>
-                  <span className="text-neutral-600 dark:text-neutral-300 font-medium whitespace-nowrap">
-                    {filteredRegistrationData?.kpis?.leadingExamSubtext || "Highest volume"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Card 4: Active Account Rate */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 shadow-2xs flex flex-col justify-between space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                    Active Account Rate
-                  </span>
-                  <UserCheck className="size-4 text-neutral-400 dark:text-neutral-500" />
-                </div>
-
-                <div>
-                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                    {filteredRegistrationData?.kpis?.activeCandidatesRate || "0% Active"}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500">
-                  <span className="truncate">Account Health</span>
-                  <span className="text-neutral-600 dark:text-neutral-300 font-medium whitespace-nowrap">
-                    {filteredRegistrationData?.kpis?.activeCandidatesCount || "0 active accounts"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Visual Charts: 2-Column Responsive Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              {/* Chart 1: Historical Sign-Up Trends (2 Columns on large screens) */}
-              <div className="lg:col-span-2 rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 sm:p-6 shadow-2xs space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/5 dark:border-white/5">
-                  <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
-                      Historical Sign-Up Trends
-                    </h3>
-                    <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5">
-                      New candidate registrations and cumulative volume over the selected timeframe
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400">
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="size-2 rounded-sm bg-[#E9C46A]" /> New Registrations
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="size-2 rounded-sm bg-[#3B3B3B] dark:bg-white" /> Cumulative Total
-                    </span>
-                  </div>
-                </div>
-
-                <div className="w-full h-[280px]">
-                  {(filteredRegistrationData?.trendChart || []).length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-xs text-[#696969] dark:text-gray-400">
-                      <Clock className="size-8 stroke-[1.5] mb-2 opacity-30" />
-                      <span>No registration trends recorded for this period.</span>
-                    </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart
-                        data={filteredRegistrationData?.trendChart || []}
-                        margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                        <XAxis
-                          dataKey={filteredRegistrationData?.isSingleDay ? "hour" : "date"}
-                          tick={{ fontSize: 10, fill: "#888888" }}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          yAxisId="left"
-                          tick={{ fontSize: 10, fill: "#888888" }}
-                          tickLine={false}
-                          axisLine={false}
-                          allowDecimals={false}
-                        />
-                        <YAxis
-                          yAxisId="right"
-                          orientation="right"
-                          tick={{ fontSize: 10, fill: "#888888" }}
-                          tickLine={false}
-                          axisLine={false}
-                          allowDecimals={false}
-                        />
-                        <Tooltip
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              const item = payload[0].payload
-                              return (
-                                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-3 shadow-lg text-xs space-y-1">
-                                  <div className="font-semibold text-[#3B3B3B] dark:text-white border-b border-black/5 dark:border-white/10 pb-1">
-                                    {item.date || label}
-                                  </div>
-                                  <div className="flex items-center justify-between gap-4 text-[#696969] dark:text-gray-300">
-                                    <span>New Registrations:</span>
-                                    <span className="font-bold text-[#E9C46A]">{item.registrations}</span>
-                                  </div>
-                                  <div className="flex items-center justify-between gap-4 text-[#696969] dark:text-gray-300">
-                                    <span>Cumulative:</span>
-                                    <span className="font-bold text-[#3B3B3B] dark:text-white">{item.cumulative}</span>
-                                  </div>
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                        <Bar
-                          yAxisId="left"
-                          dataKey="registrations"
-                          fill="#E9C46A"
-                          radius={[4, 4, 0, 0]}
-                          maxBarSize={40}
-                        />
-                        <Line
-                          yAxisId="right"
-                          type="monotone"
-                          dataKey="cumulative"
-                          stroke="#3B3B3B"
-                          strokeWidth={2}
-                          dot={{ r: 3, fill: "#3B3B3B" }}
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </div>
-
-              {/* Chart 2: Licensure Examination Distribution (1 Column Donut) */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 sm:p-6 shadow-2xs space-y-4">
-                <div className="pb-3 border-b border-black/5 dark:border-white/5">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
-                    Licensure Examination Distribution
-                  </h3>
-                  <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5">
-                    Candidate allocation across board exam tracks
+                  <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                    {filteredRegistrationData?.isSingleDay
+                      ? (regRange === "today" ? "Registered today" : "Registered on selected date")
+                      : `Registered in ${
+                          regRange === "7days"
+                            ? "last 7 days"
+                            : regRange === "30days"
+                            ? "last 30 days"
+                            : regRange === "yesterday"
+                            ? "yesterday"
+                            : "selected period"
+                        }`}
                   </p>
                 </div>
+              </div>
 
-                <div className="w-full h-[180px] relative">
-                  {(filteredRegistrationData?.distributionChart || []).length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-xs text-[#696969] dark:text-gray-400">
-                      <span>No exam distribution data.</span>
-                    </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={filteredRegistrationData?.distributionChart || []}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={48}
-                          outerRadius={75}
-                          paddingAngle={3}
-                          dataKey="count"
-                        >
-                          {(filteredRegistrationData?.distributionChart || []).map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.fill} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const d = payload[0].payload
-                              return (
-                                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-2.5 shadow-lg text-xs space-y-0.5">
-                                  <div className="font-semibold text-[#3B3B3B] dark:text-white">{d.name}</div>
-                                  <div className="text-[11px] text-[#696969] dark:text-gray-300">
-                                    {d.count} candidates ({d.percentage}%)
-                                  </div>
-                                </div>
-                              )
-                            }
-                            return null
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  )}
+              {/* Card 2: Total Students */}
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
+                <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#2A9D8F]/20 dark:bg-[#2A9D8F]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+                  <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                    Total Students
+                  </span>
                 </div>
+                <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                    {filteredRegistrationData?.kpis?.totalRegisteredCount || 0}
+                  </div>
+                  <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                    {filteredRegistrationData?.kpis?.reachSubtext || "Total registered students"}
+                  </p>
+                </div>
+              </div>
 
-                {/* Legend List */}
-                <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
-                  {(filteredRegistrationData?.distributionChart || []).map((item) => (
-                    <div key={item.name} className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
-                        <span className="font-medium text-[#3B3B3B] dark:text-gray-200 truncate" title={item.name}>
-                          {item.name}
-                        </span>
-                      </div>
-                      <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 shrink-0 ml-2">
-                        {item.count} ({item.percentage}%)
-                      </span>
-                    </div>
-                  ))}
+              {/* Card 3: Top Examination */}
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
+                <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E17055]/20 dark:bg-[#E17055]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+                  <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                    Top Examination
+                  </span>
+                </div>
+                <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+                  <div
+                    className="text-xl sm:text-2xl font-bold tracking-tight text-[#3B3B3B] dark:text-white truncate"
+                    title={filteredRegistrationData?.kpis?.leadingExamTrack || ""}
+                  >
+                    {filteredRegistrationData?.kpis?.leadingExamTrack || "—"}
+                  </div>
+                  <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                    Most popular examination chosen
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 4: Active Rate */}
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
+                <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#3B82F6]/20 dark:bg-[#3B82F6]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+                  <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                    Active Rate
+                  </span>
+                </div>
+                <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                    {filteredRegistrationData?.kpis?.activeCandidatesRate || "0%"}
+                  </div>
+                  <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                    {filteredRegistrationData?.kpis?.activeCandidatesCount || "Active student accounts"}
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Tabbed Data Tables: Tab A (Tracks Breakdown) vs Tab B (Candidate Log) */}
-            <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 sm:p-6 shadow-2xs space-y-4">
-              {/* Tab Selector Toolbar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/5 dark:border-white/5 pb-3">
-                <div className="inline-flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setRegTab("tracks")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                      regTab === "tracks"
-                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
-                        : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
-                    }`}
-                  >
-                    Licensure Track Breakdown
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRegTab("log")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                      regTab === "log"
-                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
-                        : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
-                    }`}
-                  >
-                    Candidate Sign-Ups Log
-                  </button>
+            {/* 2. Combined Analytics Visualizations & Performance Breakdown Card */}
+            <div className="relative z-20 w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs">
+              {/* Top: 2-Column Analytics Visualizations Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-black/5 dark:divide-white/10">
+                {/* Chart 1: Registration Trends */}
+                <div className="p-5 sm:p-6 flex flex-col justify-between space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/5 dark:border-white/5">
+                    <div>
+                      <h3 className="text-xs font-normal text-[#3B3B3B] dark:text-white">
+                        Registration Trends
+                      </h3>
+                      <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5 font-normal">
+                        New student sign-ups over time
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400 font-normal">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="size-2 rounded-sm bg-[#E9C46A]" /> New Students
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="size-2 rounded-sm bg-[#CBD5E1] dark:bg-slate-500" /> Total Students
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="w-full h-[280px]">
+                    {(filteredRegistrationData?.trendChart || []).length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-xs text-neutral-400 dark:text-neutral-500 font-normal">
+                        <Clock className="size-8 stroke-[1.5] mb-2 opacity-30" />
+                        <span>No sign-ups recorded for this period.</span>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart
+                          data={filteredRegistrationData?.trendChart || []}
+                          margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                          <XAxis
+                            dataKey={filteredRegistrationData?.isSingleDay ? "hour" : "date"}
+                            tick={{ fontSize: 10, fill: "#888888" }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis
+                            yAxisId="left"
+                            tick={{ fontSize: 10, fill: "#888888" }}
+                            tickLine={false}
+                            axisLine={false}
+                            allowDecimals={false}
+                          />
+                          <YAxis
+                            yAxisId="right"
+                            orientation="right"
+                            tick={{ fontSize: 10, fill: "#888888" }}
+                            tickLine={false}
+                            axisLine={false}
+                            allowDecimals={false}
+                          />
+                          <Tooltip
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                const item = payload[0].payload
+                                return (
+                                  <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-3 shadow-lg text-xs space-y-1 font-normal">
+                                    <div className="text-[#3B3B3B] dark:text-white font-normal">
+                                      {item.date || label}
+                                    </div>
+                                    <div className="text-amber-600 dark:text-amber-400 font-normal">
+                                      New Students: {item.registrations}
+                                    </div>
+                                    <div className="text-slate-500 dark:text-slate-400 font-normal">
+                                      Total Students: {item.cumulative}
+                                    </div>
+                                  </div>
+                                )
+                              }
+                              return null
+                            }}
+                          />
+                          <Bar
+                            yAxisId="left"
+                            dataKey="registrations"
+                            fill="#E9C46A"
+                            radius={[4, 4, 0, 0]}
+                            maxBarSize={32}
+                          />
+                          <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="cumulative"
+                            stroke="#CBD5E1"
+                            strokeWidth={2}
+                            dot={{ r: 3, fill: "#CBD5E1" }}
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
                 </div>
 
-                <div className="text-xs text-neutral-400 dark:text-neutral-500">
-                  {regTab === "tracks"
-                    ? `${(filteredRegistrationData?.tabA_examTracks || []).length} Examination tracks active`
-                    : `${(filteredRegistrationData?.tabB_candidateLog || []).length} Candidates listed`}
+                {/* Chart 2: Students by Examination */}
+                <div className="p-5 sm:p-6 flex flex-col justify-between space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/5 dark:border-white/5">
+                    <div>
+                      <h3 className="text-xs font-normal text-[#3B3B3B] dark:text-white">
+                        Students by Examination
+                      </h3>
+                      <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5 font-normal">
+                        Number of students per examination type
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="w-full h-[280px] flex flex-col justify-between">
+                    {(filteredRegistrationData?.distributionChart || []).length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-xs text-neutral-400 dark:text-neutral-500 font-normal">
+                        <Users className="size-8 stroke-[1.5] mb-2 opacity-30" />
+                        <span>No examination distribution data.</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-full h-[175px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={filteredRegistrationData?.distributionChart || []}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={48}
+                                outerRadius={75}
+                                paddingAngle={3}
+                                dataKey="count"
+                              >
+                                {(filteredRegistrationData?.distributionChart || []).map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                content={({ active, payload }) => {
+                                  if (active && payload && payload.length) {
+                                    const d = payload[0].payload
+                                    return (
+                                      <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-2.5 shadow-lg text-xs space-y-0.5 font-normal">
+                                        <div className="text-[#3B3B3B] dark:text-white">{d.name}</div>
+                                        <div className="text-[11px] text-[#696969] dark:text-gray-300">
+                                          {d.count} students ({d.percentage}%)
+                                        </div>
+                                      </div>
+                                    )
+                                  }
+                                  return null
+                                }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+
+                        {/* Legend List */}
+                        <div className="space-y-1.5 max-h-[95px] overflow-y-auto pr-1">
+                          {(filteredRegistrationData?.distributionChart || []).map((item) => (
+                            <div key={item.name} className="flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-2 truncate">
+                                <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
+                                <span className="text-[#3B3B3B] dark:text-gray-200 truncate font-normal" title={item.name}>
+                                  {item.name}
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-[#696969] dark:text-gray-400 shrink-0 ml-2 font-normal">
+                                {item.count} ({item.percentage}%)
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Tab A: Licensure Exam Track Breakdown Table */}
-              {regTab === "tracks" && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="sticky top-0 z-10 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 backdrop-blur-xs border-b border-[#E9C46A]/30">
-                      <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
-                        <th className="py-2.5 px-3">Licensure Exam Track</th>
-                        <th className="py-2.5 px-3 text-center">New in Period</th>
-                        <th className="py-2.5 px-3">Total Candidates</th>
-                        <th className="py-2.5 px-3">Active Candidates</th>
-                        <th className="py-2.5 px-3">Active Rate</th>
-                        <th className="py-2.5 px-3 pr-4 text-right">Cohort Share</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                      {(filteredRegistrationData?.tabA_examTracks || []).length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-8 text-center text-xs text-neutral-400 dark:text-neutral-500">
-                            No exam tracks configured or registered yet.
-                          </td>
-                        </tr>
-                      ) : (
-                        (filteredRegistrationData?.tabA_examTracks || []).map((track) => (
-                          <tr key={track.trackCode} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
-                            <td className="py-3 px-3">
-                              <div className="font-semibold text-xs text-[#3B3B3B] dark:text-gray-100">
-                                {track.trackCode}
-                              </div>
-                              <span className="inline-block mt-0.5 text-[11px] text-[#696969] dark:text-gray-400 font-normal">
-                                {track.trackName}
-                              </span>
-                            </td>
-                            <td className="py-3 px-3 text-center font-bold text-[#E9C46A]">
-                              +{track.newRegistrations}
-                            </td>
-                            <td className="py-3 px-3 font-semibold text-[#3B3B3B] dark:text-white">
-                              {track.totalCandidates}
-                            </td>
-                            <td className="py-3 px-3 text-neutral-600 dark:text-neutral-300">
-                              {track.activeCandidates}
-                            </td>
-                            <td className="py-3 px-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-20 h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
-                                  <div
-                                    className="h-full bg-emerald-500 rounded-full transition-all"
-                                    style={{ width: `${track.activePercentage}%` }}
-                                  />
-                                </div>
-                                <span className="font-medium text-[#3B3B3B] dark:text-white text-xs">
-                                  {track.activePercentage}%
-                                </span>
-                              </div>
-                            </td>
-                            <td className="py-3 px-3 pr-4 text-right font-bold text-[#3B3B3B] dark:text-white">
-                              {track.shareRate}%
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              {/* Section Divider */}
+              <div className="border-t border-black/5 dark:border-white/10" />
 
-              {/* Tab B: Candidate Sign-Ups Log Table */}
-              {regTab === "log" && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="sticky top-0 z-10 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 backdrop-blur-xs border-b border-[#E9C46A]/30">
-                      <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
-                        <th className="py-2.5 px-3">Candidate & Login ID</th>
-                        <th className="py-2.5 px-3">Target Exam Track</th>
-                        <th className="py-2.5 px-3">Batch</th>
-                        <th className="py-2.5 px-3">School / Affiliation</th>
-                        <th className="py-2.5 px-3">Status</th>
-                        <th className="py-2.5 px-3">Registered At</th>
-                        <th className="py-2.5 px-3 pr-4 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                      {(filteredRegistrationData?.tabB_candidateLog || []).length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="py-8 text-center text-xs text-neutral-400 dark:text-neutral-500">
-                            No candidate registrations found for this filter.
-                          </td>
-                        </tr>
-                      ) : (
-                        (filteredRegistrationData?.tabB_candidateLog || []).map((cand) => (
-                          <tr key={cand.id} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
-                            <td className="py-3 px-3">
-                              <div className="font-semibold text-xs text-[#3B3B3B] dark:text-gray-100">
-                                {cand.name}
-                              </div>
-                              <div className="text-[11px] text-[#696969] dark:text-gray-400 font-mono mt-0.5">
-                                {formatLoginId(cand)}
-                              </div>
-                            </td>
-                            <td className="py-3 px-3 font-medium text-neutral-600 dark:text-neutral-300">
-                              {cand.target_exam || "General"}
-                            </td>
-                            <td className="py-3 px-3 font-medium text-neutral-600 dark:text-neutral-300">
-                              {cand.batch_name || "—"}
-                            </td>
-                            <td className="py-3 px-3 text-neutral-500 dark:text-neutral-400">
-                              {cand.school_name || "—"}
-                            </td>
-                            <td className="py-3 px-3">
-                              <span className="capitalize text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
-                                {cand.status || "active"}
-                              </span>
-                            </td>
-                            <td className="py-3 px-3 text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
-                              {cand.created_formatted || "—"}
-                            </td>
-                            <td className="py-3 px-3 pr-4 text-right">
+              {/* Bottom: Tabbed Tables Area */}
+              <div className="p-0 rounded-b-2xl">
+                {/* Unified Card Header: Tabs (Left) + Search & Filter (Right) */}
+                <div className="relative z-30 px-4 py-3 border-b border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 bg-white/40 dark:bg-white/[0.02]">
+                  {/* Left: Tab Pills */}
+                  <div className="flex items-center gap-1 overflow-x-auto py-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRegTab("tracks")
+                        setRegSearch("")
+                        setRegTracksPage(1)
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                        regTab === "tracks"
+                          ? "bg-black/[0.07] dark:bg-white/15 text-[#3B3B3B] dark:text-white font-semibold shadow-2xs"
+                          : "text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white"
+                      }`}
+                    >
+                      Examination Breakdown
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRegTab("log")
+                        setRegSearch("")
+                        setRegLogPage(1)
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                        regTab === "log"
+                          ? "bg-black/[0.07] dark:bg-white/15 text-[#3B3B3B] dark:text-white font-semibold shadow-2xs"
+                          : "text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white"
+                      }`}
+                    >
+                      Student Sign-Ups
+                    </button>
+                  </div>
+
+                  {/* Right: Filter & Search Controls */}
+                  <div className="flex items-center gap-2 ml-auto">
+                    {/* Examination Filter Button & Dropdown */}
+                    <div className="relative" ref={regTableFilterRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsRegTableFilterOpen((prev) => !prev)}
+                        className={`size-8 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center justify-center text-neutral-600 dark:text-neutral-300 ${
+                          selectedRegExamIds.length > 0
+                            ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white font-medium"
+                            : ""
+                        }`}
+                        aria-expanded={isRegTableFilterOpen}
+                        aria-haspopup="true"
+                        title="Filter examinations"
+                      >
+                        <Filter className="size-3.5" />
+                        {selectedRegExamIds.length > 0 && (
+                          <span className="sr-only">({selectedRegExamIds.length} active)</span>
+                        )}
+                      </button>
+
+                      {/* Examination Filter Dropdown */}
+                      {isRegTableFilterOpen && (
+                        <div className="absolute right-0 top-full mt-1.5 w-64 sm:w-72 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                              Filter Examinations
+                            </span>
+                            {selectedRegExamIds.length > 0 && (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setSearch(cand.name)
-                                  window.scrollTo({ top: 0, behavior: "smooth" })
+                                  setSelectedRegExamIds([])
+                                  setRegTracksPage(1)
+                                  setRegLogPage(1)
                                 }}
-                                className="inline-flex items-center justify-center px-3 h-7 rounded-xl text-[11px] font-medium text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 shadow-2xs hover:bg-neutral-50 dark:hover:bg-white/15 transition-all cursor-pointer whitespace-nowrap"
+                                className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
                               >
-                                View Profile
+                                Clear
                               </button>
-                            </td>
-                          </tr>
-                        ))
+                            )}
+                          </div>
+
+                          <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                            <input
+                              type="checkbox"
+                              checked={selectedRegExamIds.length === 0}
+                              onChange={() => {
+                                setSelectedRegExamIds([])
+                                setRegTracksPage(1)
+                                setRegLogPage(1)
+                              }}
+                              className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                            />
+                            <span>All Examinations</span>
+                          </label>
+
+                          <div className="space-y-0.5 max-h-44 overflow-y-auto pr-1">
+                            {examinationOptions.map((exam) => {
+                              const isChecked = selectedRegExamIds.includes(String(exam.id))
+                              return (
+                                <label
+                                  key={exam.id}
+                                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {
+                                      setRegTracksPage(1)
+                                      setRegLogPage(1)
+                                      if (isChecked) {
+                                        setSelectedRegExamIds(
+                                          selectedRegExamIds.filter((id) => id !== String(exam.id))
+                                        )
+                                      } else {
+                                        setSelectedRegExamIds([...selectedRegExamIds, String(exam.id)])
+                                      }
+                                    }}
+                                    className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                                  />
+                                  <span className="truncate">{exam.name}</span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
                       )}
-                    </tbody>
-                  </table>
+                    </div>
+
+                    {/* Search Control */}
+                    <div className="flex items-center" ref={regSearchRef}>
+                      {isRegSearchOpen ? (
+                        <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                          <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400 pointer-events-none" />
+                            <input
+                              type="search"
+                              autoFocus
+                              placeholder={
+                                regTab === "tracks"
+                                  ? "Search examination…"
+                                  : "Search student, ID, or school…"
+                              }
+                              value={regSearch}
+                              onChange={(e) => {
+                                setRegSearch(e.target.value)
+                                setRegTracksPage(1)
+                                setRegLogPage(1)
+                              }}
+                              className="w-48 sm:w-60 h-8 pl-8 pr-2.5 text-xs rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRegSearch("")
+                              setRegTracksPage(1)
+                              setRegLogPage(1)
+                              setIsRegSearchOpen(false)
+                            }}
+                            className="h-8 px-2 text-[11px] text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setIsRegSearchOpen(true)}
+                          className={`size-8 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center justify-center text-neutral-600 dark:text-neutral-300 ${
+                            regSearch ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white" : ""
+                          }`}
+                          title="Search"
+                        >
+                          <Search className="size-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
+
+                {/* Tab A: Examination Breakdown Table */}
+                {regTab === "tracks" && (() => {
+                  const tracksList = (filteredRegistrationData?.tabA_examTracks || []).filter((tr) => {
+                    if (!regSearch.trim()) return true
+                    const q = regSearch.trim().toLowerCase()
+                    return (
+                      (tr.trackCode || "").toLowerCase().includes(q) ||
+                      (tr.trackName || "").toLowerCase().includes(q)
+                    )
+                  })
+
+                  const totalTracks = tracksList.length
+                  const totalPages = Math.max(1, Math.ceil(totalTracks / REG_PAGE_SIZE))
+                  const currentPage = Math.min(Math.max(1, regTracksPage), totalPages)
+                  const startIndex = (currentPage - 1) * REG_PAGE_SIZE
+                  const paginatedTracks = tracksList.slice(startIndex, startIndex + REG_PAGE_SIZE)
+
+                  return totalTracks === 0 ? (
+                    <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                      {regSearch ? `No examinations found matching "${regSearch}"` : "No examination records found."}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse" aria-label="Examination Breakdown Table">
+                          <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                            <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                              <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
+                                Rank
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Examination
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                New Students
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Total Students
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Active Students
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Active Rate
+                              </th>
+                              <th className="px-4 py-2.5 pr-6 font-semibold text-right" scope="col">
+                                Share
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
+                            {paginatedTracks.map((tr, idx) => {
+                              const rankNumber = startIndex + idx + 1
+                              return (
+                                <tr key={tr.trackCode || idx} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                                  <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
+                                    {rankNumber}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-left">
+                                    <div>
+                                      <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                        {tr.trackName || tr.trackCode || "—"}
+                                      </div>
+                                      <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
+                                        {tr.trackCode}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center text-xs font-normal text-[#E9C46A] whitespace-nowrap">
+                                    +{tr.newRegistrations || 0}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center text-xs text-[#3B3B3B] dark:text-white font-normal whitespace-nowrap">
+                                    {tr.totalCandidates || 0}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center text-xs text-neutral-600 dark:text-neutral-300 font-normal whitespace-nowrap">
+                                    {tr.activeCandidates || 0}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <div className="w-16 sm:w-20 h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
+                                        <div
+                                          className="h-full bg-[#2A9D8F] rounded-full transition-all"
+                                          style={{ width: `${Math.min(100, tr.activePercentage || 0)}%` }}
+                                        />
+                                      </div>
+                                      <span className="font-normal text-[#3B3B3B] dark:text-white text-xs min-w-[32px]">
+                                        {tr.activePercentage || 0}%
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-2.5 pr-6 text-right font-normal text-[#3B3B3B] dark:text-white text-xs whitespace-nowrap">
+                                    {tr.shareRate || 0}%
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Pagination Controls */}
+                      {totalPages >= 1 && (
+                        <div className="px-4 py-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-center gap-3 bg-white/20 dark:bg-white/[0.01] rounded-b-2xl">
+                          <div className="flex items-center gap-3">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                              <button
+                                key={pageNum}
+                                type="button"
+                                onClick={() => setRegTracksPage(pageNum)}
+                                className={`text-xs transition-colors cursor-pointer ${
+                                  pageNum === currentPage
+                                    ? "font-semibold text-[#3B3B3B] dark:text-white"
+                                    : "font-normal text-neutral-400 hover:text-[#3B3B3B] dark:text-neutral-500 dark:hover:text-white"
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+
+                {/* Tab B: Student Sign-Ups Table */}
+                {regTab === "log" && (() => {
+                  const logList = (filteredRegistrationData?.tabB_candidateLog || []).filter((cand) => {
+                    if (!regSearch.trim()) return true
+                    const q = regSearch.trim().toLowerCase()
+                    return (
+                      (cand.name || "").toLowerCase().includes(q) ||
+                      formatLoginId(cand).toLowerCase().includes(q) ||
+                      (cand.target_exam || "").toLowerCase().includes(q) ||
+                      (cand.batch_name || "").toLowerCase().includes(q) ||
+                      (cand.school_name || "").toLowerCase().includes(q)
+                    )
+                  })
+
+                  const totalLogs = logList.length
+                  const totalPages = Math.max(1, Math.ceil(totalLogs / REG_PAGE_SIZE))
+                  const currentPage = Math.min(Math.max(1, regLogPage), totalPages)
+                  const startIndex = (currentPage - 1) * REG_PAGE_SIZE
+                  const paginatedLogs = logList.slice(startIndex, startIndex + REG_PAGE_SIZE)
+
+                  return totalLogs === 0 ? (
+                    <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                      {regSearch ? `No student registrations found matching "${regSearch}"` : "No student registrations found for this period."}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse" aria-label="Student Sign-Ups Table">
+                          <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                            <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                              <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
+                                Rank
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Student
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Examination
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Batch
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                School
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-center" scope="col">
+                                Status
+                              </th>
+                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                                Date Registered
+                              </th>
+                              <th className="px-4 py-2.5 pr-6 font-semibold text-right" scope="col">
+                                Action
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
+                            {paginatedLogs.map((cand, idx) => {
+                              const rankNumber = startIndex + idx + 1
+                              return (
+                                <tr key={cand.id || idx} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                                  <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
+                                    {rankNumber}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-left">
+                                    <div className="flex items-center gap-3">
+                                      <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
+                                        {(cand.avatarUrl || cand.avatar_url) ? (
+                                          <img
+                                            src={cand.avatarUrl || cand.avatar_url}
+                                            alt={cand.name || "Student"}
+                                            className="size-full object-cover rounded-full"
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = "none"
+                                              if (e.currentTarget.nextElementSibling) {
+                                                e.currentTarget.nextElementSibling.style.display = "flex"
+                                              }
+                                            }}
+                                          />
+                                        ) : null}
+                                        <span className={`size-full flex items-center justify-center ${(cand.avatarUrl || cand.avatar_url) ? "hidden" : ""}`}>
+                                          {(cand.name || "S").charAt(0).toUpperCase()}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                          {cand.name || "—"}
+                                        </div>
+                                        <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
+                                          {formatLoginId(cand)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center text-xs text-[#3B3B3B] dark:text-neutral-200 font-normal whitespace-nowrap">
+                                    {cand.target_exam || "General"}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center text-xs text-neutral-500 dark:text-neutral-400 font-normal whitespace-nowrap">
+                                    {cand.batch_name || "—"}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-left text-xs text-neutral-500 dark:text-neutral-400 font-normal">
+                                    {cand.school_name || "—"}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center whitespace-nowrap">
+                                    <span
+                                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide ${
+                                        cand.status === "active"
+                                          ? "bg-[#2A9D8F]/20 text-[#1b6b61] dark:bg-[#2A9D8F]/25 dark:text-[#68c9be]"
+                                          : "bg-[#E17055]/20 text-[#b33920] dark:bg-[#E17055]/25 dark:text-[#f89b87]"
+                                      }`}
+                                    >
+                                      {cand.status === "active" ? "Active" : (cand.status || "Inactive")}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-2.5 text-left text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap font-normal">
+                                    {cand.created_formatted || "—"}
+                                  </td>
+                                  <td className="px-4 py-2.5 pr-6 text-right whitespace-nowrap">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSearch(cand.name)
+                                        window.scrollTo({ top: 0, behavior: "smooth" })
+                                      }}
+                                      className="inline-flex items-center justify-center px-3 h-7 rounded-xl text-[11px] font-normal text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 shadow-2xs hover:bg-neutral-50 dark:hover:bg-white/15 transition-all cursor-pointer whitespace-nowrap"
+                                    >
+                                      View Log
+                                    </button>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Pagination Controls */}
+                      {totalPages >= 1 && (
+                        <div className="px-4 py-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-center gap-3 bg-white/20 dark:bg-white/[0.01] rounded-b-2xl">
+                          <div className="flex items-center gap-3">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                              <button
+                                key={pageNum}
+                                type="button"
+                                onClick={() => setRegLogPage(pageNum)}
+                                className={`text-xs transition-colors cursor-pointer ${
+                                  pageNum === currentPage
+                                    ? "font-semibold text-[#3B3B3B] dark:text-white"
+                                    : "font-normal text-neutral-400 hover:text-[#3B3B3B] dark:text-neutral-500 dark:hover:text-white"
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+              </div>
             </div>
           </div>
         )}

@@ -72,7 +72,12 @@ export const DASHBOARD_MODULES = [
   {
     path: "/admin/settings",
     name: "Settings",
-    description: "Theme preferences, security protocols, and session controls"
+    description: "General theme preferences and account password settings"
+  },
+  {
+    path: "/admin/settings/security",
+    name: "Security & Access Policies",
+    description: "Session monitoring, audit & auth logs, and watermark policies in Settings"
   }
 ]
 

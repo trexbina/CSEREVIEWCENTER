@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label"
 
 export default function SystemSettingsPage() {
     const [loading, setLoading] = useState(true)
+    const [canAccessSecurity, setCanAccessSecurity] = useState(false)
     const [saving, setSaving] = useState(false)
     const [settings, setSettings] = useState({
         single_session_enabled: true,
@@ -54,18 +55,26 @@ export default function SystemSettingsPage() {
             const res = await fetch("/api/admin/settings/security")
             if (res.ok) {
                 const data = await res.json()
-                if (data.settings) {
-                    setSettings(data.settings)
-                    setWatermarkForm({
-                        watermark_text: data.settings.watermark_text || "{name} - {email}",
-                        watermark_opacity: data.settings.watermark_opacity ?? 15
-                    })
+                if (data.canAccessSecurityPolicies === false) {
+                    setCanAccessSecurity(false)
+                } else {
+                    setCanAccessSecurity(true)
+                    if (data.settings) {
+                        setSettings(data.settings)
+                        setWatermarkForm({
+                            watermark_text: data.settings.watermark_text || "{name} - {email}",
+                            watermark_opacity: data.settings.watermark_opacity ?? 15
+                        })
+                    }
+                    if (data.logs) setAuditLogs(data.logs)
+                    if (data.sessions) setSessions(data.sessions)
                 }
-                if (data.logs) setAuditLogs(data.logs)
-                if (data.sessions) setSessions(data.sessions)
+            } else {
+                setCanAccessSecurity(false)
             }
         } catch (err) {
             console.error("Failed to load security settings:", err)
+            setCanAccessSecurity(false)
         } finally {
             setLoading(false)
         }
@@ -229,106 +238,108 @@ export default function SystemSettingsPage() {
                     </div>
                 </div>
 
-                {/* Security & Access Control */}
-                <div className="pb-8 border-b border-border/60">
-                    <div className="mb-4">
-                        <h2 className="text-base font-bold uppercase tracking-wider text-foreground">
-                            Security &amp; Access Policies
-                        </h2>
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                            Manage user login rules, activity history, and study material protection.
-                        </p>
+                {/* Security & Access Control — Restricted to Super Admin and authorized roles */}
+                {canAccessSecurity && (
+                    <div className="pb-8 border-b border-border/60 animate-in fade-in duration-200">
+                        <div className="mb-4">
+                            <h2 className="text-base font-bold uppercase tracking-wider text-foreground">
+                                Security &amp; Access Policies
+                            </h2>
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                                Manage user login rules, activity history, and study material protection.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {/* 1. Session Monitoring Card */}
+                            <div className="rounded-xl border border-border/80 bg-card p-5 space-y-3 shadow-xs flex flex-col justify-between">
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-sm font-bold text-foreground">
+                                            Session Monitoring
+                                        </span>
+                                        <Switch
+                                            checked={settings.single_session_enabled}
+                                            onCheckedChange={(val) => handleToggle("single_session_enabled", val)}
+                                            aria-label="Toggle Single Session Enforcement"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Prevents account sharing by allowing only one device to be logged in at a time.
+                                    </p>
+                                </div>
+
+                                <div className="pt-2 flex items-center justify-end border-t border-border/60">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveModal("sessions")}
+                                        className="text-xs font-semibold text-foreground hover:underline cursor-pointer"
+                                    >
+                                        Manage Sessions
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 2. Access & Audit Logs Card */}
+                            <div className="rounded-xl border border-border/80 bg-card p-5 space-y-3 shadow-xs flex flex-col justify-between">
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-sm font-bold text-foreground">
+                                            Audit &amp; Auth Logs
+                                        </span>
+                                        <Switch
+                                            checked={settings.audit_logging_enabled}
+                                            onCheckedChange={(val) => handleToggle("audit_logging_enabled", val)}
+                                            aria-label="Toggle Security Audit Logging"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Keeps a history of logins, role changes, and system activities.
+                                    </p>
+                                </div>
+
+                                <div className="pt-2 flex items-center justify-end border-t border-border/60">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveModal("logs")}
+                                        className="text-xs font-semibold text-foreground hover:underline cursor-pointer"
+                                    >
+                                        View Audit Logs
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 3. Watermark Protection Card */}
+                            <div className="rounded-xl border border-border/80 bg-card p-5 space-y-3 shadow-xs flex flex-col justify-between">
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-sm font-bold text-foreground">
+                                            Watermark Protection
+                                        </span>
+                                        <Switch
+                                            checked={settings.watermark_enabled}
+                                            onCheckedChange={(val) => handleToggle("watermark_enabled", val)}
+                                            aria-label="Toggle Watermark Protection"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Adds the student&apos;s name on handouts and reviewer files to prevent unauthorized leaks.
+                                    </p>
+                                </div>
+
+                                <div className="pt-2 flex items-center justify-end border-t border-border/60">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveModal("watermark")}
+                                        className="text-xs font-semibold text-foreground hover:underline cursor-pointer"
+                                    >
+                                        Configure
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {/* 1. Session Monitoring Card */}
-                        <div className="rounded-xl border border-border/80 bg-card p-5 space-y-3 shadow-xs flex flex-col justify-between">
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between gap-2">
-                                    <span className="text-sm font-bold text-foreground">
-                                        Session Monitoring
-                                    </span>
-                                    <Switch
-                                        checked={settings.single_session_enabled}
-                                        onCheckedChange={(val) => handleToggle("single_session_enabled", val)}
-                                        aria-label="Toggle Single Session Enforcement"
-                                    />
-                                </div>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Prevents account sharing by allowing only one device to be logged in at a time.
-                                </p>
-                            </div>
-
-                            <div className="pt-2 flex items-center justify-end border-t border-border/60">
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveModal("sessions")}
-                                    className="text-xs font-semibold text-foreground hover:underline cursor-pointer"
-                                >
-                                    Manage Sessions
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* 2. Access & Audit Logs Card */}
-                        <div className="rounded-xl border border-border/80 bg-card p-5 space-y-3 shadow-xs flex flex-col justify-between">
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between gap-2">
-                                    <span className="text-sm font-bold text-foreground">
-                                        Audit &amp; Auth Logs
-                                    </span>
-                                    <Switch
-                                        checked={settings.audit_logging_enabled}
-                                        onCheckedChange={(val) => handleToggle("audit_logging_enabled", val)}
-                                        aria-label="Toggle Security Audit Logging"
-                                    />
-                                </div>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Keeps a history of logins, role changes, and system activities.
-                                </p>
-                            </div>
-
-                            <div className="pt-2 flex items-center justify-end border-t border-border/60">
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveModal("logs")}
-                                    className="text-xs font-semibold text-foreground hover:underline cursor-pointer"
-                                >
-                                    View Audit Logs
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* 3. Watermark Protection Card */}
-                        <div className="rounded-xl border border-border/80 bg-card p-5 space-y-3 shadow-xs flex flex-col justify-between">
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between gap-2">
-                                    <span className="text-sm font-bold text-foreground">
-                                        Watermark Protection
-                                    </span>
-                                    <Switch
-                                        checked={settings.watermark_enabled}
-                                        onCheckedChange={(val) => handleToggle("watermark_enabled", val)}
-                                        aria-label="Toggle Watermark Protection"
-                                    />
-                                </div>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Adds the student&apos;s name on handouts and reviewer files to prevent unauthorized leaks.
-                                </p>
-                            </div>
-
-                            <div className="pt-2 flex items-center justify-end border-t border-border/60">
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveModal("watermark")}
-                                    className="text-xs font-semibold text-foreground hover:underline cursor-pointer"
-                                >
-                                    Configure
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                )}
 
                 {/* Account Security: Change Password */}
                 <div className="pb-8">
@@ -487,7 +498,7 @@ export default function SystemSettingsPage() {
             </div>
 
             {/* ═════════ ACTIVE SESSIONS MODAL ═════════ */}
-            {activeModal === "sessions" && (
+            {canAccessSecurity && activeModal === "sessions" && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                     <div className="w-full max-w-2xl bg-card rounded-2xl border border-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -601,7 +612,7 @@ export default function SystemSettingsPage() {
             )}
 
             {/* ═════════ AUDIT LOGS MODAL ═════════ */}
-            {activeModal === "logs" && (
+            {canAccessSecurity && activeModal === "logs" && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                     <div className="w-full max-w-2xl bg-card rounded-2xl border border-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -659,7 +670,7 @@ export default function SystemSettingsPage() {
             )}
 
             {/* ═════════ WATERMARK SETTINGS MODAL ═════════ */}
-            {activeModal === "watermark" && (
+            {canAccessSecurity && activeModal === "watermark" && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                     <div className="w-full max-w-md bg-card rounded-2xl border border-border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-border">

@@ -211,7 +211,10 @@ export function DashboardSidebar({ role, permissions, roleName }) {
             for (const item of superAdminNav) {
                 if (item.section) {
                     pendingSection = item
-                } else if (allowed.includes(item.href)) {
+                } else if (
+                    allowed.includes(item.href) ||
+                    (item.href === "/admin/settings" && allowed.includes("/admin/settings/security"))
+                ) {
                     if (pendingSection) {
                         result.push(pendingSection)
                         pendingSection = null

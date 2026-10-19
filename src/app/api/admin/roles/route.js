@@ -16,6 +16,10 @@ async function ensureTable() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
+
+    UPDATE custom_roles 
+    SET permissions = permissions || '["/admin/settings/security"]'::jsonb
+    WHERE role_key = 'super_admin' AND NOT (permissions @> '["/admin/settings/security"]'::jsonb);
   `).catch(console.error)
 }
 

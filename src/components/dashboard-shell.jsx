@@ -47,6 +47,9 @@ export function DashboardShell({ role, permissions, roleName, children }) {
 
         for (const mod of guardedModules) {
             if (pathname === mod || pathname.startsWith(mod + "/")) {
+                if (mod === "/admin/settings" && permissions.includes("/admin/settings/security")) {
+                    return false
+                }
                 return !permissions.includes(mod)
             }
         }

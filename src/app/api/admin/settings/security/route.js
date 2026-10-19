@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
-import { ADMIN_ROLES } from "@/lib/auth"
+import { isAdminRole } from "@/lib/auth"
+import { canManageSecurityPolicies } from "@/lib/role-permissions"
 
 async function ensureTables() {
   await pool.query(`
@@ -37,8 +38,13 @@ async function ensureTables() {
 export async function GET() {
   try {
     const session = await getSession()
-    if (!session || !ADMIN_ROLES.includes(session.role)) {
+    if (!session || !isAdminRole(session.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const hasAccess = await canManageSecurityPolicies(session)
+    if (!hasAccess) {
+      return NextResponse.json({ canAccessSecurityPolicies: false }, { status: 200 })
     }
 
     await ensureTables()
@@ -117,6 +123,7 @@ export async function GET() {
     })
 
     return NextResponse.json({
+      canAccessSecurityPolicies: true,
       settings,
       logs: logsRes.rows,
       sessions: activeSessions
@@ -131,8 +138,13 @@ export async function GET() {
 export async function POST(request) {
   try {
     const session = await getSession()
-    if (!session || !ADMIN_ROLES.includes(session.role)) {
+    if (!session || !isAdminRole(session.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const hasAccess = await canManageSecurityPolicies(session)
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Forbidden: You do not have permission to modify Security & Access Policies." }, { status: 403 })
     }
 
     await ensureTables()

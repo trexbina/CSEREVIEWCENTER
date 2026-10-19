@@ -791,8 +791,6 @@ export default function SystemSettingsPage() {
                     </div>
                 </div>
             </div>
-                </div>
-            )}
 
             {/* ═════════ AUDIT LOGS MODAL ═════════ */}
             {canAccessSecurity && activeModal === "logs" && (

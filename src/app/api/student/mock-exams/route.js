@@ -51,7 +51,7 @@ export async function GET() {
 
     // Get mock exams targeting this batch/course (or general ones)
     const { rows: exams } = await pool.query(`
-      SELECT me.id, me.exam_code, me.title, me.description, me.questions, me.unlock_date, me.status,
+      SELECT me.id, me.exam_code, me.title, me.description, me.questions, me.unlock_date, me.created_at, me.status,
              (SELECT COUNT(*) FROM jsonb_array_elements(
                CASE WHEN jsonb_typeof(me.questions::jsonb->'questions') = 'array' 
                     THEN me.questions::jsonb->'questions' 
@@ -83,7 +83,7 @@ export async function GET() {
     // If no targeted exams, return all active exams for demo/learning
     if (exams.length === 0) {
       const { rows: allExams } = await pool.query(`
-        SELECT me.id, me.exam_code, me.title, me.description, me.questions, me.unlock_date, me.status,
+        SELECT me.id, me.exam_code, me.title, me.description, me.questions, me.unlock_date, me.created_at, me.status,
                (SELECT COUNT(*) FROM jsonb_array_elements(
                  CASE WHEN jsonb_typeof(me.questions::jsonb->'questions') = 'array' 
                       THEN me.questions::jsonb->'questions' 

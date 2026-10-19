@@ -889,28 +889,25 @@ export default function MyProgressPage() {
 
       {/* ═══ SECTION: User Subject Progression ═══ */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
           <div>
-            <div className="flex items-center gap-2">
-              <div className="size-2 rounded-full bg-[#E9C46A]" />
-              <h2 className="text-base font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                Subject Progression
-              </h2>
-            </div>
-            <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
+            <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
+              Subject Progression
+            </h2>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5 font-normal">
               Live curriculum completion, active learning days, and your current study streak.
             </p>
           </div>
 
-          {/* Quick Streak & Progress Day Pill Badges */}
-          <div className="flex items-center gap-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/40 text-amber-800 dark:text-amber-200 text-xs font-semibold shadow-2xs">
-              <Flame className="size-3.5 text-amber-500 fill-amber-500 animate-pulse" />
+          {/* Quick Streak & Progress Day Badges */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="inline-flex items-center gap-1.5 px-3 h-8 rounded-xl bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 shadow-2xs">
+              <Flame className="size-3.5 text-[#E9C46A] fill-[#E9C46A]" />
               <span>{data.overallStats?.studyStreak || 0} Day Streak</span>
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/40 text-blue-800 dark:text-blue-200 text-xs font-semibold shadow-2xs">
-              <Calendar className="size-3.5 text-blue-500" />
+            <div className="inline-flex items-center gap-1.5 px-3 h-8 rounded-xl bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 shadow-2xs">
+              <Calendar className="size-3.5 text-neutral-400 dark:text-neutral-500" />
               <span>Day {data.overallStats?.totalActiveDays || 0} Active</span>
             </div>
           </div>
@@ -918,94 +915,84 @@ export default function MyProgressPage() {
 
         {/* Dynamic Subject Cards Grid */}
         {data.subjects && data.subjects.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {data.subjects.map((sub) => {
               const pct = sub.progressPct || 0
-              const isFinished = pct >= 100
 
               return (
                 <div
                   key={sub.id}
-                  className="bg-white dark:bg-card border border-black/5 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-sm transition-all duration-200 flex flex-col justify-between gap-4"
+                  className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between transition-all hover:border-black/15 dark:hover:border-white/20"
                 >
-                  {/* Top row: Subject code, title and Category */}
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-0.5 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase bg-[#E9C46A]/20 text-[#8a6e1d] dark:text-[#E9C46A]">
-                            {sub.code || "SUBJECT"}
-                          </span>
-                          {sub.subcategoryName && (
-                            <span className="text-[11px] text-[#696969] dark:text-gray-400">
-                              • {sub.subcategoryName}
-                            </span>
-                          )}
-                        </div>
-                        <h3 className="text-sm font-bold text-[#3B3B3B] dark:text-white line-clamp-1 mt-1">
-                          {sub.title}
-                        </h3>
-                      </div>
-
-                      {/* Percentage Badge */}
-                      <div className="shrink-0 text-right">
-                        <span className="text-lg font-extrabold text-[#3B3B3B] dark:text-white tracking-tight">
-                          {pct}%
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full bg-black/5 dark:bg-white/10 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#E9C46A] rounded-full transition-all duration-700 ease-out"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
+                  {/* Signature Card Header */}
+                  <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#2A9D8F]/20 dark:bg-[#2A9D8F]/25">
+                    <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 truncate select-none">
+                      {sub.code || "SUBJECT"}
+                    </span>
+                    <span className="text-[11px] font-semibold text-[#3B3B3B] dark:text-white">
+                      {pct}%
+                    </span>
                   </div>
 
-                  {/* Bottom Stats: Out of (Completed / Total), Progress Day & Study Streak */}
-                  <div className="pt-2 border-t border-black/5 dark:border-white/5 grid grid-cols-3 gap-2 text-center text-xs">
-                    {/* Out of */}
-                    <div className="p-1.5 rounded-lg bg-gray-50/70 dark:bg-white/[0.02]">
-                      <span className="text-[10px] text-[#696969] dark:text-gray-400 block font-medium">
-                        Completed
-                      </span>
-                      <span className="font-bold text-[#3B3B3B] dark:text-white text-xs mt-0.5 block truncate">
-                        {sub.completedItems} / {sub.totalItems}
-                      </span>
-                      <span className="text-[9px] text-[#696969]/80 dark:text-gray-400 block">
-                        out of total
-                      </span>
+                  {/* Card Body */}
+                  <div className="p-5 sm:p-6 flex flex-col justify-between gap-4 flex-1">
+                    <div className="space-y-1">
+                      <h3 className="text-sm sm:text-base font-semibold text-[#3B3B3B] dark:text-white line-clamp-1">
+                        {sub.title}
+                      </h3>
+                      <p className="text-xs text-neutral-400 dark:text-neutral-500 line-clamp-1">
+                        {sub.subcategoryName || "Curriculum"}
+                      </p>
+
+                      {/* Progress Bar */}
+                      <div className="w-full bg-black/5 dark:bg-white/10 h-1.5 rounded-full overflow-hidden mt-3">
+                        <div
+                          className="h-full bg-[#2A9D8F] rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
                     </div>
 
-                    {/* Progress Day */}
-                    <div className="p-1.5 rounded-lg bg-gray-50/70 dark:bg-white/[0.02]">
-                      <span className="text-[10px] text-[#696969] dark:text-gray-400 block font-medium">
-                        Progress Day
-                      </span>
-                      <span className="font-bold text-blue-600 dark:text-blue-400 text-xs mt-0.5 block">
-                        Day {sub.activeDays || 0}
-                      </span>
-                      <span className="text-[9px] text-[#696969]/80 dark:text-gray-400 block">
-                        active study
-                      </span>
-                    </div>
-
-                    {/* Study Streak */}
-                    <div className="p-1.5 rounded-lg bg-gray-50/70 dark:bg-white/[0.02]">
-                      <span className="text-[10px] text-[#696969] dark:text-gray-400 block font-medium">
-                        Study Streak
-                      </span>
-                      <div className="flex items-center justify-center gap-1 mt-0.5">
-                        <Flame className="size-3 text-amber-500 fill-amber-500" />
-                        <span className="font-bold text-amber-600 dark:text-amber-400 text-xs">
-                          {sub.studyStreak || 0}d
+                    {/* Bottom Stats: Out of (Completed / Total), Progress Day & Study Streak */}
+                    <div className="pt-3 border-t border-black/5 dark:border-white/5 grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <span className="text-[10px] text-neutral-400 dark:text-neutral-500 block font-normal">
+                          Completed
+                        </span>
+                        <span className="font-semibold text-[#3B3B3B] dark:text-white text-xs mt-0.5 block truncate">
+                          {sub.completedItems} / {sub.totalItems}
+                        </span>
+                        <span className="text-[9px] text-neutral-400 dark:text-neutral-500 block">
+                          out of total
                         </span>
                       </div>
-                      <span className="text-[9px] text-[#696969]/80 dark:text-gray-400 block">
-                        consecutive
-                      </span>
+
+                      <div className="border-x border-black/5 dark:border-white/5">
+                        <span className="text-[10px] text-neutral-400 dark:text-neutral-500 block font-normal">
+                          Progress Day
+                        </span>
+                        <span className="font-semibold text-[#3B3B3B] dark:text-white text-xs mt-0.5 block truncate">
+                          Day {sub.activeDays || 0}
+                        </span>
+                        <span className="text-[9px] text-neutral-400 dark:text-neutral-500 block">
+                          active study
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-neutral-400 dark:text-neutral-500 block font-normal">
+                          Study Streak
+                        </span>
+                        <div className="flex items-center justify-center gap-1 mt-0.5">
+                          <Flame className="size-3 text-[#E9C46A] fill-[#E9C46A]" />
+                          <span className="font-semibold text-[#3B3B3B] dark:text-white text-xs">
+                            {sub.studyStreak || 0}d
+                          </span>
+                        </div>
+                        <span className="text-[9px] text-neutral-400 dark:text-neutral-500 block">
+                          consecutive
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1013,7 +1000,7 @@ export default function MyProgressPage() {
             })}
           </div>
         ) : (
-          <div className="bg-white dark:bg-card border border-black/5 dark:border-white/10 rounded-2xl p-6 text-center text-xs text-[#696969] dark:text-gray-400">
+          <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/15 p-6 text-center text-xs text-neutral-400 dark:text-neutral-500">
             No subject curriculum is currently active or assigned.
           </div>
         )}

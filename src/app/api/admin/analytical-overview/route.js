@@ -79,6 +79,7 @@ export async function GET(request) {
       SELECT 
         u.id AS student_id,
         u.name AS student_name,
+        u.login_id,
         u.email,
         u.exam_id,
         u.batch_id,
@@ -116,9 +117,16 @@ export async function GET(request) {
     rawScoreRows.forEach((row) => {
       const sId = row.student_id
       if (!studentMap[sId]) {
+        const parts = (row.student_name || "").trim().split(/\s+/)
+        const lastName = parts[parts.length - 1]?.toLowerCase().replace(/[^a-z0-9]/g, "") || "user"
+        const fallbackLoginId = `${lastName}${String(sId).padStart(5, "0")}`
+        const resolvedLoginId = row.login_id || fallbackLoginId
+
         studentMap[sId] = {
           id: sId,
           name: row.student_name,
+          loginId: resolvedLoginId,
+          login_id: resolvedLoginId,
           email: row.email,
           examId: row.exam_id,
           examination: row.examination_name,
@@ -145,6 +153,8 @@ export async function GET(request) {
       return {
         id: st.id,
         name: st.name,
+        loginId: st.loginId,
+        login_id: st.loginId,
         email: st.email,
         examId: st.examId,
         examination: st.examination,
@@ -162,17 +172,17 @@ export async function GET(request) {
     // If database has 0 students, provide fallback structure for clean UI display
     if (studentList.length === 0) {
       studentList = [
-        { id: 101, name: "Maria Santos", email: "maria.santos@up.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "University of the Philippines", major: "Secondary Education - Math", batch: "Batch 2026", avgScore: 88.5, attemptCount: 4, completionRate: 100, passed: true },
-        { id: 102, name: "Juan Dela Cruz", email: "juan.delacruz@ateneo.edu", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "Ateneo de Manila University", major: "Elementary Education", batch: "Batch 2026", avgScore: 82.0, attemptCount: 3, completionRate: 75, passed: true },
-        { id: 103, name: "Angela Reyes", email: "angela.reyes@dlsu.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "De La Salle University", major: "Secondary Education - English", batch: "Batch 2026", avgScore: 79.4, attemptCount: 4, completionRate: 100, passed: true },
-        { id: 104, name: "Carlos Mendoza", email: "carlos.m@ust.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "University of Santo Tomas", major: "Secondary Education - Science", batch: "Batch 2026", avgScore: 74.2, attemptCount: 2, completionRate: 50, passed: false },
-        { id: 105, name: "Patricia Gomez", email: "patricia.g@pup.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "Polytechnic University of the Philippines", major: "Elementary Education", batch: "Batch 2026", avgScore: 91.2, attemptCount: 4, completionRate: 100, passed: true },
-        { id: 106, name: "Joshua Aquino", email: "joshua.aquino@ust.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "University of Santo Tomas", major: "Elementary Education", batch: "Batch 2026", avgScore: 61.5, attemptCount: 3, completionRate: 75, passed: false },
-        { id: 107, name: "Beatriz Fernandez", email: "b.fernandez@feulept.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "Far Eastern University", major: "Secondary Education - English", batch: "Batch 2026", avgScore: 54.0, attemptCount: 2, completionRate: 50, passed: false },
-        { id: 108, name: "Kevin Ramos", email: "kevin.ramos@pup.edu.ph", examId: 17, examination: "Philippine Nurses Licensure Examination (PNLE)", school: "Polytechnic University of the Philippines", major: "Nursing Practice", batch: "Batch 2026", avgScore: 58.8, attemptCount: 4, completionRate: 100, passed: false },
-        { id: 109, name: "Sarah Alcantara", email: "sarah.alcantara@feu.edu.ph", examId: 17, examination: "Philippine Nurses Licensure Examination (PNLE)", school: "Far Eastern University", major: "Nursing Practice", batch: "Batch 2026", avgScore: 84.6, attemptCount: 4, completionRate: 100, passed: true },
-        { id: 110, name: "David Lim", email: "david.lim@dlsu.edu.ph", examId: 18, examination: "Civil Service Examination (CSE)", school: "De La Salle University", major: "Public Administration", batch: "Batch 2026", avgScore: 64.2, attemptCount: 2, completionRate: 50, passed: false },
-        { id: 111, name: "Hannah Tan", email: "hannah.tan@up.edu.ph", examId: 18, examination: "Civil Service Examination (CSE)", school: "University of the Philippines", major: "Public Administration", batch: "Batch 2026", avgScore: 89.0, attemptCount: 4, completionRate: 100, passed: true },
+        { id: 101, name: "Maria Santos", loginId: "santos00101", login_id: "santos00101", email: "maria.santos@up.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "University of the Philippines", major: "Secondary Education - Math", batch: "Batch 2026", avgScore: 88.5, attemptCount: 4, completionRate: 100, passed: true },
+        { id: 102, name: "Juan Dela Cruz", loginId: "delacruz00102", login_id: "delacruz00102", email: "juan.delacruz@ateneo.edu", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "Ateneo de Manila University", major: "Elementary Education", batch: "Batch 2026", avgScore: 82.0, attemptCount: 3, completionRate: 75, passed: true },
+        { id: 103, name: "Angela Reyes", loginId: "reyes00103", login_id: "reyes00103", email: "angela.reyes@dlsu.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "De La Salle University", major: "Secondary Education - English", batch: "Batch 2026", avgScore: 79.4, attemptCount: 4, completionRate: 100, passed: true },
+        { id: 104, name: "Carlos Mendoza", loginId: "mendoza00104", login_id: "mendoza00104", email: "carlos.m@ust.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "University of Santo Tomas", major: "Secondary Education - Science", batch: "Batch 2026", avgScore: 74.2, attemptCount: 2, completionRate: 50, passed: false },
+        { id: 105, name: "Patricia Gomez", loginId: "gomez00105", login_id: "gomez00105", email: "patricia.g@pup.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "Polytechnic University of the Philippines", major: "Elementary Education", batch: "Batch 2026", avgScore: 91.2, attemptCount: 4, completionRate: 100, passed: true },
+        { id: 106, name: "Joshua Aquino", loginId: "aquino00106", login_id: "aquino00106", email: "joshua.aquino@ust.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "University of Santo Tomas", major: "Elementary Education", batch: "Batch 2026", avgScore: 61.5, attemptCount: 3, completionRate: 75, passed: false },
+        { id: 107, name: "Beatriz Fernandez", loginId: "fernandez00107", login_id: "fernandez00107", email: "b.fernandez@feulept.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "Far Eastern University", major: "Secondary Education - English", batch: "Batch 2026", avgScore: 54.0, attemptCount: 2, completionRate: 50, passed: false },
+        { id: 108, name: "Kevin Ramos", loginId: "ramos00108", login_id: "ramos00108", email: "kevin.ramos@pup.edu.ph", examId: 17, examination: "Philippine Nurses Licensure Examination (PNLE)", school: "Polytechnic University of the Philippines", major: "Nursing Practice", batch: "Batch 2026", avgScore: 58.8, attemptCount: 4, completionRate: 100, passed: false },
+        { id: 109, name: "Sarah Alcantara", loginId: "alcantara00109", login_id: "alcantara00109", email: "sarah.alcantara@feu.edu.ph", examId: 17, examination: "Philippine Nurses Licensure Examination (PNLE)", school: "Far Eastern University", major: "Nursing Practice", batch: "Batch 2026", avgScore: 84.6, attemptCount: 4, completionRate: 100, passed: true },
+        { id: 110, name: "David Lim", loginId: "lim00110", login_id: "lim00110", email: "david.lim@dlsu.edu.ph", examId: 18, examination: "Civil Service Examination (CSE)", school: "De La Salle University", major: "Public Administration", batch: "Batch 2026", avgScore: 64.2, attemptCount: 2, completionRate: 50, passed: false },
+        { id: 111, name: "Hannah Tan", loginId: "tan00111", login_id: "tan00111", email: "hannah.tan@up.edu.ph", examId: 18, examination: "Civil Service Examination (CSE)", school: "University of the Philippines", major: "Public Administration", batch: "Batch 2026", avgScore: 89.0, attemptCount: 4, completionRate: 100, passed: true },
       ]
     }
 
@@ -797,6 +807,8 @@ export async function GET(request) {
       return {
         id: st.id,
         name: st.name,
+        loginId: st.loginId,
+        login_id: st.loginId,
         email: st.email,
         examId: st.examId,
         examination: st.examination,
@@ -939,11 +951,17 @@ export async function GET(request) {
         statusColor = "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
       }
 
+      const candidateParts = (u.name || "").trim().split(/\s+/)
+      const candidateSurname = candidateParts[candidateParts.length - 1]?.toLowerCase().replace(/[^a-z0-9]/g, "") || "user"
+      const fallbackCandLoginId = `${candidateSurname}${String(u.id || 1).padStart(5, "0")}`
+      const resolvedCandLoginId = u.login_id || fallbackCandLoginId
+
       return {
         id: u.id,
         name: u.name,
         email: u.email,
-        login_id: u.login_id || u.email,
+        login_id: resolvedCandLoginId,
+        loginId: resolvedCandLoginId,
         role: u.role,
         target_exam: u.target_exam || "General",
         target_exam_date: u.target_exam_date || null,

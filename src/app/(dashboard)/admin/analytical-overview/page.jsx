@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import {
   Search,
   RefreshCw,
@@ -24,6 +24,7 @@ import {
   UserCheck,
   TrendingUp,
   Award,
+  Filter,
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -50,8 +51,51 @@ export default function AnalyticalOverviewPage() {
   const [search, setSearch] = useState("")
   const [sortField, setSortField] = useState("avgScore")
   const [sortDir, setSortDir] = useState("desc")
-  const [selectedExaminationId, setSelectedExaminationId] = useState("ALL")
-  const [selectedBatchId, setSelectedBatchId] = useState("ALL")
+  // Section 1 filter state
+  const [selectedExamIds, setSelectedExamIds] = useState([])
+  const [selectedBatchIds, setSelectedBatchIds] = useState([])
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const filterDropdownRef = useRef(null)
+
+  // Section 2: Mock Exam Passers Rate Filters
+  const [selectedPassersExamIds, setSelectedPassersExamIds] = useState([])
+  const [selectedPassersBatchIds, setSelectedPassersBatchIds] = useState([])
+  const [selectedMockExamIds, setSelectedMockExamIds] = useState([])
+  const [isPassersFilterOpen, setIsPassersFilterOpen] = useState(false)
+  const passersFilterRef = useRef(null)
+
+  // Section 3: Student Activity & Engagement State
+  const [selectedActivityExamIds, setSelectedActivityExamIds] = useState([])
+  const [selectedActivityBatchIds, setSelectedActivityBatchIds] = useState([])
+  const [isActivityFilterOpen, setIsActivityFilterOpen] = useState(false)
+  const activityFilterRef = useRef(null)
+
+  // Section 4: User Registration Overview State
+  const [selectedRegExamIds, setSelectedRegExamIds] = useState([])
+  const [selectedRegBatchIds, setSelectedRegBatchIds] = useState([])
+  const [isRegFilterOpen, setIsRegFilterOpen] = useState(false)
+  const regFilterRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target)) {
+        setIsFilterOpen(false)
+      }
+      if (passersFilterRef.current && !passersFilterRef.current.contains(e.target)) {
+        setIsPassersFilterOpen(false)
+      }
+      if (activityFilterRef.current && !activityFilterRef.current.contains(e.target)) {
+        setIsActivityFilterOpen(false)
+      }
+      if (regFilterRef.current && !regFilterRef.current.contains(e.target)) {
+        setIsRegFilterOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
   const [showPerformanceOverview, setShowPerformanceOverview] = useState(true)
   const [showPassersRate, setShowPassersRate] = useState(true)
   const [showStudentActivity, setShowStudentActivity] = useState(true)
@@ -63,8 +107,6 @@ export default function AnalyticalOverviewPage() {
   // Section 4: User Registration Overview State
   const [regDate, setRegDate] = useState(() => new Date().toISOString().split("T")[0])
   const [regRange, setRegRange] = useState("today") // 'today' | 'yesterday' | '7days' | '30days' | 'all'
-  const [selectedRegExaminationId, setSelectedRegExaminationId] = useState("ALL")
-  const [selectedRegBatchId, setSelectedRegBatchId] = useState("ALL")
   const [regTab, setRegTab] = useState("tracks") // 'tracks' | 'log'
 
   // Section 3: Student Activity & Engagement State
@@ -76,13 +118,6 @@ export default function AnalyticalOverviewPage() {
   const [rosterSortField, setRosterSortField] = useState("name")
   const [rosterSortDir, setRosterSortDir] = useState("asc")
   const [activityLoading, setActivityLoading] = useState(false)
-  const [selectedActivityExaminationId, setSelectedActivityExaminationId] = useState("ALL")
-  const [selectedActivityBatchId, setSelectedActivityBatchId] = useState("ALL")
-
-  // Section 2: Mock Exam Passers Rate Filters
-  const [selectedPassersExaminationId, setSelectedPassersExaminationId] = useState("ALL")
-  const [selectedPassersBatchId, setSelectedPassersBatchId] = useState("ALL")
-  const [selectedExamId, setSelectedExamId] = useState("ALL")
 
   const examinationOptions = data?.filters?.examinations || []
   const allBatchOptions = data?.filters?.batches || []
@@ -90,86 +125,61 @@ export default function AnalyticalOverviewPage() {
 
   // Dynamic batch options for Section 2 (Mock Exam Passers Rate)
   const passersBatchOptions = useMemo(() => {
-    if (selectedPassersExaminationId === "ALL") {
+    if (selectedPassersExamIds.length === 0) {
       return allBatchOptions
     }
-    return allBatchOptions.filter(
-      (b) => String(b.exam_id) === String(selectedPassersExaminationId)
+    return allBatchOptions.filter((b) =>
+      selectedPassersExamIds.includes(String(b.exam_id))
     )
-  }, [allBatchOptions, selectedPassersExaminationId])
-
-  // Handle Section 2 Examination filter change with batch reset
-  const handlePassersExaminationChange = (newExamId) => {
-    setSelectedPassersExaminationId(newExamId)
-    if (newExamId !== "ALL") {
-      const isBatchValid = allBatchOptions.some(
-        (b) => String(b.id) === String(selectedPassersBatchId) && String(b.exam_id) === String(newExamId)
-      )
-      if (!isBatchValid) {
-        setSelectedPassersBatchId("ALL")
-      }
-    }
-  }
+  }, [allBatchOptions, selectedPassersExamIds])
 
   // Dynamic batch options for Section 3 (Student Activity & Engagement)
   const activityBatchOptions = useMemo(() => {
-    if (selectedActivityExaminationId === "ALL") {
+    if (selectedActivityExamIds.length === 0) {
       return allBatchOptions
     }
-    return allBatchOptions.filter(
-      (b) => String(b.exam_id) === String(selectedActivityExaminationId)
+    return allBatchOptions.filter((b) =>
+      selectedActivityExamIds.includes(String(b.exam_id))
     )
-  }, [allBatchOptions, selectedActivityExaminationId])
-
-  // Handle Section 3 Examination filter change with batch reset
-  const handleActivityExaminationChange = (newExamId) => {
-    setSelectedActivityExaminationId(newExamId)
-    if (newExamId !== "ALL") {
-      const isBatchValid = allBatchOptions.some(
-        (b) => String(b.id) === String(selectedActivityBatchId) && String(b.exam_id) === String(newExamId)
-      )
-      if (!isBatchValid) {
-        setSelectedActivityBatchId("ALL")
-      }
-    }
-  }
+  }, [allBatchOptions, selectedActivityExamIds])
 
   // Dynamic batch options for Section 4 (User Registration Overview)
   const regBatchOptions = useMemo(() => {
-    if (selectedRegExaminationId === "ALL") {
+    if (selectedRegExamIds.length === 0) {
       return allBatchOptions
     }
-    return allBatchOptions.filter(
-      (b) => String(b.exam_id) === String(selectedRegExaminationId)
+    return allBatchOptions.filter((b) =>
+      selectedRegExamIds.includes(String(b.exam_id))
     )
-  }, [allBatchOptions, selectedRegExaminationId])
+  }, [allBatchOptions, selectedRegExamIds])
 
-  // Handle Section 4 Examination filter change with batch reset
-  const handleRegExaminationChange = (newExamId) => {
-    setSelectedRegExaminationId(newExamId)
-    if (newExamId !== "ALL") {
-      const isBatchValid = allBatchOptions.some(
-        (b) => String(b.id) === String(selectedRegBatchId) && String(b.exam_id) === String(newExamId)
-      )
-      if (!isBatchValid) {
-        setSelectedRegBatchId("ALL")
-      }
-    }
-  }
+  // Filter button label for Section 2
+  const passersFilterButtonLabel = useMemo(() => {
+    const totalSelected = selectedPassersExamIds.length + selectedPassersBatchIds.length + selectedMockExamIds.length
+    if (totalSelected === 0) return "All Filters"
+    return `Filters (${totalSelected})`
+  }, [selectedPassersExamIds, selectedPassersBatchIds, selectedMockExamIds])
 
-  // Filtered mock exams for the "View" dropdown based on selected examination & batch
+  // Filter button label for Section 3
+  const activityFilterButtonLabel = useMemo(() => {
+    const totalSelected = selectedActivityExamIds.length + selectedActivityBatchIds.length
+    if (totalSelected === 0) return "All Filters"
+    return `Filters (${totalSelected})`
+  }, [selectedActivityExamIds, selectedActivityBatchIds])
+
+  // Filter button label for Section 4
+  const regFilterButtonLabel = useMemo(() => {
+    const totalSelected = selectedRegExamIds.length + selectedRegBatchIds.length
+    if (totalSelected === 0) return "All Filters"
+    return `Filters (${totalSelected})`
+  }, [selectedRegExamIds, selectedRegBatchIds])
+
+  // Filtered mock exams for Section 2 based on selected examinations & batches
   const filteredMockExamOptions = useMemo(() => {
     const list = mockExamOptions || []
-    if (selectedPassersExaminationId === "ALL" && selectedPassersBatchId === "ALL") {
+    if (selectedPassersExamIds.length === 0 && selectedPassersBatchIds.length === 0) {
       return list
     }
-
-    const examObj = selectedPassersExaminationId !== "ALL"
-      ? examinationOptions.find((e) => String(e.id) === String(selectedPassersExaminationId))
-      : null
-    const batchObj = selectedPassersBatchId !== "ALL"
-      ? allBatchOptions.find((b) => String(b.id) === String(selectedPassersBatchId))
-      : null
 
     const attemptsList = data?.mockExamPassersData?.attempts || []
 
@@ -177,8 +187,8 @@ export default function AnalyticalOverviewPage() {
       // 1. Check if mock exam has recorded attempts matching the selected exam / batch
       const hasMatchingAttempt = attemptsList.some((att) => {
         if (String(att.mockExamId) !== String(exam.id)) return false
-        const matchExam = selectedPassersExaminationId === "ALL" || String(att.examId) === String(selectedPassersExaminationId)
-        const matchBatch = selectedPassersBatchId === "ALL" || String(att.batchId) === String(selectedPassersBatchId)
+        const matchExam = selectedPassersExamIds.length === 0 || selectedPassersExamIds.includes(String(att.examId))
+        const matchBatch = selectedPassersBatchIds.length === 0 || selectedPassersBatchIds.includes(String(att.batchId))
         return matchExam && matchBatch
       })
       if (hasMatchingAttempt) return true
@@ -193,36 +203,42 @@ export default function AnalyticalOverviewPage() {
       }
 
       let matchesExamTarget = false
-      if (selectedPassersExaminationId === "ALL") {
+      if (selectedPassersExamIds.length === 0) {
         matchesExamTarget = true
       } else {
         matchesExamTarget = targets.some((t) => {
           if (typeof t !== "string") return false
           const tLower = t.toLowerCase()
-          return (
-            tLower === `course_${selectedPassersExaminationId}` ||
-            (examObj?.name && tLower.includes(examObj.name.toLowerCase()))
-          )
+          return selectedPassersExamIds.some((id) => {
+            const examObj = examinationOptions.find((e) => String(e.id) === String(id))
+            return (
+              tLower === `course_${id}` ||
+              (examObj?.name && tLower.includes(examObj.name.toLowerCase()))
+            )
+          })
         })
       }
 
       let matchesBatchTarget = false
-      if (selectedPassersBatchId === "ALL") {
+      if (selectedPassersBatchIds.length === 0) {
         matchesBatchTarget = true
       } else {
         matchesBatchTarget = targets.some((t) => {
           if (typeof t !== "string") return false
           const tLower = t.toLowerCase()
-          return (
-            tLower === `batch_${selectedPassersBatchId}` ||
-            (batchObj?.name && tLower.includes(batchObj.name.toLowerCase()))
-          )
+          return selectedPassersBatchIds.some((id) => {
+            const batchObj = allBatchOptions.find((b) => String(b.id) === String(id))
+            return (
+              tLower === `batch_${id}` ||
+              (batchObj?.name && tLower.includes(batchObj.name.toLowerCase()))
+            )
+          })
         })
       }
 
       return matchesExamTarget && matchesBatchTarget
     })
-  }, [mockExamOptions, selectedPassersExaminationId, selectedPassersBatchId, examinationOptions, allBatchOptions, data])
+  }, [mockExamOptions, selectedPassersExamIds, selectedPassersBatchIds, examinationOptions, allBatchOptions, data])
 
   // Determine current active mock exam passer stats dynamically
   const passersData = useMemo(() => {
@@ -244,13 +260,13 @@ export default function AnalyticalOverviewPage() {
     // If there are recorded individual attempts, filter them dynamically
     if (attempts.length > 0) {
       const filteredAttempts = attempts.filter((att) => {
-        if (selectedExamId !== "ALL" && String(att.mockExamId) !== String(selectedExamId)) {
+        if (selectedMockExamIds.length > 0 && !selectedMockExamIds.includes(String(att.mockExamId))) {
           return false
         }
-        if (selectedPassersExaminationId !== "ALL" && String(att.examId) !== String(selectedPassersExaminationId)) {
+        if (selectedPassersExamIds.length > 0 && !selectedPassersExamIds.includes(String(att.examId))) {
           return false
         }
-        if (selectedPassersBatchId !== "ALL" && String(att.batchId) !== String(selectedPassersBatchId)) {
+        if (selectedPassersBatchIds.length > 0 && !selectedPassersBatchIds.includes(String(att.batchId))) {
           return false
         }
         return true
@@ -266,9 +282,11 @@ export default function AnalyticalOverviewPage() {
         : 0
 
       let title = "All Mock Exams (Combined)"
-      if (selectedExamId !== "ALL") {
-        const found = raw.perExam?.find((e) => String(e.id) === String(selectedExamId))
-        title = found ? (found.exam_code ? `${found.exam_code} — ${found.title}` : found.title) : `Mock Exam #${selectedExamId}`
+      if (selectedMockExamIds.length === 1) {
+        const found = raw.perExam?.find((e) => String(e.id) === String(selectedMockExamIds[0]))
+        title = found ? (found.exam_code ? `${found.exam_code} — ${found.title}` : found.title) : `Mock Exam #${selectedMockExamIds[0]}`
+      } else if (selectedMockExamIds.length > 1) {
+        title = `${selectedMockExamIds.length} Mock Exams Selected`
       }
 
       return {
@@ -283,7 +301,7 @@ export default function AnalyticalOverviewPage() {
     }
 
     // Fallback if attempts array is empty (e.g. no mock exam attempts recorded yet)
-    if (selectedExamId === "ALL") {
+    if (selectedMockExamIds.length === 0) {
       return {
         title: "All Mock Exams (Combined)",
         totalTakers: raw.overall?.totalAttempts || 0,
@@ -295,16 +313,28 @@ export default function AnalyticalOverviewPage() {
       }
     }
 
-    const found = raw.perExam?.find((e) => String(e.id) === String(selectedExamId))
-    if (found) {
+    const selectedExams = (raw.perExam || []).filter((e) => selectedMockExamIds.includes(String(e.id)))
+    if (selectedExams.length > 0) {
+      const totalTakers = selectedExams.reduce((sum, e) => sum + (e.totalTakers || 0), 0)
+      const passedCount = selectedExams.reduce((sum, e) => sum + (e.passedCount || 0), 0)
+      const failedCount = selectedExams.reduce((sum, e) => sum + (e.failedCount || 0), 0)
+      const passRate = totalTakers > 0 ? Math.round((passedCount / totalTakers) * 1000) / 10 : 0
+      const failRate = totalTakers > 0 ? Math.max(0, Math.round((100 - passRate) * 10) / 10) : 0
+      const totalScore = selectedExams.reduce((sum, e) => sum + ((e.averageScore || 0) * (e.totalTakers || 1)), 0)
+      const averageScore = totalTakers > 0 ? Math.round((totalScore / totalTakers) * 10) / 10 : 0
+
+      let title = selectedExams.length === 1
+        ? (selectedExams[0].exam_code ? `${selectedExams[0].exam_code} — ${selectedExams[0].title}` : (selectedExams[0].title || `Mock Exam #${selectedExams[0].id}`))
+        : `${selectedExams.length} Mock Exams Selected`
+
       return {
-        title: found.exam_code ? `${found.exam_code} — ${found.title}` : (found.title || `Mock Exam #${found.id}`),
-        totalTakers: found.totalTakers || 0,
-        passedCount: found.passedCount || 0,
-        failedCount: found.failedCount || 0,
-        passRate: found.passRate || 0,
-        failRate: found.failRate || 0,
-        averageScore: found.averageScore || 0,
+        title,
+        totalTakers,
+        passedCount,
+        failedCount,
+        passRate,
+        failRate,
+        averageScore,
       }
     }
 
@@ -317,15 +347,15 @@ export default function AnalyticalOverviewPage() {
       failRate: 0,
       averageScore: 0,
     }
-  }, [data, selectedExamId, selectedPassersExaminationId, selectedPassersBatchId])
+  }, [data, selectedMockExamIds, selectedPassersExamIds, selectedPassersBatchIds])
 
   // Filtered Student Activity & Engagement Data based on Examination and Batch filters
   const filteredActivityAnalytics = useMemo(() => {
     const raw = data?.studentActivityAnalytics
     if (!raw) return null
 
-    // If both filters are "ALL", return raw data directly
-    if (selectedActivityExaminationId === "ALL" && selectedActivityBatchId === "ALL") {
+    // If both filters are empty, return raw data directly
+    if (selectedActivityExamIds.length === 0 && selectedActivityBatchIds.length === 0) {
       return raw
     }
 
@@ -335,10 +365,10 @@ export default function AnalyticalOverviewPage() {
 
     // Filter student roster
     const filteredRoster = rawRoster.filter((st) => {
-      if (selectedActivityExaminationId !== "ALL" && String(st.examId) !== String(selectedActivityExaminationId)) {
+      if (selectedActivityExamIds.length > 0 && !selectedActivityExamIds.includes(String(st.examId))) {
         return false
       }
-      if (selectedActivityBatchId !== "ALL" && String(st.batchId) !== String(selectedActivityBatchId)) {
+      if (selectedActivityBatchIds.length > 0 && !selectedActivityBatchIds.includes(String(st.batchId))) {
         return false
       }
       return true
@@ -421,7 +451,7 @@ export default function AnalyticalOverviewPage() {
       tabA_subjectBreakdown: filteredSubjectBreakdown,
       tabB_studentRoster: filteredRoster,
     }
-  }, [data, selectedActivityExaminationId, selectedActivityBatchId])
+  }, [data, selectedActivityExamIds, selectedActivityBatchIds])
 
   const fetchAnalytics = async (customParams = {}) => {
     setLoading(true)
@@ -539,7 +569,7 @@ export default function AnalyticalOverviewPage() {
     } else {
       csvRows.push([
         "Student Name",
-        "Email",
+        "Login ID",
         "Institution",
         "Major",
         "Batch",
@@ -552,7 +582,7 @@ export default function AnalyticalOverviewPage() {
       ;(act.tabB_studentRoster || []).forEach((row) => {
         csvRows.push([
           `"${(row.name || "").replace(/"/g, '""')}"`,
-          `"${(row.email || "").replace(/"/g, '""')}"`,
+          `"${(formatLoginId(row)).replace(/"/g, '""')}"`,
           `"${(row.school || "").replace(/"/g, '""')}"`,
           `"${(row.major || "").replace(/"/g, '""')}"`,
           `"${(row.batch || "").replace(/"/g, '""')}"`,
@@ -605,7 +635,6 @@ export default function AnalyticalOverviewPage() {
     } else {
       csvRows.push([
         "Candidate Name",
-        "Email",
         "Login ID",
         "Role",
         "Target Examination",
@@ -617,8 +646,7 @@ export default function AnalyticalOverviewPage() {
       ;(reg.tabB_candidateLog || []).forEach((c) => {
         csvRows.push([
           `"${(c.name || "").replace(/"/g, '""')}"`,
-          `"${(c.email || "").replace(/"/g, '""')}"`,
-          `"${(c.login_id || "").replace(/"/g, '""')}"`,
+          `"${(formatLoginId(c)).replace(/"/g, '""')}"`,
           `"${(c.role || "").replace(/"/g, '""')}"`,
           `"${(c.target_exam || "").replace(/"/g, '""')}"`,
           `"${(c.batch_name || "").replace(/"/g, '""')}"`,
@@ -649,16 +677,18 @@ export default function AnalyticalOverviewPage() {
 
     // Filter candidates by selected examination and batch
     const filteredCandidates = allCandidates.filter((c) => {
-      if (selectedRegExaminationId !== "ALL") {
-        const matchId = String(c.exam_id) === String(selectedRegExaminationId)
-        const foundExam = examinationOptions.find((e) => String(e.id) === String(selectedRegExaminationId))
-        const matchTrack = foundExam && (
-          c.target_exam?.toLowerCase() === foundExam.name?.toLowerCase() ||
-          foundExam.name?.toLowerCase().includes(c.target_exam?.toLowerCase())
-        )
+      if (selectedRegExamIds.length > 0) {
+        const matchId = selectedRegExamIds.includes(String(c.exam_id))
+        const matchTrack = selectedRegExamIds.some((id) => {
+          const foundExam = examinationOptions.find((e) => String(e.id) === String(id))
+          return foundExam && (
+            c.target_exam?.toLowerCase() === foundExam.name?.toLowerCase() ||
+            foundExam.name?.toLowerCase().includes(c.target_exam?.toLowerCase())
+          )
+        })
         if (!matchId && !matchTrack) return false
       }
-      if (selectedRegBatchId !== "ALL" && String(c.batch_id) !== String(selectedRegBatchId)) {
+      if (selectedRegBatchIds.length > 0 && !selectedRegBatchIds.includes(String(c.batch_id))) {
         return false
       }
       return true
@@ -721,7 +751,7 @@ export default function AnalyticalOverviewPage() {
 
     // Historical Sign-Up Trends Chart
     let trendChart = raw.trendChart || []
-    if (selectedRegExaminationId !== "ALL" || selectedRegBatchId !== "ALL") {
+    if (selectedRegExamIds.length > 0 || selectedRegBatchIds.length > 0) {
       if (isSingleDay) {
         const hourBuckets = Array.from({ length: 24 }).map((_, h) => ({
           hour: `${String(h).padStart(2, "0")}:00`,
@@ -804,56 +834,70 @@ export default function AnalyticalOverviewPage() {
       tabB_candidateLog: periodCandidates.length > 0 ? periodCandidates : filteredCandidates,
       isSingleDay,
     }
-  }, [data, selectedRegExaminationId, selectedRegBatchId, examinationOptions, todayStr])
+  }, [data, selectedRegExamIds, selectedRegBatchIds, examinationOptions, todayStr])
 
-  // Filter batches based on selected examination. If ALL examinations, show all batches.
+  // Filter batches based on selected examinations. If no examination is selected, show all batches.
   const availableBatchOptions = useMemo(() => {
-    if (selectedExaminationId === "ALL") {
+    if (selectedExamIds.length === 0) {
       return allBatchOptions
     }
-    return allBatchOptions.filter(
-      (b) => String(b.exam_id) === String(selectedExaminationId)
+    return allBatchOptions.filter((b) =>
+      selectedExamIds.includes(String(b.exam_id))
     )
-  }, [allBatchOptions, selectedExaminationId])
+  }, [allBatchOptions, selectedExamIds])
 
-  // Handle examination change: reset batch if current batch isn't in availableBatchOptions
-  const handleExaminationChange = (newExamId) => {
-    setSelectedExaminationId(newExamId)
-    if (newExamId !== "ALL") {
-      const isBatchValid = allBatchOptions.some(
-        (b) => String(b.id) === String(selectedBatchId) && String(b.exam_id) === String(newExamId)
-      )
-      if (!isBatchValid) {
-        setSelectedBatchId("ALL")
-      }
+  // Label for combined filter button
+  const filterButtonLabel = useMemo(() => {
+    const total = selectedExamIds.length + selectedBatchIds.length
+    if (total === 0) return "All"
+    if (selectedExamIds.length === 1 && selectedBatchIds.length === 0) {
+      const found = examinationOptions.find((e) => String(e.id) === selectedExamIds[0])
+      return found?.name || "1 Examination"
     }
-  }
+    if (selectedExamIds.length === 0 && selectedBatchIds.length === 1) {
+      const found = allBatchOptions.find((b) => String(b.id) === selectedBatchIds[0])
+      return found?.name || "1 Batch"
+    }
+    return `${total} Selected`
+  }, [selectedExamIds, selectedBatchIds, examinationOptions, allBatchOptions])
 
-  // Performance Rating calculation matching Status Reference rules
+  // Performance Rating calculation matching Status Reference rules & Dashboard palette
   const getPerformanceRating = (score) => {
     const val = Number(score) || 0
     if (val >= 80) {
       return {
         label: "SUPERIOR / IT PREPARED",
-        badgeBg: "bg-[#fbcfe8] text-[#be185d] border-[#f472b6]/30 dark:bg-[#be185d]/20 dark:text-[#f472b6]",
+        badgeBg: "bg-[#E17055]/20 text-[#b33920] border-[#E17055]/35 dark:bg-[#E17055]/25 dark:text-[#f89b87]",
       }
     }
     if (val >= 70) {
       return {
         label: "ADEQUATELY PREPARED",
-        badgeBg: "bg-[#bfdbfe] text-[#1d4ed8] border-[#60a5fa]/30 dark:bg-[#1d4ed8]/20 dark:text-[#93c5fd]",
+        badgeBg: "bg-[#3B82F6]/20 text-[#1d4ed8] border-[#3B82F6]/35 dark:bg-[#3B82F6]/25 dark:text-[#93c5fd]",
       }
     }
     if (val >= 60) {
       return {
         label: "NEEDS REINFORCEMENT",
-        badgeBg: "bg-[#bbf7d0] text-[#15803d] border-[#4ade80]/30 dark:bg-[#15803d]/20 dark:text-[#86efac]",
+        badgeBg: "bg-[#2A9D8F]/20 text-[#1b6b61] border-[#2A9D8F]/35 dark:bg-[#2A9D8F]/25 dark:text-[#68c9be]",
       }
     }
     return {
       label: "FOR MONITORING",
-      badgeBg: "bg-[#fef08a] text-[#a16207] border-[#facc15]/30 dark:bg-[#a16207]/20 dark:text-[#fde047]",
+      badgeBg: "bg-[#E9C46A]/20 text-[#a16207] border-[#E9C46A]/35 dark:bg-[#E9C46A]/25 dark:text-[#facc15]",
     }
+  }
+
+  // Format login ID matching the system standard (e.g. dianalan00002)
+  const formatLoginId = (item) => {
+    if (item?.loginId && !item.loginId.includes("@") && !item.loginId.startsWith("ID: ")) return item.loginId
+    if (item?.login_id && !item.login_id.includes("@") && !item.login_id.startsWith("ID: ")) return item.login_id
+    if (item?.name) {
+      const parts = item.name.trim().split(/\s+/)
+      const surname = parts[parts.length - 1]?.toLowerCase().replace(/[^a-z0-9]/g, "") || "user"
+      return `${surname}${String(item.id || 1).padStart(5, "0")}`
+    }
+    return `user${String(item?.id || 1).padStart(5, "0")}`
   }
 
   // Reset sorting when switching tabs
@@ -891,23 +935,34 @@ export default function AnalyticalOverviewPage() {
     const list = data?.comparativeLeaderboards?.students || []
     let result = list
 
-    // Filter by examination
-    if (selectedExaminationId !== "ALL") {
-      result = result.filter(
-        (s) =>
-          String(s.examId) === String(selectedExaminationId) ||
-          String(s.examinationId) === String(selectedExaminationId) ||
-          s.examination?.toLowerCase() === examinationOptions.find((e) => String(e.id) === String(selectedExaminationId))?.name?.toLowerCase()
-      )
+    // Filter by examination (supports multi-select)
+    if (selectedExamIds.length > 0) {
+      result = result.filter((s) => {
+        const sExamId = String(s.examId || s.examinationId || "")
+        const sExamName = s.examination?.toLowerCase()
+        return (
+          selectedExamIds.includes(sExamId) ||
+          selectedExamIds.some((id) => {
+            const found = examinationOptions.find((e) => String(e.id) === String(id))
+            return found && found.name?.toLowerCase() === sExamName
+          })
+        )
+      })
     }
 
-    // Filter by batch
-    if (selectedBatchId !== "ALL") {
-      result = result.filter(
-        (s) =>
-          String(s.batchId) === String(selectedBatchId) ||
-          s.batch?.toLowerCase() === allBatchOptions.find((b) => String(b.id) === String(selectedBatchId))?.name?.toLowerCase()
-      )
+    // Filter by batch (supports multi-select)
+    if (selectedBatchIds.length > 0) {
+      result = result.filter((s) => {
+        const sBatchId = String(s.batchId || "")
+        const sBatchName = s.batch?.toLowerCase()
+        return (
+          selectedBatchIds.includes(sBatchId) ||
+          selectedBatchIds.some((id) => {
+            const found = allBatchOptions.find((b) => String(b.id) === String(id))
+            return found && found.name?.toLowerCase() === sBatchName
+          })
+        )
+      })
     }
 
     if (search.trim()) {
@@ -915,7 +970,8 @@ export default function AnalyticalOverviewPage() {
       result = result.filter(
         (s) =>
           s.name?.toLowerCase().includes(q) ||
-          s.email?.toLowerCase().includes(q) ||
+          formatLoginId(s).toLowerCase().includes(q) ||
+          (s.loginId || s.login_id || "").toLowerCase().includes(q) ||
           s.school?.toLowerCase().includes(q) ||
           s.major?.toLowerCase().includes(q) ||
           s.examination?.toLowerCase().includes(q) ||
@@ -936,26 +992,35 @@ export default function AnalyticalOverviewPage() {
       bVal = bVal ?? 0
       return sortDir === "asc" ? aVal - bVal : bVal - aVal
     })
-  }, [data, search, sortField, sortDir, selectedExaminationId, selectedBatchId, examinationOptions, allBatchOptions])
+  }, [data, search, sortField, sortDir, selectedExamIds, selectedBatchIds, examinationOptions, allBatchOptions])
 
   // Filter and sort schools (Top Schools)
   const filteredSchools = useMemo(() => {
     const studentsList = data?.comparativeLeaderboards?.students || []
     let result = []
 
-    if (selectedExaminationId !== "ALL" || selectedBatchId !== "ALL") {
-      // Re-aggregate school statistics for the selected examination & batch
+    if (selectedExamIds.length > 0 || selectedBatchIds.length > 0) {
+      // Re-aggregate school statistics for the selected examinations & batches
       const matchedStudents = studentsList.filter((s) => {
+        const sExamId = String(s.examId || s.examinationId || "")
+        const sExamName = s.examination?.toLowerCase()
         const matchesExam =
-          selectedExaminationId === "ALL" ||
-          String(s.examId) === String(selectedExaminationId) ||
-          String(s.examinationId) === String(selectedExaminationId) ||
-          s.examination?.toLowerCase() === examinationOptions.find((e) => String(e.id) === String(selectedExaminationId))?.name?.toLowerCase()
+          selectedExamIds.length === 0 ||
+          selectedExamIds.includes(sExamId) ||
+          selectedExamIds.some((id) => {
+            const found = examinationOptions.find((e) => String(e.id) === String(id))
+            return found && found.name?.toLowerCase() === sExamName
+          })
 
+        const sBatchId = String(s.batchId || "")
+        const sBatchName = s.batch?.toLowerCase()
         const matchesBatch =
-          selectedBatchId === "ALL" ||
-          String(s.batchId) === String(selectedBatchId) ||
-          s.batch?.toLowerCase() === allBatchOptions.find((b) => String(b.id) === String(selectedBatchId))?.name?.toLowerCase()
+          selectedBatchIds.length === 0 ||
+          selectedBatchIds.includes(sBatchId) ||
+          selectedBatchIds.some((id) => {
+            const found = allBatchOptions.find((b) => String(b.id) === String(id))
+            return found && found.name?.toLowerCase() === sBatchName
+          })
 
         return matchesExam && matchesBatch
       })
@@ -1005,7 +1070,7 @@ export default function AnalyticalOverviewPage() {
       bVal = bVal ?? 0
       return sortDir === "asc" ? aVal - bVal : bVal - aVal
     })
-  }, [data, search, sortField, sortDir, selectedExaminationId, selectedBatchId, examinationOptions, allBatchOptions])
+  }, [data, search, sortField, sortDir, selectedExamIds, selectedBatchIds, examinationOptions, allBatchOptions])
 
   // Filter and sort students at risk (avgScore < 75% or low mock exam completion)
   const filteredAtRiskStudents = useMemo(() => {
@@ -1013,23 +1078,34 @@ export default function AnalyticalOverviewPage() {
     // At risk: students below passing benchmark (75%)
     let result = list.filter((s) => (s.avgScore ?? 0) < 75)
 
-    // Filter by examination
-    if (selectedExaminationId !== "ALL") {
-      result = result.filter(
-        (s) =>
-          String(s.examId) === String(selectedExaminationId) ||
-          String(s.examinationId) === String(selectedExaminationId) ||
-          s.examination?.toLowerCase() === examinationOptions.find((e) => String(e.id) === String(selectedExaminationId))?.name?.toLowerCase()
-      )
+    // Filter by examination (supports multi-select)
+    if (selectedExamIds.length > 0) {
+      result = result.filter((s) => {
+        const sExamId = String(s.examId || s.examinationId || "")
+        const sExamName = s.examination?.toLowerCase()
+        return (
+          selectedExamIds.includes(sExamId) ||
+          selectedExamIds.some((id) => {
+            const found = examinationOptions.find((e) => String(e.id) === String(id))
+            return found && found.name?.toLowerCase() === sExamName
+          })
+        )
+      })
     }
 
-    // Filter by batch
-    if (selectedBatchId !== "ALL") {
-      result = result.filter(
-        (s) =>
-          String(s.batchId) === String(selectedBatchId) ||
-          s.batch?.toLowerCase() === allBatchOptions.find((b) => String(b.id) === String(selectedBatchId))?.name?.toLowerCase()
-      )
+    // Filter by batch (supports multi-select)
+    if (selectedBatchIds.length > 0) {
+      result = result.filter((s) => {
+        const sBatchId = String(s.batchId || "")
+        const sBatchName = s.batch?.toLowerCase()
+        return (
+          selectedBatchIds.includes(sBatchId) ||
+          selectedBatchIds.some((id) => {
+            const found = allBatchOptions.find((b) => String(b.id) === String(id))
+            return found && found.name?.toLowerCase() === sBatchName
+          })
+        )
+      })
     }
 
     if (search.trim()) {
@@ -1037,7 +1113,8 @@ export default function AnalyticalOverviewPage() {
       result = result.filter(
         (s) =>
           s.name?.toLowerCase().includes(q) ||
-          s.email?.toLowerCase().includes(q) ||
+          formatLoginId(s).toLowerCase().includes(q) ||
+          (s.loginId || s.login_id || "").toLowerCase().includes(q) ||
           s.school?.toLowerCase().includes(q) ||
           s.major?.toLowerCase().includes(q) ||
           s.examination?.toLowerCase().includes(q) ||
@@ -1058,35 +1135,26 @@ export default function AnalyticalOverviewPage() {
       bVal = bVal ?? 0
       return sortDir === "asc" ? aVal - bVal : bVal - aVal
     })
-  }, [data, search, sortField, sortDir, selectedExaminationId, selectedBatchId, examinationOptions, allBatchOptions])
+  }, [data, search, sortField, sortDir, selectedExamIds, selectedBatchIds, examinationOptions, allBatchOptions])
 
   return (
-    <div className="w-full space-y-8 pb-12">
+    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 space-y-9 sm:space-y-10 pb-10">
       {/* ═══ SECTION 1: Performance Rating Overview (Top Students, Schools, At-Risk) ═══ */}
-      <div className="space-y-5">
+      <div className="space-y-4">
         {/* Section Header & Hide/Unhide Toggle */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => setShowPerformanceOverview((prev) => !prev)}
-            className="group inline-flex items-center gap-2.5 text-left cursor-pointer focus:outline-none"
-            title={showPerformanceOverview ? "Hide Performance Rating Overview" : "Show Performance Rating Overview"}
+            className="group text-left cursor-pointer focus:outline-none"
           >
-            <span className="p-1 rounded-lg bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-400 group-hover:text-[#3B3B3B] dark:group-hover:text-white transition-colors">
-              {showPerformanceOverview ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-            </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold tracking-wide text-[#3B3B3B] dark:text-white group-hover:underline">
-                  Performance Rating Overview
-                </h2>
-                <span className="text-[10px] font-medium text-[#696969] dark:text-gray-400">
-                  {showPerformanceOverview ? "(Click to hide)" : "(Click to expand)"}
-                </span>
+            <div className="inline-flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
+                Performance Rating Overview
+              </h2>
+              <div className="text-neutral-400 group-hover:text-[#3B3B3B] dark:group-hover:text-white transition-colors">
+                {showPerformanceOverview ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
               </div>
-              <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
-                Comparative ranking and performance ratings across top students, institutions, and students requiring reinforcement.
-              </p>
             </div>
           </button>
 
@@ -1095,7 +1163,7 @@ export default function AnalyticalOverviewPage() {
             type="button"
             onClick={fetchAnalytics}
             disabled={loading}
-            className="self-end sm:self-auto flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-medium text-[#696969] dark:text-gray-400 bg-white dark:bg-white/10 hover:text-[#3B3B3B] dark:hover:text-white border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+            className="self-end sm:self-auto inline-flex items-center justify-center gap-1.5 px-3.5 h-8 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/15 border border-black/5 dark:border-white/10 transition-all shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
             title="Refresh analytics data"
           >
             <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
@@ -1105,161 +1173,281 @@ export default function AnalyticalOverviewPage() {
 
         {/* Collapsible Content */}
         {showPerformanceOverview && (
-          <div className="space-y-5 animate-in fade-in duration-200">
-            {/* Header Controls: Tab Switcher */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              {/* Minimal Tab Switcher */}
-              <div className="inline-flex items-center gap-1.5 p-1 bg-[#F2F2F2]/80 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10 overflow-x-auto">
-                <button
-                  type="button"
-                  onClick={() => handleTabChange("students")}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide whitespace-nowrap transition-all cursor-pointer ${
-                    activeTab === "students"
-                      ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                      : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
-                  }`}
-                >
-                  Top Students
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTabChange("schools")}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide whitespace-nowrap transition-all cursor-pointer ${
-                    activeTab === "schools"
-                      ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                      : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
-                  }`}
-                >
-                  Top Schools
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTabChange("at-risk")}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide whitespace-nowrap transition-all cursor-pointer ${
-                    activeTab === "at-risk"
-                      ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                      : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
-                  }`}
-                >
-                  Students at Risk
-                </button>
-              </div>
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Top: Minimal Tab Switcher */}
+            <div className="inline-flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10 shrink-0 self-start">
+              <button
+                type="button"
+                onClick={() => handleTabChange("students")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                  activeTab === "students"
+                    ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                    : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
+                }`}
+              >
+                Top Students
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTabChange("schools")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                  activeTab === "schools"
+                    ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                    : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
+                }`}
+              >
+                Top Schools
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTabChange("at-risk")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                  activeTab === "at-risk"
+                    ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                    : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
+                }`}
+              >
+                Students at Risk
+              </button>
             </div>
 
-            {/* Filter Controls Row: Search Input & Examination/Batch Filter */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              {/* Search Input */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[#696969]/70" />
-                <input
-                  type="search"
-                  placeholder={
-                    activeTab === "schools"
-                      ? "Search school by name…"
-                      : "Search student by name, email, school, or major…"
-                  }
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
-                />
-              </div>
+            {/* Table Container with Integrated Toolbar */}
+            <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs">
+              {/* Table Top Toolbar: Integrated Search & Filter Controls */}
+              <div className="p-3 sm:p-3.5 border-b border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 bg-white/40 dark:bg-white/[0.02] rounded-t-2xl">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {/* Search Input */}
+                  <div className="relative w-full sm:w-64 lg:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400 pointer-events-none" />
+                    <input
+                      type="search"
+                      placeholder={
+                        activeTab === "schools"
+                          ? "Search school…"
+                          : "Search student by name, ID…"
+                      }
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="w-full h-8.5 sm:h-9 pl-9 pr-3 text-xs rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
+                    />
+                  </div>
 
-              {/* Filter Dropdowns: Examination & Batch */}
-              <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
-                {/* Examination Filter */}
-                <div className="flex items-center gap-2">
-                  <label
-                    htmlFor="examination-tab-select"
-                    className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
-                  >
-                    Examination:
-                  </label>
-                  <select
-                    id="examination-tab-select"
-                    value={selectedExaminationId}
-                    onChange={(e) => handleExaminationChange(e.target.value)}
-                    className="h-10 px-3 text-xs font-medium rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[220px] sm:max-w-[260px] truncate"
-                  >
-                    <option value="ALL">All Examinations</option>
-                    {examinationOptions.map((exam) => (
-                      <option key={exam.id} value={exam.id}>
-                        {exam.name}
-                      </option>
-                    ))}
-                  </select>
+                  {/* Beside the button, add a label "Filter" */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-normal text-[#696969] dark:text-gray-400 select-none">
+                      Filter
+                    </span>
+                    <div className="relative" ref={filterDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsFilterOpen((prev) => !prev)}
+                        className="h-8.5 sm:h-9 px-3 text-xs font-normal rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-2 select-none"
+                        aria-expanded={isFilterOpen}
+                        aria-haspopup="true"
+                      >
+                        <Filter className="size-3.5 opacity-60 shrink-0" />
+                        <span className="truncate max-w-[140px] sm:max-w-[180px]">
+                          {filterButtonLabel}
+                        </span>
+                        <ChevronDown
+                          className={`size-3 opacity-60 shrink-0 transition-transform duration-200 ${
+                            isFilterOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      {isFilterOpen && (
+                        <div className="absolute left-0 sm:left-auto top-full mt-1.5 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-3 max-h-[400px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                          {/* Section 1: Examinations */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between px-1">
+                              <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                                Examinations
+                              </span>
+                              {selectedExamIds.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedExamIds([])}
+                                  className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+
+                            <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                              <input
+                                type="checkbox"
+                                checked={selectedExamIds.length === 0}
+                                onChange={() => setSelectedExamIds([])}
+                                className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                              />
+                              <span>All Examinations</span>
+                            </label>
+
+                            <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                              {examinationOptions.map((exam) => {
+                                const isChecked = selectedExamIds.includes(String(exam.id))
+                                return (
+                                  <label
+                                    key={exam.id}
+                                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => {
+                                        if (isChecked) {
+                                          setSelectedExamIds(selectedExamIds.filter((id) => id !== String(exam.id)))
+                                        } else {
+                                          setSelectedExamIds([...selectedExamIds, String(exam.id)])
+                                        }
+                                      }}
+                                      className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                                    />
+                                    <span className="truncate">{exam.name}</span>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Section Divider */}
+                          <div className="border-t border-black/5 dark:border-white/10" />
+
+                          {/* Section 2: Batches */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between px-1">
+                              <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                                Batches
+                              </span>
+                              {selectedBatchIds.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedBatchIds([])}
+                                  className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+
+                            <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                              <input
+                                type="checkbox"
+                                checked={selectedBatchIds.length === 0}
+                                onChange={() => setSelectedBatchIds([])}
+                                className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                              />
+                              <span>All Batches</span>
+                            </label>
+
+                            <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                              {availableBatchOptions.map((batch) => {
+                                const isChecked = selectedBatchIds.includes(String(batch.id))
+                                return (
+                                  <label
+                                    key={batch.id}
+                                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => {
+                                        if (isChecked) {
+                                          setSelectedBatchIds(selectedBatchIds.filter((id) => id !== String(batch.id)))
+                                        } else {
+                                          setSelectedBatchIds([...selectedBatchIds, String(batch.id)])
+                                        }
+                                      }}
+                                      className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                                    />
+                                    <span className="truncate">{batch.name}</span>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Bottom Reset Strip */}
+                          {(selectedExamIds.length > 0 || selectedBatchIds.length > 0) && (
+                            <>
+                              <div className="border-t border-black/5 dark:border-white/10" />
+                              <div className="flex items-center justify-between px-1 pt-0.5 text-xs">
+                                <span className="text-neutral-400">
+                                  {selectedExamIds.length + selectedBatchIds.length} active
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedExamIds([])
+                                    setSelectedBatchIds([])
+                                  }}
+                                  className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
+                                >
+                                  Reset all
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Batch Filter */}
-                <div className="flex items-center gap-2">
-                  <label
-                    htmlFor="batch-tab-select"
-                    className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
-                  >
-                    Batch:
-                  </label>
-                  <select
-                    id="batch-tab-select"
-                    value={selectedBatchId}
-                    onChange={(e) => setSelectedBatchId(e.target.value)}
-                    className="h-10 px-3 text-xs font-medium rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[180px] truncate"
-                  >
-                    <option value="ALL">All Batches</option>
-                    {availableBatchOptions.map((batch) => (
-                      <option key={batch.id} value={batch.id}>
-                        {batch.name}
-                      </option>
-                    ))}
-                  </select>
+                {/* Showing count indicator on the right */}
+                <div className="text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none pr-1">
+                  {activeTab === "students" && `${filteredStudents.length} ${filteredStudents.length === 1 ? "student" : "students"}`}
+                  {activeTab === "schools" && `${filteredSchools.length} ${filteredSchools.length === 1 ? "institution" : "institutions"}`}
+                  {activeTab === "at-risk" && `${filteredAtRiskStudents.length} ${filteredAtRiskStudents.length === 1 ? "student at risk" : "students at risk"}`}
                 </div>
               </div>
-            </div>
-
-            {/* Table Container */}
-            <div className="w-full overflow-hidden rounded-2xl border border-black/5 dark:border-white/10 bg-card shadow-2xs">
           {loading ? (
             <div className="py-20 text-center flex flex-col items-center justify-center space-y-2">
               <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs font-medium text-[#696969] dark:text-gray-400">Loading ranking data…</p>
+              <p className="text-xs font-normal text-neutral-400 dark:text-neutral-500">Loading ranking data…</p>
             </div>
           ) : activeTab === "students" ? (
             /* ── Top Students Table ── */
             filteredStudents.length === 0 ? (
-              <div className="py-16 text-center text-xs font-medium text-[#696969] dark:text-gray-400">
+              <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
                 {search ? `No students found matching "${search}"` : "No student performance records available."}
               </div>
             ) : (
-              <div className="max-h-[720px] overflow-y-auto">
+              <div className="max-h-[720px] overflow-y-auto rounded-b-2xl">
                 <table className="w-full text-left border-collapse" aria-label="Top Students Table">
-                  <thead className="sticky top-0 z-10 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 backdrop-blur-xs border-b border-[#E9C46A]/30 shadow-2xs">
-                    <tr className="h-11 text-xs font-semibold text-[#3B3B3B] dark:text-gray-200">
-                      <th className="w-16 px-4 py-2.5 text-center text-[#696969] dark:text-gray-400" scope="col">Rank</th>
-                      <th className="px-4 py-2.5" scope="col">
+                  <thead className="sticky top-0 z-10 bg-neutral-50/60 dark:bg-[#14161b]/80 backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                    <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                      <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">Rank</th>
+                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("name")}
-                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold"
+                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer font-semibold text-xs"
                         >
                           <span>Student</span>
                           <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
-                      <th className="px-4 py-2.5" scope="col">
+                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("school")}
-                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold"
+                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer font-semibold text-xs"
                         >
                           <span>Institution</span>
                           <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
-                      <th className="px-4 py-2.5" scope="col">Major / Specialization</th>
-                      <th className="px-4 py-2.5 text-center" scope="col">Batch</th>
-                      <th className="px-4 py-2.5 text-right pr-6" scope="col">
+                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">Major / Specialization</th>
+                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">Batch</th>
+                      <th className="px-4 py-2.5 font-semibold text-right pr-6" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("avgScore")}
-                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold ml-auto"
+                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer ml-auto font-semibold text-xs"
                         >
                           <span>Performance Rating</span>
                           <ArrowUpDown className="size-3 opacity-60" />
@@ -1267,58 +1455,54 @@ export default function AnalyticalOverviewPage() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
+                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
                     {filteredStudents.map((st, idx) => {
                       const displayRank = idx + 1
                       const rating = getPerformanceRating(st.avgScore)
                       return (
                         <tr
                           key={st.id}
-                          className="h-13 transition-colors"
+                          className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
                         >
                           {/* Rank */}
-                          <td className="px-4 text-center font-medium text-xs text-[#696969] dark:text-gray-400">
-                            #{displayRank}
+                          <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
+                            {displayRank}
                           </td>
 
-                          {/* Student Name & Email */}
-                          <td className="px-4 py-3">
-                            <div className="font-semibold text-xs text-[#3B3B3B] dark:text-gray-100">
+                          {/* Student Name & Login ID */}
+                          <td className="px-4 py-2.5 text-left">
+                            <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
                               {st.name || "—"}
                             </div>
-                            {st.email && (
-                              <div className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
-                                {st.email}
-                              </div>
-                            )}
+                            <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
+                              {formatLoginId(st)}
+                            </div>
                           </td>
 
                           {/* Institution */}
-                          <td className="px-4 py-3 text-xs text-[#696969] dark:text-gray-300">
+                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300 font-normal">
                             {st.school || "—"}
                           </td>
 
                           {/* Major */}
-                          <td className="px-4 py-3 text-xs text-[#696969] dark:text-gray-400">
+                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-400 font-normal">
                             {st.major || "—"}
                           </td>
 
                           {/* Batch */}
-                          <td className="px-4 py-3 text-xs text-center text-[#696969] dark:text-gray-300">
-                            <span className="inline-block px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[11px] font-medium text-[#3B3B3B] dark:text-gray-200">
-                              {st.batch || "—"}
-                            </span>
+                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300 font-normal">
+                            {st.batch || "—"}
                           </td>
 
                           {/* Performance Rating */}
-                          <td className="px-4 py-3 text-right pr-6 text-xs whitespace-nowrap">
+                          <td className="px-4 py-2.5 text-right pr-6 whitespace-nowrap">
                             <div className="inline-flex items-center justify-end gap-2.5">
                               <span
-                                className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider border uppercase ${rating.badgeBg}`}
+                                className={`px-2.5 py-1 rounded-md text-[10px] font-medium tracking-wide border uppercase ${rating.badgeBg}`}
                               >
                                 {rating.label}
                               </span>
-                              <span className="font-bold text-[#3B3B3B] dark:text-gray-100 text-xs min-w-[42px] text-right">
+                              <span className="font-normal text-xs text-[#3B3B3B] dark:text-gray-100 min-w-[42px] text-right">
                                 {st.avgScore ? `${Number(st.avgScore).toFixed(1)}%` : "0.0%"}
                               </span>
                             </div>
@@ -1333,60 +1517,60 @@ export default function AnalyticalOverviewPage() {
           ) : activeTab === "schools" ? (
             /* ── Top Schools Table ── */
             filteredSchools.length === 0 ? (
-              <div className="py-16 text-center text-xs font-medium text-[#696969] dark:text-gray-400">
+              <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
                 {search ? `No schools found matching "${search}"` : "No institutional performance records available."}
               </div>
             ) : (
-              <div className="max-h-[720px] overflow-y-auto">
+              <div className="max-h-[720px] overflow-y-auto rounded-b-2xl">
                 <table className="w-full text-left border-collapse" aria-label="Top Schools Table">
-                  <thead className="sticky top-0 z-10 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 backdrop-blur-xs border-b border-[#E9C46A]/30 shadow-2xs">
-                    <tr className="h-11 text-xs font-semibold text-[#3B3B3B] dark:text-gray-200">
-                      <th className="w-16 px-4 py-2.5 text-center text-[#696969] dark:text-gray-400" scope="col">Rank</th>
-                      <th className="px-4 py-2.5" scope="col">
+                  <thead className="sticky top-0 z-10 bg-neutral-50/60 dark:bg-[#14161b]/80 backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                    <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                      <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">Rank</th>
+                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("schoolName")}
-                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold"
+                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer font-semibold text-xs"
                         >
                           <span>Institution</span>
                           <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
-                      <th className="px-4 py-2.5 text-center" scope="col">
+                      <th className="px-4 py-2.5 font-semibold text-center" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("studentCount")}
-                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer mx-auto font-semibold"
+                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer mx-auto font-semibold text-xs"
                         >
                           <span>Total Students</span>
                           <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
-                      <th className="px-4 py-2.5 text-center" scope="col">
+                      <th className="px-4 py-2.5 font-semibold text-center" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("passedCount")}
-                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer mx-auto font-semibold"
+                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer mx-auto font-semibold text-xs"
                         >
                           <span>Proficient Students</span>
                           <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
-                      <th className="px-4 py-2.5 text-center" scope="col">
+                      <th className="px-4 py-2.5 font-semibold text-center" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("passRate")}
-                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer mx-auto font-semibold"
+                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer mx-auto font-semibold text-xs"
                         >
                           <span>Passing Rate</span>
                           <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
-                      <th className="px-4 py-2.5 text-right pr-6" scope="col">
+                      <th className="px-4 py-2.5 font-semibold text-right pr-6" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("avgScore")}
-                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer ml-auto font-semibold"
+                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer ml-auto font-semibold text-xs"
                         >
                           <span>Average Progress</span>
                           <ArrowUpDown className="size-3 opacity-60" />
@@ -1394,49 +1578,49 @@ export default function AnalyticalOverviewPage() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
+                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
                     {filteredSchools.map((sch, idx) => {
                       const displayRank = idx + 1
                       return (
                         <tr
                           key={sch.schoolName}
-                          className="h-13 transition-colors"
+                          className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
                         >
                           {/* Rank */}
-                          <td className="px-4 text-center font-medium text-xs text-[#696969] dark:text-gray-400">
-                            #{displayRank}
+                          <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
+                            {displayRank}
                           </td>
 
                           {/* School Name */}
-                          <td className="px-4 py-3">
-                            <div className="font-semibold text-xs text-[#3B3B3B] dark:text-gray-100">
+                          <td className="px-4 py-2.5 text-left">
+                            <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
                               {sch.schoolName || "—"}
                             </div>
                           </td>
 
                           {/* Total Students */}
-                          <td className="px-4 py-3 text-xs text-center text-[#696969] dark:text-gray-300">
+                          <td className="px-4 py-2.5 text-center text-xs text-[#696969] dark:text-gray-300 font-normal">
                             {sch.studentCount || 0}
                           </td>
 
-                          {/* Proficient Students (with good progress) */}
-                          <td className="px-4 py-3 text-xs text-center text-[#696969] dark:text-gray-300">
-                            <span className="font-medium text-[#3B3B3B] dark:text-gray-200">
+                          {/* Proficient Students */}
+                          <td className="px-4 py-2.5 text-center text-xs text-[#696969] dark:text-gray-300 font-normal">
+                            <span className="font-normal text-[#3B3B3B] dark:text-gray-200">
                               {sch.passedCount || 0}
                             </span>
-                            <span className="text-[11px] text-[#696969] dark:text-gray-400 ml-1">
+                            <span className="text-[11px] text-[#696969]/80 dark:text-gray-400 ml-1 font-normal">
                               / {sch.studentCount || 0}
                             </span>
                           </td>
 
                           {/* Passing Rate */}
-                          <td className="px-4 py-3 text-xs text-center text-[#696969] dark:text-gray-300">
+                          <td className="px-4 py-2.5 text-center text-xs text-[#696969] dark:text-gray-300 font-normal">
                             {sch.passRate ?? 0}%
                           </td>
 
                           {/* Average Progress */}
-                          <td className="px-4 py-3 text-right pr-6 text-xs whitespace-nowrap">
-                            <span className="font-semibold text-[#3B3B3B] dark:text-gray-100">
+                          <td className="px-4 py-2.5 pr-6 text-right text-xs whitespace-nowrap font-normal">
+                            <span className="font-normal text-[#3B3B3B] dark:text-gray-100">
                               {sch.avgScore ? `${sch.avgScore}%` : "0%"}
                             </span>
                           </td>
@@ -1450,44 +1634,44 @@ export default function AnalyticalOverviewPage() {
           ) : (
             /* ── Students at Risk Table ── */
             filteredAtRiskStudents.length === 0 ? (
-              <div className="py-16 text-center text-xs font-medium text-[#696969] dark:text-gray-400">
+              <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
                 {search
                   ? `No at-risk students found matching "${search}"`
                   : "No students currently identified as at-risk in this scope."}
               </div>
             ) : (
-              <div className="max-h-[720px] overflow-y-auto">
+              <div className="max-h-[720px] overflow-y-auto rounded-b-2xl">
                 <table className="w-full text-left border-collapse" aria-label="Students at Risk Table">
-                  <thead className="sticky top-0 z-10 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 backdrop-blur-xs border-b border-[#E9C46A]/30 shadow-2xs">
-                    <tr className="h-11 text-xs font-semibold text-[#3B3B3B] dark:text-gray-200">
-                      <th className="w-16 px-4 py-2.5 text-center text-[#696969] dark:text-gray-400" scope="col">#</th>
-                      <th className="px-4 py-2.5" scope="col">
+                  <thead className="sticky top-0 z-10 bg-neutral-50/60 dark:bg-[#14161b]/80 backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                    <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                      <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">Rank</th>
+                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("name")}
-                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold"
+                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer font-semibold text-xs"
                         >
                           <span>Student</span>
                           <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
-                      <th className="px-4 py-2.5" scope="col">
+                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("school")}
-                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold"
+                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer font-semibold text-xs"
                         >
                           <span>Institution</span>
                           <ArrowUpDown className="size-3 opacity-60" />
                         </button>
                       </th>
-                      <th className="px-4 py-2.5" scope="col">Major / Specialization</th>
-                      <th className="px-4 py-2.5 text-center" scope="col">Batch</th>
-                      <th className="px-4 py-2.5 text-right pr-6" scope="col">
+                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">Major / Specialization</th>
+                      <th className="px-4 py-2.5 font-semibold text-left" scope="col">Batch</th>
+                      <th className="px-4 py-2.5 font-semibold text-right pr-6" scope="col">
                         <button
                           type="button"
                           onClick={() => handleSort("avgScore")}
-                          className="inline-flex items-center gap-1.5 hover:text-black dark:hover:text-white cursor-pointer font-semibold ml-auto"
+                          className="inline-flex items-center gap-1.5 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer ml-auto font-semibold text-xs"
                         >
                           <span>Performance Rating</span>
                           <ArrowUpDown className="size-3 opacity-60" />
@@ -1495,58 +1679,54 @@ export default function AnalyticalOverviewPage() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
+                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
                     {filteredAtRiskStudents.map((st, idx) => {
                       const displayIndex = idx + 1
                       const rating = getPerformanceRating(st.avgScore)
                       return (
                         <tr
                           key={st.id}
-                          className="h-13 transition-colors"
+                          className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
                         >
                           {/* Index */}
-                          <td className="px-4 text-center font-medium text-xs text-[#696969] dark:text-gray-400">
-                            #{displayIndex}
+                          <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
+                            {displayIndex}
                           </td>
 
-                          {/* Student Name & Email */}
-                          <td className="px-4 py-3">
-                            <div className="font-semibold text-xs text-[#3B3B3B] dark:text-gray-100">
+                          {/* Student Name & Login ID */}
+                          <td className="px-4 py-2.5 text-left">
+                            <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
                               {st.name || "—"}
                             </div>
-                            {st.email && (
-                              <div className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
-                                {st.email}
-                              </div>
-                            )}
+                            <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
+                              {formatLoginId(st)}
+                            </div>
                           </td>
 
                           {/* Institution */}
-                          <td className="px-4 py-3 text-xs text-[#696969] dark:text-gray-300">
+                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300 font-normal">
                             {st.school || "—"}
                           </td>
 
                           {/* Major */}
-                          <td className="px-4 py-3 text-xs text-[#696969] dark:text-gray-400">
+                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-400 font-normal">
                             {st.major || "—"}
                           </td>
 
                           {/* Batch */}
-                          <td className="px-4 py-3 text-xs text-center text-[#696969] dark:text-gray-300">
-                            <span className="inline-block px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[11px] font-medium text-[#3B3B3B] dark:text-gray-200">
-                              {st.batch || "—"}
-                            </span>
+                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300 font-normal">
+                            {st.batch || "—"}
                           </td>
 
                           {/* Performance Rating */}
-                          <td className="px-4 py-3 text-right pr-6 text-xs whitespace-nowrap">
+                          <td className="px-4 py-2.5 text-right pr-6 whitespace-nowrap">
                             <div className="inline-flex items-center justify-end gap-2.5">
                               <span
-                                className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wider border uppercase ${rating.badgeBg}`}
+                                className={`px-2.5 py-1 rounded-md text-[10px] font-medium tracking-wide border uppercase ${rating.badgeBg}`}
                               >
                                 {rating.label}
                               </span>
-                              <span className="font-bold text-[#3B3B3B] dark:text-gray-100 text-xs min-w-[42px] text-right">
+                              <span className="font-normal text-xs text-[#3B3B3B] dark:text-gray-100 min-w-[42px] text-right">
                                 {st.avgScore ? `${Number(st.avgScore).toFixed(1)}%` : "0.0%"}
                               </span>
                             </div>
@@ -1564,317 +1744,402 @@ export default function AnalyticalOverviewPage() {
         )}
       </div>
 
+      {/* ── Line Divider ── */}
+      <div className="border-t border-black/5 dark:border-white/10" />
+
       {/* ═══ SECTION 2: Mock Exam Passers Graphical Interface ═══ */}
-      <div className="space-y-4 pt-4 border-t border-black/5 dark:border-white/10">
-        {/* Section Header & Mock Exam Filter Dropdown */}
+      <div className="space-y-4">
+        {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => setShowPassersRate((prev) => !prev)}
-            className="group inline-flex items-center gap-2.5 text-left cursor-pointer focus:outline-none"
-            title={showPassersRate ? "Hide Mock Exam Passers Rate" : "Show Mock Exam Passers Rate"}
+            className="group text-left cursor-pointer focus:outline-none"
           >
-            <span className="p-1 rounded-lg bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-400 group-hover:text-[#3B3B3B] dark:group-hover:text-white transition-colors">
-              {showPassersRate ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-            </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold tracking-wide text-[#3B3B3B] dark:text-white group-hover:underline">
-                  Mock Exam Passers Rate
-                </h2>
-                <span className="text-[10px] font-medium text-[#696969] dark:text-gray-400">
-                  {showPassersRate ? "(Click to hide)" : "(Click to expand)"}
-                </span>
+            <div className="inline-flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
+                Mock Exam Passers Rate
+              </h2>
+              <div className="text-neutral-400 group-hover:text-[#3B3B3B] dark:group-hover:text-white transition-colors">
+                {showPassersRate ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
               </div>
-              <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
-                Percentage of students meeting the passing benchmark (75% and above) across mock examinations.
-              </p>
             </div>
           </button>
-
-          {/* Filters Row: Examination, Batch, and View Dropdowns (visible when expanded) */}
-          {showPassersRate && (
-            <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
-              {/* Examination Filter */}
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="passers-examination-select"
-                  className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
-                >
-                  Examination:
-                </label>
-                <select
-                  id="passers-examination-select"
-                  value={selectedPassersExaminationId}
-                  onChange={(e) => handlePassersExaminationChange(e.target.value)}
-                  className="h-9 px-3 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[200px] sm:max-w-[240px] truncate"
-                >
-                  <option value="ALL">All Examinations</option>
-                  {examinationOptions.map((exam) => (
-                    <option key={exam.id} value={exam.id}>
-                      {exam.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Dynamic Batch Filter */}
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="passers-batch-select"
-                  className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
-                >
-                  Batch:
-                </label>
-                <select
-                  id="passers-batch-select"
-                  value={selectedPassersBatchId}
-                  onChange={(e) => setSelectedPassersBatchId(e.target.value)}
-                  className="h-9 px-3 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[160px] truncate"
-                >
-                  <option value="ALL">All Batches</option>
-                  {passersBatchOptions.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* View (Mock Exam Selector) Dropdown */}
-              <div className="flex items-center gap-2">
-                <label htmlFor="mock-exam-select" className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap">
-                  View:
-                </label>
-                <select
-                  id="mock-exam-select"
-                  value={selectedExamId}
-                  onChange={(e) => setSelectedExamId(e.target.value)}
-                  className="h-9 px-3 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[220px] sm:max-w-[260px] truncate"
-                >
-                  <option value="ALL">All Mock Exams (Combined)</option>
-                  {filteredMockExamOptions.map((exam) => (
-                    <option key={exam.id} value={exam.id}>
-                      {exam.exam_code ? `${exam.exam_code} — ` : ""}{exam.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Graphical Summary Cards & Visual Charts (Collapsible) */}
+        {/* Collapsible Content */}
         {showPassersRate && (
-        <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 sm:p-6 shadow-2xs space-y-6">
-          {/* Selected Exam Title & Stats Metrics */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-black/5 dark:border-white/5">
-            <div>
-              <div className="text-xs font-semibold text-[#3B3B3B] dark:text-white">
-                {passersData.title}
-              </div>
-              <div className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
-                {selectedExamId === "ALL"
-                  ? "Aggregate performance across all active mock exams"
-                  : "Individual mock examination performance metrics"}
-              </div>
-            </div>
-
-            {/* Key Metrics */}
-            <div className="flex items-center gap-6 sm:gap-8 flex-wrap text-xs">
-              <div>
-                <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Total Attempts</span>
-                <span className="font-semibold text-[#3B3B3B] dark:text-white text-sm">
-                  {passersData.totalTakers}
-                </span>
-              </div>
-              <div>
-                <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Passing Rate</span>
-                <span className="font-semibold text-[#3B3B3B] dark:text-white text-sm">
-                  {passersData.passRate}%
-                </span>
-              </div>
-              <div>
-                <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Passed / Below Passing</span>
-                <span className="font-semibold text-[#3B3B3B] dark:text-white text-sm">
-                  {passersData.passedCount} / {passersData.failedCount}
-                </span>
-              </div>
-              <div>
-                <span className="text-[11px] text-[#696969] dark:text-gray-400 block">Average Score</span>
-                <span className="font-semibold text-[#3B3B3B] dark:text-white text-sm">
-                  {passersData.averageScore}%
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Single Graphical Chart: Pass / Below Benchmark Donut */}
-          <div className="flex flex-col items-center justify-center p-6 rounded-2xl border border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01]">
-            <div className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400 mb-3 text-center">
-              Pass / Below 75% Ratio
-            </div>
-
-            {passersData.totalTakers === 0 ? (
-              <div className="h-[220px] flex items-center justify-center text-xs text-[#696969] dark:text-gray-400">
-                No mock exam attempts recorded yet.
-              </div>
-            ) : (
-              <div className="relative w-full max-w-[280px] h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: "Passed (>= 75%)", value: passersData.passedCount || 0 },
-                        { name: "Below 75%", value: passersData.failedCount || 0 },
-                      ]}
-                      innerRadius={65}
-                      outerRadius={95}
-                      paddingAngle={3}
-                      dataKey="value"
-                      stroke="transparent"
-                    >
-                      <Cell fill="#3B3B3B" className="dark:fill-white transition-all" />
-                      <Cell fill="#D1D5DB" className="dark:fill-white/20 transition-all" />
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "var(--card, #ffffff)",
-                        border: "1px solid rgba(0,0,0,0.1)",
-                        borderRadius: "10px",
-                        fontSize: "12px",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-
-                {/* Center percentage label */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-2xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                    {passersData.passRate}%
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Beside the button, add a label "Filter" */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-normal text-[#696969] dark:text-gray-400 select-none">
+                Filter
+              </span>
+              <div className="relative" ref={passersFilterRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsPassersFilterOpen((prev) => !prev)}
+                  className="h-8.5 sm:h-9 px-3 text-xs font-normal rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-2 select-none"
+                  aria-expanded={isPassersFilterOpen}
+                  aria-haspopup="true"
+                >
+                  <Filter className="size-3.5 opacity-60 shrink-0" />
+                  <span className="truncate max-w-[140px] sm:max-w-[180px]">
+                    {passersFilterButtonLabel}
                   </span>
-                  <span className="text-[11px] text-[#696969] dark:text-gray-400 font-medium">
-                    Pass Rate
-                  </span>
+                  <ChevronDown
+                    className={`size-3 opacity-60 shrink-0 transition-transform duration-200 ${
+                      isPassersFilterOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {/* Dropdown Menu */}
+                {isPassersFilterOpen && (
+                  <div className="absolute left-0 sm:left-auto top-full mt-1.5 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-3 max-h-[440px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                    {/* Section 1: Examinations */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                          Examinations
+                        </span>
+                        {selectedPassersExamIds.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPassersExamIds([])}
+                            className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+
+                      <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                        <input
+                          type="checkbox"
+                          checked={selectedPassersExamIds.length === 0}
+                          onChange={() => setSelectedPassersExamIds([])}
+                          className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                        />
+                        <span>All Examinations</span>
+                      </label>
+
+                      <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                        {examinationOptions.map((exam) => {
+                          const isChecked = selectedPassersExamIds.includes(String(exam.id))
+                          return (
+                            <label
+                              key={exam.id}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedPassersExamIds(selectedPassersExamIds.filter((id) => id !== String(exam.id)))
+                                  } else {
+                                    setSelectedPassersExamIds([...selectedPassersExamIds, String(exam.id)])
+                                  }
+                                }}
+                                className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                              />
+                              <span className="truncate">{exam.name}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Section Divider */}
+                    <div className="border-t border-black/5 dark:border-white/10" />
+
+                    {/* Section 2: Batches */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                          Batches
+                        </span>
+                        {selectedPassersBatchIds.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPassersBatchIds([])}
+                            className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+
+                      <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                        <input
+                          type="checkbox"
+                          checked={selectedPassersBatchIds.length === 0}
+                          onChange={() => setSelectedPassersBatchIds([])}
+                          className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                        />
+                        <span>All Batches</span>
+                      </label>
+
+                      <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                        {passersBatchOptions.map((batch) => {
+                          const isChecked = selectedPassersBatchIds.includes(String(batch.id))
+                          return (
+                            <label
+                              key={batch.id}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedPassersBatchIds(selectedPassersBatchIds.filter((id) => id !== String(batch.id)))
+                                  } else {
+                                    setSelectedPassersBatchIds([...selectedPassersBatchIds, String(batch.id)])
+                                  }
+                                }}
+                                className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                              />
+                              <span className="truncate">{batch.name}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Section Divider */}
+                    <div className="border-t border-black/5 dark:border-white/10" />
+
+                    {/* Section 3: Mock Exams */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                          Mock Exams
+                        </span>
+                        {selectedMockExamIds.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedMockExamIds([])}
+                            className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+
+                      <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                        <input
+                          type="checkbox"
+                          checked={selectedMockExamIds.length === 0}
+                          onChange={() => setSelectedMockExamIds([])}
+                          className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                        />
+                        <span>All Mock Exams (Combined)</span>
+                      </label>
+
+                      <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                        {filteredMockExamOptions.map((exam) => {
+                          const isChecked = selectedMockExamIds.includes(String(exam.id))
+                          return (
+                            <label
+                              key={exam.id}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedMockExamIds(selectedMockExamIds.filter((id) => id !== String(exam.id)))
+                                  } else {
+                                    setSelectedMockExamIds([...selectedMockExamIds, String(exam.id)])
+                                  }
+                                }}
+                                className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                              />
+                              <span className="truncate">
+                                {exam.exam_code ? `${exam.exam_code} — ` : ""}{exam.title}
+                              </span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Bottom Reset Strip */}
+                    {(selectedPassersExamIds.length > 0 || selectedPassersBatchIds.length > 0 || selectedMockExamIds.length > 0) && (
+                      <>
+                        <div className="border-t border-black/5 dark:border-white/10" />
+                        <div className="flex items-center justify-between px-1 pt-0.5 text-xs">
+                          <span className="text-neutral-400">
+                            {selectedPassersExamIds.length + selectedPassersBatchIds.length + selectedMockExamIds.length} active
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedPassersExamIds([])
+                              setSelectedPassersBatchIds([])
+                              setSelectedMockExamIds([])
+                            }}
+                            className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
+                          >
+                            Reset all
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Graphical Summary Cards & Visual Charts */}
+            <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 sm:p-6 shadow-2xs space-y-6">
+              {/* Selected Exam Title & Stats Metrics */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-black/5 dark:border-white/5">
+                <div>
+                  <div className="text-[13px] font-normal text-[#3B3B3B] dark:text-white">
+                    {passersData.title}
+                  </div>
+                  <div className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5 font-normal">
+                    {selectedMockExamIds.length === 0
+                      ? "Aggregate performance across all active mock exams"
+                      : "Individual mock examination performance metrics"}
+                  </div>
+                </div>
+
+                {/* Key Metrics */}
+                <div className="flex items-center gap-6 sm:gap-8 flex-wrap text-xs">
+                  <div>
+                    <span className="text-[11px] text-neutral-400 dark:text-neutral-500 block font-normal">Total Attempts</span>
+                    <span className="text-xs font-normal text-[#3B3B3B] dark:text-white">
+                      {passersData.totalTakers}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-neutral-400 dark:text-neutral-500 block font-normal">Passing Rate</span>
+                    <span className="text-xs font-normal text-[#3B3B3B] dark:text-white">
+                      {passersData.passRate}%
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-neutral-400 dark:text-neutral-500 block font-normal">Passed / Below Passing</span>
+                    <span className="text-xs font-normal text-[#3B3B3B] dark:text-white">
+                      {passersData.passedCount} / {passersData.failedCount}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-neutral-400 dark:text-neutral-500 block font-normal">Average Score</span>
+                    <span className="text-xs font-normal text-[#3B3B3B] dark:text-white">
+                      {passersData.averageScore}%
+                    </span>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* Legend */}
-            <div className="flex items-center justify-center gap-8 mt-3 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-[#3B3B3B] dark:bg-white" />
-                <span className="text-[#696969] dark:text-gray-400">
-                  Passed: <strong className="text-[#3B3B3B] dark:text-white font-semibold">{passersData.passedCount}</strong>
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-gray-300 dark:bg-white/25" />
-                <span className="text-[#696969] dark:text-gray-400">
-                  Below 75%: <strong className="text-[#3B3B3B] dark:text-white font-semibold">{passersData.failedCount}</strong>
-                </span>
+              {/* Single Graphical Chart: Pass / Below Benchmark Donut */}
+              <div className="flex flex-col items-center justify-center p-6 rounded-2xl border border-black/5 dark:border-white/5 bg-black/[0.015] dark:bg-white/[0.015]">
+                <div className="text-xs font-normal text-neutral-400 dark:text-neutral-500 mb-3 text-center">
+                  Pass / Below 75% Ratio
+                </div>
+
+                {passersData.totalTakers === 0 ? (
+                  <div className="h-[220px] flex items-center justify-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                    No mock exam attempts recorded yet.
+                  </div>
+                ) : (
+                  <div className="relative w-full max-w-[280px] h-[220px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: "Passed (>= 75%)", value: passersData.passedCount || 0 },
+                            { name: "Below 75%", value: passersData.failedCount || 0 },
+                          ]}
+                          innerRadius={65}
+                          outerRadius={95}
+                          paddingAngle={3}
+                          dataKey="value"
+                          stroke="transparent"
+                        >
+                          <Cell fill="#3B3B3B" className="dark:fill-white transition-all" />
+                          <Cell fill="#D1D5DB" className="dark:fill-white/20 transition-all" />
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "var(--card, #ffffff)",
+                            border: "1px solid rgba(0,0,0,0.1)",
+                            borderRadius: "10px",
+                            fontSize: "12px",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+
+                    {/* Center percentage label */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-2xl font-normal tracking-tight text-[#3B3B3B] dark:text-white">
+                        {passersData.passRate}%
+                      </span>
+                      <span className="text-[11px] text-neutral-400 dark:text-neutral-500 font-normal">
+                        Pass Rate
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Legend */}
+                <div className="flex items-center justify-center gap-8 mt-3 text-xs font-normal">
+                  <div className="flex items-center gap-2">
+                    <span className="size-2.5 rounded-full bg-[#3B3B3B] dark:bg-white" />
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Passed: <span className="text-[#3B3B3B] dark:text-white font-normal">{passersData.passedCount}</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="size-2.5 rounded-full bg-gray-300 dark:bg-white/25" />
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Below 75%: <span className="text-[#3B3B3B] dark:text-white font-normal">{passersData.failedCount}</span>
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         )}
       </div>
 
+      {/* ── Line Divider ── */}
+      <div className="border-t border-black/5 dark:border-white/10" />
+
       {/* ═══ SECTION 3: Student Activity & Engagement Analytics ═══ */}
-      <div className="space-y-5 pt-4 border-t border-black/5 dark:border-white/10">
+      <div className="space-y-4">
         {/* Section Header & Interactive Controls */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <button
             type="button"
             onClick={() => setShowStudentActivity((prev) => !prev)}
-            className="group inline-flex items-center gap-2.5 text-left cursor-pointer focus:outline-none"
-            title={showStudentActivity ? "Hide Student Activity & Engagement" : "Show Student Activity & Engagement"}
+            className="group text-left cursor-pointer focus:outline-none"
           >
-            <span className="p-1 rounded-lg bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-400 group-hover:text-[#3B3B3B] dark:group-hover:text-white transition-colors">
-              {showStudentActivity ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-            </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold tracking-wide text-[#3B3B3B] dark:text-white group-hover:underline">
-                  Student Activity & Engagement
-                </h2>
-                <span className="text-[10px] font-medium text-[#696969] dark:text-gray-400">
-                  {showStudentActivity ? "(Click to hide)" : "(Click to expand)"}
-                </span>
+            <div className="inline-flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
+                Student Activity & Engagement
+              </h2>
+              <div className="text-neutral-400 group-hover:text-[#3B3B3B] dark:group-hover:text-white transition-colors">
+                {showStudentActivity ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
               </div>
-              <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
-                Monitor daily study hours, peak traffic windows, subject engagement, and individual candidate progress.
-              </p>
             </div>
           </button>
+        </div>
 
-          {/* Right-aligned Controls: Examination, Batch, Date Picker, Quick Filters, Export CSV */}
-          {showStudentActivity && (
-            <div className="flex flex-wrap items-center gap-2.5 self-end lg:self-auto">
-              {/* Type of Examination Filter */}
-              <div className="flex items-center gap-1.5">
-                <label
-                  htmlFor="activity-examination-select"
-                  className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
-                >
-                  Exam:
-                </label>
-                <select
-                  id="activity-examination-select"
-                  value={selectedActivityExaminationId}
-                  onChange={(e) => handleActivityExaminationChange(e.target.value)}
-                  className="h-9 px-3 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[200px] sm:max-w-[230px] truncate"
-                  title="Filter by Type of Examination"
-                >
-                  <option value="ALL">All Examinations</option>
-                  {examinationOptions.map((exam) => (
-                    <option key={exam.id} value={exam.id}>
-                      {exam.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Batch Filter */}
-              <div className="flex items-center gap-1.5">
-                <label
-                  htmlFor="activity-batch-select"
-                  className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
-                >
-                  Batch:
-                </label>
-                <select
-                  id="activity-batch-select"
-                  value={selectedActivityBatchId}
-                  onChange={(e) => setSelectedActivityBatchId(e.target.value)}
-                  className="h-9 px-3 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[150px] sm:max-w-[170px] truncate"
-                  title="Filter by Batch"
-                >
-                  <option value="ALL">All Batches</option>
-                  {activityBatchOptions.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Calendar Date Picker: Single-day selector */}
-              <div className="relative flex items-center">
-                <div className="relative">
-                  <input
-                    type="date"
-                    id="activity-date-picker"
-                    value={activityDate || todayStr}
-                    onChange={(e) => handleDateChange(e.target.value)}
-                    className="h-9 pl-3 pr-2.5 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer"
-                    title="Select specific date"
-                  />
-                </div>
-              </div>
-
-              {/* Preset Quick Filters Pill Buttons */}
-              <div className="inline-flex items-center gap-1 p-1 bg-[#F2F2F2]/80 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
+        {/* ══ Collapsible Content ══ */}
+        {showStudentActivity && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Unified Controls Toolbar: Preset Range on top, Filters underneath */}
+            <div className="flex flex-col gap-3">
+              {/* Preset Quick Filters Buttons */}
+              <div className="inline-flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10 shrink-0 self-start">
                 {[
                   { id: "today", label: "Today" },
                   { id: "yesterday", label: "Yesterday" },
@@ -1885,10 +2150,10 @@ export default function AnalyticalOverviewPage() {
                     key={pill.id}
                     type="button"
                     onClick={() => handleRangeChange(pill.id)}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
                       activityRange === pill.id
-                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                        : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                        : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
                     }`}
                   >
                     {pill.label}
@@ -1896,147 +2161,290 @@ export default function AnalyticalOverviewPage() {
                 ))}
               </div>
 
-              {/* Export CSV Action */}
-              <button
-                type="button"
-                onClick={exportToCSV}
-                className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 hover:bg-black/5 dark:hover:bg-white/15 border border-black/10 dark:border-white/15 transition-all shadow-2xs cursor-pointer"
-                title="Export currently filtered metrics to CSV"
-              >
-                <Download className="size-3.5 text-[#696969] dark:text-gray-400" />
-                <span>Export CSV</span>
-              </button>
-            </div>
-          )}
-        </div>
+              {/* Filters Row: Filter Dropdown, Date Picker, Export CSV */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                {/* Beside the button, add a label "Filter" */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-normal text-[#696969] dark:text-gray-400 select-none">
+                    Filter
+                  </span>
+                  <div className="relative" ref={activityFilterRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsActivityFilterOpen((prev) => !prev)}
+                      className="h-8.5 sm:h-9 px-3 text-xs font-normal rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-2 select-none"
+                      aria-expanded={isActivityFilterOpen}
+                      aria-haspopup="true"
+                    >
+                      <Filter className="size-3.5 opacity-60 shrink-0" />
+                      <span className="truncate max-w-[140px] sm:max-w-[180px]">
+                        {activityFilterButtonLabel}
+                      </span>
+                      <ChevronDown
+                        className={`size-3 opacity-60 shrink-0 transition-transform duration-200 ${
+                          isActivityFilterOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
 
-        {/* ══ Collapsible Content ══ */}
-        {showStudentActivity && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            {/* 1. Top-Level Metric Summary Cards (4-Column Grid) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Dropdown Menu */}
+                    {isActivityFilterOpen && (
+                      <div className="absolute left-0 sm:left-auto top-full mt-1.5 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-3 max-h-[440px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                        {/* Section 1: Examinations */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                              Examinations
+                            </span>
+                            {selectedActivityExamIds.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedActivityExamIds([])}
+                                className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+
+                          <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                            <input
+                              type="checkbox"
+                              checked={selectedActivityExamIds.length === 0}
+                              onChange={() => setSelectedActivityExamIds([])}
+                              className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                            />
+                            <span>All Examinations</span>
+                          </label>
+
+                          <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                            {examinationOptions.map((exam) => {
+                              const isChecked = selectedActivityExamIds.includes(String(exam.id))
+                              return (
+                                <label
+                                  key={exam.id}
+                                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {
+                                      if (isChecked) {
+                                        setSelectedActivityExamIds(selectedActivityExamIds.filter((id) => id !== String(exam.id)))
+                                      } else {
+                                        setSelectedActivityExamIds([...selectedActivityExamIds, String(exam.id)])
+                                      }
+                                    }}
+                                    className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                                  />
+                                  <span className="truncate">{exam.name}</span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Section Divider */}
+                        <div className="border-t border-black/5 dark:border-white/10" />
+
+                        {/* Section 2: Batches */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                              Batches
+                            </span>
+                            {selectedActivityBatchIds.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedActivityBatchIds([])}
+                                className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+
+                          <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                            <input
+                              type="checkbox"
+                              checked={selectedActivityBatchIds.length === 0}
+                              onChange={() => setSelectedActivityBatchIds([])}
+                              className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                            />
+                            <span>All Batches</span>
+                          </label>
+
+                          <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                            {activityBatchOptions.map((batch) => {
+                              const isChecked = selectedActivityBatchIds.includes(String(batch.id))
+                              return (
+                                <label
+                                  key={batch.id}
+                                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {
+                                      if (isChecked) {
+                                        setSelectedActivityBatchIds(selectedActivityBatchIds.filter((id) => id !== String(batch.id)))
+                                      } else {
+                                        setSelectedActivityBatchIds([...selectedActivityBatchIds, String(batch.id)])
+                                      }
+                                    }}
+                                    className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                                  />
+                                  <span className="truncate">{batch.name}</span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Bottom Reset Strip */}
+                        {(selectedActivityExamIds.length > 0 || selectedActivityBatchIds.length > 0) && (
+                          <>
+                            <div className="border-t border-black/5 dark:border-white/10" />
+                            <div className="flex items-center justify-between px-1 pt-0.5 text-xs">
+                              <span className="text-neutral-400">
+                                {selectedActivityExamIds.length + selectedActivityBatchIds.length} active
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedActivityExamIds([])
+                                  setSelectedActivityBatchIds([])
+                                }}
+                                className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
+                              >
+                                Reset all
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Calendar Date Picker: Single-day selector */}
+                <input
+                  type="date"
+                  id="activity-date-picker"
+                  aria-label="Filter by date"
+                  value={activityDate || todayStr}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  className="h-8.5 sm:h-9 px-3 text-xs font-normal rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer"
+                  title="Select specific date"
+                />
+
+                {/* Export CSV Action */}
+                <button
+                  type="button"
+                  onClick={exportToCSV}
+                  className="inline-flex items-center gap-1.5 px-3.5 h-8.5 sm:h-9 rounded-xl text-xs font-normal text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 border border-black/5 dark:border-white/10 transition-all shadow-2xs cursor-pointer"
+                  title="Export currently filtered metrics to CSV"
+                >
+                  <Download className="size-3.5 text-neutral-400" />
+                  <span>Export CSV</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 1. Top-Level Metric Summary Cards (4-Column Grid styled like Student Dashboard) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
               {/* Card 1: Active Reviewees */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs flex flex-col justify-between space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
+                <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+                  <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
                     Active Reviewees
                   </span>
-                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                    <Users className="size-4" />
-                  </div>
                 </div>
-
-                <div>
-                  <div className="text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+                  <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                     {filteredActivityAnalytics?.kpis?.activeReviewees || "0 / 0"}
                   </div>
-                </div>
-
-                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
-                  <span className="truncate">Participation Rate</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold whitespace-nowrap">
+                  <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
                     {filteredActivityAnalytics?.kpis?.participationDeltaText || "0% • 0% vs yesterday"}
-                  </span>
+                  </p>
                 </div>
               </div>
 
               {/* Card 2: Total Study Time */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs flex flex-col justify-between space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
+                <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#2A9D8F]/20 dark:bg-[#2A9D8F]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+                  <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
                     Total Study Time
                   </span>
-                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                    <Clock className="size-4" />
-                  </div>
                 </div>
-
-                <div>
-                  <div className="text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+                  <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                     {filteredActivityAnalytics?.kpis?.totalStudyTime || "0h 0m"}
                   </div>
-                </div>
-
-                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
-                  <span className="truncate">Active Candidate Average</span>
-                  <span className="text-[#3B3B3B] dark:text-white font-semibold whitespace-nowrap">
+                  <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
                     {filteredActivityAnalytics?.kpis?.avgStudyTimePerActive || "Avg 0h 0m per active student"}
-                  </span>
+                  </p>
                 </div>
               </div>
 
               {/* Card 3: Curriculum Interactions */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs flex flex-col justify-between space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
+                <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E17055]/20 dark:bg-[#E17055]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+                  <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
                     Curriculum Interactions
                   </span>
-                  <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                    <BookOpen className="size-4" />
-                  </div>
                 </div>
-
-                <div>
-                  <div className="text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+                  <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                     {filteredActivityAnalytics?.kpis?.curriculumInteractions || "0 opens"}
                   </div>
-                </div>
-
-                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
-                  <span className="truncate">Resource Scope</span>
-                  <span className="text-[#3B3B3B] dark:text-white font-medium whitespace-nowrap">
+                  <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
                     {filteredActivityAnalytics?.kpis?.activeSubjectsCount || "Across active subjects & modules"}
-                  </span>
+                  </p>
                 </div>
               </div>
 
               {/* Card 4: Peak Activity Window */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs flex flex-col justify-between space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
+                <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#3B82F6]/20 dark:bg-[#3B82F6]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+                  <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
                     Peak Activity Window
                   </span>
-                  <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                    <Flame className="size-4" />
-                  </div>
                 </div>
-
-                <div>
+                <div className="p-5 sm:p-6 pt-4 sm:pt-4">
                   <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white truncate">
                     {filteredActivityAnalytics?.kpis?.peakActivityWindow || "—"}
                   </div>
-                </div>
-
-                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
-                  <span className="truncate">Concurrent Load</span>
-                  <span className="text-rose-600 dark:text-rose-400 font-semibold whitespace-nowrap">
+                  <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
                     {filteredActivityAnalytics?.kpis?.peakConcurrentText || "No active students online in this period"}
-                  </span>
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* 2. Analytics Visualizations (Two-Column Chart Grid) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {/* Chart 1: Daily Study & Peak Hour Distribution */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 sm:p-6 shadow-2xs flex flex-col justify-between space-y-4">
+            {/* 2. Combined Analytics Visualizations & Performance Breakdown Card */}
+            <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden">
+              {/* Top: 2-Column Analytics Visualizations Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-black/5 dark:divide-white/10">
+                {/* Chart 1: Daily Study & Peak Hour Distribution */}
+                <div className="p-5 sm:p-6 flex flex-col justify-between space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/5 dark:border-white/5">
                   <div>
-                    <h3 className="text-xs font-semibold text-[#3B3B3B] dark:text-white uppercase tracking-wider">
+                    <h3 className="text-xs font-normal text-[#3B3B3B] dark:text-white">
                       Daily Study & Peak Hour Distribution
                     </h3>
-                    <p className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
+                    <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5 font-normal">
                       {filteredActivityAnalytics?.isSingleDay
                         ? "Hourly concurrent active students and cumulative hours (24h)"
                         : "Daily active students (bars) vs. total hours logged (line)"}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 text-[11px] text-[#696969] dark:text-gray-400">
+                  <div className="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400 font-normal">
                     <span className="inline-flex items-center gap-1.5">
-                      <span className="size-2.5 rounded-sm bg-[#E9C46A]" /> Concurrent Students
+                      <span className="size-2 rounded-sm bg-[#E9C46A]" /> Concurrent Students
                     </span>
                     <span className="inline-flex items-center gap-1.5">
-                      <span className="size-2.5 rounded-sm bg-[#3B3B3B] dark:bg-white" /> Hours Logged
+                      <span className="size-2 rounded-sm bg-[#3B3B3B] dark:bg-white" /> Hours Logged
                     </span>
                   </div>
                 </div>
@@ -2044,7 +2452,7 @@ export default function AnalyticalOverviewPage() {
                 <div className="w-full h-[280px]">
                   {(filteredActivityAnalytics?.chart1Distribution || []).length === 0 ||
                   (filteredActivityAnalytics?.kpis?.activeCount === 0 && (filteredActivityAnalytics?.chart1Distribution || []).every((d) => d.active === 0 && d.hours === 0)) ? (
-                    <div className="h-full flex flex-col items-center justify-center text-xs text-[#696969] dark:text-gray-400">
+                    <div className="h-full flex flex-col items-center justify-center text-xs text-neutral-400 dark:text-neutral-500 font-normal">
                       <Clock className="size-8 stroke-[1.5] mb-2 opacity-30" />
                       <span>No study session distribution recorded for this date.</span>
                     </div>
@@ -2079,19 +2487,19 @@ export default function AnalyticalOverviewPage() {
                             if (active && payload && payload.length) {
                               const item = payload[0].payload
                               return (
-                                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-3 shadow-lg text-xs space-y-1">
-                                  <div className="font-bold text-[#3B3B3B] dark:text-white">
+                                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-3 shadow-lg text-xs space-y-1 font-normal">
+                                  <div className="text-[#3B3B3B] dark:text-white font-normal">
                                     {label}
                                   </div>
-                                  <div className="text-amber-600 dark:text-amber-400">
-                                    Concurrent Students: <strong>{item.active}</strong>
+                                  <div className="text-amber-600 dark:text-amber-400 font-normal">
+                                    Concurrent Students: {item.active}
                                   </div>
-                                  <div className="text-[#3B3B3B] dark:text-gray-200">
-                                    Total Hours: <strong>{item.hours}h</strong>
+                                  <div className="text-[#3B3B3B] dark:text-gray-200 font-normal">
+                                    Total Hours: {item.hours}h
                                   </div>
                                   {item.topSubject && item.topSubject !== "—" && (
-                                    <div className="text-[11px] text-[#696969] dark:text-gray-400 pt-1 border-t border-black/5 dark:border-white/10">
-                                      Top Subject: <span className="font-medium text-[#3B3B3B] dark:text-gray-200">{item.topSubject}</span>
+                                    <div className="text-[11px] text-[#696969] dark:text-gray-400 pt-1 border-t border-black/5 dark:border-white/10 font-normal">
+                                      Top Subject: {item.topSubject}
                                     </div>
                                   )}
                                 </div>
@@ -2115,39 +2523,39 @@ export default function AnalyticalOverviewPage() {
                           name="Hours Logged"
                           stroke="#3B3B3B"
                           className="dark:stroke-white"
-                          strokeWidth={2.5}
+                          strokeWidth={2}
                           dot={{ r: 3, fill: "#3B3B3B" }}
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
                   )}
                 </div>
-              </div>
+                </div>
 
-              {/* Chart 2: Subject Time Allocation (Horizontal Stacked Bar Chart) */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 sm:p-6 shadow-2xs flex flex-col justify-between space-y-4">
+                {/* Chart 2: Subject Time Allocation (Horizontal Stacked Bar Chart) */}
+                <div className="p-5 sm:p-6 flex flex-col justify-between space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/5 dark:border-white/5">
                   <div>
-                    <h3 className="text-xs font-semibold text-[#3B3B3B] dark:text-white uppercase tracking-wider">
+                    <h3 className="text-xs font-normal text-[#3B3B3B] dark:text-white">
                       Subject Time Allocation
                     </h3>
-                    <p className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
+                    <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5 font-normal">
                       Lectures & reading vs. quizzes & mock exams per review domain
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 text-[11px] text-[#696969] dark:text-gray-400">
+                  <div className="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400 font-normal">
                     <span className="inline-flex items-center gap-1.5">
-                      <span className="size-2.5 rounded-sm bg-[#3B3B3B] dark:bg-white" /> Lecture & Notes
+                      <span className="size-2 rounded-sm bg-[#3B3B3B] dark:bg-white" /> Lecture & Notes
                     </span>
                     <span className="inline-flex items-center gap-1.5">
-                      <span className="size-2.5 rounded-sm bg-[#E9C46A]" /> Tests & Quizzes
+                      <span className="size-2 rounded-sm bg-[#E9C46A]" /> Tests & Quizzes
                     </span>
                   </div>
                 </div>
 
                 <div className="w-full h-[280px]">
                   {(filteredActivityAnalytics?.chart2SubjectAllocation || []).every((d) => d.totalCategoryHours === 0) ? (
-                    <div className="h-full flex flex-col items-center justify-center text-xs text-[#696969] dark:text-gray-400">
+                    <div className="h-full flex flex-col items-center justify-center text-xs text-neutral-400 dark:text-neutral-500 font-normal">
                       <BookOpen className="size-8 stroke-[1.5] mb-2 opacity-30" />
                       <span>No subject study hours logged for this period.</span>
                     </div>
@@ -2173,18 +2581,18 @@ export default function AnalyticalOverviewPage() {
                             if (active && payload && payload.length) {
                               const d = payload[0].payload
                               return (
-                                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-3 shadow-lg text-xs space-y-1">
-                                  <div className="font-bold text-[#3B3B3B] dark:text-white">
+                                <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1f1f1f] p-3 shadow-lg text-xs space-y-1 font-normal">
+                                  <div className="text-[#3B3B3B] dark:text-white font-normal">
                                     {d.category}
                                   </div>
-                                  <div className="text-[#3B3B3B] dark:text-gray-200">
-                                    Lecture & Reading: <strong>{d.lectureHours}h</strong>
+                                  <div className="text-[#3B3B3B] dark:text-gray-200 font-normal">
+                                    Lecture & Reading: {d.lectureHours}h
                                   </div>
-                                  <div className="text-amber-600 dark:text-amber-400">
-                                    Practice Tests & Quizzes: <strong>{d.testHours}h</strong>
+                                  <div className="text-amber-600 dark:text-amber-400 font-normal">
+                                    Practice Tests & Quizzes: {d.testHours}h
                                   </div>
-                                  <div className="text-[11px] text-[#696969] dark:text-gray-400 pt-1 border-t border-black/5 dark:border-white/10">
-                                    Cohort Study Share: <strong className="text-[#3B3B3B] dark:text-white">{d.sharePct}%</strong>
+                                  <div className="text-[11px] text-[#696969] dark:text-gray-400 pt-1 border-t border-black/5 dark:border-white/10 font-normal">
+                                    Cohort Study Share: {d.sharePct}%
                                   </div>
                                 </div>
                               )
@@ -2198,21 +2606,24 @@ export default function AnalyticalOverviewPage() {
                     </ResponsiveContainer>
                   )}
                 </div>
+                </div>
               </div>
-            </div>
 
-            {/* 3. Interactive Data Tables (Tabbed Interface) */}
-            <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 sm:p-6 shadow-2xs space-y-4">
+              {/* Section Divider */}
+              <div className="border-t border-black/5 dark:border-white/10" />
+
+              {/* Bottom: Deep-Dive Curriculum & Student Accountability Tabs */}
+              <div className="p-5 sm:p-6 space-y-4">
               {/* Tab Navigation */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/5 dark:border-white/5">
-                <div className="inline-flex items-center gap-1.5 p-1 bg-[#F2F2F2]/80 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
+                <div className="inline-flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10 shrink-0">
                   <button
                     type="button"
                     onClick={() => setActivityTab("subjects")}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
                       activityTab === "subjects"
-                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                        : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                        : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
                     }`}
                   >
                     Subject Performance Breakdown
@@ -2220,17 +2631,17 @@ export default function AnalyticalOverviewPage() {
                   <button
                     type="button"
                     onClick={() => setActivityTab("roster")}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
                       activityTab === "roster"
-                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                        : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                        : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
                     }`}
                   >
                     Student Accountability & Roster
                   </button>
                 </div>
 
-                <div className="text-xs text-[#696969] dark:text-gray-400">
+                <div className="text-xs text-neutral-400 dark:text-neutral-500 font-normal">
                   {activityTab === "subjects"
                     ? "Curriculum domain engagement and completion rates"
                     : "Identify active candidates and intervene with at-risk students"}
@@ -2241,47 +2652,47 @@ export default function AnalyticalOverviewPage() {
               {activityTab === "subjects" && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-black/5 dark:border-white/10 text-[#696969] dark:text-gray-400 font-semibold">
-                        <th className="py-2.5 px-3">Subject / Module Name</th>
-                        <th className="py-2.5 px-3">Active Reviewees</th>
-                        <th className="py-2.5 px-3">Total Hours Spent</th>
-                        <th className="py-2.5 px-3">Avg. Session Length</th>
-                        <th className="py-2.5 px-3 text-center">Practice Tests Taken</th>
-                        <th className="py-2.5 px-3 pr-4 text-right">Cohort Completion Rate</th>
+                    <thead className="sticky top-0 z-10 bg-neutral-50/60 dark:bg-[#14161b]/80 backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                      <tr className="h-11 text-xs font-normal text-[#696969] dark:text-gray-300">
+                        <th className="py-2.5 px-3 font-normal">Subject / Module Name</th>
+                        <th className="py-2.5 px-3 font-normal">Active Reviewees</th>
+                        <th className="py-2.5 px-3 font-normal">Total Hours Spent</th>
+                        <th className="py-2.5 px-3 font-normal">Avg. Session Length</th>
+                        <th className="py-2.5 px-3 text-center font-normal">Practice Tests Taken</th>
+                        <th className="py-2.5 px-3 pr-4 text-right font-normal">Cohort Completion Rate</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                    <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs font-normal">
                       {(filteredActivityAnalytics?.tabA_subjectBreakdown || []).length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center text-xs text-[#696969] dark:text-gray-400">
+                          <td colSpan={6} className="py-8 text-center text-xs text-neutral-400 dark:text-neutral-500 font-normal">
                             No subjects configured or recorded yet.
                           </td>
                         </tr>
                       ) : (
                         (filteredActivityAnalytics?.tabA_subjectBreakdown || []).map((sub) => (
-                          <tr key={sub.id} className="h-12 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
-                            <td className="py-3 px-3">
-                              <div className="font-semibold text-[#3B3B3B] dark:text-white">
+                          <tr key={sub.id} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                            <td className="py-2.5 px-3">
+                              <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
                                 {sub.name}
                               </div>
-                              <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-medium bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300">
+                              <span className="inline-block mt-0.5 text-[11px] text-[#696969] dark:text-gray-400 font-normal">
                                 {sub.category}
                               </span>
                             </td>
-                            <td className="py-3 px-3 font-medium text-[#3B3B3B] dark:text-gray-200">
+                            <td className="py-2.5 px-3 text-neutral-600 dark:text-neutral-300 font-normal">
                               {sub.activeReviewees} of {sub.totalEnrolled} students
                             </td>
-                            <td className="py-3 px-3 font-semibold text-[#3B3B3B] dark:text-white">
+                            <td className="py-2.5 px-3 text-[#3B3B3B] dark:text-white font-normal">
                               {sub.totalHoursStr}
                             </td>
-                            <td className="py-3 px-3 text-[#696969] dark:text-gray-400">
+                            <td className="py-2.5 px-3 text-neutral-500 dark:text-neutral-400 font-normal">
                               {sub.avgSessionLength}
                             </td>
-                            <td className="py-3 px-3 text-center font-medium text-[#3B3B3B] dark:text-gray-200">
+                            <td className="py-2.5 px-3 text-center text-[#3B3B3B] dark:text-neutral-200 font-normal">
                               {sub.practiceTestsTaken}
                             </td>
-                            <td className="py-3 px-3 pr-4 text-right">
+                            <td className="py-2.5 px-3 pr-4 text-right">
                               <div className="flex items-center justify-end gap-2.5">
                                 <div className="w-24 h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
                                   <div
@@ -2289,7 +2700,7 @@ export default function AnalyticalOverviewPage() {
                                     style={{ width: `${sub.completionRate}%` }}
                                   />
                                 </div>
-                                <span className="font-bold text-[#3B3B3B] dark:text-white text-xs min-w-[34px]">
+                                <span className="font-normal text-[#3B3B3B] dark:text-white text-xs min-w-[34px]">
                                   {sub.completionRate}%
                                 </span>
                               </div>
@@ -2306,68 +2717,67 @@ export default function AnalyticalOverviewPage() {
               {activityTab === "roster" && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-black/5 dark:border-white/10 text-[#696969] dark:text-gray-400 font-semibold">
-                        <th className="py-2.5 px-3">Student Name & Info</th>
-                        <th className="py-2.5 px-3">Status Badge</th>
-                        <th className="py-2.5 px-3">Time Spent (Period)</th>
-                        <th className="py-2.5 px-3 text-center">Modules Accessed</th>
-                        <th className="py-2.5 px-3 text-center">Mock Tests Completed</th>
-                        <th className="py-2.5 px-3">Last Active</th>
-                        <th className="py-2.5 px-3 text-right pr-4">Action</th>
+                    <thead className="sticky top-0 z-10 bg-neutral-50/60 dark:bg-[#14161b]/80 backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                      <tr className="h-11 text-xs font-normal text-[#696969] dark:text-gray-300">
+                        <th className="py-2.5 px-3 font-normal">Student & Login ID</th>
+                        <th className="py-2.5 px-3 font-normal">Status</th>
+                        <th className="py-2.5 px-3 font-normal">Time Spent (Period)</th>
+                        <th className="py-2.5 px-3 text-center font-normal">Modules Accessed</th>
+                        <th className="py-2.5 px-3 text-center font-normal">Mock Tests Completed</th>
+                        <th className="py-2.5 px-3 font-normal">Last Active</th>
+                        <th className="py-2.5 px-3 text-right pr-4 font-normal">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                    <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs font-normal">
                       {(filteredActivityAnalytics?.tabB_studentRoster || []).length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="py-8 text-center text-xs text-[#696969] dark:text-gray-400">
+                          <td colSpan={7} className="py-8 text-center text-xs text-neutral-400 dark:text-neutral-500 font-normal">
                             No student activity records found for this period.
                           </td>
                         </tr>
                       ) : (
                         (filteredActivityAnalytics?.tabB_studentRoster || []).map((st) => (
-                          <tr key={st.id} className="h-12 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
-                            <td className="py-3 px-3">
-                              <div className="font-semibold text-[#3B3B3B] dark:text-white">
+                          <tr key={st.id} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                            <td className="py-2.5 px-3">
+                              {/* Bold ONLY on student name */}
+                              <div className="font-semibold text-[13px] text-[#3B3B3B] dark:text-gray-100">
                                 {st.name}
                               </div>
-                              <div className="text-[11px] text-[#696969] dark:text-gray-400">
-                                {st.email} • {st.school}
+                              {/* No font-mono, single font style */}
+                              <div className="text-[11px] text-[#696969] dark:text-gray-400 font-normal mt-0.5">
+                                {formatLoginId(st)} • {st.school}
                               </div>
                             </td>
-                            <td className="py-3 px-3">
-                              <span
-                                className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-semibold border ${st.statusColor}`}
-                              >
+                            <td className="py-2.5 px-3">
+                              <span className="text-[11px] font-normal text-neutral-600 dark:text-neutral-300">
                                 {st.statusBadge}
                               </span>
                             </td>
-                            <td className="py-3 px-3 font-semibold text-[#3B3B3B] dark:text-white">
+                            <td className="py-2.5 px-3 text-[#3B3B3B] dark:text-white font-normal">
                               {st.timeSpentStr}
                             </td>
-                            <td className="py-3 px-3 text-center font-medium text-[#3B3B3B] dark:text-gray-200">
+                            <td className="py-2.5 px-3 text-center text-[#3B3B3B] dark:text-neutral-200 font-normal">
                               {st.modulesAccessed}
                             </td>
-                            <td className="py-3 px-3 text-center">
-                              <span className="font-semibold text-[#3B3B3B] dark:text-white">
+                            <td className="py-2.5 px-3 text-center">
+                              <span className="font-normal text-[#3B3B3B] dark:text-white">
                                 {st.mockTestsCompleted}
                               </span>
-                              <span className="text-[11px] text-[#696969] dark:text-gray-400 block">
+                              <span className="text-[11px] text-neutral-400 dark:text-neutral-500 block font-normal">
                                 avg. {st.avgScore}%
                               </span>
                             </td>
-                            <td className="py-3 px-3 text-[#696969] dark:text-gray-400 whitespace-nowrap">
+                            <td className="py-2.5 px-3 text-neutral-500 dark:text-neutral-400 whitespace-nowrap font-normal">
                               {st.lastActiveText}
                             </td>
-                            <td className="py-3 px-3 pr-4 text-right">
+                            <td className="py-2.5 px-3 pr-4 text-right">
                               <button
                                 type="button"
                                 onClick={() => {
-                                  // Scroll or filter to student in section 1
                                   setSearch(st.name)
                                   window.scrollTo({ top: 0, behavior: "smooth" })
                                 }}
-                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-[#3B3B3B] dark:text-white transition-all cursor-pointer whitespace-nowrap"
+                                className="inline-flex items-center justify-center px-3 h-7 rounded-xl text-[11px] font-normal text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 shadow-2xs hover:bg-neutral-50 dark:hover:bg-white/15 transition-all cursor-pointer whitespace-nowrap"
                               >
                                 View Profile / Study Log
                               </button>
@@ -2381,86 +2791,199 @@ export default function AnalyticalOverviewPage() {
               )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
 
       {/* ═══ SECTION 4: User Registration Overview ═══ */}
-      <div className="space-y-5 pt-4 border-t border-black/5 dark:border-white/10">
+      <div className="border-t border-black/5 dark:border-white/10" />
+      <div className="space-y-6">
         {/* Section Header & Interactive Controls */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <button
             type="button"
             onClick={() => setShowUserRegistration((prev) => !prev)}
-            className="group inline-flex items-center gap-2.5 text-left cursor-pointer focus:outline-none"
+            className="group text-left cursor-pointer focus:outline-none"
             title={showUserRegistration ? "Hide User Registration Overview" : "Show User Registration Overview"}
           >
-            <span className="p-1 rounded-lg bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-400 group-hover:text-[#3B3B3B] dark:group-hover:text-white transition-colors">
-              {showUserRegistration ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-            </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold tracking-wide text-[#3B3B3B] dark:text-white group-hover:underline">
-                  User Registration Overview
-                </h2>
-                <span className="text-[10px] font-medium text-[#696969] dark:text-gray-400">
-                  {showUserRegistration ? "(Click to hide)" : "(Click to expand)"}
-                </span>
+            <div className="inline-flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
+                User Registration Overview
+              </h2>
+              <div className="text-neutral-400 group-hover:text-[#3B3B3B] dark:group-hover:text-white transition-colors">
+                {showUserRegistration ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
               </div>
-              <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
-                Track new candidate sign-ups, total platform reach, and enrollment distribution across licensure examination categories.
-              </p>
             </div>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5 font-normal">
+              Track new student sign-ups, active accounts, and exam enrollments.
+            </p>
           </button>
 
           {/* Right-aligned Controls: Exam Filter, Batch Filter, Date Picker, Quick Presets, Export CSV */}
           {showUserRegistration && (
             <div className="flex flex-wrap items-center gap-2.5 self-end lg:self-auto">
-              {/* Exam Track Filter */}
-              <div className="flex items-center gap-1.5">
-                <label
-                  htmlFor="reg-examination-select"
-                  className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
-                >
-                  Exam:
-                </label>
-                <select
-                  id="reg-examination-select"
-                  value={selectedRegExaminationId}
-                  onChange={(e) => handleRegExaminationChange(e.target.value)}
-                  className="h-9 px-3 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[200px] sm:max-w-[230px] truncate"
-                  title="Filter by Examination Category"
-                >
-                  <option value="ALL">All Examinations</option>
-                  {examinationOptions.map((exam) => (
-                    <option key={exam.id} value={exam.id}>
-                      {exam.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Beside the button, add a label "Filter" */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-normal text-[#696969] dark:text-gray-400 select-none">
+                  Filter
+                </span>
+                <div className="relative" ref={regFilterRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsRegFilterOpen((prev) => !prev)}
+                    className="h-8 sm:h-9 px-3 text-xs font-normal rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-2 select-none"
+                    aria-expanded={isRegFilterOpen}
+                    aria-haspopup="true"
+                  >
+                    <Filter className="size-3.5 opacity-60 shrink-0" />
+                    <span className="truncate max-w-[140px] sm:max-w-[180px]">
+                      {regFilterButtonLabel}
+                    </span>
+                    <ChevronDown
+                      className={`size-3 opacity-60 shrink-0 transition-transform duration-200 ${
+                        isRegFilterOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
 
-              {/* Batch Filter (dynamically reflects selected examination) */}
-              <div className="flex items-center gap-1.5">
-                <label
-                  htmlFor="reg-batch-select"
-                  className="text-xs text-[#696969] dark:text-gray-400 whitespace-nowrap"
-                >
-                  Batch:
-                </label>
-                <select
-                  id="reg-batch-select"
-                  value={selectedRegBatchId}
-                  onChange={(e) => setSelectedRegBatchId(e.target.value)}
-                  className="h-9 px-3 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer max-w-[150px] sm:max-w-[170px] truncate"
-                  title="Filter by Batch"
-                >
-                  <option value="ALL">All Batches</option>
-                  {regBatchOptions.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
+                  {/* Dropdown Menu */}
+                  {isRegFilterOpen && (
+                    <div className="absolute left-0 sm:left-auto top-full mt-1.5 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-xl z-50 p-3 space-y-3 max-h-[440px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                      {/* Section 1: Examinations */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between px-1">
+                          <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                            Examinations
+                          </span>
+                          {selectedRegExamIds.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedRegExamIds([])}
+                              className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+
+                        <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                          <input
+                            type="checkbox"
+                            checked={selectedRegExamIds.length === 0}
+                            onChange={() => setSelectedRegExamIds([])}
+                            className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                          />
+                          <span>All Examinations</span>
+                        </label>
+
+                        <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                          {examinationOptions.map((exam) => {
+                            const isChecked = selectedRegExamIds.includes(String(exam.id))
+                            return (
+                              <label
+                                key={exam.id}
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    if (isChecked) {
+                                      setSelectedRegExamIds(selectedRegExamIds.filter((id) => id !== String(exam.id)))
+                                    } else {
+                                      setSelectedRegExamIds([...selectedRegExamIds, String(exam.id)])
+                                    }
+                                  }}
+                                  className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                                />
+                                <span className="truncate">{exam.name}</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Section Divider */}
+                      <div className="border-t border-black/5 dark:border-white/10" />
+
+                      {/* Section 2: Batches */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between px-1">
+                          <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                            Batches
+                          </span>
+                          {selectedRegBatchIds.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedRegBatchIds([])}
+                              className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+
+                        <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                          <input
+                            type="checkbox"
+                            checked={selectedRegBatchIds.length === 0}
+                            onChange={() => setSelectedRegBatchIds([])}
+                            className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                          />
+                          <span>All Batches</span>
+                        </label>
+
+                        <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                          {regBatchOptions.map((batch) => {
+                            const isChecked = selectedRegBatchIds.includes(String(batch.id))
+                            return (
+                              <label
+                                key={batch.id}
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    if (isChecked) {
+                                      setSelectedRegBatchIds(selectedRegBatchIds.filter((id) => id !== String(batch.id)))
+                                    } else {
+                                      setSelectedRegBatchIds([...selectedRegBatchIds, String(batch.id)])
+                                    }
+                                  }}
+                                  className="size-3.5 rounded border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                                />
+                                <span className="truncate">{batch.name}</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Bottom Reset Strip */}
+                      {(selectedRegExamIds.length > 0 || selectedRegBatchIds.length > 0) && (
+                        <>
+                          <div className="border-t border-black/5 dark:border-white/10" />
+                          <div className="flex items-center justify-between px-1 pt-0.5 text-xs">
+                            <span className="text-neutral-400">
+                              {selectedRegExamIds.length + selectedRegBatchIds.length} active
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedRegExamIds([])
+                                setSelectedRegBatchIds([])
+                              }}
+                              className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
+                            >
+                              Reset all
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Calendar Date Picker: Single-day lookup and custom dates */}
@@ -2470,13 +2993,13 @@ export default function AnalyticalOverviewPage() {
                   id="reg-date-picker"
                   value={regDate || todayStr}
                   onChange={(e) => handleRegDateChange(e.target.value)}
-                  className="h-9 pl-3 pr-2.5 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer"
+                  className="h-8 sm:h-9 px-3 text-xs font-medium rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white focus:outline-none focus:ring-1 focus:ring-black/10 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer"
                   title="Select registration date"
                 />
               </div>
 
               {/* Quick Presets: Segmented Pill Buttons */}
-              <div className="inline-flex items-center gap-1 p-1 bg-[#F2F2F2]/80 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
+              <div className="inline-flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
                 {[
                   { id: "today", label: "Today" },
                   { id: "yesterday", label: "Yesterday" },
@@ -2490,8 +3013,8 @@ export default function AnalyticalOverviewPage() {
                     onClick={() => handleRegRangeChange(pill.id)}
                     className={`px-3 py-1 rounded-lg text-xs font-semibold tracking-wide whitespace-nowrap transition-all cursor-pointer ${
                       regRange === pill.id
-                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                        : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                        : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
                     }`}
                   >
                     {pill.label}
@@ -2503,10 +3026,10 @@ export default function AnalyticalOverviewPage() {
               <button
                 type="button"
                 onClick={exportRegCSV}
-                className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 hover:bg-black/5 dark:hover:bg-white/15 border border-black/10 dark:border-white/15 transition-all shadow-2xs cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 h-8 sm:h-9 rounded-xl text-xs font-semibold text-[#696969] dark:text-neutral-300 bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 shadow-2xs hover:bg-neutral-50 dark:hover:bg-white/15 transition-all cursor-pointer"
                 title="Export User Registration data to CSV"
               >
-                <Download className="size-3.5 text-[#696969] dark:text-gray-400" />
+                <Download className="size-3.5 text-neutral-400 dark:text-neutral-500" />
                 <span>Export CSV</span>
               </button>
             </div>
@@ -2519,100 +3042,92 @@ export default function AnalyticalOverviewPage() {
             {/* Phase 3: Top-Level KPI Summary Cards (4-Card Responsive Grid) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Card 1: New Registrations */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs flex flex-col justify-between space-y-4">
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 shadow-2xs flex flex-col justify-between space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
                     New Registrations
                   </span>
-                  <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                    <UserPlus className="size-4" />
-                  </div>
+                  <UserPlus className="size-4 text-neutral-400 dark:text-neutral-500" />
                 </div>
 
                 <div>
-                  <div className="text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                     {filteredRegistrationData?.kpis?.newRegistrations || "+0 in Period"}
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
+                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500">
                   <span className="truncate">Period Comparison</span>
-                  <span className="text-blue-600 dark:text-blue-400 font-semibold whitespace-nowrap">
+                  <span className="text-neutral-600 dark:text-neutral-300 font-medium whitespace-nowrap">
                     {filteredRegistrationData?.kpis?.registrationDeltaText || "0 accounts"}
                   </span>
                 </div>
               </div>
 
               {/* Card 2: Total Registered Reach */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs flex flex-col justify-between space-y-4">
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 shadow-2xs flex flex-col justify-between space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
                     Total Registered Reach
                   </span>
-                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                    <Users className="size-4" />
-                  </div>
+                  <Users className="size-4 text-neutral-400 dark:text-neutral-500" />
                 </div>
 
                 <div>
-                  <div className="text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                     {filteredRegistrationData?.kpis?.totalRegisteredReach || "0 Candidates"}
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
+                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500">
                   <span className="truncate">Platform Share</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold whitespace-nowrap">
+                  <span className="text-neutral-600 dark:text-neutral-300 font-medium whitespace-nowrap">
                     {filteredRegistrationData?.kpis?.reachSubtext || "100% of platform reach"}
                   </span>
                 </div>
               </div>
 
               {/* Card 3: Leading Exam Track */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs flex flex-col justify-between space-y-4">
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 shadow-2xs flex flex-col justify-between space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
                     Leading Exam Track
                   </span>
-                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                    <Award className="size-4" />
-                  </div>
+                  <Award className="size-4 text-neutral-400 dark:text-neutral-500" />
                 </div>
 
                 <div>
-                  <div className="text-2xl font-bold tracking-tight text-[#3B3B3B] dark:text-white truncate">
+                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white truncate">
                     {filteredRegistrationData?.kpis?.leadingExamTrack || "—"}
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
+                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500">
                   <span className="truncate">Examination Category</span>
-                  <span className="text-amber-600 dark:text-amber-400 font-semibold whitespace-nowrap">
+                  <span className="text-neutral-600 dark:text-neutral-300 font-medium whitespace-nowrap">
                     {filteredRegistrationData?.kpis?.leadingExamSubtext || "Highest volume"}
                   </span>
                 </div>
               </div>
 
               {/* Card 4: Active Account Rate */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs flex flex-col justify-between space-y-4">
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 shadow-2xs flex flex-col justify-between space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#696969] dark:text-gray-400">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
                     Active Account Rate
                   </span>
-                  <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                    <UserCheck className="size-4" />
-                  </div>
+                  <UserCheck className="size-4 text-neutral-400 dark:text-neutral-500" />
                 </div>
 
                 <div>
-                  <div className="text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                     {filteredRegistrationData?.kpis?.activeCandidatesRate || "0% Active"}
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-[#696969] dark:text-gray-400">
+                <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-neutral-400 dark:text-neutral-500">
                   <span className="truncate">Account Health</span>
-                  <span className="text-[#3B3B3B] dark:text-white font-semibold whitespace-nowrap">
+                  <span className="text-neutral-600 dark:text-neutral-300 font-medium whitespace-nowrap">
                     {filteredRegistrationData?.kpis?.activeCandidatesCount || "0 active accounts"}
                   </span>
                 </div>
@@ -2620,24 +3135,24 @@ export default function AnalyticalOverviewPage() {
             </div>
 
             {/* Visual Charts: 2-Column Responsive Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               {/* Chart 1: Historical Sign-Up Trends (2 Columns on large screens) */}
-              <div className="lg:col-span-2 rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="lg:col-span-2 rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 sm:p-6 shadow-2xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/5 dark:border-white/5">
                   <div>
                     <h3 className="text-xs font-semibold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
                       Historical Sign-Up Trends
                     </h3>
-                    <p className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
+                    <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5">
                       New candidate registrations and cumulative volume over the selected timeframe
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 text-[11px] text-[#696969] dark:text-gray-400">
+                  <div className="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400">
                     <span className="inline-flex items-center gap-1.5">
-                      <span className="size-2.5 rounded-sm bg-[#E9C46A]" /> New Registrations
+                      <span className="size-2 rounded-sm bg-[#E9C46A]" /> New Registrations
                     </span>
                     <span className="inline-flex items-center gap-1.5">
-                      <span className="size-2.5 rounded-sm bg-[#3B3B3B] dark:bg-white" /> Cumulative Total
+                      <span className="size-2 rounded-sm bg-[#3B3B3B] dark:bg-white" /> Cumulative Total
                     </span>
                   </div>
                 </div>
@@ -2721,12 +3236,12 @@ export default function AnalyticalOverviewPage() {
               </div>
 
               {/* Chart 2: Licensure Examination Distribution (1 Column Donut) */}
-              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs space-y-4">
-                <div>
+              <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 sm:p-6 shadow-2xs space-y-4">
+                <div className="pb-3 border-b border-black/5 dark:border-white/5">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
                     Licensure Examination Distribution
                   </h3>
-                  <p className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
+                  <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5">
                     Candidate allocation across board exam tracks
                   </p>
                 </div>
@@ -2793,17 +3308,17 @@ export default function AnalyticalOverviewPage() {
             </div>
 
             {/* Tabbed Data Tables: Tab A (Tracks Breakdown) vs Tab B (Candidate Log) */}
-            <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-card p-5 shadow-2xs space-y-4">
+            <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5 sm:p-6 shadow-2xs space-y-4">
               {/* Tab Selector Toolbar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/5 dark:border-white/10 pb-3">
-                <div className="inline-flex items-center gap-1 p-1 bg-[#F2F2F2]/80 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/5 dark:border-white/5 pb-3">
+                <div className="inline-flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
                   <button
                     type="button"
                     onClick={() => setRegTab("tracks")}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                       regTab === "tracks"
-                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                        : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                        : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
                     }`}
                   >
                     Licensure Track Breakdown
@@ -2813,15 +3328,15 @@ export default function AnalyticalOverviewPage() {
                     onClick={() => setRegTab("log")}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                       regTab === "log"
-                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                        : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                        ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                        : "text-neutral-400 dark:text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white"
                     }`}
                   >
                     Candidate Sign-Ups Log
                   </button>
                 </div>
 
-                <div className="text-xs text-[#696969] dark:text-gray-400">
+                <div className="text-xs text-neutral-400 dark:text-neutral-500">
                   {regTab === "tracks"
                     ? `${(filteredRegistrationData?.tabA_examTracks || []).length} Examination tracks active`
                     : `${(filteredRegistrationData?.tabB_candidateLog || []).length} Candidates listed`}
@@ -2832,8 +3347,8 @@ export default function AnalyticalOverviewPage() {
               {regTab === "tracks" && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-black/5 dark:border-white/10 text-[#696969] dark:text-gray-400 font-semibold">
+                    <thead className="sticky top-0 z-10 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 backdrop-blur-xs border-b border-[#E9C46A]/30">
+                      <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
                         <th className="py-2.5 px-3">Licensure Exam Track</th>
                         <th className="py-2.5 px-3 text-center">New in Period</th>
                         <th className="py-2.5 px-3">Total Candidates</th>
@@ -2845,18 +3360,18 @@ export default function AnalyticalOverviewPage() {
                     <tbody className="divide-y divide-black/5 dark:divide-white/5">
                       {(filteredRegistrationData?.tabA_examTracks || []).length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center text-xs text-[#696969] dark:text-gray-400">
+                          <td colSpan={6} className="py-8 text-center text-xs text-neutral-400 dark:text-neutral-500">
                             No exam tracks configured or registered yet.
                           </td>
                         </tr>
                       ) : (
                         (filteredRegistrationData?.tabA_examTracks || []).map((track) => (
-                          <tr key={track.trackCode} className="h-12 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                          <tr key={track.trackCode} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
                             <td className="py-3 px-3">
-                              <div className="font-semibold text-[#3B3B3B] dark:text-white">
+                              <div className="font-semibold text-xs text-[#3B3B3B] dark:text-gray-100">
                                 {track.trackCode}
                               </div>
-                              <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-medium bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300">
+                              <span className="inline-block mt-0.5 text-[11px] text-[#696969] dark:text-gray-400 font-normal">
                                 {track.trackName}
                               </span>
                             </td>
@@ -2866,7 +3381,7 @@ export default function AnalyticalOverviewPage() {
                             <td className="py-3 px-3 font-semibold text-[#3B3B3B] dark:text-white">
                               {track.totalCandidates}
                             </td>
-                            <td className="py-3 px-3 text-[#3B3B3B] dark:text-gray-200">
+                            <td className="py-3 px-3 text-neutral-600 dark:text-neutral-300">
                               {track.activeCandidates}
                             </td>
                             <td className="py-3 px-3">
@@ -2897,9 +3412,9 @@ export default function AnalyticalOverviewPage() {
               {regTab === "log" && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-black/5 dark:border-white/10 text-[#696969] dark:text-gray-400 font-semibold">
-                        <th className="py-2.5 px-3">Candidate Name & Email</th>
+                    <thead className="sticky top-0 z-10 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 backdrop-blur-xs border-b border-[#E9C46A]/30">
+                      <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                        <th className="py-2.5 px-3">Candidate & Login ID</th>
                         <th className="py-2.5 px-3">Target Exam Track</th>
                         <th className="py-2.5 px-3">Batch</th>
                         <th className="py-2.5 px-3">School / Affiliation</th>
@@ -2911,46 +3426,36 @@ export default function AnalyticalOverviewPage() {
                     <tbody className="divide-y divide-black/5 dark:divide-white/5">
                       {(filteredRegistrationData?.tabB_candidateLog || []).length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="py-8 text-center text-xs text-[#696969] dark:text-gray-400">
+                          <td colSpan={7} className="py-8 text-center text-xs text-neutral-400 dark:text-neutral-500">
                             No candidate registrations found for this filter.
                           </td>
                         </tr>
                       ) : (
                         (filteredRegistrationData?.tabB_candidateLog || []).map((cand) => (
-                          <tr key={cand.id} className="h-12 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                          <tr key={cand.id} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
                             <td className="py-3 px-3">
-                              <div className="font-semibold text-[#3B3B3B] dark:text-white">
+                              <div className="font-semibold text-xs text-[#3B3B3B] dark:text-gray-100">
                                 {cand.name}
                               </div>
-                              <div className="text-[11px] text-[#696969] dark:text-gray-400">
-                                {cand.email} • ID: {cand.login_id || cand.id}
+                              <div className="text-[11px] text-[#696969] dark:text-gray-400 font-mono mt-0.5">
+                                {formatLoginId(cand)}
                               </div>
                             </td>
-                            <td className="py-3 px-3">
-                              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-                                {cand.target_exam || "General"}
-                              </span>
+                            <td className="py-3 px-3 font-medium text-neutral-600 dark:text-neutral-300">
+                              {cand.target_exam || "General"}
                             </td>
-                            <td className="py-3 px-3 font-medium text-[#3B3B3B] dark:text-gray-200">
+                            <td className="py-3 px-3 font-medium text-neutral-600 dark:text-neutral-300">
                               {cand.batch_name || "—"}
                             </td>
-                            <td className="py-3 px-3 text-[#696969] dark:text-gray-400">
+                            <td className="py-3 px-3 text-neutral-500 dark:text-neutral-400">
                               {cand.school_name || "—"}
                             </td>
                             <td className="py-3 px-3">
-                              <span
-                                className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                                  cand.status === "active"
-                                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
-                                    : cand.status === "pending"
-                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20"
-                                    : "bg-gray-500/10 text-gray-700 dark:text-gray-300 border-gray-500/20"
-                                }`}
-                              >
+                              <span className="capitalize text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
                                 {cand.status || "active"}
                               </span>
                             </td>
-                            <td className="py-3 px-3 text-[#696969] dark:text-gray-400 whitespace-nowrap">
+                            <td className="py-3 px-3 text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
                               {cand.created_formatted || "—"}
                             </td>
                             <td className="py-3 px-3 pr-4 text-right">
@@ -2960,7 +3465,7 @@ export default function AnalyticalOverviewPage() {
                                   setSearch(cand.name)
                                   window.scrollTo({ top: 0, behavior: "smooth" })
                                 }}
-                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-[#3B3B3B] dark:text-white transition-all cursor-pointer whitespace-nowrap"
+                                className="inline-flex items-center justify-center px-3 h-7 rounded-xl text-[11px] font-medium text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 shadow-2xs hover:bg-neutral-50 dark:hover:bg-white/15 transition-all cursor-pointer whitespace-nowrap"
                               >
                                 View Profile
                               </button>

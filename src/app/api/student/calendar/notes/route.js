@@ -64,11 +64,21 @@ export async function POST(request) {
       )
     }
 
+    const selectedTag = tag?.trim() || "amber"
+
+    // If there are existing notes on this date, update their color tag to overwrite it
+    await pool.query(
+      `UPDATE student_calendar_notes
+       SET tag = $1, updated_at = NOW()
+       WHERE student_id = $2 AND event_date = $3`,
+      [selectedTag, session.userId, event_date]
+    )
+
     const { rows } = await pool.query(
       `INSERT INTO student_calendar_notes (student_id, event_date, title, description, time, tag)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, to_char(event_date, 'YYYY-MM-DD') as event_date, title, description, time, tag, created_at`,
-      [session.userId, event_date, title.trim(), description?.trim() || null, time?.trim() || null, tag?.trim() || "personal"]
+      [session.userId, event_date, title.trim(), description?.trim() || null, time?.trim() || null, selectedTag]
     )
 
     return NextResponse.json({ note: rows[0] }, { status: 201 })

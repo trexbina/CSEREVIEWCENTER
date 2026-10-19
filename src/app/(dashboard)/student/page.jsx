@@ -2,28 +2,17 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { getSession } from "@/lib/auth-session"
 import pool from "@/lib/db"
-import {
-  CalendarDays,
-  Play,
-  ArrowRight,
-  Clock,
-  Flame,
-  Award,
-  FileCheck2,
-  TrendingUp,
-  RotateCcw,
-  Sparkles,
-  ChevronRight,
-  Target,
-  CheckCircle2
-} from "lucide-react"
-import { LETCountdownInline } from "@/components/let-countdown-inline"
+import { ArrowRight, ChevronRight } from "lucide-react"
+import { UpcomingExamTimer } from "@/components/upcoming-exam-timer"
+import { StudentTodoWidget } from "./student-todo-widget"
+import { StudentCalendarWidget } from "./student-calendar-widget"
+import { LordIcon } from "@/components/ui/lord-icon"
 
 const DashboardCarousel = dynamic(
   () => import("@/components/dashboard-carousel").then((m) => m.DashboardCarousel),
   {
     loading: () => (
-      <div className="w-full aspect-[21/7] rounded-xl border border-border bg-muted animate-pulse" />
+      <div className="w-full aspect-[16/8] sm:aspect-[16/7] rounded-2xl border border-black/5 dark:border-white/10 bg-muted/40 animate-pulse" />
     ),
   }
 )
@@ -32,7 +21,7 @@ const LearningPerformanceChart = dynamic(
   () => import("@/components/student-dashboard-charts").then((m) => m.LearningPerformanceChart),
   {
     loading: () => (
-      <div className="rounded-xl border border-border bg-card h-[360px] animate-pulse" />
+      <div className="rounded-2xl border border-border/70 bg-card h-[360px] animate-pulse" />
     ),
   }
 )
@@ -41,7 +30,7 @@ const SubjectFocusChart = dynamic(
   () => import("@/components/student-dashboard-charts").then((m) => m.SubjectFocusChart),
   {
     loading: () => (
-      <div className="rounded-xl border border-border bg-card h-[360px] animate-pulse" />
+      <div className="rounded-2xl border border-border/70 bg-card h-[360px] animate-pulse" />
     ),
   }
 )
@@ -50,13 +39,10 @@ const RecentLearningActivityList = dynamic(
   () => import("@/components/recent-learning-activity-list").then((m) => m.RecentLearningActivityList),
   {
     loading: () => (
-      <div className="rounded-2xl border border-border bg-card p-6 h-[200px] animate-pulse" />
+      <div className="rounded-2xl border border-border/70 bg-card p-6 h-[200px] animate-pulse" />
     ),
   }
 )
-
-// LET Examination date — April 1, 2026
-const LET_EXAM_DATE = "2026-04-01T08:00:00"
 
 async function getStudentDashboardData(userId) {
   const [
@@ -66,7 +52,8 @@ async function getStudentDashboardData(userId) {
     activityResult,
     mockExamsProgressRes,
     sevenDayPerformanceRes,
-    subjectFocusRes
+    subjectFocusRes,
+    upcomingExamRes
   ] = await Promise.all([
     // 1. Where the student last left off (last opened lesson or subject)
     pool.query(
@@ -231,7 +218,30 @@ async function getStudentDashboardData(userId) {
        LEFT JOIN student_subject_progress ssp ON ssp.subject_id = s.id AND ssp.student_id = $1
        WHERE s.status = 'active'
        GROUP BY s.id, s.title, s.code, ssp.progress_pct
-       ORDER BY s.id ASC`,
+        ORDER BY s.id ASC`,
+      [userId]
+    ).catch(() => ({ rows: [] })),
+
+    // 8. Upcoming or Active Mock Exam for Alarm/Timer
+    pool.query(
+      `SELECT 
+         me.id,
+         me.title,
+         me.exam_code,
+         me.unlock_date,
+         me.status,
+         mes.completed_at
+       FROM mock_exams me
+       LEFT JOIN mock_exam_scores mes ON mes.mock_exam_id = me.id AND mes.student_id = $1
+       WHERE me.status = 'active'
+       ORDER BY 
+         CASE 
+           WHEN me.unlock_date IS NOT NULL AND me.unlock_date > NOW() THEN 0 
+           WHEN mes.completed_at IS NULL THEN 1 
+           ELSE 2 
+         END ASC,
+         me.unlock_date ASC NULLS LAST,
+         me.id ASC`,
       [userId]
     ).catch(() => ({ rows: [] }))
   ])
@@ -241,6 +251,23 @@ async function getStudentDashboardData(userId) {
   const subjects = activeSubjectsRes.rows || []
   const activities = activityResult.rows || []
   const mockExams = mockExamsProgressRes.rows || []
+
+  // Resolve upcoming exam for header alarm & timer
+  const upcomingExamList = upcomingExamRes?.rows || []
+  const futureExam = upcomingExamList.find(
+    (e) => e.unlock_date && new Date(e.unlock_date).getTime() > Date.now() && !e.completed_at
+  )
+  const activeUncompletedExam = upcomingExamList.find((e) => !e.completed_at)
+
+  const selectedTarget = futureExam || activeUncompletedExam
+  const upcomingExam = selectedTarget
+    ? {
+      id: selectedTarget.id,
+      title: selectedTarget.title,
+      examCode: selectedTarget.exam_code,
+      unlockDate: selectedTarget.unlock_date ? new Date(selectedTarget.unlock_date).toISOString() : null,
+    }
+    : null
 
   // Format 7-Day Performance
   const performanceData = (sevenDayPerformanceRes.rows || []).map(r => ({
@@ -297,7 +324,8 @@ async function getStudentDashboardData(userId) {
       }
     }),
     performanceData,
-    focusData
+    focusData,
+    upcomingExam
   }
 }
 
@@ -312,14 +340,15 @@ export default async function StudentDashboard() {
     activities: [],
     mockExams: [],
     performanceData: [],
-    focusData: []
+    focusData: [],
+    upcomingExam: null
   }
 
   if (session?.userId) {
     data = await getStudentDashboardData(session.userId)
   }
 
-  const { resume, overview, subjects, activities, mockExams, performanceData, focusData } = data
+  const { resume, overview, subjects, activities, mockExams, performanceData, focusData, upcomingExam } = data
 
   // Resume URL builder
   let resumeUrl = "/student/subjects"
@@ -332,153 +361,177 @@ export default async function StudentDashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* ── Hero Banner / Carousel ── */}
-      <DashboardCarousel />
-
+    <div className="space-y-9 sm:space-y-10 pb-10">
       {/* ── Dashboard heading row ── */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="mt-1 text-muted-foreground text-sm">
-            Welcome back, {firstName}. Here is your live learning progress and curriculum overview.
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+            Dashboard
+          </h1>
+          <p className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal">
+            Welcome back, {firstName}! Here is how you are doing so far.
           </p>
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
-          <LETCountdownInline targetDate={LET_EXAM_DATE} />
-
-          <Link
-            href="/student/calendar"
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-accent hover:border-black/10 dark:hover:border-white/10 transition-all shadow-2xs"
-          >
-            <CalendarDays className="h-4 w-4 text-primary" />
-            Schedule
-          </Link>
-
-          <Link
-            href="/student/mock-exams"
-            className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-4 py-2 text-xs font-bold hover:bg-primary/90 transition-all shadow-2xs"
-          >
-            <Play className="h-3.5 w-3.5 fill-current" />
-            Mock Exams
-          </Link>
+          <UpcomingExamTimer upcomingExam={upcomingExam} />
         </div>
       </div>
 
+      {/* ── Top Section: 9-col Carousel + Metric Cards / 3-col To-Do List + Calendar ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-7 items-stretch">
+        {/* Left Column (spans 9 cols): Carousel Banner + Overview Metrics Strip */}
+        <div className="lg:col-span-9 flex flex-col justify-between gap-6 sm:gap-7">
+          <DashboardCarousel />
+
+          {/* Key Overview Metrics Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
+            {/* Metric 1: Study Streak */}
+            <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
+              <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+                <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                  Study Streak
+                </span>
+              </div>
+              <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  {overview.studyStreak} <span className="text-sm font-normal text-neutral-400 dark:text-neutral-500">days</span>
+                </div>
+                <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                  Days studied in a row
+                </p>
+              </div>
+            </div>
+
+            {/* Metric 2: Active Days */}
+            <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
+              <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#2A9D8F]/20 dark:bg-[#2A9D8F]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+                <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                  Active Days
+                </span>
+              </div>
+              <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  {overview.activeDays} <span className="text-sm font-normal text-neutral-400 dark:text-neutral-500">days total</span>
+                </div>
+                <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                  Days you logged in
+                </p>
+              </div>
+            </div>
+
+            {/* Metric 3: Quizzes Taken */}
+            <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
+              <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E17055]/20 dark:bg-[#E17055]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+                <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                  Quizzes Taken
+                </span>
+              </div>
+              <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  {overview.completedQuizzes} <span className="text-sm font-normal text-neutral-400 dark:text-neutral-500">completed</span>
+                </div>
+                <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                  Quizzes you finished
+                </p>
+              </div>
+            </div>
+
+            {/* Metric 4: Quiz Accuracy */}
+            <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
+              <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#3B82F6]/20 dark:bg-[#3B82F6]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+                <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+                  Quiz Accuracy
+                </span>
+              </div>
+              <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+                <div className="text-3xl sm:text-4xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                  {overview.avgQuizScore != null ? `${overview.avgQuizScore}%` : "—"}
+                </div>
+                <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none">
+                  Your average score
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column (spans 3 cols): Student To-do List + Calendar Widget */}
+        <div className="lg:col-span-3 flex flex-col justify-between gap-6 sm:gap-7">
+          <StudentTodoWidget />
+          <StudentCalendarWidget upcomingExamDate={upcomingExam?.unlockDate} />
+        </div>
+      </div>
+
+      {/* ── Line Divider ── */}
+      <div className="border-t border-black/5 dark:border-white/10" />
+
       {/* ── Hero "Resume Where You Left Off" Navigation Banner ── */}
       {resume && (
-        <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/[0.08] via-primary/[0.03] to-card p-5 sm:p-6 shadow-2xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1.5 min-w-0">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary/20 text-[#8a6e1d] dark:text-primary">
-                <RotateCcw className="size-3" />
-                <span>Pick up where you left off</span>
+        <>
+          <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-neutral-50 dark:bg-white/[0.02] p-5 sm:p-6 transition-all shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+              <LordIcon
+                src="/icons/startexam.json"
+                size={48}
+                trigger="loop"
+                delay={2500}
+                className="shrink-0 select-none"
+              />
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold tracking-wider uppercase text-neutral-400 dark:text-neutral-500 select-none">
+                    Continue where you left off
+                  </span>
+                  {resume.subject_code && (
+                    <span className="text-[10px] font-semibold text-neutral-500 dark:text-neutral-400 bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded-full select-none">
+                      {resume.subject_code}
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight line-clamp-1">
+                  {resume.lesson_title || resume.subject_title || "Continue Lesson"}
+                </h2>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">
+                  {resume.subject_title}
+                  {resume.module_title && ` · ${resume.module_title}`}
+                </p>
               </div>
-              <h2 className="text-lg font-bold text-foreground tracking-tight line-clamp-1">
-                {resume.lesson_title || resume.subject_title || "Continue Your Learning Module"}
-              </h2>
-              <p className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-2">
-                <span>{resume.subject_title}</span>
-                {resume.subject_code && (
-                  <>
-                    <span>•</span>
-                    <span className="font-semibold">{resume.subject_code}</span>
-                  </>
-                )}
-                {resume.module_title && (
-                  <>
-                    <span>•</span>
-                    <span>{resume.module_title}</span>
-                  </>
-                )}
-              </p>
             </div>
 
             <Link
               href={resumeUrl}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-sm shrink-0 self-start sm:self-auto"
+              className="inline-flex items-center justify-center gap-1.5 h-8 px-4 rounded-xl text-xs font-semibold text-white bg-[#3B3B3B] hover:bg-[#2B2B2B] dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 transition-all shadow-2xs shrink-0 self-start sm:self-auto cursor-pointer"
             >
-              <span>Resume Module</span>
-              <ArrowRight className="size-4" />
+              <span>Resume Lesson</span>
+              <ArrowRight className="size-3.5" />
             </Link>
           </div>
-        </div>
+
+          <div className="border-t border-black/5 dark:border-white/10" />
+        </>
       )}
 
-      {/* ── Key Overview Metrics Cards ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground">Study Streak</span>
-            <Flame className="size-4 text-amber-500 fill-amber-500" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-extrabold text-foreground">{overview.studyStreak}</span>
-            <span className="text-xs text-muted-foreground font-medium">days</span>
-          </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Consistent review habit</p>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground">Active Days</span>
-            <Clock className="size-4 text-blue-500" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-extrabold text-foreground">{overview.activeDays}</span>
-            <span className="text-xs text-muted-foreground font-medium">days total</span>
-          </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Study sessions logged</p>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground">Quizzes Taken</span>
-            <FileCheck2 className="size-4 text-emerald-500" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-extrabold text-foreground">{overview.completedQuizzes}</span>
-            <span className="text-xs text-muted-foreground font-medium">completed</span>
-          </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Module quiz checks</p>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground">Quiz Accuracy</span>
-            <Sparkles className="size-4 text-primary" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-extrabold text-foreground">
-              {overview.avgQuizScore != null ? `${overview.avgQuizScore}%` : "—"}
-            </span>
-          </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">Average quiz score</p>
-        </div>
-      </div>
-
       {/* ── SECTION: Mock Exam Progress ── */}
-      <div className="space-y-3.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="size-2 rounded-full bg-blue-500" />
-            <h2 className="text-base font-bold text-foreground tracking-tight">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
               Mock Exam Progress
             </h2>
           </div>
+
           <Link
             href="/student/mock-exams"
-            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+            className="inline-flex items-center justify-center px-3.5 h-8 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/15 border border-black/5 dark:border-white/10 transition-all shadow-2xs shrink-0 cursor-pointer"
           >
-            <span>All Mock Exams</span>
-            <ChevronRight className="size-3.5" />
+            View all
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {mockExams.length === 0 ? (
-            <div className="col-span-full rounded-2xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
-              No mock examinations currently scheduled or active.
+            <div className="col-span-full rounded-2xl border border-dashed border-black/10 dark:border-white/15 p-6 text-center text-xs text-neutral-400 dark:text-neutral-500">
+              No mock exams right now.
             </div>
           ) : (
             mockExams.map((exam) => {
@@ -486,57 +539,46 @@ export default async function StudentDashboard() {
               return (
                 <div
                   key={exam.id}
-                  className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-2xs flex flex-col justify-between gap-4"
+                  className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between transition-all hover:border-black/15 dark:hover:border-white/20"
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-0.5 min-w-0">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wider uppercase bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
-                          {exam.exam_code || `MOCK-${exam.id}`}
-                        </span>
-                        <h3 className="text-xs sm:text-sm font-bold text-foreground line-clamp-1 mt-1">
-                          {exam.title}
-                        </h3>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span className="text-sm sm:text-base font-extrabold text-foreground">
-                          {exam.percentage != null ? `${exam.percentage}%` : "Pending"}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar or Status */}
-                    <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          isDone ? "bg-emerald-500" : "bg-primary/50"
-                        }`}
-                        style={{ width: `${exam.percentage != null ? exam.percentage : (isDone ? 100 : 0)}%` }}
-                      />
-                    </div>
+                  <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
+                    <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 truncate select-none">
+                      {exam.exam_code || `MOCK-${exam.id}`}
+                    </span>
+                    <span className="text-[11px] font-semibold text-[#3B3B3B] dark:text-white">
+                      {isDone ? `${exam.percentage}%` : "Not started"}
+                    </span>
                   </div>
 
-                  <div className="pt-2 border-t border-border/70 flex items-center justify-between text-xs">
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] text-muted-foreground block">
-                        {exam.questionCount} Questions
-                      </span>
-                      <span className="text-[11px] font-semibold text-foreground block">
-                        {isDone ? `${exam.score} / ${exam.maxScore} pts` : "Not attempted"}
-                      </span>
+                  <div className="p-5 sm:p-6 flex flex-col justify-between gap-4 flex-1">
+                    <div className="space-y-1">
+                      <h3 className="text-sm sm:text-base font-semibold text-[#3B3B3B] dark:text-white line-clamp-1">
+                        {exam.title}
+                      </h3>
+                      <p className="text-xs text-neutral-400 dark:text-neutral-500 line-clamp-1">
+                        {exam.questionCount} questions
+                      </p>
+
+                      <div className="w-full bg-black/5 dark:bg-white/10 h-1.5 rounded-full overflow-hidden mt-3">
+                        <div
+                          className="h-full bg-[#E9C46A] rounded-full transition-all duration-500"
+                          style={{ width: `${exam.percentage != null ? exam.percentage : (isDone ? 100 : 0)}%` }}
+                        />
+                      </div>
                     </div>
 
-                    <Link
-                      href="/student/mock-exams"
-                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                        isDone
-                          ? "bg-muted hover:bg-muted/80 text-foreground"
-                          : "bg-primary text-primary-foreground hover:bg-primary/90"
-                      }`}
-                    >
-                      {isDone ? "Review" : "Take Exam"}
-                      <ArrowRight className="size-3" />
-                    </Link>
+                    <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2">
+                      <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                        {isDone ? `${exam.score} / ${exam.maxScore} pts` : "Not taken yet"}
+                      </span>
+
+                      <Link
+                        href="/student/mock-exams"
+                        className="inline-flex items-center justify-center px-3.5 h-8 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 border border-black/5 dark:border-white/10 transition-all shadow-2xs shrink-0 cursor-pointer"
+                      >
+                        {isDone ? "Review" : "Start Exam"}
+                      </Link>
+                    </div>
                   </div>
                 </div>
               )
@@ -545,86 +587,103 @@ export default async function StudentDashboard() {
         </div>
       </div>
 
+      {/* ── Line Divider ── */}
+      <div className="border-t border-black/5 dark:border-white/10" />
+
       {/* ── Active Subjects Curriculum Section ── */}
-      <div className="space-y-3.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="size-2 rounded-full bg-primary" />
-            <h2 className="text-base font-bold text-foreground tracking-tight">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
               Curriculum & Modules
             </h2>
           </div>
+
           <Link
             href="/student/subjects"
-            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+            className="inline-flex items-center justify-center px-3.5 h-8 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 dark:hover:bg-white/15 border border-black/5 dark:border-white/10 transition-all shadow-2xs shrink-0 cursor-pointer"
           >
-            <span>View All Subjects</span>
-            <ChevronRight className="size-3.5" />
+            View all
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {subjects.length === 0 ? (
-            <div className="col-span-full rounded-2xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
-              No subjects currently active.
+            <div className="col-span-full rounded-2xl border border-dashed border-black/10 dark:border-white/15 p-6 text-center text-xs text-neutral-400 dark:text-neutral-500">
+              No subjects available right now.
             </div>
           ) : (
             subjects.map((sub) => {
               const pct = Number(sub.progress_pct || 0)
               return (
-                <Link
+                <div
                   key={sub.id}
-                  href={`/student/subjects/${sub.id}`}
-                  className="group rounded-2xl border border-border bg-card p-4 shadow-2xs hover:shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between gap-3"
+                  className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between transition-all hover:border-black/15 dark:hover:border-white/20"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary/15 text-[#8a6e1d] dark:text-primary">
-                        {sub.code || "SUBJ"}
-                      </span>
-                      <span className="text-xs font-bold text-foreground">{pct}%</span>
-                    </div>
-                    <h3 className="text-xs font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                      {sub.title}
-                    </h3>
-                    <p className="text-[11px] text-muted-foreground line-clamp-1">
-                      {sub.category || "General"}
-                    </p>
+                  <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#2A9D8F]/20 dark:bg-[#2A9D8F]/25">
+                    <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 truncate select-none">
+                      {sub.code || "SUBJECT"}
+                    </span>
+                    <span className="text-[11px] font-semibold text-[#3B3B3B] dark:text-white">
+                      {pct}%
+                    </span>
                   </div>
 
-                  <div className="space-y-1.5 pt-1">
-                    <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%` }}
-                      />
+                  <div className="p-5 sm:p-6 flex flex-col justify-between gap-4 flex-1">
+                    <div className="space-y-1">
+                      <h3 className="text-sm sm:text-base font-semibold text-[#3B3B3B] dark:text-white line-clamp-1">
+                        {sub.title}
+                      </h3>
+                      <p className="text-xs text-neutral-400 dark:text-neutral-500 line-clamp-1">
+                        {sub.category || "General"}
+                      </p>
+
+                      <div className="w-full bg-black/5 dark:bg-white/10 h-1.5 rounded-full overflow-hidden mt-3">
+                        <div
+                          className="h-full bg-[#2A9D8F] rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                      <span>{sub.completed_items} of {sub.total_items} items</span>
-                      <span className="font-medium text-primary group-hover:translate-x-0.5 transition-transform flex items-center">
-                        Open <ChevronRight className="size-3" />
+
+                    <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-2">
+                      <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                        {sub.completed_items} of {sub.total_items} lessons done
                       </span>
+
+                      <Link
+                        href={`/student/subjects/${sub.id}`}
+                        className="inline-flex items-center justify-center px-3.5 h-8 rounded-xl text-xs font-semibold text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white bg-white dark:bg-white/10 hover:bg-white/90 border border-black/5 dark:border-white/10 transition-all shadow-2xs shrink-0 cursor-pointer"
+                      >
+                        Open
+                      </Link>
                     </div>
                   </div>
-                </Link>
+                </div>
               )
             })
           )}
         </div>
       </div>
 
+      {/* ── Line Divider ── */}
+      <div className="border-t border-black/5 dark:border-white/10" />
+
       {/* ── Dynamic Charts Row (Live Performance Trend & Dynamic Subject Focus) ── */}
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <LearningPerformanceChart
           performanceData={performanceData}
           overallAverage={overview.avgQuizScore}
-          trendLabel={overview.completedQuizzes > 0 ? "7-Day score trend" : "Start quizzes to track score trajectory"}
+          trendLabel={overview.completedQuizzes > 0 ? "Scores over the last 7 days" : "Take quizzes to track your progress"}
         />
         <SubjectFocusChart focusData={focusData} />
       </div>
 
-      {/* ── Dynamic Recent Student Learning Activity (Collapsible & Expandable) ── */}
-      <RecentLearningActivityList activities={activities} />
+  {/* ── Line Divider ── */ }
+  <div className="border-t border-black/5 dark:border-white/10" />
+
+  {/* ── Dynamic Recent Student Learning Activity (Collapsible & Expandable) ── */}
+  <RecentLearningActivityList activities={activities} />
     </div>
   )
 }

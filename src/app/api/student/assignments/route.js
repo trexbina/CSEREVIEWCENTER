@@ -20,6 +20,7 @@ export async function GET() {
         sc.lesson_type,
         sc.quiz_content,
         sc.module_id,
+        sc.created_at,
         sm.title as module_title,
         sub.id as subject_id,
         sub.title as subject_title,
@@ -89,6 +90,9 @@ export async function GET() {
         startDateTime = `${settings.startDate}T${time}`
       }
 
+      // If neither start_date nor due_date is specified, fall back to creation date so it reflects on the calendar
+      const effectiveStartDate = startDateTime || (!dueDateTime ? row.created_at : null)
+
       const sub = submissionsMap[row.id]
       const isSubmitted = !!sub
 
@@ -100,7 +104,7 @@ export async function GET() {
         subject_id: row.subject_id,
         module_id: row.module_id,
         is_assignment: isAssignment,
-        start_date: startDateTime,
+        start_date: effectiveStartDate,
         due_date: dueDateTime,
         max_points: calculatedTotalPoints || 100,
         question_count: qOnly.length,

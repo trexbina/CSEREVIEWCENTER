@@ -212,17 +212,17 @@ export function DashboardCarousel() {
     }
 
     if (loading) {
-        return <div className="w-full aspect-[21/7] rounded-xl border border-border bg-muted animate-pulse" />
+        return <div className="w-full aspect-[16/8] sm:aspect-[16/7] rounded-2xl border border-black/5 dark:border-white/10 bg-muted/40 animate-pulse" />
     }
 
     if (slides.length === 0) {
         return (
-            <div className="w-full aspect-[21/7] rounded-xl border border-border bg-muted flex flex-col items-center justify-center gap-2 p-6 text-center">
-                <p className="text-muted-foreground font-semibold">No slides available.</p>
+            <div className="w-full aspect-[16/8] sm:aspect-[16/7] rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md flex flex-col items-center justify-center gap-2 p-6 text-center shadow-2xs">
+                <p className="text-neutral-400 dark:text-neutral-500 text-xs font-medium">No slides available.</p>
                 {isAdmin && (
                     <button
                         onClick={openAddModal}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/95 transition-colors shadow-sm"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#3B3B3B] hover:bg-[#2B2B2B] text-white px-3 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                     >
                         Add Slide
                     </button>
@@ -234,9 +234,9 @@ export function DashboardCarousel() {
     const currentSlide = slides[current]
 
     return (
-        <div className="group relative w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <div className="group relative w-full overflow-hidden rounded-2xl border border-black/5 dark:border-white/10 bg-neutral-900 shadow-2xs">
             {/* Slide container */}
-            <div className="relative aspect-[21/7] w-full overflow-hidden">
+            <div className="relative aspect-[16/8] sm:aspect-[16/7] w-full overflow-hidden">
                 <div
                     className="absolute inset-0 flex h-full"
                     style={{

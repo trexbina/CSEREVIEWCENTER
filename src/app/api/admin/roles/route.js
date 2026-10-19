@@ -41,7 +41,7 @@ export async function GET() {
         r.is_system, 
         r.created_at, 
         r.updated_at,
-        (SELECT COUNT(*) FROM users u WHERE u.role = r.role_key) as user_count
+        (SELECT COUNT(*) FROM users u WHERE u.role = r.role_key OR (r.role_key = 'super_admin' AND u.role = 'admin')) as user_count
       FROM custom_roles r
       ORDER BY r.is_system DESC, r.name ASC
     `)

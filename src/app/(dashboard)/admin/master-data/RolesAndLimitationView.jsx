@@ -12,7 +12,8 @@ import {
   Shield,
   Lock,
   Search,
-  Users
+  Users,
+  ExternalLink
 } from "lucide-react"
 import {
   Table,
@@ -23,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
+import RoleUsersDialog from "./RoleUsersDialog"
 import { toast } from "@/components/ui/toast"
 
 // Predefined available dashboard modules/restrictions for administrators
@@ -256,6 +258,9 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
     roleName: ""
   })
 
+  // State for Role Users Management Dialog
+  const [viewUsersRole, setViewUsersRole] = useState(null)
+
   // Filter roles by search
   const filteredRoles = useMemo(() => {
     if (!search.trim()) return roles
@@ -415,7 +420,7 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                 <th className="py-2.5 px-4 font-semibold">Role Name</th>
                 <th className="py-2.5 px-4 font-semibold">Description</th>
                 <th className="py-2.5 px-4 font-semibold">Accessible Modules</th>
-                <th className="py-2.5 px-4 text-center font-semibold">Users</th>
+                <th className="py-2.5 px-4 text-center font-semibold">Assigned Users</th>
                 <th className="py-2.5 px-4 text-right pr-6 font-semibold">Actions</th>
               </tr>
             </thead>
@@ -438,7 +443,15 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                   >
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground text-xs">{role.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setViewUsersRole(role)}
+                          className="font-semibold text-foreground text-xs text-left hover:text-[#E9C46A] hover:underline transition-colors cursor-pointer group flex items-center gap-1.5"
+                          title="View and manage users assigned to this role"
+                        >
+                          <span>{role.name}</span>
+                          <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity text-[#E9C46A]" />
+                        </button>
                         {role.is_system && (
                           <span className="text-[11px] font-normal text-muted-foreground">
                             System Default
@@ -478,12 +491,28 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                       )}
                     </td>
 
-                    <td className="py-3 px-4 text-center font-normal text-sm text-[#696969] dark:text-gray-300 whitespace-nowrap">
-                      {role.user_count || 0}
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => setViewUsersRole(role)}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 hover:bg-[#E9C46A]/20 hover:text-[#E9C46A] text-foreground transition-all cursor-pointer group border border-transparent hover:border-[#E9C46A]/30 active:scale-95"
+                        title={`View ${role.user_count || 0} user${role.user_count === 1 ? "" : "s"} under ${role.name}`}
+                      >
+                        <Users className="h-3 w-3 opacity-60 group-hover:opacity-100" />
+                        <span>{role.user_count || 0}</span>
+                      </button>
                     </td>
 
                     <td className="py-3 px-4 text-right pr-6 whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setViewUsersRole(role)}
+                          className="h-7 w-7 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                          title="View & Manage Assigned Users"
+                        >
+                          <Users className="h-3.5 w-3.5" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(role)}
@@ -536,6 +565,21 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
         description={`Are you sure you want to delete the role "${deleteModal.roleName}"? This action cannot be undone.`}
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteModal({ isOpen: false, roleId: null, roleName: "" })}
+      />
+
+      {/* View & Manage Role Users Dialog */}
+      <RoleUsersDialog
+        isOpen={Boolean(viewUsersRole)}
+        onClose={() => setViewUsersRole(null)}
+        role={
+          viewUsersRole
+            ? roles.find((r) => r.role_key === viewUsersRole.role_key) || viewUsersRole
+            : null
+        }
+        allRoles={roles}
+        onRoleUpdated={async () => {
+          await fetchData()
+        }}
       />
     </div>
   )

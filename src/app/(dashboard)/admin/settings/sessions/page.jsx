@@ -306,24 +306,6 @@ export default function ActiveSessionsPage() {
     }
   }
 
-  // Reset / Reseed for demo testing
-  const handleResetSessions = async () => {
-    try {
-      setRefreshing(true)
-      await fetch("/api/admin/settings/security", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "reset_sessions" })
-      })
-      toast("Active sessions re-seeded.")
-      fetchData()
-    } catch {
-      toast("Failed to reset sessions.")
-    } finally {
-      setRefreshing(false)
-    }
-  }
-
   if (loading) {
     return (
       <div className="p-8 flex flex-col items-center justify-center min-h-[60vh] space-y-4">
@@ -962,13 +944,6 @@ export default function ActiveSessionsPage() {
               </span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={handleResetSessions}
-            className="text-[11px] text-muted-foreground hover:text-foreground hover:underline cursor-pointer"
-          >
-            Reset / Reseed Concurrency Demo Data
-          </button>
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import pool from "@/lib/db"
 import { signToken, SESSION_COOKIE_OPTIONS } from "@/lib/auth"
+import { parseDeviceFromUserAgent, getClientIp } from "@/lib/device-utils"
 
 export async function POST(request) {
   try {
@@ -77,6 +78,45 @@ export async function POST(request) {
       loginId: user.login_id,
       role: user.role,
     })
+
+    // Record active session and audit log dynamically
+    try {
+      const userAgent = request.headers.get("user-agent") || ""
+      const clientIp = getClientIp(request)
+      const deviceInfo = parseDeviceFromUserAgent(userAgent)
+      const sessionId = `sess_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+
+      await pool.query(
+        `INSERT INTO user_active_sessions (
+           id, user_id, user_name, email, role, device, device_type, ip_address, location, login_time, last_active, is_current, status
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW(), true, 'active')`,
+        [
+          sessionId,
+          user.id,
+          user.name,
+          user.email,
+          user.role,
+          deviceInfo.device,
+          deviceInfo.deviceType,
+          clientIp,
+          "Philippines"
+        ]
+      )
+
+      await pool.query(
+        `INSERT INTO security_audit_logs (user_id, user_name, user_role, event_type, description, ip_address, status, created_at)
+         VALUES ($1, $2, $3, 'AUTH_LOGIN', $4, $5, 'success', NOW())`,
+        [
+          user.id,
+          user.name,
+          user.role,
+          `User signed in from ${deviceInfo.device}`,
+          clientIp
+        ]
+      )
+    } catch (sessErr) {
+      console.error("[login] session tracking error:", sessErr)
+    }
 
     const { password: _, ...safeUser } = updatedUser
     const response = NextResponse.json({ user: safeUser })

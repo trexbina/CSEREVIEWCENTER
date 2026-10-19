@@ -1,5 +1,37 @@
 import { NextResponse } from "next/server"
-import { SESSION_COOKIE_OPTIONS } from "@/lib/auth"
+import { SESSION_COOKIE_OPTIONS, verifyToken } from "@/lib/auth"
+import pool from "@/lib/db"
+import { getClientIp } from "@/lib/device-utils"
+
+async function recordLogout(request) {
+  try {
+    const token = request.cookies.get("session")?.value
+    if (!token) return
+    const payload = await verifyToken(token)
+    if (!payload?.userId) return
+
+    const clientIp = getClientIp(request)
+
+    await pool.query(
+      `UPDATE user_active_sessions SET status = 'logged_out', last_active = NOW() WHERE user_id = $1 AND status = 'active'`,
+      [payload.userId]
+    )
+
+    await pool.query(
+      `INSERT INTO security_audit_logs (user_id, user_name, user_role, event_type, description, ip_address, status, created_at)
+       VALUES ($1, $2, $3, 'AUTH_LOGOUT', $4, $5, 'success', NOW())`,
+      [
+        payload.userId,
+        payload.loginId || payload.email || "User",
+        payload.role || "student",
+        "User logged out of the session",
+        clientIp
+      ]
+    )
+  } catch (err) {
+    console.error("[logout] session update error:", err)
+  }
+}
 
 function clearSessionCookie(response) {
   // Clear standard session cookie
@@ -26,6 +58,7 @@ function clearSessionCookie(response) {
 }
 
 export async function GET(request) {
+  await recordLogout(request)
   const url = new URL(request.url)
   const redirectTo = url.searchParams.get("redirect") || "/"
   // Ensure we redirect to root or requested path with 303 See Other
@@ -35,12 +68,14 @@ export async function GET(request) {
   return clearSessionCookie(response)
 }
 
-export async function POST() {
+export async function POST(request) {
+  await recordLogout(request)
   const response = NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store, no-cache" } })
   return clearSessionCookie(response)
 }
 
-export async function DELETE() {
+export async function DELETE(request) {
+  await recordLogout(request)
   const response = NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store, no-cache" } })
   return clearSessionCookie(response)
 }

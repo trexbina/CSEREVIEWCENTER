@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { Settings } from "@/components/animate-ui/icons/settings"
 import { ThemeSwitcher } from "@/components/theme-switcher"
@@ -10,15 +10,20 @@ import {
     Loader2,
     Laptop,
     Smartphone,
+    Tablet,
     KeyRound,
     Eye,
     EyeOff,
     CheckCircle2,
     AlertCircle,
-    ArrowRight
+    ArrowRight,
+    RefreshCw,
+    AlertTriangle,
+    ShieldAlert
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { toast } from "@/components/ui/toast"
 
 export default function SystemSettingsPage() {
     const [loading, setLoading] = useState(true)
@@ -33,6 +38,12 @@ export default function SystemSettingsPage() {
     })
     const [auditLogs, setAuditLogs] = useState([])
     const [sessions, setSessions] = useState([])
+
+    // Scanning & on-demand inspection states
+    const [isScanningSessions, setIsScanningSessions] = useState(false)
+    const [isScanningLogs, setIsScanningLogs] = useState(false)
+    const [lastSessionScan, setLastSessionScan] = useState(null)
+    const [showSessionsTable, setShowSessionsTable] = useState(false)
 
     // Change Password States
     const [currentPassword, setCurrentPassword] = useState("")
@@ -86,6 +97,53 @@ export default function SystemSettingsPage() {
         fetchSecurityData()
     }, [])
 
+    // Explicit on-demand scan for active user sessions
+    const handleScanSessions = async () => {
+        setIsScanningSessions(true)
+        try {
+            const res = await fetch("/api/admin/settings/security")
+            if (res.ok) {
+                const data = await res.json()
+                if (data.sessions) setSessions(data.sessions)
+                if (data.settings) setSettings(data.settings)
+                setLastSessionScan(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+                toast("Active session scan completed.")
+            }
+        } catch (err) {
+            console.error("Failed to scan sessions:", err)
+            toast("Error scanning sessions.")
+        } finally {
+            setIsScanningSessions(false)
+        }
+    }
+
+    // Explicit on-demand scan for audit logs
+    const handleScanAuditLogs = async () => {
+        setIsScanningLogs(true)
+        try {
+            const res = await fetch("/api/admin/settings/security")
+            if (res.ok) {
+                const data = await res.json()
+                if (data.logs) setAuditLogs(data.logs)
+                toast("Audit logs refreshed.")
+            }
+        } catch {
+            toast("Error scanning audit logs.")
+        } finally {
+            setIsScanningLogs(false)
+        }
+    }
+
+    // Calculate number of accounts with multiple concurrent devices
+    const concurrentUserCount = useMemo(() => {
+        const userCounts = {}
+        sessions.forEach(s => {
+            const key = s.userId || s.name
+            userCounts[key] = (userCounts[key] || 0) + 1
+        })
+        return Object.values(userCounts).filter(c => c > 1).length
+    }, [sessions])
+
     // Update toggle state & persist to API
     const handleToggle = async (key, value) => {
         const updated = { ...settings, [key]: value }
@@ -136,14 +194,16 @@ export default function SystemSettingsPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     action: "terminate_session",
+                    sessionId: sessionItem.id,
                     userName: sessionItem.name,
-                    targetUserId: sessionItem.id
+                    targetUserId: sessionItem.userId || sessionItem.id
                 })
             })
             setSessions(prev => prev.filter(s => s.id !== sessionItem.id))
-            fetchSecurityData()
+            toast(`Terminated session for ${sessionItem.name}.`)
         } catch (err) {
             console.error("Failed to terminate session:", err)
+            toast("Failed to terminate session.")
         }
     }
 
@@ -254,56 +314,131 @@ export default function SystemSettingsPage() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             {/* 1. Session Monitoring Card */}
-                            <div className="rounded-xl border border-border/80 bg-card p-5 space-y-3 shadow-xs flex flex-col justify-between">
+                            <div className="rounded-xl border border-border/80 bg-card p-5 space-y-3.5 shadow-xs flex flex-col justify-between relative overflow-hidden">
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="text-sm font-bold text-foreground">
-                                            Session Monitoring
-                                        </span>
-                                        <Switch
-                                            checked={settings.single_session_enabled}
-                                            onCheckedChange={(val) => handleToggle("single_session_enabled", val)}
-                                            aria-label="Toggle Single Session Enforcement"
-                                        />
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-bold text-foreground">
+                                                Session Monitoring
+                                            </span>
+                                            {isScanningSessions && (
+                                                <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full animate-pulse">
+                                                    <Loader2 className="h-2.5 w-2.5 animate-spin" /> Scanning…
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={handleScanSessions}
+                                                disabled={isScanningSessions}
+                                                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                                                title="Scan active user sessions on demand"
+                                            >
+                                                <RefreshCw className={`h-3.5 w-3.5 ${isScanningSessions ? "animate-spin text-amber-500" : ""}`} />
+                                            </button>
+                                            <Switch
+                                                checked={settings.single_session_enabled}
+                                                onCheckedChange={(val) => handleToggle("single_session_enabled", val)}
+                                                aria-label="Toggle Single Session Enforcement"
+                                            />
+                                        </div>
                                     </div>
                                     <p className="text-xs text-muted-foreground leading-relaxed">
                                         Prevents account sharing by allowing only one device to be logged in at a time.
                                     </p>
+
+                                    {/* Dynamic Scanning Status & Concurrency Indicator */}
+                                    <div className="pt-1 flex flex-wrap items-center gap-2 text-xs">
+                                        {sessions.length > 0 ? (
+                                            <>
+                                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-[11px] font-semibold">
+                                                    <Laptop className="h-3 w-3 text-neutral-500" />
+                                                    {sessions.length} active sessions
+                                                </span>
+                                                {concurrentUserCount > 0 ? (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[11px] font-bold border border-amber-500/20">
+                                                        <AlertTriangle className="h-3 w-3 text-amber-500" />
+                                                        {concurrentUserCount} concurrent flagged
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold">
+                                                        <CheckCircle2 className="h-3 w-3" />
+                                                        100% Single Device
+                                                    </span>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <span className="text-[11px] text-muted-foreground italic">
+                                                Press scan icon to detect live devices
+                                            </span>
+                                        )}
+                                    </div>
+                                    {lastSessionScan && (
+                                        <p className="text-[10px] text-muted-foreground/70">
+                                            Last scanned: {lastSessionScan}
+                                        </p>
+                                    )}
                                 </div>
 
-                                <div className="pt-2 flex items-center justify-between border-t border-border/60">
-                                    <span className="text-[11px] text-muted-foreground">
-                                        {sessions.length > 0 ? `${sessions.length} active sessions` : "Live monitor"}
-                                    </span>
+                                <div className="pt-2.5 flex items-center justify-between border-t border-border/60 text-xs">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowSessionsTable(prev => !prev)}
+                                        className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 hover:text-foreground hover:underline cursor-pointer flex items-center gap-1"
+                                    >
+                                        <span>{showSessionsTable ? "Hide Quick Table" : "Show Quick Table"}</span>
+                                    </button>
                                     <Link
                                         href="/admin/settings/sessions"
                                         className="text-xs font-semibold text-foreground hover:underline inline-flex items-center gap-1 cursor-pointer"
                                     >
-                                        <span>Manage Sessions</span>
+                                        <span>Full Table Page</span>
                                         <ArrowRight className="h-3 w-3" />
                                     </Link>
                                 </div>
                             </div>
 
                             {/* 2. Access & Audit Logs Card */}
-                            <div className="rounded-xl border border-border/80 bg-card p-5 space-y-3 shadow-xs flex flex-col justify-between">
+                            <div className="rounded-xl border border-border/80 bg-card p-5 space-y-3.5 shadow-xs flex flex-col justify-between">
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="text-sm font-bold text-foreground">
-                                            Audit &amp; Auth Logs
-                                        </span>
-                                        <Switch
-                                            checked={settings.audit_logging_enabled}
-                                            onCheckedChange={(val) => handleToggle("audit_logging_enabled", val)}
-                                            aria-label="Toggle Security Audit Logging"
-                                        />
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-bold text-foreground">
+                                                Audit &amp; Auth Logs
+                                            </span>
+                                            {isScanningLogs && (
+                                                <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 animate-pulse">
+                                                    Scanning…
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={handleScanAuditLogs}
+                                                disabled={isScanningLogs}
+                                                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                                                title="Scan latest audit events on demand"
+                                            >
+                                                <RefreshCw className={`h-3.5 w-3.5 ${isScanningLogs ? "animate-spin text-blue-500" : ""}`} />
+                                            </button>
+                                            <Switch
+                                                checked={settings.audit_logging_enabled}
+                                                onCheckedChange={(val) => handleToggle("audit_logging_enabled", val)}
+                                                aria-label="Toggle Security Audit Logging"
+                                            />
+                                        </div>
                                     </div>
                                     <p className="text-xs text-muted-foreground leading-relaxed">
                                         Keeps a history of logins, role changes, and system activities.
                                     </p>
+                                    <div className="pt-1 text-[11px] text-muted-foreground">
+                                        {auditLogs.length} audit trail records logged
+                                    </div>
                                 </div>
 
-                                <div className="pt-2 flex items-center justify-end border-t border-border/60">
+                                <div className="pt-2.5 flex items-center justify-end border-t border-border/60">
                                     <button
                                         type="button"
                                         onClick={() => setActiveModal("logs")}
@@ -315,7 +450,7 @@ export default function SystemSettingsPage() {
                             </div>
 
                             {/* 3. Watermark Protection Card */}
-                            <div className="rounded-xl border border-border/80 bg-card p-5 space-y-3 shadow-xs flex flex-col justify-between">
+                            <div className="rounded-xl border border-border/80 bg-card p-5 space-y-3.5 shadow-xs flex flex-col justify-between">
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="text-sm font-bold text-foreground">
@@ -330,9 +465,12 @@ export default function SystemSettingsPage() {
                                     <p className="text-xs text-muted-foreground leading-relaxed">
                                         Adds the student&apos;s name on handouts and reviewer files to prevent unauthorized leaks.
                                     </p>
+                                    <div className="pt-1 text-[11px] text-muted-foreground truncate">
+                                        Format: <code className="text-xs">{settings.watermark_text || "{name} - {email}"}</code> ({settings.watermark_opacity ?? 15}% opacity)
+                                    </div>
                                 </div>
 
-                                <div className="pt-2 flex items-center justify-end border-t border-border/60">
+                                <div className="pt-2.5 flex items-center justify-end border-t border-border/60">
                                     <button
                                         type="button"
                                         onClick={() => setActiveModal("watermark")}
@@ -343,6 +481,158 @@ export default function SystemSettingsPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Dynamic Active Sessions Quick Table (Only shown when toggled or scanned) */}
+                        {showSessionsTable && (
+                            <div className="mt-4 rounded-2xl border border-black/5 dark:border-white/10 bg-card overflow-hidden shadow-2xs animate-in fade-in duration-200">
+                                <div className="px-5 py-3 border-b border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-2 bg-[#F2F2F2]/60 dark:bg-white/[0.02]">
+                                    <div className="flex items-center gap-2">
+                                        <Laptop className="h-4 w-4 text-foreground" />
+                                        <span className="text-xs font-bold text-foreground">
+                                            Live Active Sessions &amp; Concurrency Table ({sessions.length})
+                                        </span>
+                                        {concurrentUserCount > 0 && (
+                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                                                {concurrentUserCount} Concurrency Flagged
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleScanSessions}
+                                            disabled={isScanningSessions}
+                                            className="h-8 px-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-semibold text-foreground hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                                        >
+                                            <RefreshCw className={`h-3 w-3 ${isScanningSessions ? "animate-spin text-amber-500" : ""}`} />
+                                            <span>Scan Now</span>
+                                        </button>
+                                        <Link
+                                            href="/admin/settings/sessions"
+                                            className="h-8 px-3 rounded-lg bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity flex items-center gap-1 cursor-pointer"
+                                        >
+                                            <span>Open Full Table Page</span>
+                                            <ArrowRight className="h-3 w-3" />
+                                        </Link>
+                                    </div>
+                                </div>
+
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-xs border-collapse">
+                                        <thead>
+                                            <tr className="border-b border-black/5 dark:border-white/10 font-semibold text-muted-foreground bg-[#F2F2F2]/40 dark:bg-white/[0.02]">
+                                                <th className="py-2.5 px-4 font-semibold">User Account</th>
+                                                <th className="py-2.5 px-4 font-semibold">Role</th>
+                                                <th className="py-2.5 px-4 font-semibold">Device</th>
+                                                <th className="py-2.5 px-4 font-semibold">IP Address</th>
+                                                <th className="py-2.5 px-4 font-semibold">Login Time</th>
+                                                <th className="py-2.5 px-4 font-semibold">Concurrency Status</th>
+                                                <th className="py-2.5 px-4 font-semibold text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                                            {sessions.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                                                        No active sessions loaded. Click &quot;Scan Now&quot; to scan the network.
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                sessions.slice(0, 10).map((sess) => {
+                                                    const isCurrent = sess.isCurrent
+                                                    const isConcurrent = sess.isConcurrent
+
+                                                    return (
+                                                        <tr
+                                                            key={sess.id}
+                                                            className={`transition-colors ${
+                                                                isCurrent
+                                                                    ? "bg-emerald-500/[0.03] dark:bg-emerald-500/[0.05]"
+                                                                    : isConcurrent
+                                                                    ? "bg-amber-500/[0.04] dark:bg-amber-500/[0.06] hover:bg-amber-500/[0.08]"
+                                                                    : "hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+                                                            }`}
+                                                        >
+                                                            <td className="py-2.5 px-4 font-medium text-foreground">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="size-6 rounded-lg bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center font-bold text-[10px]">
+                                                                        {(sess.name || "U")[0].toUpperCase()}
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="font-semibold text-foreground truncate">{sess.name}</p>
+                                                                        <p className="text-[10px] text-muted-foreground">{sess.email || sess.login_id || ""}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-2.5 px-4">
+                                                                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                                                    {sess.role}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-2.5 px-4 text-foreground">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    {sess.deviceType === "mobile" ? (
+                                                                        <Smartphone className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                                    ) : sess.deviceType === "tablet" ? (
+                                                                        <Tablet className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                                    ) : (
+                                                                        <Laptop className="h-3 w-3 text-muted-foreground shrink-0" />
+                                                                    )}
+                                                                    <span className="truncate">{sess.device}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-2.5 px-4 font-mono text-[11px] text-muted-foreground">
+                                                                {sess.ip}
+                                                            </td>
+                                                            <td className="py-2.5 px-4 text-muted-foreground">
+                                                                {new Date(sess.loginTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                                            </td>
+                                                            <td className="py-2.5 px-4">
+                                                                {isCurrent ? (
+                                                                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                                                        Current (You)
+                                                                    </span>
+                                                                ) : isConcurrent ? (
+                                                                    <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-500/15 px-2 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1 w-fit">
+                                                                        <span className="size-1.5 rounded-full bg-amber-500 animate-ping" />
+                                                                        Concurrent ({sess.deviceCount} Devices)
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-[10px] text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-full">
+                                                                        Single Device
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                            <td className="py-2.5 px-4 text-right">
+                                                                {!isCurrent && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleTerminateSession(sess)}
+                                                                        className="px-2 py-0.5 text-[11px] font-semibold rounded border border-border/80 text-muted-foreground hover:text-rose-600 hover:border-rose-300 dark:hover:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
+                                                                    >
+                                                                        Revoke
+                                                                    </button>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {sessions.length > 10 && (
+                                    <div className="p-3 text-center border-t border-black/5 dark:border-white/5 bg-muted/20">
+                                        <Link
+                                            href="/admin/settings/sessions"
+                                            className="text-xs font-semibold text-[#E9C46A] hover:underline"
+                                        >
+                                            View all {sessions.length} sessions on the full table page &rarr;
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 

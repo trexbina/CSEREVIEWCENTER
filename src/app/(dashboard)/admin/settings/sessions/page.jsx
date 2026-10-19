@@ -31,6 +31,8 @@ import {
 export default function ActiveSessionsPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [isScanning, setIsScanning] = useState(false)
+  const [lastScanTime, setLastScanTime] = useState(null)
   const [canAccess, setCanAccess] = useState(true)
   const [sessions, setSessions] = useState([])
   const [settings, setSettings] = useState({
@@ -58,9 +60,9 @@ export default function ActiveSessionsPage() {
   const [revoking, setRevoking] = useState(false)
   const [copiedIp, setCopiedIp] = useState(null)
 
-  // Fetch security and session data
-  const fetchData = async (isManualRefresh = false) => {
-    if (isManualRefresh) setRefreshing(true)
+  // Fetch security and session data on demand
+  const fetchData = async (isManualScan = false) => {
+    if (isManualScan) setIsScanning(true)
     try {
       const res = await fetch("/api/admin/settings/security")
       if (res.ok) {
@@ -71,21 +73,25 @@ export default function ActiveSessionsPage() {
           setCanAccess(true)
           if (data.sessions) setSessions(data.sessions)
           if (data.settings) setSettings(data.settings)
+          setLastScanTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+          if (isManualScan) toast("Active devices scan complete.")
         }
       } else {
         setCanAccess(false)
       }
     } catch (err) {
       console.error("Failed to load sessions:", err)
-      toast("Failed to load active sessions.")
+      toast("Failed to scan active sessions.")
     } finally {
       setLoading(false)
       setRefreshing(false)
+      setIsScanning(false)
     }
   }
 
+  // Only scan once upon opening page (no auto-polling in background)
   useEffect(() => {
-    fetchData()
+    fetchData(false)
   }, [])
 
   // Toggle single session enforcement policy
@@ -384,12 +390,12 @@ export default function ActiveSessionsPage() {
           <button
             type="button"
             onClick={() => fetchData(true)}
-            disabled={refreshing}
-            className="h-9 px-3 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-semibold text-neutral-700 dark:text-gray-200 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
-            title="Refresh session list"
+            disabled={isScanning}
+            className="h-9 px-3.5 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-xs font-semibold text-foreground hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2 shadow-2xs cursor-pointer"
+            title="Scan active connections and concurrent devices"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">Refresh</span>
+            <RefreshCw className={`h-3.5 w-3.5 ${isScanning ? "animate-spin text-amber-500" : ""}`} />
+            <span>{isScanning ? "Scanning Devices…" : "Scan / Refresh"}</span>
           </button>
 
           {metrics.excessSessionsCount > 0 && (
@@ -413,6 +419,41 @@ export default function ActiveSessionsPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Scanning Status Banner ── */}
+      {isScanning ? (
+        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3 text-xs text-amber-800 dark:text-amber-300 animate-pulse">
+          <RefreshCw className="h-4 w-4 animate-spin text-amber-600 shrink-0" />
+          <div className="flex-1">
+            <span className="font-bold">Scanning Active Connections…</span> Analyzing live device tokens, checking IP origins, and verifying single-session compliance across all student and staff accounts.
+          </div>
+        </div>
+      ) : lastScanTime ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 rounded-xl bg-neutral-100/70 dark:bg-white/[0.03] border border-black/5 dark:border-white/5 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-emerald-500" />
+            <span>Scan completed at <strong>{lastScanTime}</strong></span>
+            <span>&bull;</span>
+            <span><strong>{metrics.totalSessions}</strong> live sessions analyzed</span>
+            {metrics.concurrentUserCount > 0 ? (
+              <span className="text-amber-700 dark:text-amber-400 font-semibold">
+                &bull; {metrics.concurrentUserCount} accounts flagged for concurrency
+              </span>
+            ) : (
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                &bull; 100% compliant with single-session policy
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => fetchData(true)}
+            className="font-semibold text-foreground hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <RefreshCw className="h-2.5 w-2.5" /> Re-scan network
+          </button>
+        </div>
+      ) : null}
 
       {/* ── Metric Summary Strip ("div full rounded") ── */}
       <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-xs overflow-hidden">

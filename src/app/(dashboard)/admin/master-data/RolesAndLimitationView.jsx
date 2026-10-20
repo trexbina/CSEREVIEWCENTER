@@ -98,7 +98,13 @@ export const SECURITY_MODULES = [
 // Minimal neutral checkbox
 function NeutralCheckbox({ checked, onChange, label, description }) {
   return (
-    <label className="flex items-start gap-2.5 p-2.5 rounded-xl border border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] cursor-pointer transition-all select-none group">
+    <label
+      className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer select-none group ${
+        checked
+          ? "border-black/20 dark:border-white/20 bg-black/[0.015] dark:bg-white/[0.03]"
+          : "border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
+      }`}
+    >
       <div className="relative flex items-center justify-center mt-0.5">
         <input
           type="checkbox"
@@ -186,20 +192,20 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-card border border-border/80 rounded-2xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-150 font-sans">
-        <div className="flex justify-between items-center pb-3 border-b border-border/40 shrink-0">
+      <div className="bg-white dark:bg-[#1E293B] border border-black/10 dark:border-white/10 rounded-2xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-150 font-sans">
+        <div className="flex justify-between items-center pb-3 border-b border-black/5 dark:border-white/10 shrink-0">
           <div>
-            <h3 className="font-semibold text-foreground text-sm tracking-tight">
+            <h3 className="font-bold text-[#3B3B3B] dark:text-white text-sm sm:text-base tracking-tight">
               {isEdit ? "Configure Role & Restrictions" : "Add New Role"}
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
               Set role title and check the dashboard modules this role can access.
             </p>
           </div>
           <button
             type="button"
             onClick={onCancel}
-            className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
+            className="p-1 rounded-lg text-neutral-400 hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -207,28 +213,28 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
 
         <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto pr-1 flex-1">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground">Role Name *</label>
+            <label className="text-xs font-semibold text-[#696969]">Role Name *</label>
             <input
               type="text"
               required
               disabled={roleForm.role_key === "super_admin" && isEdit}
-              className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-background text-foreground placeholder:text-muted-foreground/60 shadow-2xs focus:outline-none focus:ring-1 focus:ring-[#E9C46A] disabled:opacity-50 transition-all"
+              className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] disabled:opacity-50 transition-all"
               value={roleForm.name}
               onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
               placeholder="e.g. Branch Coordinator, Admissions Head"
             />
             {roleForm.role_key === "super_admin" && (
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[11px] text-[#696969] dark:text-gray-400">
                 Super Admin role name cannot be modified.
               </p>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground">Description</label>
+            <label className="text-xs font-semibold text-[#696969]">Description</label>
             <input
               type="text"
-              className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-background text-foreground placeholder:text-muted-foreground/60 shadow-2xs focus:outline-none focus:ring-1 focus:ring-[#E9C46A] transition-all"
+              className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] transition-all"
               value={roleForm.description || ""}
               onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })}
               placeholder="Brief description of responsibilities and scope"
@@ -236,15 +242,15 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
           </div>
 
           {/* Checklist of Dashboard Modules */}
-          <div className="space-y-2.5 pt-2 border-t border-border/40">
+          <div className="space-y-2.5 pt-2 border-t border-black/5 dark:border-white/10">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-foreground">
+              <label className="text-xs font-semibold text-[#696969]">
                 Dashboard Permissions ({selectedPerms.filter((p) => allRegularPaths.includes(p)).length}/{DASHBOARD_MODULES.length})
               </label>
               <button
                 type="button"
                 onClick={toggleAll}
-                className="text-xs text-muted-foreground hover:text-foreground font-medium transition-colors cursor-pointer"
+                className="text-xs text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white font-medium transition-colors cursor-pointer"
               >
                 {allRegularSelected ? "Deselect All" : "Select All"}
               </button>
@@ -262,43 +268,33 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
               ))}
             </div>
 
-            {/* Separate Elevated Security Selection: Roles & Limitations */}
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.04] dark:bg-amber-500/10 p-3 space-y-2 mt-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Shield className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                  <span className="text-xs font-semibold text-foreground">
-                    Roles & Limitation (Access Control)
-                  </span>
-                </div>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300">
-                  Separate Restriction
-                </span>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-snug">
-                Separated from Master Data. Granting &quot;Master Data (Academic)&quot; above only allows managing Exams, Batches, Schools, and Gradebooks. Check this box only to authorize editing and adding administrator roles.
-              </p>
+            {/* Elevated Access Control: Roles & Limitations */}
+            <div className="pt-3 border-t border-black/5 dark:border-white/10 space-y-2">
+              <label className="text-xs font-semibold text-[#696969] flex items-center gap-1.5">
+                <Shield className="size-3.5 text-[#E9C46A]" />
+                <span>Administrative Access Control</span>
+              </label>
               <NeutralCheckbox
                 checked={hasRolesPerm}
                 onChange={toggleRolesPerm}
-                label="Allow Editing & Adding Roles"
-                description="Grants permission to configure roles, restrictions, and reassign user roles."
+                label="Roles & Limitation Management"
+                description="Authorizes configuring roles, restrictions, and managing admin permissions."
               />
             </div>
           </div>
 
-          <div className="flex justify-end items-center gap-2 pt-3 border-t border-border/40 shrink-0">
+          <div className="flex justify-end items-center gap-2 pt-3 border-t border-black/5 dark:border-white/10 shrink-0">
             <button
               type="button"
               onClick={onCancel}
-              className="px-3.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 rounded-lg transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-semibold text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-2xs transition-all flex items-center justify-center cursor-pointer active:scale-95"
+              className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4.5 py-2 rounded-xl shadow-xs transition-all flex items-center justify-center cursor-pointer active:scale-95"
             >
               {isSaving ? "Saving…" : isEdit ? "Save Changes" : "Create Role"}
             </button>

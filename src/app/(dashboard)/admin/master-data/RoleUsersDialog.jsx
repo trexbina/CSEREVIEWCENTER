@@ -18,11 +18,6 @@ import {
 import { toast } from "@/components/ui/toast"
 import AddAdminUserDialog from "./AddAdminUserDialog"
 
-// Base built-in system user roles in PEAK
-const BASE_SYSTEM_USER_ROLES = [
-  { role_key: "teacher", name: "Teacher", is_system: true },
-  { role_key: "student", name: "Student (Reviewee)", is_system: true },
-]
 
 export function isSuperAdminUser(user) {
   if (!user) return false
@@ -144,58 +139,37 @@ export default function RoleUsersDialog({
     return () => clearTimeout(timer)
   }, [globalSearch, activeTab])
 
-  // Categorize selectable destination roles into System Roles and Custom Roles from currently existing roles
+  // Categorize selectable destination roles into System Roles and Custom Roles
+  // Strictly containing whatever roles are added in Admin Roles & Permissions (allRoles)
   const { systemRoles, customRoles, destinationRoles } = useMemo(() => {
-    // 1. System Roles: Super Admin (from allRoles or fallback) + other is_system roles + standard user roles
-    const superAdminRole = allRoles.find(
-      (r) => r.role_key === "super_admin" || r.role_key === "admin"
-    )
-    const sysList = [
-      {
-        role_key: "super_admin",
-        name: superAdminRole?.name || "Super Admin",
-        is_system: true,
-      },
-    ]
-
-    allRoles.forEach((r) => {
-      if (
-        r.is_system &&
-        !["super_admin", "admin", "teacher", "student"].includes(r.role_key)
-      ) {
-        if (!sysList.some((item) => item.role_key === r.role_key)) {
-          sysList.push({
-            role_key: r.role_key,
-            name: r.name,
-            is_system: true,
-          })
-        }
-      }
-    })
-
-    // Include standard user roles
-    BASE_SYSTEM_USER_ROLES.forEach((ur) => {
-      if (!sysList.some((item) => item.role_key === ur.role_key)) {
-        sysList.push(ur)
-      }
-    })
-
-    // 2. Custom Roles: All non-system roles currently existing in allRoles (Master Data)
+    const sysList = []
     const custList = []
-    allRoles.forEach((r) => {
-      if (
-        !r.is_system &&
-        !["super_admin", "admin", "teacher", "student"].includes(r.role_key)
-      ) {
-        if (!custList.some((item) => item.role_key === r.role_key)) {
-          custList.push({
-            role_key: r.role_key,
-            name: r.name,
-            is_system: false,
-          })
+
+    ;(allRoles || []).forEach((r) => {
+      const item = {
+        role_key: r.role_key,
+        name: r.name,
+        is_system: Boolean(r.is_system),
+      }
+      if (r.is_system) {
+        if (!sysList.some((s) => s.role_key === r.role_key)) {
+          sysList.push(item)
+        }
+      } else {
+        if (!custList.some((c) => c.role_key === r.role_key)) {
+          custList.push(item)
         }
       }
     })
+
+    // Fallback if allRoles is empty
+    if (sysList.length === 0 && custList.length === 0) {
+      sysList.push({
+        role_key: "super_admin",
+        name: "Super Admin",
+        is_system: true,
+      })
+    }
 
     const allDest = [...sysList, ...custList]
 

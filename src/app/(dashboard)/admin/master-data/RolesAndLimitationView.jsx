@@ -96,6 +96,16 @@ export const SECURITY_MODULES = [
   }
 ]
 
+// Helper to determine if a role has every single permission checked
+export function hasFullModuleAccess(role) {
+  if (!role) return false
+  if (role.role_key === "super_admin") return true
+  const perms = Array.isArray(role.permissions) ? role.permissions : []
+  const hasAllDashboard = DASHBOARD_MODULES.every((mod) => perms.includes(mod.path))
+  const hasRoles = perms.includes("/admin/master-data/roles") || perms.includes("/admin/roles")
+  return hasAllDashboard && hasRoles
+}
+
 // Minimal neutral checkbox
 function NeutralCheckbox({ checked, onChange, label, description }) {
   return (
@@ -387,7 +397,7 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
 
       // Popover Access filter
       const perms = Array.isArray(r.permissions) ? r.permissions : []
-      const allAccess = perms.length === DASHBOARD_MODULES.length
+      const allAccess = hasFullModuleAccess(r)
       if (filterAccess === "full" && !allAccess) return false
       if (filterAccess === "custom" && (allAccess || perms.length === 0)) return false
       if (filterAccess === "none" && perms.length !== 0) return false
@@ -808,7 +818,7 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                         </td>
 
                         <td className="px-4 py-2.5 text-xs max-w-sm">
-                          {allAccess ? (
+                          {hasFullModuleAccess(role) ? (
                             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-[#2A9D8F]/15 text-[#1b6b61] dark:bg-[#2A9D8F]/25 dark:text-[#68c9be]">
                               Full Access (All Modules)
                             </span>
@@ -817,17 +827,12 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                               No Dashboard Access
                             </span>
                           ) : (
-                            <div className="text-xs text-neutral-600 dark:text-neutral-300 font-normal leading-relaxed truncate" title={perms.map((p) => DASHBOARD_MODULES.find((mod) => mod.path === p)?.name || p).join(", ")}>
-                              {perms
-                                .slice(0, 3)
-                                .map((p) => DASHBOARD_MODULES.find((mod) => mod.path === p)?.name || p)
-                                .join(", ")}
-                              {perms.length > 3 && (
-                                <span className="text-neutral-400 dark:text-neutral-500 ml-1">
-                                  +{perms.length - 3} more
-                                </span>
-                              )}
-                            </div>
+                            <span
+                              className="px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-[#E9C46A]/20 text-[#9b7216] dark:bg-[#E9C46A]/25 dark:text-[#f4d48a]"
+                              title={`${perms.length} modules permitted: ${perms.map((p) => DASHBOARD_MODULES.find((mod) => mod.path === p)?.name || (p.includes("roles") ? "Admin Roles & Permissions" : p)).join(", ")}`}
+                            >
+                              Restricted Access
+                            </span>
                           )}
                         </td>
 

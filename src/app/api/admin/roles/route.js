@@ -179,8 +179,8 @@ export async function DELETE(req) {
     }
 
     const role = roleRes.rows[0]
-    if (role.is_system) {
-      return NextResponse.json({ error: "System default roles cannot be deleted." }, { status: 400 })
+    if (role.role_key === "super_admin") {
+      return NextResponse.json({ error: "System default Super Admin role cannot be deleted." }, { status: 400 })
     }
 
     // Check if any users are currently assigned to this role

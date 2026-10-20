@@ -211,15 +211,15 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
             <input
               type="text"
               required
-              disabled={roleForm.is_system && isEdit}
+              disabled={roleForm.role_key === "super_admin" && isEdit}
               className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-background text-foreground placeholder:text-muted-foreground/60 shadow-2xs focus:outline-none focus:ring-1 focus:ring-[#E9C46A] disabled:opacity-50 transition-all"
               value={roleForm.name}
               onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
               placeholder="e.g. Branch Coordinator, Admissions Head"
             />
-            {roleForm.is_system && (
+            {roleForm.role_key === "super_admin" && (
               <p className="text-[11px] text-muted-foreground">
-                System default role name cannot be modified.
+                Super Admin role name cannot be modified.
               </p>
             )}
           </div>
@@ -788,11 +788,6 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                             <span className="font-medium text-[13px] text-[#3B3B3B] dark:text-gray-100">
                               {role.name}
                             </span>
-                            {role.is_system && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide bg-black/[0.05] dark:bg-white/[0.08] text-neutral-500 dark:text-neutral-400">
-                                System Default
-                              </span>
-                            )}
                           </div>
                           <span className="text-[11px] text-neutral-400 dark:text-neutral-500 font-mono block mt-0.5">
                             {role.role_key}
@@ -870,7 +865,7 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                             >
                               <Settings className="h-3.5 w-3.5" />
                             </button>
-                            {!role.is_system && (
+                            {role.role_key !== "super_admin" && (
                               <button
                                 type="button"
                                 onClick={(e) => {

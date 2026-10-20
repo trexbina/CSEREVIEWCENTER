@@ -3020,10 +3020,7 @@ export default function AnalyticalOverviewPage() {
                         <table className="w-full text-left border-collapse" aria-label="Subject Performance Table">
                           <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
                             <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
-                              <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
-                                Rank
-                              </th>
-                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                              <th className="px-4 py-2.5 font-semibold text-left pl-6" scope="col">
                                 Subject
                               </th>
                               <th className="px-4 py-2.5 font-semibold text-center" scope="col">
@@ -3045,16 +3042,10 @@ export default function AnalyticalOverviewPage() {
                           </thead>
                           <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
                             {paginatedSubjects.map((sub, idx) => {
-                              const rankNumber = startIndex + idx + 1
                               return (
                                 <tr key={sub.id || idx} className="h-13">
-                                  {/* Rank */}
-                                  <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
-                                    {rankNumber}
-                                  </td>
-
                                   {/* Subject & Category */}
-                                  <td className="px-4 py-2.5 text-left">
+                                  <td className="px-4 py-2.5 text-left pl-6">
                                     <div>
                                       <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
                                         {sub.name || "—"}
@@ -3152,10 +3143,7 @@ export default function AnalyticalOverviewPage() {
                         <table className="w-full text-left border-collapse" aria-label="Student Activity Roster Table">
                           <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
                             <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
-                              <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
-                                Rank
-                              </th>
-                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                              <th className="px-4 py-2.5 font-semibold text-left pl-6" scope="col">
                                 Student
                               </th>
                               <th className="px-4 py-2.5 font-semibold text-center" scope="col">
@@ -3180,16 +3168,10 @@ export default function AnalyticalOverviewPage() {
                           </thead>
                           <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
                             {paginatedRoster.map((st, idx) => {
-                              const rankNumber = startIndex + idx + 1
                               return (
                                 <tr key={st.id || idx} className="h-13">
-                                  {/* Rank */}
-                                  <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
-                                    {rankNumber}
-                                  </td>
-
                                   {/* Student Name with Avatar & Login ID */}
-                                  <td className="px-4 py-2.5 text-left">
+                                  <td className="px-4 py-2.5 text-left pl-6">
                                     <div className="flex items-center gap-3">
                                       <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
                                         {(st.avatarUrl || st.avatar_url) ? (
@@ -4037,10 +4019,7 @@ export default function AnalyticalOverviewPage() {
                         <table className="w-full text-left border-collapse" aria-label="Examination Breakdown Table">
                           <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
                             <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
-                              <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
-                                Rank
-                              </th>
-                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                              <th className="px-4 py-2.5 font-semibold text-left pl-6" scope="col">
                                 Examination
                               </th>
                               <th className="px-4 py-2.5 font-semibold text-center" scope="col">
@@ -4062,13 +4041,9 @@ export default function AnalyticalOverviewPage() {
                           </thead>
                           <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
                             {paginatedTracks.map((tr, idx) => {
-                              const rankNumber = startIndex + idx + 1
                               return (
                                 <tr key={tr.trackCode || idx} className="h-13">
-                                  <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
-                                    {rankNumber}
-                                  </td>
-                                  <td className="px-4 py-2.5 text-left">
+                                  <td className="px-4 py-2.5 text-left pl-6">
                                     <div>
                                       <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
                                         {tr.trackName || tr.trackCode || "—"}
@@ -4166,10 +4141,7 @@ export default function AnalyticalOverviewPage() {
                         <table className="w-full text-left border-collapse" aria-label="Student Sign-Ups Table">
                           <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
                             <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
-                              <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
-                                Rank
-                              </th>
-                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                              <th className="px-4 py-2.5 font-semibold text-left pl-6" scope="col">
                                 Student
                               </th>
                               <th className="px-4 py-2.5 font-semibold text-center" scope="col">
@@ -4194,13 +4166,9 @@ export default function AnalyticalOverviewPage() {
                           </thead>
                           <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
                             {paginatedLogs.map((cand, idx) => {
-                              const rankNumber = startIndex + idx + 1
                               return (
                                 <tr key={cand.id || idx} className="h-13">
-                                  <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
-                                    {rankNumber}
-                                  </td>
-                                  <td className="px-4 py-2.5 text-left">
+                                  <td className="px-4 py-2.5 text-left pl-6">
                                     <div className="flex items-center gap-3">
                                       <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
                                         {(cand.avatarUrl || cand.avatar_url) ? (

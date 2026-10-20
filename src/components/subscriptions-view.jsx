@@ -987,10 +987,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
               <table className="w-full text-left border-collapse" aria-label="Reviewees Subscriptions Table">
                 <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
                   <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
-                    <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
-                      Rank
-                    </th>
-                    <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                    <th className="px-4 py-2.5 font-semibold text-left pl-6" scope="col">
                       <TableSortButton label="Student" field="name" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="alpha" />
                     </th>
                     <th className="px-4 py-2.5 font-semibold text-left" scope="col">
@@ -1013,7 +1010,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                 <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                      <td colSpan={6} className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
                         <div className="flex flex-col items-center justify-center space-y-2">
                           <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                           <span>Loading subscriptions…</span>
@@ -1022,13 +1019,12 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                     </tr>
                   ) : filteredStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                      <td colSpan={6} className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
                         {search ? `No subscriptions found matching "${search}"` : "No student subscriptions match the selected criteria."}
                       </td>
                     </tr>
                   ) : (
-                    paginatedStudents.map((student, idx) => {
-                      const displayRank = studentStartIndex + idx + 1
+                    paginatedStudents.map((student) => {
                       const isExpired = student.computed_status === "expired" || student.computed_status === "disabled"
                       const isExpiring = student.computed_status === "expiring"
                       const dateFormatted = student.effective_end_date 
@@ -1037,13 +1033,8 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
 
                       return (
                         <tr key={student.id} className="h-13 transition-colors">
-                          {/* Rank */}
-                          <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
-                            {displayRank}
-                          </td>
-
                           {/* Student Name with Avatar & Login ID */}
-                          <td className="px-4 py-2.5 text-left">
+                          <td className="px-4 py-2.5 text-left pl-6">
                             <div className="flex items-center gap-3">
                               <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
                                 {(student.avatar_url || student.avatarUrl) ? (
@@ -1218,10 +1209,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
               <table className="w-full text-left border-collapse" aria-label="Batches Subscriptions Table">
                 <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
                   <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
-                    <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
-                      Rank
-                    </th>
-                    <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                    <th className="px-4 py-2.5 font-semibold text-left pl-6" scope="col">
                       <TableSortButton label="Batch Name" field="name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="alpha" />
                     </th>
                     <th className="px-4 py-2.5 font-semibold text-left" scope="col">
@@ -1244,13 +1232,12 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                 <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
                   {filteredBatches.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                      <td colSpan={6} className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
                         {search ? `No batches found matching "${search}"` : "No batches found."}
                       </td>
                     </tr>
                   ) : (
-                    paginatedBatches.map((batch, idx) => {
-                      const displayRank = batchStartIndex + idx + 1
+                    paginatedBatches.map((batch) => {
                       const endFormatted = batch.end_date 
                         ? new Date(batch.end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
                         : "No scheduled end"
@@ -1258,13 +1245,8 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
 
                       return (
                         <tr key={batch.id} className="h-13 transition-colors">
-                          {/* Rank */}
-                          <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
-                            {displayRank}
-                          </td>
-
                           {/* Batch Name */}
-                          <td className="px-4 py-2.5 text-left">
+                          <td className="px-4 py-2.5 text-left pl-6">
                             <div className="font-semibold text-xs text-[#3B3B3B] dark:text-gray-100">
                               {batch.name}
                             </div>

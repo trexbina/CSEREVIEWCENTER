@@ -972,7 +972,7 @@ export default function MasterDataBuilderPage() {
                   >
                     <div className="min-w-0">
                       <h3 className="font-bold text-[#4d4d4d] dark:text-gray-200 text-base group-hover:text-[#E9C46A] transition-colors truncate">
-                        Roles & Permissions
+                        Admin Roles & Permissions
                       </h3>
                       <p className="text-xs sm:text-sm text-[#8c8c8c] dark:text-gray-400 mt-0.5 truncate">
                         Manage admin roles and control which pages each role can access

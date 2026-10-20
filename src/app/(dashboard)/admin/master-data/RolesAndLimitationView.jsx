@@ -91,7 +91,7 @@ export const DASHBOARD_MODULES = [
 export const SECURITY_MODULES = [
   {
     path: "/admin/master-data/roles",
-    name: "Roles & Limitations (Security)",
+    name: "Admin Roles & Permissions (Security)",
     description: "Access and configure administrative roles, user assignments, and permissions within Master Data"
   }
 ]
@@ -355,7 +355,6 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
   // State for Role Users Management Dialog
   const [viewUsersRole, setViewUsersRole] = useState(null)
   const [isAddUserOpen, setIsAddUserOpen] = useState(false)
-  const [editingUser, setEditingUser] = useState(null)
   const [currentUser, setCurrentUser] = useState(null)
 
   // Fetch current user session to determine super admin privileges
@@ -367,42 +366,6 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
       })
       .catch(console.error)
   }, [])
-
-  const handleEditAdminProfile = async (role) => {
-    if (!role?.role_key) return
-    const isTargetSuperRole = role.role_key === "super_admin" || role.role_key === "admin"
-    const isCurrentSuper = !currentUser || isSuperAdminUser(currentUser)
-    if (isTargetSuperRole && !isCurrentSuper) {
-      toast("Only Super Admins can edit Super Admin profiles.")
-      return
-    }
-
-    try {
-      const res = await fetch(`/api/admin/roles/users?role_key=${encodeURIComponent(role.role_key)}`)
-      const data = await res.json()
-      const roleUsers = data.users || []
-      
-      if (roleUsers.length === 0) {
-        toast(`No administrator account is assigned to "${role.name}" yet.`)
-        return
-      }
-
-      if (roleUsers.length === 1) {
-        const targetUser = roleUsers[0]
-        const isTargetSuper = isSuperAdminUser(targetUser)
-        if (isTargetSuper && !isCurrentSuper) {
-          toast("Only Super Admins can edit Super Admin profiles.")
-          return
-        }
-        setEditingUser(targetUser)
-      } else {
-        setViewUsersRole(role)
-      }
-    } catch (err) {
-      console.error("Error opening profile edit:", err)
-      toast("Failed to load user profile for editing.")
-    }
-  }
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -589,7 +552,7 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
           )}
           <div>
             <h2 className="text-xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-              Roles & Permissions
+              Admin Roles & Permissions
             </h2>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
               Manage admin roles and control which pages each role can access.
@@ -884,19 +847,6 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
 
                         <td className="px-4 py-2.5 pr-6 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <div className="inline-flex items-center justify-end gap-1">
-                            {(!isTargetSuperRole || isCurrentSuperAdmin) && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleEditAdminProfile(role)
-                                }}
-                                className="h-7 w-7 rounded-lg flex items-center justify-center text-neutral-500 hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                title="Edit Profile"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </button>
-                            )}
                             <button
                               type="button"
                               onClick={(e) => {
@@ -1015,20 +965,6 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
           await fetchData()
         }}
       />
-
-      {/* Direct Edit Admin User Dialog from Roles Table */}
-      {editingUser && (
-        <AddAdminUserDialog
-          isOpen={Boolean(editingUser)}
-          onClose={() => setEditingUser(null)}
-          roles={roles}
-          userToEdit={editingUser}
-          onUserUpdated={async () => {
-            setEditingUser(null)
-            await fetchData()
-          }}
-        />
-      )}
     </div>
   )
 }

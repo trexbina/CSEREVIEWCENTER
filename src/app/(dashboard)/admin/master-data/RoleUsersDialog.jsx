@@ -471,11 +471,10 @@ export default function RoleUsersDialog({
                             <button
                               type="button"
                               onClick={() => setEditingUser(user)}
-                              className="h-8.5 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs active:scale-95"
+                              className="h-8.5 w-8.5 rounded-xl flex items-center justify-center transition-all cursor-pointer border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs active:scale-95"
                               title="Edit user profile"
                             >
                               <Pencil className="size-3.5 text-[#E9C46A]" />
-                              <span>Edit Profile</span>
                             </button>
                           )}
 

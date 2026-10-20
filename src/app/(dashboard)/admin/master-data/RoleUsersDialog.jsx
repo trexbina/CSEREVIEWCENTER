@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState, useEffect, useMemo, useCallback } from "react"
-import { motion, AnimatePresence } from "motion/react"
 import {
   X,
   Search,
@@ -11,11 +10,9 @@ import {
   UserX,
   UserCheck,
   Check,
-  AlertTriangle,
   Loader2,
   UserPlus,
   RefreshCw,
-  ExternalLink
 } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 
@@ -251,70 +248,67 @@ export default function RoleUsersDialog({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-card border border-border/80 rounded-2xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150 font-sans overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-[#1E293B] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border/40 shrink-0 bg-muted/20">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10 shrink-0 bg-white/50 dark:bg-white/[0.02]">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-[#E9C46A]/15 border border-[#E9C46A]/30 flex items-center justify-center text-[#E9C46A] shrink-0">
-              <Shield className="h-5 w-5" />
+            <div className="size-9 rounded-xl bg-[#E9C46A]/15 text-[#b08826] dark:text-[#E9C46A] flex items-center justify-center shrink-0">
+              <Users className="size-4.5" />
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-bold text-foreground text-base tracking-tight">
-                  {role?.name || "Role"}
-                </h3>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-muted/60 text-muted-foreground border border-border/40">
-                  {role?.role_key}
-                </span>
-                {role?.is_system && (
-                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                    System Default
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <h2 className="text-base sm:text-lg font-bold text-[#3B3B3B] dark:text-white">
+                {role?.name || "Role Users"}
+              </h2>
+              <p className="text-xs text-[#696969] dark:text-gray-400">
                 Manage accounts assigned to this role, transfer roles, or disable access.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={fetchRoleUsers}
               disabled={isLoading}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
               title="Refresh User List"
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin text-primary" : ""}`} />
+              <RefreshCw className={`size-4 ${isLoading ? "animate-spin text-[#E9C46A]" : ""}`} />
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
               title="Close Dialog"
             >
-              <X className="h-4 w-4" />
+              <X className="size-4" />
             </button>
           </div>
         </div>
 
-        {/* Tab Switcher: Assigned Users vs Assign New */}
-        <div className="flex items-center justify-between px-5 pt-3 pb-2 border-b border-border/40 bg-card shrink-0">
-          <div className="flex items-center gap-1.5">
+        {/* Tab Switcher: Assigned Users vs Transfer User Here */}
+        <div className="flex items-center justify-between px-6 py-3 border-b border-black/5 dark:border-white/10 bg-black/[0.01] dark:bg-white/[0.01] shrink-0 flex-wrap gap-2">
+          {/* Minimal Tab Switcher Pill matching user management & master data */}
+          <div className="flex items-center gap-1.5 p-1 bg-[#F2F2F2]/80 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
             <button
               type="button"
               onClick={() => setActiveTab("assigned")}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === "assigned"
-                  ? "bg-[#3B3B3B] dark:bg-white text-white dark:text-neutral-900 shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                  ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
+                  : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
               }`}
             >
-              <Users className="h-3.5 w-3.5" />
+              <Users className="size-3.5" />
               <span>Assigned Users</span>
-              <span className="ml-1 text-[11px] font-mono px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-black/20">
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  activeTab === "assigned"
+                    ? "bg-[#E9C46A] text-white"
+                    : "bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-400"
+                }`}
+              >
                 {users.length}
               </span>
             </button>
@@ -322,18 +316,18 @@ export default function RoleUsersDialog({
             <button
               type="button"
               onClick={() => setActiveTab("assign_new")}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === "assign_new"
-                  ? "bg-[#3B3B3B] dark:bg-white text-white dark:text-neutral-900 shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                  ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
+                  : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
               }`}
             >
-              <UserPlus className="h-3.5 w-3.5" />
+              <UserPlus className="size-3.5" />
               <span>Transfer User Here</span>
             </button>
           </div>
 
-          <span className="text-[11px] text-muted-foreground hidden sm:inline-block">
+          <span className="text-[11px] text-[#696969] dark:text-gray-400 hidden sm:inline-block">
             {activeTab === "assigned" ? "Click Transfer or Status to modify" : "Search any system account"}
           </span>
         </div>
@@ -342,23 +336,23 @@ export default function RoleUsersDialog({
         {activeTab === "assigned" && (
           <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Search filter within assigned users */}
-            <div className="p-4 border-b border-border/30 bg-muted/10 shrink-0">
+            <div className="px-6 py-3 border-b border-black/5 dark:border-white/10 bg-white/40 dark:bg-white/[0.01] shrink-0">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-3.5 text-[#696969] pointer-events-none" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={`Search ${users.length} assigned user${users.length === 1 ? "" : "s"} by name, email, or login ID…`}
-                  className="w-full h-9 pl-9 pr-8 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-[#E9C46A] shadow-2xs"
+                  className="w-full h-9.5 pl-9 pr-8 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] shadow-2xs transition-all"
                 />
                 {search && (
                   <button
                     type="button"
                     onClick={() => setSearch("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-[#3B3B3B] dark:hover:text-white p-0.5 rounded cursor-pointer"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="size-3.5" />
                   </button>
                 )}
               </div>
@@ -367,19 +361,19 @@ export default function RoleUsersDialog({
             {/* List Table */}
             <div className="flex-1 overflow-y-auto">
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                  <Loader2 className="h-7 w-7 animate-spin text-[#E9C46A] mb-2" />
+                <div className="flex flex-col items-center justify-center py-16 text-[#696969]">
+                  <Loader2 className="size-7 animate-spin text-[#E9C46A] mb-2" />
                   <p className="text-xs font-medium">Loading users assigned to {role?.name}…</p>
                 </div>
               ) : filteredUsers.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                  <div className="h-12 w-12 rounded-2xl bg-muted/50 border border-border/40 flex items-center justify-center text-muted-foreground mb-3">
-                    <Users className="h-6 w-6 opacity-40" />
+                  <div className="size-12 rounded-2xl bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-center justify-center text-neutral-400 mb-3">
+                    <Users className="size-6 opacity-40" />
                   </div>
-                  <h4 className="text-sm font-semibold text-foreground">
+                  <h4 className="text-sm font-semibold text-[#3B3B3B] dark:text-white">
                     {search ? "No matching users found" : "No users assigned to this role"}
                   </h4>
-                  <p className="text-xs text-muted-foreground max-w-sm mt-1">
+                  <p className="text-xs text-[#696969] dark:text-gray-400 max-w-sm mt-1">
                     {search
                       ? `No user in "${role?.name}" matches "${search}".`
                       : `Currently there are no active users assigned to "${role?.name}". You can transfer existing users into this role using the "Transfer User Here" tab.`}
@@ -388,15 +382,15 @@ export default function RoleUsersDialog({
                     <button
                       type="button"
                       onClick={() => setActiveTab("assign_new")}
-                      className="mt-4 bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                      className="mt-4 bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                     >
-                      <UserPlus className="h-3.5 w-3.5" />
+                      <UserPlus className="size-3.5" />
                       Transfer a User to this Role
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="divide-y divide-border/30">
+                <div className="divide-y divide-black/5 dark:divide-white/5">
                   {filteredUsers.map((user) => {
                     const isActive = user.is_active !== false
                     const isProtectedSuperAdmin = user.login_id?.toLowerCase() === "admin00001" || user.id === 1
@@ -404,7 +398,7 @@ export default function RoleUsersDialog({
                     return (
                       <div
                         key={user.id}
-                        className="p-3.5 sm:px-5 hover:bg-muted/15 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                        className="px-6 py-3.5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                       >
                         {/* User Details */}
                         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -412,22 +406,22 @@ export default function RoleUsersDialog({
                             <img
                               src={user.avatar_url}
                               alt={user.name}
-                              className="h-9 w-9 rounded-full object-cover border border-border/40 shrink-0"
+                              className="size-9 rounded-full object-cover border border-black/10 dark:border-white/10 shrink-0"
                             />
                           ) : (
-                            <div className="h-9 w-9 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs flex items-center justify-center shrink-0">
+                            <div className="size-9 rounded-full bg-[#E9C46A]/15 border border-[#E9C46A]/25 text-[#b08826] dark:text-[#E9C46A] font-bold text-xs flex items-center justify-center shrink-0">
                               {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                             </div>
                           )}
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold text-xs text-foreground truncate">
+                              <span className="font-semibold text-xs text-[#3B3B3B] dark:text-white truncate">
                                 {user.name}
                               </span>
                               {isProtectedSuperAdmin && (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                                  <Shield className="h-2.5 w-2.5" />
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                                  <Shield className="size-2.5" />
                                   Default Super Admin
                                 </span>
                               )}
@@ -440,17 +434,17 @@ export default function RoleUsersDialog({
                                 }`}
                               >
                                 <span
-                                  className={`h-1.5 w-1.5 rounded-full ${
-                                    isActive ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+                                  className={`size-1.5 rounded-full ${
+                                    isActive ? "bg-emerald-500" : "bg-rose-500"
                                   }`}
                                 />
                                 {isActive ? "Active" : "Disabled"}
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5 flex-wrap">
+                            <div className="flex items-center gap-2 text-[11px] text-[#696969] dark:text-gray-400 mt-0.5 flex-wrap">
                               {user.login_id && (
-                                <span className="font-mono bg-muted/50 px-1.5 py-0.2 rounded border border-border/30">
+                                <span className="font-mono bg-black/[0.04] dark:bg-white/10 text-[#3B3B3B] dark:text-gray-300 px-1.5 py-0.2 rounded border border-black/5 dark:border-white/10">
                                   {user.login_id}
                                 </span>
                               )}
@@ -466,13 +460,13 @@ export default function RoleUsersDialog({
                           {isProtectedSuperAdmin ? (
                             <div className="flex items-center gap-2">
                               <span
-                                className="text-[11px] font-medium text-amber-700 dark:text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 flex items-center gap-1.5"
+                                className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20 flex items-center gap-1.5"
                                 title="The default Super Admin account is permanently assigned as Super Admin"
                               >
-                                <Shield className="h-3 w-3" /> Fixed Role
+                                <Shield className="size-3" /> Fixed Role
                               </span>
                               <span
-                                className="text-[11px] font-medium text-muted-foreground bg-muted/40 px-2 py-1 rounded-lg border border-border/30 cursor-not-allowed opacity-60"
+                                className="text-xs font-medium text-neutral-400 dark:text-neutral-500 bg-black/[0.03] dark:bg-white/5 px-3 py-1.5 rounded-xl border border-black/5 dark:border-white/10 cursor-not-allowed opacity-60"
                                 title="Default Super Admin cannot be disabled"
                               >
                                 Permanent Access
@@ -482,7 +476,7 @@ export default function RoleUsersDialog({
                             <>
                               {/* Transfer Role Dropdown */}
                               <div className="flex items-center gap-1.5">
-                                <label className="text-[11px] text-muted-foreground font-medium hidden md:inline">
+                                <label className="text-[11px] text-[#696969] dark:text-gray-400 font-medium hidden md:inline">
                                   Transfer:
                                 </label>
                                 <select
@@ -499,7 +493,7 @@ export default function RoleUsersDialog({
                                       })
                                     }
                                   }}
-                                  className="h-8 text-xs px-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-background text-foreground shadow-2xs focus:outline-none focus:ring-1 focus:ring-[#E9C46A] cursor-pointer"
+                                  className="h-8.5 text-xs px-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] cursor-pointer"
                                   title="Transfer user to another role"
                                 >
                                   <option value={role.role_key} disabled>
@@ -527,21 +521,21 @@ export default function RoleUsersDialog({
                                     willBeActive: !isActive
                                   })
                                 }
-                                className={`h-8 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                                className={`h-8.5 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border shadow-2xs active:scale-95 ${
                                   isActive
-                                    ? "border-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 active:scale-95"
-                                    : "border-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 active:scale-95"
+                                    ? "border-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10"
+                                    : "border-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
                                 }`}
                                 title={isActive ? "Disable user login access" : "Enable user login access"}
                               >
                                 {isActive ? (
                                   <>
-                                    <UserX className="h-3.5 w-3.5" />
+                                    <UserX className="size-3.5" />
                                     <span>Disable</span>
                                   </>
                                 ) : (
                                   <>
-                                    <UserCheck className="h-3.5 w-3.5" />
+                                    <UserCheck className="size-3.5" />
                                     <span>Enable</span>
                                   </>
                                 )}
@@ -562,27 +556,27 @@ export default function RoleUsersDialog({
         {activeTab === "assign_new" && (
           <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* Search Bar */}
-            <div className="p-4 border-b border-border/30 bg-muted/10 shrink-0">
-              <label className="text-xs font-medium text-foreground block mb-1.5">
+            <div className="px-6 py-3 border-b border-black/5 dark:border-white/10 bg-white/40 dark:bg-white/[0.01] shrink-0">
+              <label className="text-xs font-semibold text-[#696969] dark:text-gray-400 block mb-1.5">
                 Search any user to transfer into "{role?.name}":
               </label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-3.5 text-[#696969] pointer-events-none" />
                 <input
                   type="text"
                   value={globalSearch}
                   onChange={(e) => setGlobalSearch(e.target.value)}
                   placeholder="Type name, email, or login ID (min. 2 characters)…"
                   autoFocus
-                  className="w-full h-9 pl-9 pr-8 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-[#E9C46A] shadow-2xs"
+                  className="w-full h-9.5 pl-9 pr-8 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] shadow-2xs transition-all"
                 />
                 {globalSearch && (
                   <button
                     type="button"
                     onClick={() => setGlobalSearch("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-[#3B3B3B] dark:hover:text-white p-0.5 rounded cursor-pointer"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="size-3.5" />
                   </button>
                 )}
               </div>
@@ -591,25 +585,25 @@ export default function RoleUsersDialog({
             {/* Global Search Results List */}
             <div className="flex-1 overflow-y-auto">
               {isSearchingGlobal ? (
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#E9C46A] mb-2" />
+                <div className="flex flex-col items-center justify-center py-16 text-[#696969]">
+                  <Loader2 className="size-6 animate-spin text-[#E9C46A] mb-2" />
                   <p className="text-xs font-medium">Searching accounts…</p>
                 </div>
               ) : !globalSearch.trim() || globalSearch.trim().length < 2 ? (
-                <div className="flex flex-col items-center justify-center py-16 px-4 text-center text-muted-foreground">
-                  <Search className="h-8 w-8 opacity-30 mb-2" />
+                <div className="flex flex-col items-center justify-center py-16 px-4 text-center text-[#696969]">
+                  <Search className="size-8 opacity-30 mb-2" />
                   <p className="text-xs font-medium">Type at least 2 characters to search across all registered users.</p>
                   <p className="text-[11px] opacity-70 mt-0.5">
                     You can quickly search students, teachers, coordinators, or admins to transfer into this role.
                   </p>
                 </div>
               ) : globalResults.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 px-4 text-center text-muted-foreground">
-                  <UserX className="h-8 w-8 opacity-30 mb-2" />
+                <div className="flex flex-col items-center justify-center py-16 px-4 text-center text-[#696969]">
+                  <UserX className="size-8 opacity-30 mb-2" />
                   <p className="text-xs font-medium">No users matched "{globalSearch}".</p>
                 </div>
               ) : (
-                <div className="divide-y divide-border/30">
+                <div className="divide-y divide-black/5 dark:divide-white/5">
                   {globalResults.map((user) => {
                     const isAlreadyInThisRole =
                       user.role === role.role_key ||
@@ -618,31 +612,31 @@ export default function RoleUsersDialog({
                     return (
                       <div
                         key={user.id}
-                        className="p-3.5 sm:px-5 hover:bg-muted/15 transition-colors flex items-center justify-between gap-3"
+                        className="px-6 py-3.5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors flex items-center justify-between gap-3"
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           {user.avatar_url ? (
                             <img
                               src={user.avatar_url}
                               alt={user.name}
-                              className="h-9 w-9 rounded-full object-cover border border-border/40 shrink-0"
+                              className="size-9 rounded-full object-cover border border-black/10 dark:border-white/10 shrink-0"
                             />
                           ) : (
-                            <div className="h-9 w-9 rounded-full bg-primary/10 border border-primary/20 text-primary font-bold text-xs flex items-center justify-center shrink-0">
+                            <div className="size-9 rounded-full bg-[#E9C46A]/15 border border-[#E9C46A]/25 text-[#b08826] dark:text-[#E9C46A] font-bold text-xs flex items-center justify-center shrink-0">
                               {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                             </div>
                           )}
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold text-xs text-foreground truncate">
+                              <span className="font-semibold text-xs text-[#3B3B3B] dark:text-white truncate">
                                 {user.name}
                               </span>
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-muted/60 text-muted-foreground border border-border/40">
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/10 text-[#696969] dark:text-gray-300 border border-black/5 dark:border-white/10">
                                 Current: {user.role_name || user.role}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                            <div className="flex items-center gap-2 text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
                               {user.login_id && <span className="font-mono">{user.login_id}</span>}
                               <span className="truncate">{user.personal_email || user.email}</span>
                             </div>
@@ -651,13 +645,13 @@ export default function RoleUsersDialog({
 
                         <div className="shrink-0">
                           {user.login_id?.toLowerCase() === "admin00001" || user.id === 1 ? (
-                            <span className="text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 flex items-center gap-1">
-                              <Shield className="h-3 w-3" />
-                              Primary Super Admin (Protected)
+                            <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20 flex items-center gap-1.5">
+                              <Shield className="size-3" />
+                              Primary Super Admin
                             </span>
                           ) : isAlreadyInThisRole ? (
-                            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-1">
-                              <Check className="h-3 w-3 stroke-[3]" />
+                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 flex items-center gap-1.5">
+                              <Check className="size-3.5 stroke-[3]" />
                               Already in this role
                             </span>
                           ) : (
@@ -665,9 +659,9 @@ export default function RoleUsersDialog({
                               type="button"
                               disabled={isActionPending}
                               onClick={() => handleAssignUserToRole(user)}
-                              className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                              className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-3.5 py-1.5 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                             >
-                              <ArrowRightLeft className="h-3 w-3" />
+                              <ArrowRightLeft className="size-3.5" />
                               Transfer to {role.name}
                             </button>
                           )}
@@ -682,14 +676,14 @@ export default function RoleUsersDialog({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-border/40 bg-muted/20 shrink-0">
-          <div className="text-xs text-muted-foreground">
-            Total users in role: <strong className="text-foreground">{users.length}</strong>
+        <div className="flex items-center justify-between px-6 py-3.5 border-t border-black/5 dark:border-white/10 bg-white/50 dark:bg-white/[0.02] shrink-0">
+          <div className="text-xs text-[#696969] dark:text-gray-400 font-medium">
+            Total users in role: <strong className="text-[#3B3B3B] dark:text-white font-semibold">{users.length}</strong>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-semibold bg-background hover:bg-muted/50 border border-border/60 text-foreground rounded-lg transition-colors cursor-pointer"
+            className="px-4.5 py-2 text-xs font-semibold bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 border border-black/10 dark:border-white/10 text-[#3B3B3B] dark:text-white rounded-xl transition-all shadow-2xs cursor-pointer active:scale-95"
           >
             Close
           </button>
@@ -698,30 +692,28 @@ export default function RoleUsersDialog({
 
       {/* Confirmation Modal: Transfer Role */}
       {confirmTransfer.isOpen && (
-        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-card border border-border/80 rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-3 animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-60 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-[#1E293B] border border-black/10 dark:border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-[#E9C46A]/20 text-[#E9C46A] flex items-center justify-center shrink-0">
-                <ArrowRightLeft className="h-4 w-4" />
+              <div className="size-9 rounded-xl bg-[#E9C46A]/15 text-[#b08826] dark:text-[#E9C46A] flex items-center justify-center shrink-0">
+                <ArrowRightLeft className="size-4.5" />
               </div>
-              <h4 className="font-bold text-sm text-foreground">Confirm Role Transfer</h4>
+              <h4 className="font-bold text-sm text-[#3B3B3B] dark:text-white">Confirm Role Transfer</h4>
             </div>
 
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-xs text-[#696969] dark:text-gray-400 leading-relaxed">
               Are you sure you want to transfer{" "}
-              <strong className="text-foreground">{confirmTransfer.user?.name}</strong> from{" "}
-              <strong className="text-foreground">{role?.name}</strong> to{" "}
-              <strong className="text-foreground">{confirmTransfer.targetRoleName}</strong>?
+              <strong className="text-[#3B3B3B] dark:text-white font-semibold">{confirmTransfer.user?.name}</strong> from{" "}
+              <strong className="text-[#3B3B3B] dark:text-white font-semibold">{role?.name}</strong> to{" "}
+              <strong className="text-[#3B3B3B] dark:text-white font-semibold">{confirmTransfer.targetRoleName}</strong>?
             </p>
 
-            <div className="flex justify-end items-center gap-2 pt-2">
+            <div className="flex justify-end items-center gap-2 pt-2 border-t border-black/5 dark:border-white/10">
               <button
                 type="button"
                 disabled={isActionPending}
-                onClick={() =>
-                  setConfirmTransfer({ isOpen: false, user: null, targetRoleKey: "", targetRoleName: "" })
-                }
-                className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground rounded-lg transition-colors cursor-pointer"
+                onClick={() => setConfirmTransfer({ isOpen: false, user: null, targetRoleKey: "", targetRoleName: "" })}
+                className="px-4 py-2 text-xs font-semibold text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -729,60 +721,47 @@ export default function RoleUsersDialog({
                 type="button"
                 disabled={isActionPending}
                 onClick={handleExecuteTransfer}
-                className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
               >
-                {isActionPending ? "Transferring…" : "Confirm Transfer"}
+                {isActionPending ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                <span>Confirm Transfer</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Confirmation Modal: Disable / Enable Account */}
+      {/* Confirmation Modal: Enable/Disable Account */}
       {confirmDisable.isOpen && (
-        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-card border border-border/80 rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-3 animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-60 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-[#1E293B] border border-black/10 dark:border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3">
               <div
-                className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${
+                className={`size-9 rounded-xl flex items-center justify-center shrink-0 ${
                   confirmDisable.willBeActive
-                    ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                    : "bg-rose-500/20 text-rose-600 dark:text-rose-400"
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                    : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
                 }`}
               >
-                {confirmDisable.willBeActive ? (
-                  <UserCheck className="h-4 w-4" />
-                ) : (
-                  <AlertTriangle className="h-4 w-4" />
-                )}
+                {confirmDisable.willBeActive ? <UserCheck className="size-4.5" /> : <UserX className="size-4.5" />}
               </div>
-              <h4 className="font-bold text-sm text-foreground">
+              <h4 className="font-bold text-sm text-[#3B3B3B] dark:text-white">
                 {confirmDisable.willBeActive ? "Enable Account Access" : "Disable Account Access"}
               </h4>
             </div>
 
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {confirmDisable.willBeActive ? (
-                <>
-                  Are you sure you want to enable account access for{" "}
-                  <strong className="text-foreground">{confirmDisable.user?.name}</strong>? They will be able to
-                  log in again immediately.
-                </>
-              ) : (
-                <>
-                  Are you sure you want to disable account access for{" "}
-                  <strong className="text-foreground">{confirmDisable.user?.name}</strong>? They will be locked out
-                  and unable to log into the portal until re-enabled.
-                </>
-              )}
+            <p className="text-xs text-[#696969] dark:text-gray-400 leading-relaxed">
+              {confirmDisable.willBeActive
+                ? `Enable login access for "${confirmDisable.user?.name}"? The user will be able to log in to the system again.`
+                : `Are you sure you want to disable login access for "${confirmDisable.user?.name}"? They will be immediately blocked from signing in.`}
             </p>
 
-            <div className="flex justify-end items-center gap-2 pt-2">
+            <div className="flex justify-end items-center gap-2 pt-2 border-t border-black/5 dark:border-white/10">
               <button
                 type="button"
                 disabled={isActionPending}
                 onClick={() => setConfirmDisable({ isOpen: false, user: null, willBeActive: false })}
-                className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -790,17 +769,20 @@ export default function RoleUsersDialog({
                 type="button"
                 disabled={isActionPending}
                 onClick={handleExecuteToggleStatus}
-                className={`text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                className={`text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
                   confirmDisable.willBeActive
                     ? "bg-emerald-600 hover:bg-emerald-700"
                     : "bg-rose-600 hover:bg-rose-700"
                 }`}
               >
-                {isActionPending
-                  ? "Updating…"
-                  : confirmDisable.willBeActive
-                  ? "Enable Account"
-                  : "Disable Account"}
+                {isActionPending ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : confirmDisable.willBeActive ? (
+                  <UserCheck className="size-3.5" />
+                ) : (
+                  <UserX className="size-3.5" />
+                )}
+                <span>{confirmDisable.willBeActive ? "Enable Account" : "Disable Account"}</span>
               </button>
             </div>
           </div>

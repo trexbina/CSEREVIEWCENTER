@@ -10,6 +10,8 @@ import {
   EyeOff,
   Info,
   UserPlus,
+  Pencil,
+  Check,
   Loader2,
 } from "lucide-react"
 import { Label } from "@/components/ui/label"
@@ -33,7 +35,13 @@ export default function AddAdminUserDialog({
   onClose,
   roles = [],
   onUserCreated,
+  userToEdit = null,
+  onUserUpdated,
 }) {
+  const isEditMode = Boolean(userToEdit)
+  const isTargetProtected = Boolean(
+    userToEdit && (userToEdit.login_id?.toLowerCase() === "admin00001" || userToEdit.id === 1)
+  )
   // ── Personal Information ──
   const [firstName, setFirstName] = useState("")
   const [middleName, setMiddleName] = useState("")
@@ -92,45 +100,75 @@ export default function AddAdminUserDialog({
     }
   }, [isOpen])
 
-  // Reset form when dialog opens
+  // Reset or populate form when dialog opens
   useEffect(() => {
     if (isOpen) {
-      setFirstName("")
-      setMiddleName("")
-      setLastName("")
-      setSuffix("")
-      setBirthday("")
-      setGender("")
-      setPhone("")
-      setPersonalEmail("")
-      setAddress("")
-      setCity("")
-      setProvince("")
-      setZipCode("")
-      setAvatarUrl("")
-      setSchoolId("")
-      setHighestEducation("")
-      setAcademicCourseId("")
-      setYearGraduated("")
-      setPassword("")
-      setConfirmPassword("")
-      setShowPassword(false)
-      setShowConfirmPassword(false)
-      setJobRoleDescription("")
-      setError("")
-      setSaving(false)
+      if (userToEdit) {
+        setFirstName(userToEdit.first_name || (userToEdit.name ? userToEdit.name.split(" ")[0] : "") || "")
+        setMiddleName(userToEdit.middle_name || "")
+        setLastName(userToEdit.last_name || (userToEdit.name ? userToEdit.name.split(" ").slice(1).join(" ") : "") || "")
+        setSuffix(userToEdit.suffix || "")
+        setBirthday(userToEdit.birthday ? String(userToEdit.birthday).split("T")[0] : "")
+        setGender(userToEdit.gender || "")
+        setPhone(userToEdit.phone || "")
+        setPersonalEmail(userToEdit.personal_email || userToEdit.email || "")
+        setAddress(userToEdit.address || "")
+        setCity(userToEdit.city || "")
+        setProvince(userToEdit.province || "")
+        setZipCode(userToEdit.zip_code || "")
+        setAvatarUrl(userToEdit.avatar_url || "")
+        setSchoolId(userToEdit.school_id ? String(userToEdit.school_id) : "")
+        setHighestEducation(userToEdit.highest_education || "")
+        setAcademicCourseId(userToEdit.academic_course_id ? String(userToEdit.academic_course_id) : "")
+        setYearGraduated(userToEdit.year_graduated ? String(userToEdit.year_graduated) : "")
+        setLoginIdPreview(userToEdit.login_id || "")
+        setPassword("")
+        setConfirmPassword("")
+        setShowPassword(false)
+        setShowConfirmPassword(false)
+        setSelectedRole(userToEdit.role || "super_admin")
+        setJobRoleDescription(userToEdit.job_role_description || "")
+        setError("")
+        setSaving(false)
+      } else {
+        setFirstName("")
+        setMiddleName("")
+        setLastName("")
+        setSuffix("")
+        setBirthday("")
+        setGender("")
+        setPhone("")
+        setPersonalEmail("")
+        setAddress("")
+        setCity("")
+        setProvince("")
+        setZipCode("")
+        setAvatarUrl("")
+        setSchoolId("")
+        setHighestEducation("")
+        setAcademicCourseId("")
+        setYearGraduated("")
+        setLoginIdPreview("")
+        setPassword("")
+        setConfirmPassword("")
+        setShowPassword(false)
+        setShowConfirmPassword(false)
+        setJobRoleDescription("")
+        setError("")
+        setSaving(false)
 
-      // Set default selected role
-      const defaultRole = roles.find((r) => r.role_key === "super_admin")?.role_key ||
-        roles.find((r) => !["student", "teacher"].includes(r.role_key))?.role_key ||
-        "super_admin"
-      setSelectedRole(defaultRole)
+        // Set default selected role
+        const defaultRole = roles.find((r) => r.role_key === "super_admin")?.role_key ||
+          roles.find((r) => !["student", "teacher"].includes(r.role_key))?.role_key ||
+          "super_admin"
+        setSelectedRole(defaultRole)
+      }
     }
-  }, [isOpen, roles])
+  }, [isOpen, userToEdit, roles])
 
-  // Live preview of the automatic Login ID
+  // Live preview of the automatic Login ID (only when creating)
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || isEditMode) return
     const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(" ")
     const params = new URLSearchParams({
       lastName: lastName || "",
@@ -145,7 +183,7 @@ export default function AddAdminUserDialog({
         }
       })
       .catch(console.error)
-  }, [isOpen, lastName, firstName, middleName, suffix, selectedRole])
+  }, [isOpen, isEditMode, lastName, firstName, middleName, suffix, selectedRole])
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -180,19 +218,32 @@ export default function AddAdminUserDialog({
       return
     }
 
-    if (!password) {
-      setError("Password is required.")
-      return
-    }
+    if (!isEditMode) {
+      if (!password) {
+        setError("Password is required.")
+        return
+      }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.")
-      return
-    }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters.")
+        return
+      }
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.")
-      return
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.")
+        return
+      }
+    } else {
+      if (password) {
+        if (password.length < 6) {
+          setError("Password must be at least 6 characters.")
+          return
+        }
+        if (password !== confirmPassword) {
+          setError("Passwords do not match.")
+          return
+        }
+      }
     }
 
     if (!selectedRole) {
@@ -207,51 +258,63 @@ export default function AddAdminUserDialog({
       .join(" ")
       .trim()
 
+    const payload = {
+      name: fullName,
+      email: personalEmail || undefined,
+      personal_email: personalEmail || null,
+      role: selectedRole,
+      first_name: firstName.trim(),
+      middle_name: middleName.trim() || null,
+      last_name: lastName.trim(),
+      suffix: suffix.trim() || null,
+      birthday: birthday || null,
+      gender: gender || null,
+      phone: phone || null,
+      address: address || null,
+      city: city || null,
+      province: province || null,
+      zip_code: zipCode || null,
+      school_id: schoolId ? parseInt(schoolId, 10) : null,
+      academic_course_id: academicCourseId ? parseInt(academicCourseId, 10) : null,
+      year_graduated: yearGraduated || null,
+      highest_education: highestEducation || null,
+      job_role_description: jobRoleDescription.trim() || null,
+      avatar_url: avatarUrl || null,
+    }
+
+    if (password) {
+      payload.password = password
+    }
+
     try {
-      const res = await fetch("/api/admin/users", {
-        method: "POST",
+      const endpoint = isEditMode
+        ? `/api/admin/users?id=${userToEdit.id}`
+        : "/api/admin/users"
+      const method = isEditMode ? "PUT" : "POST"
+
+      const res = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: fullName,
-          email: personalEmail || undefined,
-          personal_email: personalEmail || null,
-          password,
-          role: selectedRole,
-          first_name: firstName.trim(),
-          middle_name: middleName.trim() || null,
-          last_name: lastName.trim(),
-          suffix: suffix.trim() || null,
-          birthday: birthday || null,
-          gender: gender || null,
-          phone: phone || null,
-          address: address || null,
-          city: city || null,
-          province: province || null,
-          zip_code: zipCode || null,
-          school_id: schoolId ? parseInt(schoolId, 10) : null,
-          academic_course_id: academicCourseId ? parseInt(academicCourseId, 10) : null,
-          year_graduated: yearGraduated || null,
-          highest_education: highestEducation || null,
-          job_role_description: jobRoleDescription.trim() || null,
-          avatar_url: avatarUrl || null,
-        }),
+        body: JSON.stringify(payload),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || "Failed to create administrator account.")
+        setError(data.error || (isEditMode ? "Failed to update administrator profile." : "Failed to create administrator account."))
         setSaving(false)
         return
       }
 
-      toast("Successfully created administrator account.")
-      if (onUserCreated) {
+      toast(isEditMode ? "Admin profile updated successfully." : "Successfully created administrator account.")
+      if (isEditMode && onUserUpdated) {
+        await onUserUpdated(data.user || data)
+      } else if (!isEditMode && onUserCreated) {
         await onUserCreated()
       }
       onClose()
     } catch (err) {
-      console.error("Create admin error:", err)
+      console.error(isEditMode ? "Update admin error:" : "Create admin error:", err)
       setError(err.message || "Something went wrong.")
     } finally {
       setSaving(false)
@@ -278,14 +341,16 @@ export default function AddAdminUserDialog({
         <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10 shrink-0 bg-white/50 dark:bg-white/[0.02]">
           <div className="flex items-center gap-2.5">
             <div className="size-9 rounded-xl bg-[#E9C46A]/15 text-[#b08826] dark:text-[#E9C46A] flex items-center justify-center">
-              <UserPlus className="size-4.5" />
+              {isEditMode ? <Pencil className="size-4.5" /> : <UserPlus className="size-4.5" />}
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-[#3B3B3B] dark:text-white">
-                Add New Admin User
+                {isEditMode ? "Edit Admin Profile" : "Add New Admin User"}
               </h2>
               <p className="text-xs text-[#696969] dark:text-gray-400">
-                Create and configure an administrator account with dashboard access.
+                {isEditMode
+                  ? `Update administrative details and profile information for ${userToEdit?.name || userToEdit?.login_id || "admin"}.`
+                  : "Create and configure an administrator account with dashboard access."}
               </p>
             </div>
           </div>
@@ -604,16 +669,18 @@ export default function AddAdminUserDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="admin-password" className="text-xs font-semibold text-[#696969]">Password *</Label>
+                <Label htmlFor="admin-password" className="text-xs font-semibold text-[#696969]">
+                  {isEditMode ? "Change Password (Optional)" : "Password *"}
+                </Label>
                 <div className="relative">
                   <input
                     id="admin-password"
                     type={showPassword ? "text" : "password"}
-                    required
+                    required={!isEditMode}
                     minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder={isEditMode ? "Leave blank to keep current password" : "••••••••"}
                     className="w-full h-9 pl-3 pr-9 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] shadow-2xs transition-all"
                   />
                   <button
@@ -628,16 +695,18 @@ export default function AddAdminUserDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="admin-confirm-password" className="text-xs font-semibold text-[#696969]">Confirm Password *</Label>
+                <Label htmlFor="admin-confirm-password" className="text-xs font-semibold text-[#696969]">
+                  {isEditMode ? "Confirm New Password" : "Confirm Password *"}
+                </Label>
                 <div className="relative">
                   <input
                     id="admin-confirm-password"
                     type={showConfirmPassword ? "text" : "password"}
-                    required
+                    required={!isEditMode && Boolean(password)}
                     minLength={6}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder={isEditMode ? "Re-enter new password" : "••••••••"}
                     className="w-full h-9 pl-3 pr-9 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] shadow-2xs transition-all"
                   />
                   <button
@@ -653,9 +722,16 @@ export default function AddAdminUserDialog({
 
               {/* Admin Role Selector (Admin only!) */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-[#696969]">Admin Role *</Label>
-                <Select value={selectedRole} onValueChange={(val) => setSelectedRole(val)}>
-                  <SelectTrigger className="w-full h-9 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[#3B3B3B] dark:text-white shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-[#696969]">Admin Role *</Label>
+                  {isTargetProtected && (
+                    <span className="text-[10px] text-neutral-400 font-medium">Default Super Admin cannot change role</span>
+                  )}
+                </div>
+                <Select value={selectedRole} onValueChange={(val) => setSelectedRole(val)} disabled={isTargetProtected}>
+                  <SelectTrigger className="w-full h-9 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[#3B3B3B] dark:text-white shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed">
+                    <SelectValue placeholder="Select Admin Role" />
+                  </SelectTrigger>
                     <SelectValue placeholder="Select Admin Role" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-h-60">
@@ -717,12 +793,12 @@ export default function AddAdminUserDialog({
               {saving ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Creating Account...</span>
+                  <span>{isEditMode ? "Saving Changes..." : "Creating Account..."}</span>
                 </>
               ) : (
                 <>
-                  <UserPlus className="h-3.5 w-3.5" />
-                  <span>Create Admin Account</span>
+                  {isEditMode ? <Check className="h-3.5 w-3.5" /> : <UserPlus className="h-3.5 w-3.5" />}
+                  <span>{isEditMode ? "Save Changes" : "Create Admin Account"}</span>
                 </>
               )}
             </button>

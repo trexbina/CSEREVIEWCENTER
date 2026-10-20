@@ -1,6 +1,6 @@
 // helper to check if admin is logged in
 import { getSession } from "@/lib/auth-session"
-import { ADMIN_ROLES } from "@/lib/auth"
+import { ADMIN_ROLES, isAdminRole } from "@/lib/auth"
 
 // database connection helper
 import pool from "@/lib/db"
@@ -67,6 +67,11 @@ export default async function EditUserPage({ params }) {
   const user = await getUserDetail(userId)
   if (!user) {
     notFound()
+  }
+
+  // Admin profiles can only be edited in Roles and Limitations
+  if (isAdminRole(user.role)) {
+    redirect("/admin/users")
   }
 
   // render the interactive edit user form

@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 
 // helper for creating navigation links
 import Link from "next/link"
+import { isAdminRole } from "@/lib/auth"
 
 // icons for actions and table headers
 import {
@@ -751,23 +752,26 @@ function ActionButtons({ user, currentUserId }) {
   const router = useRouter()
   const isProtectedAdmin = user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001"
   const isSelf = user?.id === currentUserId
+  const isAdmin = isAdminRole(user?.role)
 
   return (
     <TooltipProvider>
       <div className="flex items-center gap-1 h-7">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-[#696969] hover:text-[#3B3B3B] hover:bg-black/5 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-              onClick={() => router.push(`/admin/users/${user.id}/edit`)}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Edit user details</TooltipContent>
-        </Tooltip>
+        {!isAdmin && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-[#696969] hover:text-[#3B3B3B] hover:bg-black/5 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                onClick={() => router.push(`/admin/users/${user.id}/edit`)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Edit user details</TooltipContent>
+          </Tooltip>
+        )}
 
         {!isSelf && !isProtectedAdmin && (
           <Tooltip>

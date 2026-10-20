@@ -6,6 +6,7 @@ import { getSession } from "@/lib/auth-session"
 import { moveToTrash } from "@/lib/trash"
 
 import { generateNextLoginId } from "@/lib/login-id"
+import { isSuperAdmin } from "@/lib/role-permissions"
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 const VALID_ROLES = ["student", "teacher", ...ADMIN_ROLES]
@@ -284,6 +285,15 @@ export async function PUT(request) {
 
     // Protection for default Super Admin account (admin00001 or id=1)
     const isProtectedSuperAdmin = currentUser.login_id?.toLowerCase() === "admin00001" || currentUser.id === 1
+
+    // Permission rule: only Super Admins can edit Super Admin profiles
+    const isTargetSuperAdmin = isProtectedSuperAdmin || currentUser.role === "super_admin" || currentUser.role === "admin"
+    if (isTargetSuperAdmin && !isSuperAdmin(session)) {
+      return NextResponse.json(
+        { error: "Only Super Admins can edit Super Admin profiles." },
+        { status: 403 }
+      )
+    }
 
     let finalRole = role || currentUser.role || "student"
     if (isProtectedSuperAdmin) {

@@ -13,8 +13,10 @@ import {
   Loader2,
   UserPlus,
   RefreshCw,
+  Pencil,
 } from "lucide-react"
 import { toast } from "@/components/ui/toast"
+import AddAdminUserDialog from "./AddAdminUserDialog"
 
 // Built-in standard roles in the system
 const DEFAULT_SYSTEM_ROLES = [
@@ -24,6 +26,15 @@ const DEFAULT_SYSTEM_ROLES = [
   { role_key: "teacher", name: "Teacher" },
   { role_key: "student", name: "Student (Reviewee)" }
 ]
+
+function isSuperAdminUser(user) {
+  if (!user) return false
+  if (user.role === "super_admin" || user.role === "admin") return true
+  if (user.id === 1 || user.userId === 1) return true
+  const loginId = user.login_id || user.loginId
+  if (typeof loginId === "string" && loginId.toLowerCase() === "admin00001") return true
+  return false
+}
 
 export default function RoleUsersDialog({
   isOpen,
@@ -56,7 +67,19 @@ export default function RoleUsersDialog({
     willBeActive: false
   })
 
+  const [currentUser, setCurrentUser] = useState(null)
+  const [editingUser, setEditingUser] = useState(null)
   const [isActionPending, setIsActionPending] = useState(false)
+
+  // Fetch current user session to determine super admin rights
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.user) setCurrentUser(data.user)
+      })
+      .catch(console.error)
+  }, [])
 
   // Fetch users assigned to this role
   const fetchRoleUsers = useCallback(async () => {
@@ -385,6 +408,9 @@ export default function RoleUsersDialog({
                   {filteredUsers.map((user) => {
                     const isActive = user.is_active !== false
                     const isProtectedSuperAdmin = user.login_id?.toLowerCase() === "admin00001" || user.id === 1
+                    const isTargetSuperAdmin = isSuperAdminUser(user)
+                    const isCurrentSuperAdmin = isSuperAdminUser(currentUser)
+                    const canEditThisUser = !isTargetSuperAdmin || isCurrentSuperAdmin
 
                     return (
                       <div
@@ -430,8 +456,27 @@ export default function RoleUsersDialog({
                           </div>
                         </div>
 
-                        {/* Actions: Transfer Role & Disable/Enable */}
+                        {/* Actions: Edit Profile, Transfer Role & Disable/Enable */}
                         <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                          {canEditThisUser ? (
+                            <button
+                              type="button"
+                              onClick={() => setEditingUser(user)}
+                              className="h-8.5 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs active:scale-95"
+                              title="Edit user profile"
+                            >
+                              <Pencil className="size-3.5 text-[#E9C46A]" />
+                              <span>Edit</span>
+                            </button>
+                          ) : (
+                            <span
+                              className="px-2.5 py-1 rounded-xl text-[11px] font-medium text-neutral-400 bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/10 cursor-not-allowed"
+                              title="Only Super Admins can edit Super Admin profiles"
+                            >
+                              Protected
+                            </span>
+                          )}
+
                           {isProtectedSuperAdmin ? (
                             <span
                               className="px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-black/[0.05] dark:bg-white/[0.08] text-neutral-500 dark:text-neutral-400"
@@ -753,6 +798,21 @@ export default function RoleUsersDialog({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Admin User Dialog */}
+      {editingUser && (
+        <AddAdminUserDialog
+          isOpen={Boolean(editingUser)}
+          onClose={() => setEditingUser(null)}
+          roles={allRoles}
+          userToEdit={editingUser}
+          onUserUpdated={async () => {
+            setEditingUser(null)
+            await fetchRoleUsers()
+            if (onRoleUpdated) onRoleUpdated()
+          }}
+        />
       )}
     </div>
   )

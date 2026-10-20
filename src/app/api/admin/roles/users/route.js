@@ -27,17 +27,7 @@ export async function GET(req) {
       const q = `%${search.trim()}%`
       const result = await pool.query(
         `SELECT 
-          u.id, 
-          u.name, 
-          u.first_name, 
-          u.last_name, 
-          u.email, 
-          u.personal_email, 
-          u.login_id, 
-          u.role, 
-          u.is_active, 
-          u.avatar_url, 
-          u.created_at,
+          u.*,
           COALESCE(r.name, u.role) as role_name
         FROM users u
         LEFT JOIN custom_roles r ON r.role_key = u.role
@@ -61,17 +51,7 @@ export async function GET(req) {
     // If role_key is super_admin, also return users with legacy 'admin' role
     const result = await pool.query(
       `SELECT 
-        u.id, 
-        u.name, 
-        u.first_name, 
-        u.last_name, 
-        u.email, 
-        u.personal_email, 
-        u.login_id, 
-        u.role, 
-        u.is_active, 
-        u.avatar_url, 
-        u.created_at,
+        u.*,
         COALESCE(r.name, u.role) as role_name
       FROM users u
       LEFT JOIN custom_roles r ON r.role_key = u.role

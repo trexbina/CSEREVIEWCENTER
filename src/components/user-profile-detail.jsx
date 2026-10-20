@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { isAdminRole } from "@/lib/auth"
 import {
   Calendar, MapPin, GraduationCap, Phone, Mail, User,
   Edit, BarChart3, Clock, ArrowLeft, Loader2, Save, X, BookOpen, AlertCircle,
@@ -333,17 +334,19 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
               Logins: {user.login_count || 1} · Last login: {formatActivityTime(user.last_login_at || user.created_at)}
             </p>
 
-            {/* Minimal Edit Profile button */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#3B3B3B] dark:text-gray-200 hover:text-black dark:hover:text-white bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 rounded-xl border border-black/5 dark:border-white/10 transition-all cursor-pointer shadow-2xs active:scale-95"
-              >
-                <Edit className="size-3.5" />
-                <span>Edit Profile</span>
-              </button>
-            </div>
+            {/* Minimal Edit Profile button (hidden for admin roles; edited in Roles & Limitations) */}
+            {!isAdminRole(user.role) && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#3B3B3B] dark:text-gray-200 hover:text-black dark:hover:text-white bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 rounded-xl border border-black/5 dark:border-white/10 transition-all cursor-pointer shadow-2xs active:scale-95"
+                >
+                  <Edit className="size-3.5" />
+                  <span>Edit Profile</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

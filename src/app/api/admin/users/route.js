@@ -345,6 +345,20 @@ export async function PUT(request) {
     }
     const subEndDateVal = body.subscription_end_date ? body.subscription_end_date : null
 
+    // Check if login_id is taken by another user if updated
+    if (body.login_id) {
+      const existingLogin = await pool.query(
+        "SELECT id FROM users WHERE LOWER(login_id) = $1 AND id != $2",
+        [body.login_id.toLowerCase().trim(), userId]
+      )
+      if (existingLogin.rows.length > 0) {
+        return NextResponse.json(
+          { error: `Login ID "${body.login_id}" is already in use by another user.` },
+          { status: 409 }
+        )
+      }
+    }
+
     if (password?.trim()) {
       const hash = await bcrypt.hash(password.trim(), 10)
       result = await pool.query(
@@ -355,8 +369,11 @@ export async function PUT(request) {
           school = $16, course = $17, year_graduated = $18, highest_education = $19,
           exam_id = $20, batch_id = $21, program_id = $22, major_id = $23, job_role_description = $24,
           school_id = $25, academic_course_id = $26, avatar_url = $27, targets = $28,
-          personal_email = $29, is_active = $30, subscription_end_date = $31
-         WHERE id = $32
+          personal_email = $29, is_active = $30, subscription_end_date = $31,
+          login_id = COALESCE($32, login_id),
+          login_prefix = COALESCE($33, login_prefix),
+          login_number = COALESCE($34, login_number)
+         WHERE id = $35
          RETURNING id, name, email, login_id, login_prefix, login_number, personal_email, role, is_active, subscription_end_date, created_at, avatar_url`,
         [
           name.trim(),
@@ -390,6 +407,9 @@ export async function PUT(request) {
           personal_email?.toLowerCase().trim() || userEmail,
           isActiveVal,
           subEndDateVal,
+          body.login_id?.trim() || null,
+          body.login_prefix?.trim() || null,
+          body.login_number?.trim() || null,
           userId,
         ]
       )
@@ -402,8 +422,11 @@ export async function PUT(request) {
           school = $15, course = $16, year_graduated = $17, highest_education = $18,
           exam_id = $19, batch_id = $20, program_id = $21, major_id = $22, job_role_description = $23,
           school_id = $24, academic_course_id = $25, avatar_url = $26, targets = $27,
-          personal_email = $28, is_active = $29, subscription_end_date = $30
-         WHERE id = $31
+          personal_email = $28, is_active = $29, subscription_end_date = $30,
+          login_id = COALESCE($31, login_id),
+          login_prefix = COALESCE($32, login_prefix),
+          login_number = COALESCE($33, login_number)
+         WHERE id = $34
          RETURNING id, name, email, login_id, login_prefix, login_number, personal_email, role, is_active, subscription_end_date, created_at, avatar_url`,
         [
           name.trim(),
@@ -436,6 +459,9 @@ export async function PUT(request) {
           personal_email?.toLowerCase().trim() || userEmail,
           isActiveVal,
           subEndDateVal,
+          body.login_id?.trim() || null,
+          body.login_prefix?.trim() || null,
+          body.login_number?.trim() || null,
           userId,
         ]
       )

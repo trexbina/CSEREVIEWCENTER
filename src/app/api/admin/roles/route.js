@@ -20,6 +20,10 @@ async function ensureTable() {
     UPDATE custom_roles 
     SET permissions = permissions || '["/admin/settings/security"]'::jsonb
     WHERE role_key = 'super_admin' AND NOT (permissions @> '["/admin/settings/security"]'::jsonb);
+
+    UPDATE custom_roles
+    SET description = 'Full system access and master controls across all features'
+    WHERE role_key = 'super_admin' AND (description IS NULL OR description = '');
   `).catch(console.error)
 }
 

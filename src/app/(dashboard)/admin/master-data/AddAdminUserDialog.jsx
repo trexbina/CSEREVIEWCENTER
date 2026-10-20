@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   User,
   GraduationCap,
@@ -76,6 +76,7 @@ export default function AddAdminUserDialog({
   const [jobRoleDescription, setJobRoleDescription] = useState("")
 
   // ── System State ──
+  const [allAvailableRoles, setAllAvailableRoles] = useState(roles)
   const [dropdownData, setDropdownData] = useState({
     schools: [],
     academic_courses: [],
@@ -83,7 +84,14 @@ export default function AddAdminUserDialog({
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
 
-  // Fetch schools and academic courses dropdown data
+  // Keep allAvailableRoles in sync with props
+  useEffect(() => {
+    if (roles && roles.length > 0) {
+      setAllAvailableRoles(roles)
+    }
+  }, [roles])
+
+  // Fetch fresh roles and master data dropdowns
   useEffect(() => {
     if (isOpen) {
       fetch("/api/admin/master-data/dropdowns")
@@ -94,11 +102,55 @@ export default function AddAdminUserDialog({
               schools: data.schools || [],
               academic_courses: data.academic_courses || [],
             })
+            if (data.roles && Array.isArray(data.roles) && data.roles.length > 0) {
+              setAllAvailableRoles(data.roles)
+            }
+          }
+        })
+        .catch(console.error)
+
+      fetch("/api/admin/roles")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.roles && Array.isArray(data.roles)) {
+            setAllAvailableRoles(data.roles)
           }
         })
         .catch(console.error)
     }
   }, [isOpen])
+
+  // Collect all available administrative roles from Master Data
+  const availableAdminRoles = useMemo(() => {
+    const list = []
+
+    const superAdminRole = allAvailableRoles.find(
+      (r) => r.role_key === "super_admin" || r.role_key === "admin"
+    )
+    list.push({
+      role_key: "super_admin",
+      name: superAdminRole?.name || "Super Admin",
+      description:
+        superAdminRole?.description ||
+        "Full system access and master controls across all features",
+      is_system: true,
+    })
+
+    allAvailableRoles.forEach((r) => {
+      if (!["student", "teacher", "super_admin", "admin"].includes(r.role_key)) {
+        if (!list.some((item) => item.role_key === r.role_key)) {
+          list.push({
+            role_key: r.role_key,
+            name: r.name,
+            description: r.description || "",
+            is_system: Boolean(r.is_system),
+          })
+        }
+      }
+    })
+
+    return list
+  }, [allAvailableRoles])
 
   // Reset or populate form when dialog opens
   useEffect(() => {
@@ -126,8 +178,15 @@ export default function AddAdminUserDialog({
         setConfirmPassword("")
         setShowPassword(false)
         setShowConfirmPassword(false)
-        setSelectedRole(userToEdit.role || "super_admin")
-        setJobRoleDescription(userToEdit.job_role_description || "")
+
+        const normalizedRole = userToEdit.role === "admin" ? "super_admin" : (userToEdit.role || "super_admin")
+        setSelectedRole(normalizedRole)
+
+        const matched = availableAdminRoles.find((r) => r.role_key === normalizedRole)
+        const defaultDesc =
+          matched?.description ||
+          (normalizedRole === "super_admin" ? "Full system access and master controls across all features" : "")
+        setJobRoleDescription(userToEdit.job_role_description || defaultDesc)
         setError("")
         setSaving(false)
       } else {
@@ -153,23 +212,46 @@ export default function AddAdminUserDialog({
         setConfirmPassword("")
         setShowPassword(false)
         setShowConfirmPassword(false)
-        setJobRoleDescription("")
         setError("")
         setSaving(false)
 
-        // Set default selected role
-        const defaultRole = roles.find((r) => r.role_key === "super_admin")?.role_key ||
-          roles.find((r) => !["student", "teacher"].includes(r.role_key))?.role_key ||
-          "super_admin"
+        const defaultRole = availableAdminRoles[0]?.role_key || "super_admin"
         setSelectedRole(defaultRole)
+        setJobRoleDescription(
+          availableAdminRoles[0]?.description || "Full system access and master controls across all features"
+        )
       }
     }
-  }, [isOpen, userToEdit, roles])
+  }, [isOpen, userToEdit, availableAdminRoles])
 
-  // Live preview of the automatic Login ID (only when creating)
+  // Live preview of the automatic Login ID (both create and edit modes)
   useEffect(() => {
-    if (!isOpen || isEditMode) return
+    if (!isOpen) return
+
     const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(" ")
+
+    if (isEditMode && userToEdit) {
+      // In edit mode: dynamically update login ID using surname prefix + user's existing sequence number
+      const seqNumber =
+        userToEdit.login_number ||
+        (userToEdit.login_id ? userToEdit.login_id.replace(/^[^0-9]+/, "") : "00001") ||
+        "00001"
+
+      const rawSurname = (lastName || "").trim()
+      let cleanPrefix = rawSurname.toLowerCase().replace(/[^a-z0-9]/g, "")
+      if (!cleanPrefix && fullName) {
+        const parts = fullName.trim().split(/\s+/)
+        cleanPrefix = (parts[parts.length - 1] || "").toLowerCase().replace(/[^a-z0-9]/g, "")
+      }
+      if (!cleanPrefix) {
+        cleanPrefix = userToEdit.login_prefix || "admin"
+      }
+
+      setLoginIdPreview(`${cleanPrefix}${seqNumber}`)
+      return
+    }
+
+    // Creating new user: fetch next sequence
     const params = new URLSearchParams({
       lastName: lastName || "",
       name: fullName || "",
@@ -183,7 +265,7 @@ export default function AddAdminUserDialog({
         }
       })
       .catch(console.error)
-  }, [isOpen, isEditMode, lastName, firstName, middleName, suffix, selectedRole])
+  }, [isOpen, isEditMode, userToEdit, lastName, firstName, middleName, suffix, selectedRole])
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -258,11 +340,17 @@ export default function AddAdminUserDialog({
       .join(" ")
       .trim()
 
+    const cleanPrefix = loginIdPreview ? loginIdPreview.replace(/[0-9]+$/, "") : ""
+    const seqNumber = loginIdPreview ? loginIdPreview.replace(/^[^0-9]+/, "") : ""
+
     const payload = {
       name: fullName,
       email: personalEmail || undefined,
       personal_email: personalEmail || null,
       role: selectedRole,
+      login_id: loginIdPreview || undefined,
+      login_prefix: cleanPrefix || undefined,
+      login_number: seqNumber || undefined,
       first_name: firstName.trim(),
       middle_name: middleName.trim() || null,
       last_name: lastName.trim(),
@@ -322,17 +410,6 @@ export default function AddAdminUserDialog({
   }
 
   if (!isOpen) return null
-
-  // Collect available admin roles (system defaults + custom roles from Master Data)
-  const systemAdminRoles = [
-    { role_key: "super_admin", name: "Super Admin (System Owner)" },
-    { role_key: "academic_admin", name: "Academic Coordinator (Curriculum & Exams)" },
-    { role_key: "registrar", name: "Registrar (Students & Admissions)" },
-  ]
-
-  const customRoles = roles.filter(
-    (r) => !["super_admin", "academic_admin", "registrar", "student", "teacher", "admin"].includes(r.role_key)
-  )
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
@@ -723,32 +800,26 @@ export default function AddAdminUserDialog({
               {/* Admin Role Selector (Admin only!) */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-[#696969]">Admin Role *</Label>
-                <Select value={selectedRole} onValueChange={(val) => setSelectedRole(val)} disabled={isTargetProtected}>
+                <Select
+                  value={selectedRole}
+                  onValueChange={(val) => {
+                    setSelectedRole(val)
+                    const matched = availableAdminRoles.find((r) => r.role_key === val)
+                    if (matched?.description) {
+                      setJobRoleDescription(matched.description)
+                    }
+                  }}
+                  disabled={isTargetProtected}
+                >
                   <SelectTrigger className="w-full h-9 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[#3B3B3B] dark:text-white shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed">
                     <SelectValue placeholder="Select Admin Role" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-h-60">
-                    <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                      System Roles
-                    </div>
-                    {systemAdminRoles.map((r) => (
+                    {availableAdminRoles.map((r) => (
                       <SelectItem key={r.role_key} value={r.role_key}>
                         {r.name}
                       </SelectItem>
                     ))}
-
-                    {customRoles.length > 0 && (
-                      <>
-                        <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400 border-t border-black/5 dark:border-white/10 mt-1">
-                          Custom Master Data Roles
-                        </div>
-                        {customRoles.map((r) => (
-                          <SelectItem key={r.id || r.role_key} value={r.role_key}>
-                            {r.name}
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -761,7 +832,10 @@ export default function AddAdminUserDialog({
                   type="text"
                   value={jobRoleDescription}
                   onChange={(e) => setJobRoleDescription(e.target.value)}
-                  placeholder="e.g. Lead Coordinator, Admissions Officer"
+                  placeholder={
+                    availableAdminRoles.find((r) => r.role_key === selectedRole)?.description ||
+                    "e.g. Lead Coordinator, Admissions Officer"
+                  }
                   className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] shadow-2xs transition-all"
                 />
               </div>

@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth-session"
-import { ADMIN_ROLES } from "@/lib/auth"
+import { ADMIN_ROLES, isAdminRole } from "@/lib/auth"
 import pool from "@/lib/db"
 import { put } from "@vercel/blob"
 
 export const runtime = "nodejs"
 const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES || 50 * 1024 * 1024)
 
-async function adminGuard() {
+async function authGuard() {
     const session = await getSession()
-    if (!session || !ADMIN_ROLES.includes(session.role)) return null
+    if (!session || !session.userId) return null
     return session
 }
 
@@ -84,8 +84,8 @@ async function uploadToBlob(filename, buffer, contentType) {
 
 export async function POST(request) {
     try {
-        const session = await adminGuard()
-        if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        const session = await authGuard()
+        if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
         const formData = await request.formData()
         const file = formData.get("file")

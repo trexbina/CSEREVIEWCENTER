@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/toast"
+import { compressImage, fileToDataUrl } from "@/lib/image-compression"
 import {
   Tooltip,
   TooltipContent,
@@ -158,20 +159,49 @@ export function EditUserDialog({ open, onOpenChange, user }) {
     if (!file) return
 
     setUploadingAvatar(true)
-    const formData = new FormData()
-    formData.append("file", file)
-
     try {
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: formData,
-      })
-      if (!res.ok) throw new Error("Upload failed")
-      const data = await res.json()
-      setAvatarUrl(data.url)
+      const compressed = await compressImage(file, { maxWidth: 600, maxHeight: 600, quality: 0.85 })
+      const formData = new FormData()
+      formData.append("file", compressed)
+
+      let uploadedUrl = null
+      try {
+        const res = await fetch("/api/user/upload", {
+          method: "POST",
+          body: formData,
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data?.url) uploadedUrl = data.url
+        }
+      } catch (e1) {
+        console.warn("Primary user upload endpoint error, trying fallback...", e1)
+      }
+
+      if (!uploadedUrl) {
+        try {
+          const fallbackRes = await fetch("/api/admin/upload", {
+            method: "POST",
+            body: formData,
+          })
+          if (fallbackRes.ok) {
+            const data = await fallbackRes.json()
+            if (data?.url) uploadedUrl = data.url
+          }
+        } catch (e2) {
+          console.warn("Fallback admin upload endpoint error:", e2)
+        }
+      }
+
+      if (!uploadedUrl) {
+        uploadedUrl = await fileToDataUrl(compressed)
+      }
+
+      setAvatarUrl(uploadedUrl)
+      toast("Profile photo uploaded successfully.")
     } catch (err) {
-      console.error(err)
-      alert("Failed to upload image.")
+      console.error("[Avatar Upload Error]", err)
+      toast("Failed to process image. Please try another photo.")
     } finally {
       setUploadingAvatar(false)
     }
@@ -211,7 +241,11 @@ export function EditUserDialog({ open, onOpenChange, user }) {
       setSchoolId(user.school_id ? user.school_id.toString() : "")
       setAcademicCourseId(user.academic_course_id ? user.academic_course_id.toString() : "")
       setYearGraduated(user.year_graduated || "")
-      setHighestEducation(user.highest_education || "")
+      const edu = user.highest_education || ""
+      if (edu === "bachelor") setHighestEducation("Bachelor's Degree")
+      else if (edu === "master") setHighestEducation("Master's Degree")
+      else if (edu === "doctorate") setHighestEducation("Doctorate Degree")
+      else setHighestEducation(edu)
 
       setExamId(user.exam_id ? user.exam_id.toString() : "")
       setBatchId(user.batch_id ? user.batch_id.toString() : "")
@@ -421,15 +455,12 @@ export function EditUserDialog({ open, onOpenChange, user }) {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label className="text-xs">Highest Education</Label>
-                <Select value={highestEducation || "none"} onValueChange={(val) => setHighestEducation(val === "none" ? "" : val)}>
+                <Select value={highestEducation || ""} onValueChange={(val) => setHighestEducation(val === "none" ? "" : val)}>
                   <SelectTrigger className="w-full"><SelectValue placeholder="Select level" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="high_school">High School</SelectItem>
-                    <SelectItem value="vocational">Vocational / Technical</SelectItem>
-                    <SelectItem value="bachelor">Bachelor&apos;s Degree</SelectItem>
-                    <SelectItem value="master">Master&apos;s Degree</SelectItem>
-                    <SelectItem value="doctorate">Doctorate</SelectItem>
+                    <SelectItem value="Bachelor's Degree">Bachelor&apos;s Degree</SelectItem>
+                    <SelectItem value="Master's Degree">Master&apos;s Degree</SelectItem>
+                    <SelectItem value="Doctorate Degree">Doctorate Degree</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

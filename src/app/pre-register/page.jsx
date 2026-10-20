@@ -535,8 +535,7 @@ export default function PreRegisterPage() {
                           <SelectValue placeholder="Select Highest Education" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Undergraduate">Undergraduate</SelectItem>
-                          <SelectItem value="College Graduate">College Graduate</SelectItem>
+                          <SelectItem value="Bachelor's Degree">Bachelor&apos;s Degree</SelectItem>
                           <SelectItem value="Master's Degree">Master&apos;s Degree</SelectItem>
                           <SelectItem value="Doctorate Degree">Doctorate Degree</SelectItem>
                         </SelectContent>

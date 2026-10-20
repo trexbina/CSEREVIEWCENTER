@@ -361,10 +361,6 @@ export default function RoleUsersDialog({
               Transfer User Here
             </button>
           </div>
-
-          <span className="text-[11px] text-[#696969] dark:text-gray-400 hidden sm:inline-block">
-            {activeTab === "assigned" ? "Click Transfer or Status to modify" : "Search any system account"}
-          </span>
         </div>
 
         {/* Tab 1: Assigned Users */}
@@ -402,9 +398,6 @@ export default function RoleUsersDialog({
                 </div>
               ) : filteredUsers.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                  <div className="size-12 rounded-2xl bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-center justify-center text-neutral-400 mb-3">
-                    <Users className="size-6 opacity-40" />
-                  </div>
                   <h4 className="text-sm font-semibold text-[#3B3B3B] dark:text-white">
                     {search ? "No matching users found" : "No users assigned to this role"}
                   </h4>
@@ -417,9 +410,8 @@ export default function RoleUsersDialog({
                     <button
                       type="button"
                       onClick={() => setActiveTab("assign_new")}
-                      className="mt-4 bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                      className="mt-4 bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
                     >
-                      <UserPlus className="size-3.5" />
                       Transfer a User to this Role
                     </button>
                   )}

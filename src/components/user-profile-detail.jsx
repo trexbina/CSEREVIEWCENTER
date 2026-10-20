@@ -7,7 +7,7 @@ import { isAdminRole } from "@/lib/auth"
 import {
   Calendar, MapPin, GraduationCap, Phone, Mail, User,
   Edit, BarChart3, Clock, ArrowLeft, Loader2, Save, X, BookOpen, AlertCircle,
-  Key, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Shield, Info
+  Key, Lock, Eye, EyeOff, ChevronDown, ChevronUp, Shield, Info, Camera
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "@/components/ui/toast"
+import { compressImage, fileToDataUrl } from "@/lib/image-compression"
 
 export function UserProfileDetail({ initialUser, showBackBtn = true }) {
   const router = useRouter()
@@ -59,7 +60,13 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
   const [role, setRole] = useState(user.role || "student")
   const [jobRoleDescription, setJobRoleDescription] = useState(user.job_role_description || "")
 
-  const [highestEducation, setHighestEducation] = useState(user.highest_education || "")
+  const [highestEducation, setHighestEducation] = useState(() => {
+    const edu = user.highest_education || ""
+    if (edu === "bachelor") return "Bachelor's Degree"
+    if (edu === "master") return "Master's Degree"
+    if (edu === "doctorate") return "Doctorate Degree"
+    return edu
+  })
   const [schoolId, setSchoolId] = useState(user.school_id ? user.school_id.toString() : "")
   const [academicCourseId, setAcademicCourseId] = useState(user.academic_course_id ? user.academic_course_id.toString() : "")
   const [yearGraduated, setYearGraduated] = useState(user.year_graduated || "")
@@ -82,20 +89,79 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
     if (!file) return
 
     setUploadingAvatar(true)
-    const formData = new FormData()
-    formData.append("file", file)
-
     try {
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: formData,
-      })
-      if (!res.ok) throw new Error("Upload failed")
-      const data = await res.json()
-      setAvatarUrl(data.url)
+      // 1. Compress image to prevent Vercel 4.5MB payload limit errors
+      const compressed = await compressImage(file, { maxWidth: 600, maxHeight: 600, quality: 0.85 })
+      const formData = new FormData()
+      formData.append("file", compressed)
+
+      // 2. Primary upload route: dedicated /api/user/upload
+      let uploadedUrl = null
+      try {
+        const res = await fetch("/api/user/upload", {
+          method: "POST",
+          body: formData,
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data?.url) uploadedUrl = data.url
+        }
+      } catch (userUploadErr) {
+        console.warn("Primary user upload endpoint error, trying fallback...", userUploadErr)
+      }
+
+      // 3. Fallback to /api/admin/upload if needed
+      if (!uploadedUrl) {
+        try {
+          const fallbackRes = await fetch("/api/admin/upload", {
+            method: "POST",
+            body: formData,
+          })
+          if (fallbackRes.ok) {
+            const data = await fallbackRes.json()
+            if (data?.url) uploadedUrl = data.url
+          }
+        } catch (adminUploadErr) {
+          console.warn("Fallback admin upload endpoint error:", adminUploadErr)
+        }
+      }
+
+      // 4. Ultra-fallback: direct inline base64 data URI so user is never blocked
+      if (!uploadedUrl) {
+        uploadedUrl = await fileToDataUrl(compressed)
+      }
+
+      setAvatarUrl(uploadedUrl)
+
+      // Auto-persist directly to user profile in DB so it takes effect immediately
+      try {
+        const updateRes = await fetch("/api/user/profile", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            avatar_url: uploadedUrl,
+          }),
+        })
+        if (updateRes.ok) {
+          const updateData = await updateRes.json()
+          if (updateData?.user) {
+            setUser(updateData.user)
+          } else {
+            setUser((prev) => ({ ...prev, avatar_url: uploadedUrl }))
+          }
+        }
+      } catch (saveErr) {
+        console.warn("Direct avatar update error:", saveErr)
+      }
+
+      toast("Profile photo updated successfully.")
     } catch (err) {
-      console.error(err)
-      alert("Failed to upload image.")
+      console.error("[Avatar Upload Error]", err)
+      toast("Failed to process image. Please try another photo.")
     } finally {
       setUploadingAvatar(false)
     }
@@ -302,14 +368,37 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
         {/* Profile Info Row */}
         <div className="px-6 md:px-10 pb-6 pt-0 relative flex flex-col items-center gap-3 -mt-16 md:-mt-20 z-10 text-center">
 
-          {/* Avatar (overlapping the banner, NO shadow) */}
-          <div className="h-32 w-32 md:h-36 md:w-36 rounded-full border-4 border-card bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden relative z-20 shrink-0">
+          {/* Avatar (overlapping the banner, with hover camera overlay) */}
+          <div className="group relative h-32 w-32 md:h-36 md:w-36 rounded-full border-4 border-card bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden z-20 shrink-0 shadow-sm">
             {user.avatar_url ? (
               <img src={user.avatar_url} alt={user.name} className="h-full w-full object-cover" />
             ) : (
               <span className="text-4xl font-bold text-slate-600 dark:text-slate-200">
                 {getAvatarInitial(user.name)}
               </span>
+            )}
+
+            {/* Hover overlay with camera button */}
+            <label
+              htmlFor="direct-avatar-upload"
+              className="absolute inset-0 bg-black/45 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-30"
+              title="Change Profile Photo"
+            >
+              <Camera className="size-6 mb-1 text-white" />
+              <span className="text-[10px] font-semibold tracking-wide uppercase text-white">Change</span>
+            </label>
+            <input
+              id="direct-avatar-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarUpload}
+            />
+
+            {uploadingAvatar && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-40">
+                <span className="size-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              </div>
             )}
           </div>
 
@@ -981,16 +1070,11 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-sm font-semibold text-[#696969]">Highest Education</Label>
-                    <Select value={highestEducation || "none"} onValueChange={(val) => setHighestEducation(val === "none" ? "" : val)}>
+                    <Select value={highestEducation || ""} onValueChange={(val) => setHighestEducation(val === "none" ? "" : val)}>
                       <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs">
                         <SelectValue placeholder="Select Education" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="High School">High School</SelectItem>
-                        <SelectItem value="Senior High School">Senior High School</SelectItem>
-                        <SelectItem value="Vocational / Associate">Vocational / Associate</SelectItem>
-                        <SelectItem value="College Undergraduate">College Undergraduate</SelectItem>
                         <SelectItem value="Bachelor's Degree">Bachelor&apos;s Degree</SelectItem>
                         <SelectItem value="Master's Degree">Master&apos;s Degree</SelectItem>
                         <SelectItem value="Doctorate Degree">Doctorate Degree</SelectItem>

@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { compressImage, fileToDataUrl } from "@/lib/image-compression"
 import {
     Tooltip,
     TooltipContent,
@@ -312,7 +313,13 @@ export default function EditUserForm({ initialUser }) {
     const [schoolId, setSchoolId] = useState(initialUser.school_id ? String(initialUser.school_id) : "")
     const [academicCourseId, setAcademicCourseId] = useState(initialUser.academic_course_id ? String(initialUser.academic_course_id) : "")
     const [yearGraduated, setYearGraduated] = useState(initialUser.year_graduated || "")
-    const [highestEducation, setHighestEducation] = useState(initialUser.highest_education || "")
+    const [highestEducation, setHighestEducation] = useState(() => {
+        const edu = initialUser.highest_education || ""
+        if (edu === "bachelor") return "Bachelor's Degree"
+        if (edu === "master") return "Master's Degree"
+        if (edu === "doctorate") return "Doctorate Degree"
+        return edu
+    })
 
     // ── Master Data ──
     const [examId, setExamId] = useState(initialUser.exam_id ? String(initialUser.exam_id) : "")
@@ -359,20 +366,49 @@ export default function EditUserForm({ initialUser }) {
         if (!file) return
 
         setUploadingAvatar(true)
-        const formData = new FormData()
-        formData.append("file", file)
-
+        setError("")
         try {
-            const res = await fetch("/api/admin/upload", {
-                method: "POST",
-                body: formData,
-            })
-            if (!res.ok) throw new Error("Upload failed")
-            const data = await res.json()
-            setAvatarUrl(data.url)
+            const compressed = await compressImage(file, { maxWidth: 600, maxHeight: 600, quality: 0.85 })
+            const formData = new FormData()
+            formData.append("file", compressed)
+
+            let uploadedUrl = null
+            try {
+                const res = await fetch("/api/user/upload", {
+                    method: "POST",
+                    body: formData,
+                })
+                if (res.ok) {
+                    const data = await res.json()
+                    if (data?.url) uploadedUrl = data.url
+                }
+            } catch (e1) {
+                console.warn("Primary user upload endpoint error, trying fallback...", e1)
+            }
+
+            if (!uploadedUrl) {
+                try {
+                    const fallbackRes = await fetch("/api/admin/upload", {
+                        method: "POST",
+                        body: formData,
+                    })
+                    if (fallbackRes.ok) {
+                        const data = await fallbackRes.json()
+                        if (data?.url) uploadedUrl = data.url
+                    }
+                } catch (e2) {
+                    console.warn("Fallback admin upload endpoint error:", e2)
+                }
+            }
+
+            if (!uploadedUrl) {
+                uploadedUrl = await fileToDataUrl(compressed)
+            }
+
+            setAvatarUrl(uploadedUrl)
         } catch (err) {
-            console.error(err)
-            setError("Failed to upload avatar image.")
+            console.error("[Avatar Upload Error]", err)
+            setError("Failed to upload avatar image. Please try another photo.")
         } finally {
             setUploadingAvatar(false)
         }
@@ -629,16 +665,11 @@ export default function EditUserForm({ initialUser }) {
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-sm font-semibold text-[#696969]">Highest Education</Label>
-                            <Select value={highestEducation || "none"} onValueChange={(val) => setHighestEducation(val === "none" ? "" : val)}>
+                            <Select value={highestEducation || ""} onValueChange={(val) => setHighestEducation(val === "none" ? "" : val)}>
                                 <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Education" /></SelectTrigger>
                                 <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                                    <SelectItem value="none">None</SelectItem>
-                                    <SelectItem value="High School">High School</SelectItem>
-                                    <SelectItem value="Senior High School">Senior High School</SelectItem>
-                                    <SelectItem value="Vocational / Associate">Vocational / Associate</SelectItem>
-                                    <SelectItem value="College Undergraduate">College Undergraduate</SelectItem>
-                                    <SelectItem value="Bachelor's Degree">Bachelor's Degree</SelectItem>
-                                    <SelectItem value="Master's Degree">Master's Degree</SelectItem>
+                                    <SelectItem value="Bachelor's Degree">Bachelor&apos;s Degree</SelectItem>
+                                    <SelectItem value="Master's Degree">Master&apos;s Degree</SelectItem>
                                     <SelectItem value="Doctorate Degree">Doctorate Degree</SelectItem>
                                 </SelectContent>
                             </Select>

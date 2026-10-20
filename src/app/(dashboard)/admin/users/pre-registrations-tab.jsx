@@ -142,7 +142,7 @@ export function PreRegistrationsTab() {
       academic_course_id: app.academic_course_id ? app.academic_course_id.toString() : "",
       course: app.course || "",
       year_graduated: app.year_graduated || "",
-      highest_education: app.highest_education || "",
+      highest_education: app.highest_education === "College Graduate" ? "Bachelor's Degree" : (app.highest_education || ""),
       exam_id: app.exam_id ? app.exam_id.toString() : "",
       program_id: app.program_id ? app.program_id.toString() : "",
       major_id: app.major_id ? app.major_id.toString() : "",
@@ -849,9 +849,8 @@ export function PreRegistrationsTab() {
                           <SelectValue placeholder="Select Education" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-black/10 dark:border-white/10">
-                          <SelectItem value="College Graduate">College Graduate</SelectItem>
-                          <SelectItem value="College Undergraduate">College Undergraduate</SelectItem>
-                          <SelectItem value="Master's Degree">Master's Degree</SelectItem>
+                          <SelectItem value="Bachelor's Degree">Bachelor&apos;s Degree</SelectItem>
+                          <SelectItem value="Master's Degree">Master&apos;s Degree</SelectItem>
                           <SelectItem value="Doctorate Degree">Doctorate Degree</SelectItem>
                         </SelectContent>
                       </Select>

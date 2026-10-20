@@ -47,7 +47,9 @@ export async function GET(request, props) {
         const filename = row.filename || "image.png"
         const contentType = row.content_type || "image/png"
 
-        return new Response(row.data, {
+        const fileBuffer = Buffer.isBuffer(row.data) ? new Uint8Array(row.data) : row.data
+
+        return new Response(fileBuffer, {
             headers: {
                 "Content-Type": contentType,
                 "Content-Disposition": `inline; filename="${filename}"`,

@@ -19,15 +19,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Pencil,
-  LayoutDashboard,
-  CreditCard,
-  BookOpen,
-  FileText,
-  Database,
-  BarChart3,
-  Trash2,
-  ShieldCheck,
+  Pencil
 } from "lucide-react"
 import {
   Table,
@@ -47,61 +39,51 @@ export const DASHBOARD_MODULES = [
   {
     path: "/admin",
     name: "Admin Dashboard",
-    icon: LayoutDashboard,
     description: "System overview, active users, and statistics"
   },
   {
     path: "/admin/users",
     name: "User Management",
-    icon: Users,
     description: "Manage students, teachers, and staff accounts"
   },
   {
     path: "/admin/subscriptions",
     name: "Subscriptions & Terms",
-    icon: CreditCard,
     description: "View student access periods and batch dates"
   },
   {
     path: "/admin/curriculum",
     name: "Curriculum Manager",
-    icon: BookOpen,
     description: "Manage exam programs, subjects, and topics"
   },
   {
     path: "/admin/mock-exams",
     name: "Mock Exams",
-    icon: FileText,
     description: "Create, schedule, and review mock exams"
   },
   {
     path: "/admin/master-data",
     name: "Master Data",
-    icon: Database,
     description: "Manage board exams, batches, and schools"
   },
   {
     path: "/admin/analytical-overview",
     name: "Analytical Overview",
-    icon: BarChart3,
     description: "View student performance reports and charts"
   },
   {
     path: "/admin/trash",
     name: "Trash & Recovery",
-    icon: Trash2,
     description: "Restore or permanently delete removed items"
   },
   {
     path: "/admin/settings",
     name: "Settings",
-    icon: Settings,
     description: "Manage general preferences and account passwords"
   },
   {
     path: "/admin/settings/security",
     name: "Security & Policies",
-    icon: ShieldCheck,
     description: "View active sessions, audit logs, and security"
   }
 ]
@@ -124,15 +106,15 @@ export function hasFullModuleAccess(role) {
   return hasAllDashboard && hasRoles
 }
 
-// Minimal, clean module row item (no heavy bordered box)
-function MinimalModuleRow({ checked, onChange, label, icon: Icon }) {
+// Minimal, clean module row item (no gray background)
+function MinimalModuleRow({ checked, onChange, label }) {
   return (
     <div
       onClick={onChange}
-      className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all cursor-pointer select-none group text-left ${
+      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors cursor-pointer select-none group text-left ${
         checked
-          ? "bg-black/[0.035] dark:bg-white/[0.06] text-[#3B3B3B] dark:text-white"
-          : "hover:bg-black/[0.02] dark:hover:bg-white/[0.03] text-neutral-500 dark:text-neutral-400 hover:text-[#3B3B3B] dark:hover:text-white"
+          ? "text-[#3B3B3B] dark:text-white"
+          : "text-neutral-500 dark:text-neutral-400 hover:text-[#3B3B3B] dark:hover:text-white"
       }`}
     >
       <div
@@ -144,15 +126,6 @@ function MinimalModuleRow({ checked, onChange, label, icon: Icon }) {
       >
         {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
       </div>
-      {Icon && (
-        <Icon
-          className={`size-3.5 shrink-0 transition-colors ${
-            checked
-              ? "text-[#a07415] dark:text-[#E9C46A]"
-              : "text-neutral-400 dark:text-neutral-500 group-hover:text-neutral-600 dark:group-hover:text-neutral-300"
-          }`}
-        />
-      )}
       <span className="text-xs font-medium truncate flex-1 leading-none">{label}</span>
     </div>
   )
@@ -293,15 +266,14 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
               </button>
             </div>
 
-            {/* Seamless 2-Column Module Panel without heavy individual borders */}
-            <div className="rounded-2xl p-1.5 bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-0.5">
+            {/* Seamless 2-Column Module Panel without gray background */}
+            <div className="rounded-2xl p-2 border border-black/5 dark:border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-1">
               {DASHBOARD_MODULES.map((mod) => (
                 <MinimalModuleRow
                   key={mod.path}
                   checked={selectedPerms.includes(mod.path)}
                   onChange={() => togglePermission(mod.path)}
                   label={mod.name}
-                  icon={mod.icon}
                 />
               ))}
             </div>

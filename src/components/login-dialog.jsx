@@ -115,21 +115,18 @@ function LoginFormInner({ initialMode = "login" }) {
   /* ---------------- Forgot Password View ---------------- */
   if (mode === "forgot") {
     return (
-      <div className="p-1 sm:p-2 space-y-5">
+      <div className="space-y-5">
         {/* Header */}
-        <div className="flex flex-col items-center text-center space-y-2">
-          <div className="size-11 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center p-2 shadow-2xs">
-            <Mail className="size-5 text-[#E9C46A]" />
-          </div>
-          <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+        <div className="flex flex-col items-center text-center space-y-1.5 pt-1">
+          <DialogTitle className="text-xl font-bold tracking-tight text-[#1E1E1E] dark:text-white">
             Forgot Password
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground max-w-xs">
-            Enter your user account to receive a secure password reset link at your registered email address.
+          <DialogDescription className="text-xs text-[#696969] dark:text-gray-400 max-w-[280px] leading-relaxed">
+            Enter your Login ID to receive a secure password reset link at your registered email address.
           </DialogDescription>
         </div>
 
-        {/* Error message (displays 'invalid Contact Admin to change password' if admin username entered) */}
+        {/* Error message */}
         {forgotError && (
           <div className="rounded-xl bg-destructive/10 p-3 text-xs text-destructive text-center border border-destructive/20 font-medium animate-in fade-in duration-200 flex items-center justify-center gap-2">
             <ShieldAlert className="size-4 shrink-0" />
@@ -139,7 +136,7 @@ function LoginFormInner({ initialMode = "login" }) {
 
         {/* Success message */}
         {forgotSuccess ? (
-          <div className="space-y-5 text-center animate-in fade-in zoom-in-95 duration-200">
+          <div className="space-y-4 text-center animate-in fade-in zoom-in-95 duration-200">
             <div className="rounded-xl bg-emerald-500/10 p-4 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-400 font-medium leading-relaxed flex flex-col items-center space-y-2">
               <CheckCircle2 className="size-6 text-emerald-600 dark:text-emerald-400" />
               <p>{forgotSuccess}</p>
@@ -150,7 +147,7 @@ function LoginFormInner({ initialMode = "login" }) {
                 setForgotSuccess("")
                 setMode("login")
               }}
-              className="w-full h-10 bg-[#E9C46A] text-slate-900 font-bold text-xs rounded-xl shadow-xs hover:bg-[#dfb758] cursor-pointer"
+              className="w-full h-10.5 bg-[#E9C46A] hover:bg-[#deb454] text-[#1E1E1E] font-bold text-xs uppercase tracking-wider rounded-xl shadow-2xs transition-all active:scale-[0.99] cursor-pointer"
             >
               Back to Sign In
             </Button>
@@ -158,27 +155,23 @@ function LoginFormInner({ initialMode = "login" }) {
         ) : (
           <form onSubmit={handleForgotSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="forgot-identifier" className="text-xs font-semibold text-foreground">
-                User Account (Username / Login ID)
+              <Label htmlFor="forgot-identifier" className="text-xs font-semibold text-[#3B3B3B] dark:text-gray-300">
+                Login ID / Username
               </Label>
               <Input
                 id="forgot-identifier"
                 type="text"
                 required
                 autoComplete="username"
-                placeholder="e.g. dianalan00002 or email@example.com"
                 value={forgotIdentifier}
                 onChange={(e) => setForgotIdentifier(e.target.value)}
-                className="h-10 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-background/50 focus-visible:ring-1 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-600 focus-visible:border-slate-400 dark:focus-visible:border-slate-500 transition-all px-3.5"
+                className="h-10.5 text-xs sm:text-sm rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-3.5 text-[#1E1E1E] dark:text-white focus-visible:ring-1.5 focus-visible:ring-[#E9C46A] focus-visible:border-[#E9C46A] transition-all shadow-2xs"
               />
-              <p className="text-[11px] text-muted-foreground">
-                We will look up your registered email and send a secure reset link.
-              </p>
             </div>
 
             <Button
               type="submit"
-              className="w-full h-10 bg-[#E9C46A] text-slate-900 font-bold text-xs rounded-xl shadow-xs mt-2 transition-opacity duration-200 hover:opacity-85 hover:bg-[#E9C46A] active:opacity-75 cursor-pointer"
+              className="w-full h-10.5 bg-[#E9C46A] hover:bg-[#deb454] text-[#1E1E1E] font-bold text-xs uppercase tracking-wider rounded-xl shadow-2xs mt-2 transition-all active:scale-[0.99] cursor-pointer"
               disabled={forgotLoading || !forgotIdentifier.trim()}
             >
               {forgotLoading ? (
@@ -198,10 +191,10 @@ function LoginFormInner({ initialMode = "login" }) {
                   setForgotError("")
                   setMode("login")
                 }}
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs text-[#696969] hover:text-[#1E1E1E] dark:text-gray-400 dark:hover:text-white font-medium transition-colors cursor-pointer"
               >
                 <ArrowLeft className="size-3.5" />
-                Back to Sign In
+                <span>Back to Sign In</span>
               </button>
             </div>
           </form>
@@ -212,17 +205,17 @@ function LoginFormInner({ initialMode = "login" }) {
 
   /* ---------------- Standard Login View ---------------- */
   return (
-    <div className="p-1 sm:p-2">
+    <div>
       {/* Header with Logo */}
-      <div className="flex flex-col items-center text-center space-y-2 mb-6">
-        <div className="size-11 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-800 flex items-center justify-center p-2 shadow-2xs">
+      <div className="flex flex-col items-center text-center space-y-1 mb-5">
+        <div className="size-10 flex items-center justify-center p-1 mb-1">
           <img
             src="/landingpageassets/logo.png"
             alt="Peak Excellence"
             className="h-full w-full object-contain"
           />
         </div>
-        <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+        <DialogTitle className="text-xl font-bold tracking-tight text-[#1E1E1E] dark:text-white">
           Sign In
         </DialogTitle>
         <DialogDescription className="sr-only">
@@ -231,14 +224,14 @@ function LoginFormInner({ initialMode = "login" }) {
       </div>
 
       {error && (
-        <div className="rounded-xl bg-destructive/10 p-3 text-xs text-destructive text-center mb-5 border border-destructive/20 font-medium animate-in fade-in duration-200">
+        <div className="rounded-xl bg-destructive/10 p-3 text-xs text-destructive text-center mb-4 border border-destructive/20 font-medium animate-in fade-in duration-200">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleLoginSubmit} className="space-y-4">
+      <form onSubmit={handleLoginSubmit} className="space-y-3.5">
         <div className="space-y-1.5">
-          <Label htmlFor="login-id" className="text-xs font-semibold text-foreground">
+          <Label htmlFor="login-id" className="text-xs font-semibold text-[#3B3B3B] dark:text-gray-300">
             Login ID
           </Label>
           <Input
@@ -246,44 +239,30 @@ function LoginFormInner({ initialMode = "login" }) {
             type="text"
             required
             autoComplete="username"
-            placeholder="e.g. dianalan00002"
             value={loginId}
             onChange={(e) => setLoginId(e.target.value)}
-            className="h-10 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-background/50 focus-visible:ring-1 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-600 focus-visible:border-slate-400 dark:focus-visible:border-slate-500 transition-all px-3.5"
+            className="h-10.5 text-xs sm:text-sm rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-3.5 text-[#1E1E1E] dark:text-white focus-visible:ring-1.5 focus-visible:ring-[#E9C46A] focus-visible:border-[#E9C46A] transition-all shadow-2xs"
           />
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-xs font-semibold text-foreground">
-              Password
-            </Label>
-            <button
-              type="button"
-              onClick={() => {
-                setError("")
-                setMode("forgot")
-              }}
-              className="text-[11px] text-[#b38a2e] dark:text-[#E9C46A] hover:underline font-medium cursor-pointer"
-            >
-              Forgot password?
-            </button>
-          </div>
+          <Label htmlFor="password" className="text-xs font-semibold text-[#3B3B3B] dark:text-gray-300">
+            Password
+          </Label>
           <div className="relative">
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
               required
               autoComplete="current-password"
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-10 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-background/50 focus-visible:ring-1 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-600 focus-visible:border-slate-400 dark:focus-visible:border-slate-500 transition-all pl-3.5 pr-10"
+              className="h-10.5 text-xs sm:text-sm rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] pl-3.5 pr-10 text-[#1E1E1E] dark:text-white focus-visible:ring-1.5 focus-visible:ring-[#E9C46A] focus-visible:border-[#E9C46A] transition-all shadow-2xs"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
               tabIndex={-1}
               title={showPassword ? "Hide password" : "Show password"}
             >
@@ -298,7 +277,7 @@ function LoginFormInner({ initialMode = "login" }) {
 
         <Button
           type="submit"
-          className="w-full h-10 bg-[#E9C46A] text-slate-900 font-bold text-xs rounded-xl shadow-xs mt-2 transition-opacity duration-200 hover:opacity-85 hover:bg-[#E9C46A] active:opacity-75 cursor-pointer"
+          className="w-full h-10.5 bg-[#E9C46A] hover:bg-[#deb454] text-[#1E1E1E] font-bold text-xs uppercase tracking-wider rounded-xl shadow-2xs mt-2 transition-all active:scale-[0.99] cursor-pointer"
           disabled={loading}
         >
           {loading ? (
@@ -312,8 +291,8 @@ function LoginFormInner({ initialMode = "login" }) {
         </Button>
       </form>
 
-      <div className="mt-6 pt-4 border-t border-border/50 text-center space-y-2">
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
+      <div className="mt-5 pt-3.5 border-t border-black/5 dark:border-white/5 text-center">
+        <p className="text-xs text-[#696969] dark:text-gray-400">
           Forgot your password?{" "}
           <button
             type="button"
@@ -321,9 +300,9 @@ function LoginFormInner({ initialMode = "login" }) {
               setError("")
               setMode("forgot")
             }}
-            className="text-[#b38a2e] dark:text-[#E9C46A] hover:underline font-semibold cursor-pointer"
+            className="font-semibold text-[#b38a2e] dark:text-[#E9C46A] hover:underline cursor-pointer ml-0.5"
           >
-            Reset it here
+            Reset it
           </button>
         </p>
       </div>
@@ -347,7 +326,7 @@ function LoginDialogInner({ children, defaultOpen = false, initialMode = "login"
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[400px] p-6 bg-card border border-border/80 shadow-2xl rounded-2xl">
+      <DialogContent className="sm:max-w-[380px] p-6 sm:p-7 bg-white dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 shadow-2xl rounded-2xl">
         <LoginFormInner initialMode={effectiveMode} />
       </DialogContent>
     </Dialog>

@@ -784,13 +784,8 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                         className="h-13 hover:bg-black/[0.025] dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
                       >
                         <td className="px-4 py-2.5 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-[13px] text-[#3B3B3B] dark:text-gray-100">
-                              {role.name}
-                            </span>
-                          </div>
-                          <span className="text-[11px] text-neutral-400 dark:text-neutral-500 font-mono block mt-0.5">
-                            {role.role_key}
+                          <span className="font-medium text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                            {role.name}
                           </span>
                         </td>
 

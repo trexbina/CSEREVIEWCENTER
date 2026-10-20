@@ -38,52 +38,52 @@ export const DASHBOARD_MODULES = [
   {
     path: "/admin",
     name: "Admin Dashboard",
-    description: "System overview, live status and global statistics"
+    description: "System overview, active users, and statistics"
   },
   {
     path: "/admin/users",
     name: "User Management",
-    description: "Manage students, teachers, administrators, and admissions"
+    description: "Manage students, teachers, and staff accounts"
   },
   {
     path: "/admin/subscriptions",
     name: "Subscriptions & Terms",
-    description: "Monitor scheduled batch deadlines, active reviewee access, and renewals"
+    description: "View student access periods and batch dates"
   },
   {
     path: "/admin/curriculum",
     name: "Curriculum Manager",
-    description: "Manage examination programs, subjects, and study modules"
+    description: "Manage exam programs, subjects, and topics"
   },
   {
     path: "/admin/mock-exams",
     name: "Mock Exams",
-    description: "Create, schedule, and grade mock exams"
+    description: "Create, schedule, and review mock exams"
   },
   {
     path: "/admin/master-data",
-    name: "Master Data (Academic)",
-    description: "Manage board exams, batches, schools, and gradebooks"
+    name: "Master Data",
+    description: "Manage board exams, batches, and schools"
   },
   {
     path: "/admin/analytical-overview",
     name: "Analytical Overview",
-    description: "Performance reports, exam charts, and cohort analytics"
+    description: "View student performance reports and charts"
   },
   {
     path: "/admin/trash",
     name: "Trash & Recovery",
-    description: "Recycle bin and item restoration manager"
+    description: "Restore or permanently delete removed items"
   },
   {
     path: "/admin/settings",
     name: "Settings",
-    description: "General theme preferences and account password settings"
+    description: "Manage general preferences and account passwords"
   },
   {
     path: "/admin/settings/security",
-    name: "Security & Access Policies",
-    description: "Session monitoring, audit & auth logs, and watermark policies in Settings"
+    name: "Security & Policies",
+    description: "View active sessions, audit logs, and security"
   }
 ]
 
@@ -196,10 +196,10 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
         <div className="flex justify-between items-center pb-3 border-b border-black/5 dark:border-white/10 shrink-0">
           <div>
             <h3 className="font-bold text-[#3B3B3B] dark:text-white text-sm sm:text-base tracking-tight">
-              {isEdit ? "Configure Role & Restrictions" : "Add New Role"}
+              {isEdit ? "Configure Role & Permissions" : "Add New Role"}
             </h3>
             <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
-              Set role title and check the dashboard modules this role can access.
+              Set role title and choose which pages this role can access.
             </p>
           </div>
           <button
@@ -237,7 +237,7 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
               className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] transition-all"
               value={roleForm.description || ""}
               onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })}
-              placeholder="Brief description of responsibilities and scope"
+              placeholder="Short description of this role"
             />
           </div>
 
@@ -245,7 +245,7 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
           <div className="space-y-2.5 pt-2 border-t border-black/5 dark:border-white/10">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-[#696969]">
-                Dashboard Permissions ({selectedPerms.filter((p) => allRegularPaths.includes(p)).length}/{DASHBOARD_MODULES.length})
+                Dashboard Pages ({selectedPerms.filter((p) => allRegularPaths.includes(p)).length}/{DASHBOARD_MODULES.length})
               </label>
               <button
                 type="button"
@@ -272,13 +272,13 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
             <div className="pt-3 border-t border-black/5 dark:border-white/10 space-y-2">
               <label className="text-xs font-semibold text-[#696969] flex items-center gap-1.5">
                 <Shield className="size-3.5 text-[#E9C46A]" />
-                <span>Administrative Access Control</span>
+                <span>Admin Access Control</span>
               </label>
               <NeutralCheckbox
                 checked={hasRolesPerm}
                 onChange={toggleRolesPerm}
-                label="Roles & Limitation Management"
-                description="Authorizes configuring roles, restrictions, and managing admin permissions."
+                label="Manage Roles & Permissions"
+                description="Allow creating, editing, and assigning admin roles."
               />
             </div>
           </div>

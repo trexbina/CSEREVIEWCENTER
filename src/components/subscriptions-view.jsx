@@ -1,8 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
-import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle, Filter, ArrowRightLeft, ArrowUpDown, ArrowUp, ArrowDown, UserX } from "lucide-react"
-import { LordIcon } from "@/components/ui/lord-icon"
+import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle, Filter, ArrowRightLeft, ArrowUpDown, ArrowUp, ArrowDown, UserX, UserCheck } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 import {
   Select,
@@ -164,13 +163,6 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
     endDate: ""
   })
   const [savingBatchSubscription, setSavingBatchSubscription] = useState(false)
-
-  // Modal state for deactivating student account
-  const [deactivateModal, setDeactivateModal] = useState({
-    isOpen: false,
-    student: null
-  })
-  const [deactivating, setDeactivating] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -556,29 +548,25 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
     }
   }
 
-  const handleConfirmDeactivate = async () => {
-    if (!deactivateModal.student) return
-    setDeactivating(true)
+  const handleDeactivate = async (studentId, studentName) => {
     try {
       const res = await fetch("/api/admin/subscriptions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "DEACTIVATE_STUDENT",
-          studentId: deactivateModal.student.id
+          studentId
         })
       })
       if (res.ok) {
-        toast(`Account for ${deactivateModal.student.name} deactivated.`)
-        setDeactivateModal({ isOpen: false, student: null })
+        toast(`Account for ${studentName} deactivated.`)
         fetchData()
       } else {
-        toast("Failed to deactivate account.")
+        const errData = await res.json().catch(() => ({}))
+        toast(errData.error || "Failed to deactivate account.")
       }
     } catch {
       toast("Error deactivating account.")
-    } finally {
-      setDeactivating(false)
     }
   }
 
@@ -595,129 +583,73 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
 
   return (
     <div className="space-y-6">
-      {/* ── Top-Level Metric Summary Cards (4-Column Grid styled like Analytical Overview) ── */}
+      {/* ── Top-Level Metric Summary Cards (Non-pressable, no hover) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {/* Card 1: Total */}
-        <div
-          onClick={() => {
-            setStatusFilter("all")
-            setStudentPage(1)
-            setBatchPage(1)
-          }}
-          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer ${
-            statusFilter === "all" ? "ring-2 ring-black/15 dark:ring-white/20" : ""
-          }`}
-        >
+        <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
           <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
             <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
               {currentMetrics.totalLabel}
             </span>
           </div>
-          <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(currentMetrics.totalCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
-                {currentMetrics.totalSubtext}
-              </p>
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+              {Number(currentMetrics.totalCount || 0).toLocaleString()}
             </div>
-            <div className="shrink-0 opacity-80">
-              <LordIcon src="/icons/sidebar/users.json" size={38} trigger="loop" />
-            </div>
+            <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+              {currentMetrics.totalSubtext}
+            </p>
           </div>
         </div>
 
         {/* Card 2: Active */}
-        <div
-          onClick={() => {
-            setStatusFilter(statusFilter === "active" ? "all" : "active")
-            setStudentPage(1)
-            setBatchPage(1)
-          }}
-          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer ${
-            statusFilter === "active" ? "ring-2 ring-emerald-500/40" : ""
-          }`}
-        >
+        <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
           <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#2A9D8F]/20 dark:bg-[#2A9D8F]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
             <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
               {currentMetrics.activeLabel}
             </span>
           </div>
-          <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(currentMetrics.activeCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
-                {currentMetrics.activeSubtext}
-              </p>
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+              {Number(currentMetrics.activeCount || 0).toLocaleString()}
             </div>
-            <div className="shrink-0 opacity-80">
-              <LordIcon src="/icons/instantresults.json" size={38} trigger="loop" />
-            </div>
+            <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+              {currentMetrics.activeSubtext}
+            </p>
           </div>
         </div>
 
         {/* Card 3: Expiring Soon */}
-        <div
-          onClick={() => {
-            setStatusFilter(statusFilter === "expiring" ? "all" : "expiring")
-            setStudentPage(1)
-            setBatchPage(1)
-          }}
-          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer ${
-            statusFilter === "expiring" ? "ring-2 ring-amber-500/40" : ""
-          }`}
-        >
+        <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
           <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E17055]/20 dark:bg-[#E17055]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
             <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
               {currentMetrics.expiringLabel}
             </span>
           </div>
-          <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(currentMetrics.expiringCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
-                {currentMetrics.expiringSubtext}
-              </p>
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+              {Number(currentMetrics.expiringCount || 0).toLocaleString()}
             </div>
-            <div className="shrink-0 opacity-80">
-              <LordIcon src="/icons/sidebar/calendar.json" size={38} trigger="loop" />
-            </div>
+            <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+              {currentMetrics.expiringSubtext}
+            </p>
           </div>
         </div>
 
         {/* Card 4: Expired */}
-        <div
-          onClick={() => {
-            setStatusFilter(statusFilter === "expired" ? "all" : "expired")
-            setStudentPage(1)
-            setBatchPage(1)
-          }}
-          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer ${
-            statusFilter === "expired" ? "ring-2 ring-blue-500/40" : ""
-          }`}
-        >
+        <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
           <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#3B82F6]/20 dark:bg-[#3B82F6]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
             <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
               {currentMetrics.expiredLabel}
             </span>
           </div>
-          <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(currentMetrics.expiredCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
-                {currentMetrics.expiredSubtext}
-              </p>
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+              {Number(currentMetrics.expiredCount || 0).toLocaleString()}
             </div>
-            <div className="shrink-0 opacity-80">
-              <LordIcon src="/icons/sidebar/layers.json" size={38} trigger="loop" />
-            </div>
+            <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+              {currentMetrics.expiredSubtext}
+            </p>
           </div>
         </div>
       </div>
@@ -1071,7 +1003,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                       <TableSortButton label="Remaining Term" field="days_remaining" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="number" />
                     </th>
                     <th className="px-4 py-2.5 font-semibold text-left" scope="col">
-                      Status
+                      <TableSortButton label="Status" field="status" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="alpha" />
                     </th>
                     <th className="px-4 py-2.5 text-right font-semibold pr-6" scope="col">
                       Actions
@@ -1104,7 +1036,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                         : "No scheduled end"
 
                       return (
-                        <tr key={student.id} className="h-13">
+                        <tr key={student.id} className="h-13 transition-colors">
                           {/* Rank */}
                           <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
                             {displayRank}
@@ -1175,22 +1107,22 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                             )}
                           </td>
 
-                          {/* Status Pill Badge matching system design */}
+                          {/* Status Pill Badge (Borderless soft pastel) */}
                           <td className="px-4 py-2.5 text-left text-xs">
                             {student.is_active === false ? (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-rose-600 dark:text-rose-400">
+                              <span className="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs font-medium bg-[#fbe3e3] text-[#a82a2a] dark:bg-rose-950/50 dark:text-rose-300">
                                 Disabled
                               </span>
                             ) : isExpired ? (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-400">
+                              <span className="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs font-medium bg-[#eef0f2] text-[#696969] dark:bg-white/10 dark:text-neutral-400">
                                 Term Completed
                               </span>
                             ) : isExpiring ? (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-[#C07028] dark:text-[#D48946]">
+                              <span className="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs font-medium bg-[#faeed9] text-[#935914] dark:bg-amber-950/50 dark:text-amber-300">
                                 Expiring Soon
                               </span>
                             ) : (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-emerald-700 dark:text-emerald-400">
+                              <span className="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs font-medium bg-[#dcefe9] text-[#1b5e52] dark:bg-[#2A9D8F]/25 dark:text-[#5fe0b9]">
                                 Active
                               </span>
                             )}
@@ -1199,6 +1131,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                           {/* Actions */}
                           <td className="px-4 py-2.5 text-right pr-6">
                             <div className="flex items-center justify-end gap-1">
+                              {/* Move Batch Button */}
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -1214,13 +1147,14 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                                 </Tooltip>
                               </TooltipProvider>
 
+                              {/* Deactivate / Reactivate Account Button (matching move batch style) */}
                               {student.is_active !== false ? (
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <button
-                                        onClick={() => setDeactivateModal({ isOpen: true, student })}
-                                        className="size-8 rounded-lg flex items-center justify-center text-rose-500/80 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                                        onClick={() => handleDeactivate(student.id, student.name)}
+                                        className="size-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                                         aria-label="Deactivate Account"
                                       >
                                         <UserX className="size-3.5" />
@@ -1230,12 +1164,20 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                                   </Tooltip>
                                 </TooltipProvider>
                               ) : (
-                                <button
-                                  onClick={() => handleReactivate(student.id, student.name)}
-                                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-neutral-200 hover:bg-neutral-300 dark:bg-white/15 dark:hover:bg-white/25 text-neutral-800 dark:text-white transition-colors cursor-pointer ml-1"
-                                >
-                                  Enable
-                                </button>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button
+                                        onClick={() => handleReactivate(student.id, student.name)}
+                                        className="size-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                        aria-label="Reactivate Account"
+                                      >
+                                        <UserCheck className="size-3.5" />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Reactivate Account</TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               )}
                             </div>
                           </td>
@@ -1292,7 +1234,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                       <TableSortButton label="Scheduled End Date" field="end_date" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="date" />
                     </th>
                     <th className="px-4 py-2.5 font-semibold text-left" scope="col">
-                      Status
+                      <TableSortButton label="Status" field="status" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="alpha" />
                     </th>
                     <th className="px-4 py-2.5 text-right font-semibold pr-6" scope="col">
                       Actions
@@ -1315,7 +1257,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                       const isPast = batch.end_date ? new Date(batch.end_date) < new Date(new Date().setHours(0,0,0,0)) : false
 
                       return (
-                        <tr key={batch.id} className="h-13">
+                        <tr key={batch.id} className="h-13 transition-colors">
                           {/* Rank */}
                           <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
                             {displayRank}
@@ -1354,18 +1296,18 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                             )}
                           </td>
 
-                          {/* Status Pill Badge matching system design */}
+                          {/* Status Pill Badge (Borderless soft pastel) */}
                           <td className="px-4 py-2.5 text-left text-xs">
                             {isPast ? (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-400">
+                              <span className="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs font-medium bg-[#eef0f2] text-[#696969] dark:bg-white/10 dark:text-neutral-400">
                                 Term Ended
                               </span>
                             ) : batch.status === "inactive" ? (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-rose-600 dark:text-rose-400">
+                              <span className="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs font-medium bg-[#fbe3e3] text-[#a82a2a] dark:bg-rose-950/50 dark:text-rose-300">
                                 Inactive
                               </span>
                             ) : (
-                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-emerald-700 dark:text-emerald-400">
+                              <span className="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs font-medium bg-[#dcefe9] text-[#1b5e52] dark:bg-[#2A9D8F]/25 dark:text-[#5fe0b9]">
                                 Active
                               </span>
                             )}
@@ -1633,17 +1575,6 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
           </div>
         </div>
       )}
-      {/* ── Confirm Deactivate Modal ── */}
-      <ConfirmDeleteModal
-        isOpen={deactivateModal.isOpen}
-        title="Confirm Account Deactivation"
-        itemName={deactivateModal.student?.name}
-        description={`Are you sure you want to deactivate the account for "${deactivateModal.student?.name}"? The user will be unable to log in until reactivated.`}
-        confirmText="Deactivate"
-        loading={deactivating}
-        onConfirm={handleConfirmDeactivate}
-        onClose={() => setDeactivateModal({ isOpen: false, student: null })}
-      />
     </div>
   )
 }

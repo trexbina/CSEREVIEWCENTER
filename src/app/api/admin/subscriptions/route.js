@@ -189,7 +189,7 @@ export async function POST(request) {
       return NextResponse.json({ success: true })
     }
 
-    // Deactivate student account
+    // 2b. Deactivate student account (sets is_active = false)
     if (action === "DEACTIVATE_STUDENT" && studentId) {
       await pool.query(
         `UPDATE users SET is_active = false WHERE id = $1`,

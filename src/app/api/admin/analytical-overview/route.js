@@ -175,30 +175,13 @@ export async function GET(request) {
       }
     })
 
-    // If database has 0 students, provide fallback structure for clean UI display
-    if (studentList.length === 0) {
-      studentList = [
-        { id: 101, name: "Maria Santos", loginId: "santos00101", login_id: "santos00101", email: "maria.santos@up.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "University of the Philippines", major: "Secondary Education - Math", batch: "Batch 2026", avgScore: 88.5, attemptCount: 4, completionRate: 100, passed: true },
-        { id: 102, name: "Juan Dela Cruz", loginId: "delacruz00102", login_id: "delacruz00102", email: "juan.delacruz@ateneo.edu", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "Ateneo de Manila University", major: "Elementary Education", batch: "Batch 2026", avgScore: 82.0, attemptCount: 3, completionRate: 75, passed: true },
-        { id: 103, name: "Angela Reyes", loginId: "reyes00103", login_id: "reyes00103", email: "angela.reyes@dlsu.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "De La Salle University", major: "Secondary Education - English", batch: "Batch 2026", avgScore: 79.4, attemptCount: 4, completionRate: 100, passed: true },
-        { id: 104, name: "Carlos Mendoza", loginId: "mendoza00104", login_id: "mendoza00104", email: "carlos.m@ust.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "University of Santo Tomas", major: "Secondary Education - Science", batch: "Batch 2026", avgScore: 74.2, attemptCount: 2, completionRate: 50, passed: false },
-        { id: 105, name: "Patricia Gomez", loginId: "gomez00105", login_id: "gomez00105", email: "patricia.g@pup.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "Polytechnic University of the Philippines", major: "Elementary Education", batch: "Batch 2026", avgScore: 91.2, attemptCount: 4, completionRate: 100, passed: true },
-        { id: 106, name: "Joshua Aquino", loginId: "aquino00106", login_id: "aquino00106", email: "joshua.aquino@ust.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "University of Santo Tomas", major: "Elementary Education", batch: "Batch 2026", avgScore: 61.5, attemptCount: 3, completionRate: 75, passed: false },
-        { id: 107, name: "Beatriz Fernandez", loginId: "fernandez00107", login_id: "fernandez00107", email: "b.fernandez@feulept.edu.ph", examId: 16, examination: "Licensure Examination for Professional Teachers (LEPT)", school: "Far Eastern University", major: "Secondary Education - English", batch: "Batch 2026", avgScore: 54.0, attemptCount: 2, completionRate: 50, passed: false },
-        { id: 108, name: "Kevin Ramos", loginId: "ramos00108", login_id: "ramos00108", email: "kevin.ramos@pup.edu.ph", examId: 17, examination: "Philippine Nurses Licensure Examination (PNLE)", school: "Polytechnic University of the Philippines", major: "Nursing Practice", batch: "Batch 2026", avgScore: 58.8, attemptCount: 4, completionRate: 100, passed: false },
-        { id: 109, name: "Sarah Alcantara", loginId: "alcantara00109", login_id: "alcantara00109", email: "sarah.alcantara@feu.edu.ph", examId: 17, examination: "Philippine Nurses Licensure Examination (PNLE)", school: "Far Eastern University", major: "Nursing Practice", batch: "Batch 2026", avgScore: 84.6, attemptCount: 4, completionRate: 100, passed: true },
-        { id: 110, name: "David Lim", loginId: "lim00110", login_id: "lim00110", email: "david.lim@dlsu.edu.ph", examId: 18, examination: "Civil Service Examination (CSE)", school: "De La Salle University", major: "Public Administration", batch: "Batch 2026", avgScore: 64.2, attemptCount: 2, completionRate: 50, passed: false },
-        { id: 111, name: "Hannah Tan", loginId: "tan00111", login_id: "tan00111", email: "hannah.tan@up.edu.ph", examId: 18, examination: "Civil Service Examination (CSE)", school: "University of the Philippines", major: "Public Administration", batch: "Batch 2026", avgScore: 89.0, attemptCount: 4, completionRate: 100, passed: true },
-      ]
-    }
-
     // Sort student list by avgScore descending to calculate Percentile Ranks
     studentList.sort((a, b) => b.avgScore - a.avgScore)
     const totalStudents = studentList.length
 
     studentList = studentList.map((st, index) => {
       const rank = index + 1
-      const percentile = Math.round(((totalStudents - rank + 1) / totalStudents) * 100)
+      const percentile = totalStudents > 0 ? Math.round(((totalStudents - rank + 1) / totalStudents) * 100) : 0
       return {
         ...st,
         rank,
@@ -208,16 +191,15 @@ export async function GET(request) {
 
     // 4. Calculate Individual Student Analytics Detail (for selected or first student)
     const targetStudentId = studentFilter ? parseInt(studentFilter, 10) : studentList[0]?.id
-    const selectedStudent = studentList.find((s) => s.id === targetStudentId) || studentList[0]
+    const selectedStudent = studentList.find((s) => s.id === targetStudentId) || studentList[0] || null
 
     // Subject Area Breakdown for Radar Chart
     // Categories: General Education, Professional Education, Specialization / Major
-    const baseScore = selectedStudent ? selectedStudent.avgScore : 80
-    const individualRadar = [
-      { subject: "General Education", score: Math.min(98, Math.max(50, Math.round(baseScore + 4))), fullMark: 100 },
-      { subject: "Professional Education", score: Math.min(98, Math.max(50, Math.round(baseScore - 3))), fullMark: 100 },
-      { subject: "Specialization / Major", score: Math.min(98, Math.max(50, Math.round(baseScore + 2))), fullMark: 100 },
-    ]
+    const individualRadar = selectedStudent ? [
+      { subject: "General Education", score: Math.min(98, Math.max(50, Math.round(selectedStudent.avgScore + 4))), fullMark: 100 },
+      { subject: "Professional Education", score: Math.min(98, Math.max(50, Math.round(selectedStudent.avgScore - 3))), fullMark: 100 },
+      { subject: "Specialization / Major", score: Math.min(98, Math.max(50, Math.round(selectedStudent.avgScore + 2))), fullMark: 100 },
+    ] : []
 
     // 5. Calculate Score Distribution (Histograms)
     const scoreDistribution = [
@@ -253,8 +235,8 @@ export async function GET(request) {
     })
 
     const schoolLeaderboard = Object.values(schoolStatsMap).map((sch) => {
-      const avgScore = Math.round((sch.totalScoreSum / sch.studentCount) * 10) / 10
-      const passRate = Math.round((sch.passedCount / sch.studentCount) * 100)
+      const avgScore = sch.studentCount > 0 ? Math.round((sch.totalScoreSum / sch.studentCount) * 10) / 10 : 0
+      const passRate = sch.studentCount > 0 ? Math.round((sch.passedCount / sch.studentCount) * 100) : 0
       return {
         schoolName: sch.schoolName,
         studentCount: sch.studentCount,
@@ -278,14 +260,14 @@ export async function GET(request) {
 
     // 7. System Category Mean Comparison
     const totalPassedStudents = studentList.filter((s) => s.passed).length
-    const overallPassRate = Math.round((totalPassedStudents / totalStudents) * 100)
-    const overallMeanScore = Math.round((studentList.reduce((acc, curr) => acc + curr.avgScore, 0) / totalStudents) * 10) / 10
+    const overallPassRate = totalStudents > 0 ? Math.round((totalPassedStudents / totalStudents) * 100) : 0
+    const overallMeanScore = totalStudents > 0 ? Math.round((studentList.reduce((acc, curr) => acc + curr.avgScore, 0) / totalStudents) * 10) / 10 : 0
 
-    const categoryMeans = [
+    const categoryMeans = totalStudents > 0 ? [
       { category: "General Education", meanScore: Math.round((overallMeanScore + 2.4) * 10) / 10, passingBenchmark: 75 },
       { category: "Professional Education", meanScore: Math.round((overallMeanScore - 1.8) * 10) / 10, passingBenchmark: 75 },
       { category: "Specialization / Major", meanScore: Math.round((overallMeanScore + 1.2) * 10) / 10, passingBenchmark: 75 },
-    ]
+    ] : []
 
     // Historical Trend Data across Attempts / Batches
     const historicalTrends = [

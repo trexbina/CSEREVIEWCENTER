@@ -722,16 +722,9 @@ export default function AddAdminUserDialog({
 
               {/* Admin Role Selector (Admin only!) */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-semibold text-[#696969]">Admin Role *</Label>
-                  {isTargetProtected && (
-                    <span className="text-[10px] text-neutral-400 font-medium">Default Super Admin cannot change role</span>
-                  )}
-                </div>
+                <Label className="text-xs font-semibold text-[#696969]">Admin Role *</Label>
                 <Select value={selectedRole} onValueChange={(val) => setSelectedRole(val)} disabled={isTargetProtected}>
                   <SelectTrigger className="w-full h-9 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[#3B3B3B] dark:text-white shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed">
-                    <SelectValue placeholder="Select Admin Role" />
-                  </SelectTrigger>
                     <SelectValue placeholder="Select Admin Role" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-h-60">

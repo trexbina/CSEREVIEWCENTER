@@ -458,7 +458,7 @@ export default function RoleUsersDialog({
 
                         {/* Actions: Edit Profile, Transfer Role & Disable/Enable */}
                         <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                          {canEditThisUser ? (
+                          {canEditThisUser && (
                             <button
                               type="button"
                               onClick={() => setEditingUser(user)}
@@ -468,23 +468,9 @@ export default function RoleUsersDialog({
                               <Pencil className="size-3.5 text-[#E9C46A]" />
                               <span>Edit</span>
                             </button>
-                          ) : (
-                            <span
-                              className="px-2.5 py-1 rounded-xl text-[11px] font-medium text-neutral-400 bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/10 cursor-not-allowed"
-                              title="Only Super Admins can edit Super Admin profiles"
-                            >
-                              Protected
-                            </span>
                           )}
 
-                          {isProtectedSuperAdmin ? (
-                            <span
-                              className="px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-black/[0.05] dark:bg-white/[0.08] text-neutral-500 dark:text-neutral-400"
-                              title="The default Super Admin account is permanently assigned as Super Admin"
-                            >
-                              Fixed Role
-                            </span>
-                          ) : (
+                          {!isProtectedSuperAdmin && (
                             <>
                               {/* Transfer Role Dropdown */}
                               <div className="flex items-center gap-1.5">

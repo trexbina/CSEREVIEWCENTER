@@ -514,14 +514,7 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                 <p className="text-[10px] text-muted-foreground">Min. 6 characters. Only fill this if you want to reset this user's password.</p>
               </div>
               <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs">User Role *</Label>
-                  {(user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001") && (
-                    <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-                      <Shield className="h-2.5 w-2.5" /> Protected
-                    </span>
-                  )}
-                </div>
+                <Label className="text-xs">User Role *</Label>
                 <Select 
                   disabled={user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001"}
                   value={
@@ -781,20 +774,6 @@ function ActionButtons({ user, currentUserId }) {
               </span>
             </TooltipTrigger>
             <TooltipContent>Permanently delete this user</TooltipContent>
-          </Tooltip>
-        )}
-
-        {isProtectedAdmin && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div
-                className="h-7 w-7 flex items-center justify-center text-amber-600 dark:text-amber-400 cursor-help"
-                title="Default System Super Admin cannot be deleted"
-              >
-                <Shield className="h-3.5 w-3.5" />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>Default Super Admin (Protected)</TooltipContent>
           </Tooltip>
         )}
       </div>

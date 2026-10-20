@@ -747,14 +747,7 @@ export default function EditUserForm({ initialUser }) {
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                                <Label className="text-sm font-semibold text-[#696969]">User Role *</Label>
-                                {(initialUser.login_id?.toLowerCase() === "admin00001" || initialUser.id === 1) && (
-                                    <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-                                        <Shield className="h-3 w-3" /> Protected
-                                    </span>
-                                )}
-                            </div>
+                            <Label className="text-sm font-semibold text-[#696969]">User Role *</Label>
                             <Select 
                                 disabled={initialUser.login_id?.toLowerCase() === "admin00001" || initialUser.id === 1}
                                 value={

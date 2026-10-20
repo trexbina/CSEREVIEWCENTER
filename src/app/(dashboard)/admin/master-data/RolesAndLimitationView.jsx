@@ -883,7 +883,7 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                         </td>
 
                         <td className="px-4 py-2.5 pr-6 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                          <div className="inline-flex items-center justify-end gap-1.5">
+                          <div className="inline-flex items-center justify-end gap-1">
                             {(!isTargetSuperRole || isCurrentSuperAdmin) && (
                               <button
                                 type="button"
@@ -891,11 +891,10 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                                   e.stopPropagation()
                                   handleEditAdminProfile(role)
                                 }}
-                                className="h-7 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold text-[#3B3B3B] dark:text-neutral-200 hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 transition-colors cursor-pointer shadow-2xs"
-                                title={`Edit profile of ${role.name} administrator`}
+                                className="h-7 w-7 rounded-lg flex items-center justify-center text-neutral-500 hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                title="Edit Profile"
                               >
-                                <Pencil className="h-3 w-3 text-[#E9C46A]" />
-                                <span>Edit Profile</span>
+                                <Pencil className="h-3.5 w-3.5" />
                               </button>
                             )}
                             <button

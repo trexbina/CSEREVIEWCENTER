@@ -189,6 +189,15 @@ export async function POST(request) {
       return NextResponse.json({ success: true })
     }
 
+    // Deactivate student account
+    if (action === "DEACTIVATE_STUDENT" && studentId) {
+      await pool.query(
+        `UPDATE users SET is_active = false WHERE id = $1`,
+        [studentId]
+      )
+      return NextResponse.json({ success: true })
+    }
+
     // 3. Extend / Edit entire batch
     if ((action === "EXTEND_BATCH" || action === "EDIT_BATCH_SUBSCRIPTION") && batchId) {
       const { startDate, endDate, newStartDate } = body

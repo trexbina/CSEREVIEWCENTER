@@ -363,7 +363,7 @@ export function TrashClient() {
                     return (
                       <React.Fragment key={item.id}>
                         <tr
-                          className={`h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors ${
+                          className={`h-13 transition-colors ${
                             isChecked ? "bg-black/[0.025] dark:bg-white/[0.035]" : ""
                           }`}
                         >

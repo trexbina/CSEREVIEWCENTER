@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
-import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle, Filter, ArrowRightLeft, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle, Filter, ArrowRightLeft, ArrowUpDown, ArrowUp, ArrowDown, UserX } from "lucide-react"
+import { LordIcon } from "@/components/ui/lord-icon"
 import { toast } from "@/components/ui/toast"
 import {
   Select,
@@ -163,6 +164,13 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
     endDate: ""
   })
   const [savingBatchSubscription, setSavingBatchSubscription] = useState(false)
+
+  // Modal state for deactivating student account
+  const [deactivateModal, setDeactivateModal] = useState({
+    isOpen: false,
+    student: null
+  })
+  const [deactivating, setDeactivating] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -548,6 +556,32 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
     }
   }
 
+  const handleConfirmDeactivate = async () => {
+    if (!deactivateModal.student) return
+    setDeactivating(true)
+    try {
+      const res = await fetch("/api/admin/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "DEACTIVATE_STUDENT",
+          studentId: deactivateModal.student.id
+        })
+      })
+      if (res.ok) {
+        toast(`Account for ${deactivateModal.student.name} deactivated.`)
+        setDeactivateModal({ isOpen: false, student: null })
+        fetchData()
+      } else {
+        toast("Failed to deactivate account.")
+      }
+    } catch {
+      toast("Error deactivating account.")
+    } finally {
+      setDeactivating(false)
+    }
+  }
+
   // Pagination calculations
   const totalStudentPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE))
   const currentStudentPage = Math.min(Math.max(1, studentPage), totalStudentPages)
@@ -570,7 +604,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
             setStudentPage(1)
             setBatchPage(1)
           }}
-          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer transition-all hover:border-black/15 dark:hover:border-white/20 ${
+          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer ${
             statusFilter === "all" ? "ring-2 ring-black/15 dark:ring-white/20" : ""
           }`}
         >
@@ -579,13 +613,18 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
               {currentMetrics.totalLabel}
             </span>
           </div>
-          <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-              {Number(currentMetrics.totalCount || 0).toLocaleString()}
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                {Number(currentMetrics.totalCount || 0).toLocaleString()}
+              </div>
+              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+                {currentMetrics.totalSubtext}
+              </p>
             </div>
-            <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
-              {currentMetrics.totalSubtext}
-            </p>
+            <div className="shrink-0 opacity-80">
+              <LordIcon src="/icons/sidebar/users.json" size={38} trigger="loop" />
+            </div>
           </div>
         </div>
 
@@ -596,7 +635,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
             setStudentPage(1)
             setBatchPage(1)
           }}
-          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer transition-all hover:border-black/15 dark:hover:border-white/20 ${
+          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer ${
             statusFilter === "active" ? "ring-2 ring-emerald-500/40" : ""
           }`}
         >
@@ -605,13 +644,18 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
               {currentMetrics.activeLabel}
             </span>
           </div>
-          <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-              {Number(currentMetrics.activeCount || 0).toLocaleString()}
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                {Number(currentMetrics.activeCount || 0).toLocaleString()}
+              </div>
+              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+                {currentMetrics.activeSubtext}
+              </p>
             </div>
-            <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
-              {currentMetrics.activeSubtext}
-            </p>
+            <div className="shrink-0 opacity-80">
+              <LordIcon src="/icons/instantresults.json" size={38} trigger="loop" />
+            </div>
           </div>
         </div>
 
@@ -622,7 +666,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
             setStudentPage(1)
             setBatchPage(1)
           }}
-          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer transition-all hover:border-black/15 dark:hover:border-white/20 ${
+          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer ${
             statusFilter === "expiring" ? "ring-2 ring-amber-500/40" : ""
           }`}
         >
@@ -631,13 +675,18 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
               {currentMetrics.expiringLabel}
             </span>
           </div>
-          <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-              {Number(currentMetrics.expiringCount || 0).toLocaleString()}
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                {Number(currentMetrics.expiringCount || 0).toLocaleString()}
+              </div>
+              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+                {currentMetrics.expiringSubtext}
+              </p>
             </div>
-            <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
-              {currentMetrics.expiringSubtext}
-            </p>
+            <div className="shrink-0 opacity-80">
+              <LordIcon src="/icons/sidebar/calendar.json" size={38} trigger="loop" />
+            </div>
           </div>
         </div>
 
@@ -648,7 +697,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
             setStudentPage(1)
             setBatchPage(1)
           }}
-          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer transition-all hover:border-black/15 dark:hover:border-white/20 ${
+          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer ${
             statusFilter === "expired" ? "ring-2 ring-blue-500/40" : ""
           }`}
         >
@@ -657,13 +706,18 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
               {currentMetrics.expiredLabel}
             </span>
           </div>
-          <div className="p-5 sm:p-6 pt-4 sm:pt-4">
-            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-              {Number(currentMetrics.expiredCount || 0).toLocaleString()}
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                {Number(currentMetrics.expiredCount || 0).toLocaleString()}
+              </div>
+              <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+                {currentMetrics.expiredSubtext}
+              </p>
             </div>
-            <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
-              {currentMetrics.expiredSubtext}
-            </p>
+            <div className="shrink-0 opacity-80">
+              <LordIcon src="/icons/sidebar/layers.json" size={38} trigger="loop" />
+            </div>
           </div>
         </div>
       </div>
@@ -1050,7 +1104,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                         : "No scheduled end"
 
                       return (
-                        <tr key={student.id} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                        <tr key={student.id} className="h-13">
                           {/* Rank */}
                           <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
                             {displayRank}
@@ -1121,22 +1175,22 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                             )}
                           </td>
 
-                          {/* Status Pill Badge */}
+                          {/* Status Pill Badge matching system design */}
                           <td className="px-4 py-2.5 text-left text-xs">
                             {student.is_active === false ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-rose-50 text-rose-700 border border-rose-200/60 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/40">
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-rose-600 dark:text-rose-400">
                                 Disabled
                               </span>
                             ) : isExpired ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-neutral-100 text-neutral-600 border border-neutral-200 dark:bg-white/10 dark:text-neutral-300 dark:border-white/10">
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-400">
                                 Term Completed
                               </span>
                             ) : isExpiring ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-[#E9C46A]/20 text-[#A06010] dark:text-[#E9C46A] border border-[#E9C46A]/40 dark:border-[#E9C46A]/30">
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-[#C07028] dark:text-[#D48946]">
                                 Expiring Soon
                               </span>
                             ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/40">
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-emerald-700 dark:text-emerald-400">
                                 Active
                               </span>
                             )}
@@ -1159,10 +1213,26 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                                   <TooltipContent>Move Batch</TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
-                              {student.is_active === false && (
+
+                              {student.is_active !== false ? (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button
+                                        onClick={() => setDeactivateModal({ isOpen: true, student })}
+                                        className="size-8 rounded-lg flex items-center justify-center text-rose-500/80 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                                        aria-label="Deactivate Account"
+                                      >
+                                        <UserX className="size-3.5" />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Deactivate Account</TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              ) : (
                                 <button
                                   onClick={() => handleReactivate(student.id, student.name)}
-                                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-neutral-200 hover:bg-neutral-300 dark:bg-white/15 dark:hover:bg-white/25 text-neutral-800 dark:text-white transition-colors cursor-pointer"
+                                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-neutral-200 hover:bg-neutral-300 dark:bg-white/15 dark:hover:bg-white/25 text-neutral-800 dark:text-white transition-colors cursor-pointer ml-1"
                                 >
                                   Enable
                                 </button>
@@ -1245,7 +1315,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                       const isPast = batch.end_date ? new Date(batch.end_date) < new Date(new Date().setHours(0,0,0,0)) : false
 
                       return (
-                        <tr key={batch.id} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                        <tr key={batch.id} className="h-13">
                           {/* Rank */}
                           <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
                             {displayRank}
@@ -1284,18 +1354,18 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                             )}
                           </td>
 
-                          {/* Status Pill Badge */}
+                          {/* Status Pill Badge matching system design */}
                           <td className="px-4 py-2.5 text-left text-xs">
                             {isPast ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-neutral-100 text-neutral-600 border border-neutral-200 dark:bg-white/10 dark:text-neutral-300 dark:border-white/10">
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-400">
                                 Term Ended
                               </span>
                             ) : batch.status === "inactive" ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-rose-50 text-rose-700 border border-rose-200/60 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/40">
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-rose-600 dark:text-rose-400">
                                 Inactive
                               </span>
                             ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/40">
+                              <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-emerald-700 dark:text-emerald-400">
                                 Active
                               </span>
                             )}
@@ -1563,6 +1633,17 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
           </div>
         </div>
       )}
+      {/* ── Confirm Deactivate Modal ── */}
+      <ConfirmDeleteModal
+        isOpen={deactivateModal.isOpen}
+        title="Confirm Account Deactivation"
+        itemName={deactivateModal.student?.name}
+        description={`Are you sure you want to deactivate the account for "${deactivateModal.student?.name}"? The user will be unable to log in until reactivated.`}
+        confirmText="Deactivate"
+        loading={deactivating}
+        onConfirm={handleConfirmDeactivate}
+        onClose={() => setDeactivateModal({ isOpen: false, student: null })}
+      />
     </div>
   )
 }

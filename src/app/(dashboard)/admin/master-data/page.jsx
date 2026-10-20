@@ -1533,7 +1533,7 @@ export default function MasterDataBuilderPage() {
                                 return (
                                   <tr
                                     key={batch.id}
-                                    className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
+                                    className="h-13"
                                   >
                                     <td className="px-4 py-2.5 text-center whitespace-nowrap">
                                       <span

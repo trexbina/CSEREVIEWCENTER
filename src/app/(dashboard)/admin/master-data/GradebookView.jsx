@@ -675,7 +675,7 @@ const SpreadsheetView = ({ gradebookId, onBack }) => {
               const pct = totalMax > 0 ? (totalScore / totalMax) * 100 : 0
               const { status, bg } = getStatusAndStyleFromRules(pct, statusRules)
               return (
-                <tr key={student.id} className="h-11 border-b border-border hover:bg-muted/10 transition-colors">
+                <tr key={student.id} className="h-11 border-b border-border">
                   <td className="border-r border-border bg-muted/20 text-center text-xs text-muted-foreground select-none font-medium">{ri + 1}</td>
                   <td className="border-r border-border px-4 font-medium text-foreground">{student.name}</td>
                   <td className="border-r border-border px-4 text-muted-foreground">{student.school_name}</td>
@@ -708,7 +708,7 @@ const SpreadsheetView = ({ gradebookId, onBack }) => {
             {Array.from({ length: Math.max(16 - students.length, 6) }).map((_, i) => {
               const rowNum = students.length + i + 1
               return (
-                <tr key={`empty-row-${rowNum}`} className="h-11 border-b border-border hover:bg-muted/5 transition-colors">
+                <tr key={`empty-row-${rowNum}`} className="h-11 border-b border-border">
                   <td className="border-r border-border bg-muted/15 text-center text-xs text-muted-foreground/50 select-none font-medium">
                     {rowNum}
                   </td>

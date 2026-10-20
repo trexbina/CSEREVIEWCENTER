@@ -1319,7 +1319,7 @@ export default function MockExamsPage() {
                                         const status = getExamStatus(exam)
 
                                         return (
-                                            <tr key={exam.id} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                                            <tr key={exam.id} className="h-13">
                                                 <td className="px-4 py-2.5 min-w-[200px] max-w-[260px]">
                                                     <button
                                                         type="button"

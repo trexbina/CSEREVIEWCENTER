@@ -749,8 +749,8 @@ export default function ActiveSessionsPage() {
                         isCurrent
                           ? "bg-emerald-500/[0.03] dark:bg-emerald-500/[0.05]"
                           : isConcurrent
-                          ? "bg-amber-500/[0.04] dark:bg-amber-500/[0.06] hover:bg-amber-500/[0.08]"
-                          : "hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
+                          ? "bg-amber-500/[0.04] dark:bg-amber-500/[0.06]"
+                          : ""
                       }`}
                     >
                       {/* Checkbox */}

@@ -1562,7 +1562,7 @@ export default function AnalyticalOverviewPage() {
                               return (
                                 <tr
                                   key={st.id}
-                                  className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
+                                  className="h-13"
                                 >
                                   {/* Rank */}
                                   <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
@@ -1708,7 +1708,7 @@ export default function AnalyticalOverviewPage() {
                               return (
                                 <tr
                                   key={sch.schoolName}
-                                  className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
+                                  className="h-13"
                                 >
                                   {/* Rank */}
                                   <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
@@ -1833,7 +1833,7 @@ export default function AnalyticalOverviewPage() {
                               return (
                                 <tr
                                   key={st.id}
-                                  className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
+                                  className="h-13"
                                 >
                                   {/* Rank */}
                                   <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
@@ -3047,7 +3047,7 @@ export default function AnalyticalOverviewPage() {
                             {paginatedSubjects.map((sub, idx) => {
                               const rankNumber = startIndex + idx + 1
                               return (
-                                <tr key={sub.id || idx} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                                <tr key={sub.id || idx} className="h-13">
                                   {/* Rank */}
                                   <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
                                     {rankNumber}
@@ -3182,7 +3182,7 @@ export default function AnalyticalOverviewPage() {
                             {paginatedRoster.map((st, idx) => {
                               const rankNumber = startIndex + idx + 1
                               return (
-                                <tr key={st.id || idx} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                                <tr key={st.id || idx} className="h-13">
                                   {/* Rank */}
                                   <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
                                     {rankNumber}
@@ -4064,7 +4064,7 @@ export default function AnalyticalOverviewPage() {
                             {paginatedTracks.map((tr, idx) => {
                               const rankNumber = startIndex + idx + 1
                               return (
-                                <tr key={tr.trackCode || idx} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                                <tr key={tr.trackCode || idx} className="h-13">
                                   <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
                                     {rankNumber}
                                   </td>
@@ -4196,7 +4196,7 @@ export default function AnalyticalOverviewPage() {
                             {paginatedLogs.map((cand, idx) => {
                               const rankNumber = startIndex + idx + 1
                               return (
-                                <tr key={cand.id || idx} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                                <tr key={cand.id || idx} className="h-13">
                                   <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
                                     {rankNumber}
                                   </td>

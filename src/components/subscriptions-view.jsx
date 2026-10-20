@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle, Filter, ArrowRightLeft, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 import {
@@ -77,6 +77,34 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
   const [studentPage, setStudentPage] = useState(1)
   const [batchPage, setBatchPage] = useState(1)
   const PAGE_SIZE = 8
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const filterDropdownRef = useRef(null)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const searchRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target)) {
+        setIsFilterOpen(false)
+      }
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setIsSearchOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (statusFilter !== "all") count++
+    if (examFilter !== "all") count++
+    if (batchFilter !== "all") count++
+    return count
+  }, [statusFilter, examFilter, batchFilter])
 
   // Format login ID matching the system standard
   const formatLoginId = (item) => {
@@ -641,9 +669,9 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
       </div>
 
       {/* ── Unified Table Card (Styled like Analytical Overview) ── */}
-      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden">
+      <div className={`w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs ${isFilterOpen ? "relative z-50" : "relative z-10"}`}>
         {/* Card Top Header: Tabs (left) + Search & Filter Controls (right) */}
-        <div className="px-4 py-3 border-b border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 bg-white/40 dark:bg-white/[0.02] rounded-t-2xl">
+        <div className={`px-4 py-3 border-b border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 bg-white/40 dark:bg-white/[0.02] rounded-t-2xl relative ${isFilterOpen ? "z-50" : "z-20"}`}>
           {/* Left: Tab Pills */}
           <div className="flex items-center gap-1 overflow-x-auto py-0.5">
             <button
@@ -676,114 +704,292 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
             </button>
           </div>
 
-          {/* Right: Filters & Search */}
-          <div className="flex flex-wrap items-center gap-2 ml-auto">
-            <Select
-              value={statusFilter}
-              onValueChange={(val) => {
-                setStatusFilter(val)
-                setStudentPage(1)
-                setBatchPage(1)
-              }}
-            >
-              <SelectTrigger
-                aria-label="Filter by status"
-                className="h-8.5 px-3 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-medium text-[#3B3B3B] dark:text-gray-200 shadow-2xs focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20"
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>
-                    {statusFilter === "all" && "All Statuses"}
-                    {statusFilter === "active" && "Active Only"}
-                    {statusFilter === "expiring" && (activeTab === "students" ? "Expiring Soon (≤ 7 days)" : "Expiring Soon (≤ 30 days)")}
-                    {statusFilter === "expired" && (activeTab === "students" ? "Expired / Inactive" : "Term Ended / Inactive")}
-                  </span>
+          {/* Right: Search & Filter Popover */}
+          <div className="flex items-center gap-2 ml-auto">
+            {/* Search Control (Expandable) */}
+            <div className="relative" ref={searchRef}>
+              {isSearchOpen ? (
+                <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400 pointer-events-none" />
+                    <input
+                      type="search"
+                      autoFocus
+                      placeholder={activeTab === "batches" ? "Search batch…" : "Search student…"}
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value)
+                        setStudentPage(1)
+                        setBatchPage(1)
+                      }}
+                      className="w-44 sm:w-56 h-8 pl-8 pr-2.5 text-xs rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearch("")
+                      setStudentPage(1)
+                      setBatchPage(1)
+                      setIsSearchOpen(false)
+                    }}
+                    className="h-8 px-2 text-[11px] text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white cursor-pointer"
+                  >
+                    Cancel
+                  </button>
                 </div>
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                <SelectItem value="all" className="text-xs">All Statuses</SelectItem>
-                <SelectItem value="active" className="text-xs">Active Only</SelectItem>
-                <SelectItem value="expiring" className="text-xs">{activeTab === "students" ? "Expiring Soon (≤ 7 days)" : "Expiring Soon (≤ 30 days)"}</SelectItem>
-                <SelectItem value="expired" className="text-xs">{activeTab === "students" ? "Expired / Inactive" : "Term Ended / Inactive"}</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {examinationsList.length > 0 && (
-              <Select
-                value={examFilter}
-                onValueChange={(val) => {
-                  handleExamFilterChange(val)
-                  setStudentPage(1)
-                  setBatchPage(1)
-                }}
-              >
-                <SelectTrigger
-                  aria-label="Filter by examination type"
-                  className="h-8.5 px-3 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-medium text-[#3B3B3B] dark:text-gray-200 max-w-[200px] shadow-2xs focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20"
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsSearchOpen(true)}
+                  className={`size-8 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center justify-center text-neutral-600 dark:text-neutral-300 ${
+                    search ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white" : ""
+                  }`}
+                  title="Search"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">
-                      {examFilter === "all"
-                        ? "All Exam Types"
-                        : selectedExam?.name || "All Exam Types"}
-                    </span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-w-sm">
-                  <SelectItem value="all" className="text-xs font-medium">All Exam Types</SelectItem>
-                  {examinationsList.map((e) => (
-                    <SelectItem key={e.id} value={String(e.id)} className="text-xs truncate">
-                      {e.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+                  <Search className="size-3.5" />
+                </button>
+              )}
+            </div>
 
-            {data.batches?.length > 0 && (
-              <Select
-                value={batchFilter}
-                onValueChange={(val) => {
-                  setBatchFilter(val)
-                  setStudentPage(1)
-                  setBatchPage(1)
-                }}
+            {/* Filter Popover Button */}
+            <div className="relative" ref={filterDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen((prev) => !prev)}
+                className={`h-8 px-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300 select-none ${
+                  activeFiltersCount > 0
+                    ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white font-medium"
+                    : ""
+                }`}
+                aria-expanded={isFilterOpen}
+                aria-haspopup="true"
+                title="Filter subscriptions"
               >
-                <SelectTrigger
-                  aria-label="Filter by batch"
-                  className="h-8.5 px-3 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-medium text-[#3B3B3B] dark:text-gray-200 max-w-[190px] shadow-2xs focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20"
-                >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">
-                      {batchFilter === "all"
-                        ? "All Batches"
-                        : data.batches.find((b) => String(b.id) === String(batchFilter))?.name || "All Batches"}
-                    </span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-w-sm">
-                  <SelectItem value="all" className="text-xs font-medium">All Batches</SelectItem>
-                  {displayedBatches.map(b => (
-                    <SelectItem key={b.id} value={String(b.id)} className="text-xs truncate">
-                      {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+                <Filter className="size-3.5" />
+                {activeFiltersCount > 0 && (
+                  <span className="text-[11px]">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
 
-            <div className="relative min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400 pointer-events-none" />
-              <input
-                type="search"
-                placeholder="Search subscriptions…"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
-                  setStudentPage(1)
-                  setBatchPage(1)
-                }}
-                className="w-full h-8.5 pl-8.5 pr-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs"
-              />
+              {/* Dropdown Menu */}
+              {isFilterOpen && (
+                <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-2xl z-[100] p-3 space-y-3 max-h-[460px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                  {/* Section 1: Status */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                        Status
+                      </span>
+                      {statusFilter !== "all" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStatusFilter("all")
+                            setStudentPage(1)
+                            setBatchPage(1)
+                          }}
+                          className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-0.5">
+                      {[
+                        { value: "all", label: "All Statuses" },
+                        { value: "active", label: "Active" },
+                        { value: "expiring", label: activeTab === "students" ? "Expiring Soon (≤ 7 days)" : "Expiring Soon (≤ 30 days)" },
+                        { value: "expired", label: activeTab === "students" ? "Expired / Inactive" : "Term Ended / Inactive" }
+                      ].map((st) => (
+                        <label
+                          key={st.value}
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                        >
+                          <input
+                            type="radio"
+                            name="subStatusFilter"
+                            checked={statusFilter === st.value}
+                            onChange={() => {
+                              setStatusFilter(st.value)
+                              setStudentPage(1)
+                              setBatchPage(1)
+                            }}
+                            className="size-3.5 border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                          />
+                          <span className={statusFilter === st.value ? "font-semibold text-[#3B3B3B] dark:text-white" : ""}>
+                            {st.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Section Divider */}
+                  {examinationsList.length > 0 && <div className="border-t border-black/5 dark:border-white/10" />}
+
+                  {/* Section 2: Examinations */}
+                  {examinationsList.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                          Examinations
+                        </span>
+                        {examFilter !== "all" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleExamFilterChange("all")
+                              setStudentPage(1)
+                              setBatchPage(1)
+                            }}
+                            className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+
+                      <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                        <input
+                          type="radio"
+                          name="subExamFilter"
+                          checked={examFilter === "all"}
+                          onChange={() => {
+                            handleExamFilterChange("all")
+                            setStudentPage(1)
+                            setBatchPage(1)
+                          }}
+                          className="size-3.5 border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                        />
+                        <span className={examFilter === "all" ? "font-semibold text-[#3B3B3B] dark:text-white" : ""}>
+                          All Examinations
+                        </span>
+                      </label>
+
+                      <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                        {examinationsList.map((exam) => (
+                          <label
+                            key={exam.id}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                          >
+                            <input
+                              type="radio"
+                              name="subExamFilter"
+                              checked={String(examFilter) === String(exam.id)}
+                              onChange={() => {
+                                handleExamFilterChange(String(exam.id))
+                                setStudentPage(1)
+                                setBatchPage(1)
+                              }}
+                              className="size-3.5 border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                            />
+                            <span className={`truncate ${String(examFilter) === String(exam.id) ? "font-semibold text-[#3B3B3B] dark:text-white" : ""}`}>
+                              {exam.name}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Section Divider */}
+                  {displayedBatches.length > 0 && <div className="border-t border-black/5 dark:border-white/10" />}
+
+                  {/* Section 3: Batches */}
+                  {displayedBatches.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                          Batches
+                        </span>
+                        {batchFilter !== "all" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBatchFilter("all")
+                              setStudentPage(1)
+                              setBatchPage(1)
+                            }}
+                            className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+
+                      <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                        <input
+                          type="radio"
+                          name="subBatchFilter"
+                          checked={batchFilter === "all"}
+                          onChange={() => {
+                            setBatchFilter("all")
+                            setStudentPage(1)
+                            setBatchPage(1)
+                          }}
+                          className="size-3.5 border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                        />
+                        <span className={batchFilter === "all" ? "font-semibold text-[#3B3B3B] dark:text-white" : ""}>
+                          All Batches
+                        </span>
+                      </label>
+
+                      <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                        {displayedBatches.map((batch) => (
+                          <label
+                            key={batch.id}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                          >
+                            <input
+                              type="radio"
+                              name="subBatchFilter"
+                              checked={String(batchFilter) === String(batch.id)}
+                              onChange={() => {
+                                setBatchFilter(String(batch.id))
+                                setStudentPage(1)
+                                setBatchPage(1)
+                              }}
+                              className="size-3.5 border-black/20 text-[#3B3B3B] focus:ring-0 cursor-pointer accent-[#3B3B3B]"
+                            />
+                            <span className={`truncate ${String(batchFilter) === String(batch.id) ? "font-semibold text-[#3B3B3B] dark:text-white" : ""}`}>
+                              {batch.name}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bottom Reset Strip */}
+                  {activeFiltersCount > 0 && (
+                    <>
+                      <div className="border-t border-black/5 dark:border-white/10" />
+                      <div className="flex items-center justify-between px-1 pt-0.5 text-xs">
+                        <span className="text-neutral-400">
+                          {activeFiltersCount} active filter{activeFiltersCount > 1 ? "s" : ""}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStatusFilter("all")
+                            handleExamFilterChange("all")
+                            setBatchFilter("all")
+                            setStudentPage(1)
+                            setBatchPage(1)
+                          }}
+                          className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
+                        >
+                          Reset all
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -971,14 +971,9 @@ export default function MasterDataBuilderPage() {
                     onClick={() => handleTabChange("roles")}
                   >
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-[#4d4d4d] dark:text-gray-200 text-base group-hover:text-[#E9C46A] transition-colors truncate">
-                          Roles and Limitation
-                        </h3>
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                          Restricted
-                        </span>
-                      </div>
+                      <h3 className="font-bold text-[#4d4d4d] dark:text-gray-200 text-base group-hover:text-[#E9C46A] transition-colors truncate">
+                        Roles and Limitation
+                      </h3>
                       <p className="text-xs sm:text-sm text-[#8c8c8c] dark:text-gray-400 mt-0.5 truncate">
                         Configure administrator roles, permissions, and security restrictions
                       </p>

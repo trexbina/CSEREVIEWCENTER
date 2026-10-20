@@ -588,7 +588,7 @@ export default function AddAdminUserDialog({
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="top">
-                        Automatically assigned in sequential order based on surname and administrative role.
+                        Automatically assigned in sequential order (admin + 5-digit number).
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

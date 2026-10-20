@@ -37,7 +37,7 @@ export async function GET(request) {
     // 2. Fetch all student subscription entries
     let userQuery = `
       SELECT 
-        u.id, u.name, u.email, u.login_id, u.login_prefix, u.login_number, u.role, u.is_active, u.subscription_end_date, u.created_at,
+        u.id, u.name, u.email, u.login_id, u.login_prefix, u.login_number, u.role, u.is_active, u.subscription_end_date, u.created_at, u.avatar_url,
         u.batch_id, u.exam_id,
         b.name as batch_name, b.end_date as batch_end_date, b.start_date as batch_start_date,
         e.name as exam_name

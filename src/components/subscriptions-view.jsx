@@ -74,6 +74,21 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
   const [batchFilter, setBatchFilter] = useState(initialBatchFilter)
   const [examFilter, setExamFilter] = useState("all")
   const [activeTab, setActiveTab] = useState("students") // students, batches
+  const [studentPage, setStudentPage] = useState(1)
+  const [batchPage, setBatchPage] = useState(1)
+  const PAGE_SIZE = 8
+
+  // Format login ID matching the system standard
+  const formatLoginId = (item) => {
+    if (item?.loginId && !item.loginId.includes("@") && !item.loginId.startsWith("ID: ")) return item.loginId
+    if (item?.login_id && !item.login_id.includes("@") && !item.login_id.startsWith("ID: ")) return item.login_id
+    if (item?.name) {
+      const parts = item.name.trim().split(/\s+/)
+      const surname = parts[parts.length - 1]?.toLowerCase().replace(/[^a-z0-9]/g, "") || "user"
+      return `${surname}${String(item.id || 1).padStart(5, "0")}`
+    }
+    return `user${String(item?.id || 1).padStart(5, "0")}`
+  }
 
   // Sorting state for students and batches
   const [studentSortField, setStudentSortField] = useState("name")
@@ -505,410 +520,622 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
     }
   }
 
+  // Pagination calculations
+  const totalStudentPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE))
+  const currentStudentPage = Math.min(Math.max(1, studentPage), totalStudentPages)
+  const studentStartIndex = (currentStudentPage - 1) * PAGE_SIZE
+  const paginatedStudents = filteredStudents.slice(studentStartIndex, studentStartIndex + PAGE_SIZE)
+
+  const totalBatchPages = Math.max(1, Math.ceil(filteredBatches.length / PAGE_SIZE))
+  const currentBatchPage = Math.min(Math.max(1, batchPage), totalBatchPages)
+  const batchStartIndex = (currentBatchPage - 1) * PAGE_SIZE
+  const paginatedBatches = filteredBatches.slice(batchStartIndex, batchStartIndex + PAGE_SIZE)
+
   return (
     <div className="space-y-6">
-      {/* ── Sub-tabs & Search Toolbar (Moved above metric summary strip) ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 p-1 bg-[#F2F2F2]/80 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
+      {/* ── Top-Level Metric Summary Cards (4-Column Grid styled like Analytical Overview) ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {/* Card 1: Total */}
+        <div
+          onClick={() => {
+            setStatusFilter("all")
+            setStudentPage(1)
+            setBatchPage(1)
+          }}
+          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer transition-all hover:border-black/15 dark:hover:border-white/20 ${
+            statusFilter === "all" ? "ring-2 ring-black/15 dark:ring-white/20" : ""
+          }`}
+        >
+          <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+            <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+              {currentMetrics.totalLabel}
+            </span>
+          </div>
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+              {Number(currentMetrics.totalCount || 0).toLocaleString()}
+            </div>
+            <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+              {currentMetrics.totalSubtext}
+            </p>
+          </div>
+        </div>
+
+        {/* Card 2: Active */}
+        <div
+          onClick={() => {
+            setStatusFilter(statusFilter === "active" ? "all" : "active")
+            setStudentPage(1)
+            setBatchPage(1)
+          }}
+          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer transition-all hover:border-black/15 dark:hover:border-white/20 ${
+            statusFilter === "active" ? "ring-2 ring-emerald-500/40" : ""
+          }`}
+        >
+          <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#2A9D8F]/20 dark:bg-[#2A9D8F]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+            <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+              {currentMetrics.activeLabel}
+            </span>
+          </div>
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+              {Number(currentMetrics.activeCount || 0).toLocaleString()}
+            </div>
+            <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+              {currentMetrics.activeSubtext}
+            </p>
+          </div>
+        </div>
+
+        {/* Card 3: Expiring Soon */}
+        <div
+          onClick={() => {
+            setStatusFilter(statusFilter === "expiring" ? "all" : "expiring")
+            setStudentPage(1)
+            setBatchPage(1)
+          }}
+          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer transition-all hover:border-black/15 dark:hover:border-white/20 ${
+            statusFilter === "expiring" ? "ring-2 ring-amber-500/40" : ""
+          }`}
+        >
+          <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E17055]/20 dark:bg-[#E17055]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+            <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+              {currentMetrics.expiringLabel}
+            </span>
+          </div>
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+              {Number(currentMetrics.expiringCount || 0).toLocaleString()}
+            </div>
+            <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+              {currentMetrics.expiringSubtext}
+            </p>
+          </div>
+        </div>
+
+        {/* Card 4: Expired */}
+        <div
+          onClick={() => {
+            setStatusFilter(statusFilter === "expired" ? "all" : "expired")
+            setStudentPage(1)
+            setBatchPage(1)
+          }}
+          className={`rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none cursor-pointer transition-all hover:border-black/15 dark:hover:border-white/20 ${
+            statusFilter === "expired" ? "ring-2 ring-blue-500/40" : ""
+          }`}
+        >
+          <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#3B82F6]/20 dark:bg-[#3B82F6]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+            <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
+              {currentMetrics.expiredLabel}
+            </span>
+          </div>
+          <div className="p-5 sm:p-6 pt-4 sm:pt-4">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+              {Number(currentMetrics.expiredCount || 0).toLocaleString()}
+            </div>
+            <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
+              {currentMetrics.expiredSubtext}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Unified Table Card (Styled like Analytical Overview) ── */}
+      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden">
+        {/* Card Top Header: Tabs (left) + Search & Filter Controls (right) */}
+        <div className="px-4 py-3 border-b border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 bg-white/40 dark:bg-white/[0.02] rounded-t-2xl">
+          {/* Left: Tab Pills */}
+          <div className="flex items-center gap-1 overflow-x-auto py-0.5">
             <button
-              onClick={() => setActiveTab("students")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+              type="button"
+              onClick={() => {
+                setActiveTab("students")
+                setStudentPage(1)
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
                 activeTab === "students"
-                  ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                  : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B]"
+                  ? "bg-black/[0.07] dark:bg-white/15 text-[#3B3B3B] dark:text-white font-semibold shadow-2xs"
+                  : "text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white"
               }`}
             >
               Reviewees
             </button>
             <button
-              onClick={() => setActiveTab("batches")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+              type="button"
+              onClick={() => {
+                setActiveTab("batches")
+                setBatchPage(1)
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
                 activeTab === "batches"
-                  ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
-                  : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B]"
+                  ? "bg-black/[0.07] dark:bg-white/15 text-[#3B3B3B] dark:text-white font-semibold shadow-2xs"
+                  : "text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white"
               }`}
             >
               Batches ({data.batches?.length || 0})
             </button>
           </div>
 
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger
-              aria-label="Filter by status"
-              className="h-9 px-3 rounded-xl border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
+          {/* Right: Filters & Search */}
+          <div className="flex flex-wrap items-center gap-2 ml-auto">
+            <Select
+              value={statusFilter}
+              onValueChange={(val) => {
+                setStatusFilter(val)
+                setStudentPage(1)
+                setBatchPage(1)
+              }}
             >
-              <div className="flex items-center gap-1.5">
-                <span>
-                  {statusFilter === "all" && "All Statuses"}
-                  {statusFilter === "active" && "Active Only"}
-                  {statusFilter === "expiring" && (activeTab === "students" ? "Expiring Soon (≤ 7 days)" : "Expiring Soon (≤ 30 days)")}
-                  {statusFilter === "expired" && (activeTab === "students" ? "Expired / Inactive" : "Term Ended / Inactive")}
-                </span>
-              </div>
-            </SelectTrigger>
-            <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-              <SelectItem value="all" className="text-xs">All Statuses</SelectItem>
-              <SelectItem value="active" className="text-xs">Active Only</SelectItem>
-              <SelectItem value="expiring" className="text-xs">{activeTab === "students" ? "Expiring Soon (≤ 7 days)" : "Expiring Soon (≤ 30 days)"}</SelectItem>
-              <SelectItem value="expired" className="text-xs">{activeTab === "students" ? "Expired / Inactive" : "Term Ended / Inactive"}</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {examinationsList.length > 0 && (
-            <Select value={examFilter} onValueChange={handleExamFilterChange}>
               <SelectTrigger
-                aria-label="Filter by examination type"
-                className="h-9 px-3 rounded-xl border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 max-w-[210px] shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
+                aria-label="Filter by status"
+                className="h-8.5 px-3 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-medium text-[#3B3B3B] dark:text-gray-200 shadow-2xs focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20"
               >
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="truncate">
-                    {examFilter === "all"
-                      ? "All Exam Types"
-                      : selectedExam?.name || "All Exam Types"}
+                <div className="flex items-center gap-1.5">
+                  <span>
+                    {statusFilter === "all" && "All Statuses"}
+                    {statusFilter === "active" && "Active Only"}
+                    {statusFilter === "expiring" && (activeTab === "students" ? "Expiring Soon (≤ 7 days)" : "Expiring Soon (≤ 30 days)")}
+                    {statusFilter === "expired" && (activeTab === "students" ? "Expired / Inactive" : "Term Ended / Inactive")}
                   </span>
                 </div>
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-w-sm">
-                <SelectItem value="all" className="text-xs font-medium">All Exam Types</SelectItem>
-                {examinationsList.map((e) => (
-                  <SelectItem key={e.id} value={String(e.id)} className="text-xs truncate">
-                    {e.name}
-                  </SelectItem>
-                ))}
+              <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                <SelectItem value="all" className="text-xs">All Statuses</SelectItem>
+                <SelectItem value="active" className="text-xs">Active Only</SelectItem>
+                <SelectItem value="expiring" className="text-xs">{activeTab === "students" ? "Expiring Soon (≤ 7 days)" : "Expiring Soon (≤ 30 days)"}</SelectItem>
+                <SelectItem value="expired" className="text-xs">{activeTab === "students" ? "Expired / Inactive" : "Term Ended / Inactive"}</SelectItem>
               </SelectContent>
             </Select>
-          )}
 
-          {data.batches?.length > 0 && (
-            <Select value={batchFilter} onValueChange={setBatchFilter}>
-              <SelectTrigger
-                aria-label="Filter by batch"
-                className="h-9 px-3 rounded-xl border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-semibold text-[#696969] dark:text-gray-300 max-w-[200px] shadow-2xs focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20"
+            {examinationsList.length > 0 && (
+              <Select
+                value={examFilter}
+                onValueChange={(val) => {
+                  handleExamFilterChange(val)
+                  setStudentPage(1)
+                  setBatchPage(1)
+                }}
               >
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="truncate">
-                    {batchFilter === "all"
-                      ? "All Batches"
-                      : data.batches.find((b) => String(b.id) === String(batchFilter))?.name || "All Batches"}
-                  </span>
-                </div>
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-w-sm">
-                <SelectItem value="all" className="text-xs font-medium">All Batches</SelectItem>
-                {displayedBatches.map(b => (
-                  <SelectItem key={b.id} value={String(b.id)} className="text-xs truncate">
-                    {b.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
+                <SelectTrigger
+                  aria-label="Filter by examination type"
+                  className="h-8.5 px-3 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-medium text-[#3B3B3B] dark:text-gray-200 max-w-[200px] shadow-2xs focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">
+                      {examFilter === "all"
+                        ? "All Exam Types"
+                        : selectedExam?.name || "All Exam Types"}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-w-sm">
+                  <SelectItem value="all" className="text-xs font-medium">All Exam Types</SelectItem>
+                  {examinationsList.map((e) => (
+                    <SelectItem key={e.id} value={String(e.id)} className="text-xs truncate">
+                      {e.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-        <div className="relative min-w-[220px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#696969]" />
-          <input
-            type="search"
-            placeholder="Search subscriptions…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-9 pl-9 pr-3 text-xs rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-          />
-        </div>
-      </div>
+            {data.batches?.length > 0 && (
+              <Select
+                value={batchFilter}
+                onValueChange={(val) => {
+                  setBatchFilter(val)
+                  setStudentPage(1)
+                  setBatchPage(1)
+                }}
+              >
+                <SelectTrigger
+                  aria-label="Filter by batch"
+                  className="h-8.5 px-3 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-xs font-medium text-[#3B3B3B] dark:text-gray-200 max-w-[190px] shadow-2xs focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">
+                      {batchFilter === "all"
+                        ? "All Batches"
+                        : data.batches.find((b) => String(b.id) === String(batchFilter))?.name || "All Batches"}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-w-sm">
+                  <SelectItem value="all" className="text-xs font-medium">All Batches</SelectItem>
+                  {displayedBatches.map(b => (
+                    <SelectItem key={b.id} value={String(b.id)} className="text-xs truncate">
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-      {/* ── Metric Summary Strip ("div full rounded") ── */}
-      <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-xs overflow-hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-black/5 dark:divide-white/5">
-          {/* 1. Total */}
-          <div
-            className={`flex flex-col justify-between select-none group/card cursor-pointer transition-colors ${
-              statusFilter === "all" ? "bg-black/[0.03] dark:bg-white/[0.06]" : "hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
-            }`}
-            onClick={() => setStatusFilter("all")}
-          >
-            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                {currentMetrics.totalLabel}
-              </span>
-            </div>
-            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(currentMetrics.totalCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
-                {currentMetrics.totalSubtext}
-              </p>
-            </div>
-          </div>
-
-          {/* 2. Active */}
-          <div
-            className={`flex flex-col justify-between select-none group/card cursor-pointer transition-colors ${
-              statusFilter === "active" ? "bg-black/[0.03] dark:bg-white/[0.06]" : "hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
-            }`}
-            onClick={() => setStatusFilter(statusFilter === "active" ? "all" : "active")}
-          >
-            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                {currentMetrics.activeLabel}
-              </span>
-            </div>
-            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(currentMetrics.activeCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
-                {currentMetrics.activeSubtext}
-              </p>
-            </div>
-          </div>
-
-          {/* 3. Expiring Soon */}
-          <div
-            className={`flex flex-col justify-between select-none group/card cursor-pointer transition-colors ${
-              statusFilter === "expiring" ? "bg-black/[0.03] dark:bg-white/[0.06]" : "hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
-            }`}
-            onClick={() => setStatusFilter(statusFilter === "expiring" ? "all" : "expiring")}
-          >
-            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                {currentMetrics.expiringLabel}
-              </span>
-            </div>
-            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(currentMetrics.expiringCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
-                {currentMetrics.expiringSubtext}
-              </p>
-            </div>
-          </div>
-
-          {/* 4. Expired */}
-          <div
-            className={`flex flex-col justify-between select-none group/card cursor-pointer transition-colors ${
-              statusFilter === "expired" ? "bg-black/[0.03] dark:bg-white/[0.06]" : "hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
-            }`}
-            onClick={() => setStatusFilter(statusFilter === "expired" ? "all" : "expired")}
-          >
-            <div className="relative z-10 px-4 py-2 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25">
-              <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 select-none">
-                {currentMetrics.expiredLabel}
-              </span>
-            </div>
-            <div className="p-4 sm:p-5 pt-3 sm:pt-3">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-                {Number(currentMetrics.expiredCount || 0).toLocaleString()}
-              </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500 font-normal select-none truncate">
-                {currentMetrics.expiredSubtext}
-              </p>
+            <div className="relative min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400 pointer-events-none" />
+              <input
+                type="search"
+                placeholder="Search subscriptions…"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setStudentPage(1)
+                  setBatchPage(1)
+                }}
+                className="w-full h-8.5 pl-8.5 pr-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs"
+              />
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Table Content ── */}
-      {activeTab === "students" ? (
-        <div className="w-full overflow-hidden rounded-2xl border border-black/5 dark:border-white/10 bg-card shadow-2xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-black/5 dark:border-white/10 text-xs font-semibold text-[#696969]/80 dark:text-gray-400 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs">
-                  <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Student" field="name" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="alpha" />
-                  </th>
-                  <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Examination & Batch" field="batch_name" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="alpha" />
-                  </th>
-                  <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Scheduled End Date" field="effective_end_date" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="date" />
-                  </th>
-                  <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Remaining Term" field="days_remaining" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="number" />
-                  </th>
-                  <th className="py-2.5 px-4 font-semibold">Status</th>
-                  <th className="py-2.5 px-4 text-right font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-xs text-muted-foreground">
-                      Loading subscriptions…
-                    </td>
+        {/* Table Content */}
+        {activeTab === "students" ? (
+          <div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse" aria-label="Reviewees Subscriptions Table">
+                <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                  <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                    <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
+                      Rank
+                    </th>
+                    <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                      <TableSortButton label="Student" field="name" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="alpha" />
+                    </th>
+                    <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                      <TableSortButton label="Examination & Batch" field="batch_name" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="alpha" />
+                    </th>
+                    <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                      <TableSortButton label="Scheduled End Date" field="effective_end_date" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="date" />
+                    </th>
+                    <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                      <TableSortButton label="Remaining Term" field="days_remaining" sortField={studentSortField} sortDir={studentSortDir} onSort={handleStudentSort} type="number" />
+                    </th>
+                    <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                      Status
+                    </th>
+                    <th className="px-4 py-2.5 text-right font-semibold pr-6" scope="col">
+                      Actions
+                    </th>
                   </tr>
-                ) : filteredStudents.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-xs text-muted-foreground">
-                      No student subscriptions match the selected criteria.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredStudents.map(student => {
-                    const isExpired = student.computed_status === "expired" || student.computed_status === "disabled"
-                    const isExpiring = student.computed_status === "expiring"
-                    const dateFormatted = student.effective_end_date 
-                      ? new Date(student.effective_end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-                      : "No scheduled end"
+                </thead>
+                <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                        <div className="flex flex-col items-center justify-center space-y-2">
+                          <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          <span>Loading subscriptions…</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                        {search ? `No subscriptions found matching "${search}"` : "No student subscriptions match the selected criteria."}
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedStudents.map((student, idx) => {
+                      const displayRank = studentStartIndex + idx + 1
+                      const isExpired = student.computed_status === "expired" || student.computed_status === "disabled"
+                      const isExpiring = student.computed_status === "expiring"
+                      const dateFormatted = student.effective_end_date 
+                        ? new Date(student.effective_end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                        : "No scheduled end"
 
-                    return (
-                      <tr key={student.id} className="transition-colors">
-                        <td className="py-3 px-4">
-                          <p className="font-semibold text-[#696969] dark:text-gray-300 text-xs sm:text-sm">{student.name}</p>
-                        </td>
-                        <td className="py-3 px-4 text-xs">
-                          <p className="font-medium text-[#3B3B3B] dark:text-gray-200">{student.batch_name || "—"}</p>
-                          <p className="text-xs text-gray-400 dark:text-gray-400 font-normal">{student.exam_name || "—"}</p>
-                        </td>
-                        <td className="py-3 px-4 text-xs text-[#696969] dark:text-gray-300">
-                          {dateFormatted}
-                          {student.subscription_end_date && (
-                            <span className="block text-[10px] text-gray-400 dark:text-gray-400 italic">Custom extension</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-xs">
-                          {student.days_remaining !== null ? (
-                            <span className={student.days_remaining < 0 ? "text-neutral-500 font-medium" : isExpiring ? "text-neutral-700 dark:text-neutral-200 font-medium" : "text-[#696969] dark:text-gray-400 font-normal"}>
-                              {student.days_remaining < 0 ? `${Math.abs(student.days_remaining)} days ago` : `${student.days_remaining} days left`}
-                            </span>
-                          ) : (
-                            <span className="text-[#696969]/60 dark:text-gray-500 font-normal">—</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-xs">
-                          {student.is_active === false ? (
-                            <span className="font-medium text-rose-600 dark:text-rose-400">Disabled</span>
-                          ) : isExpired ? (
-                            <span className="font-medium text-gray-500 dark:text-gray-400">Term Completed</span>
-                          ) : isExpiring ? (
-                            <span className="font-medium text-[#C07028] dark:text-[#D48946]">Expiring Soon</span>
-                          ) : (
-                            <span className="font-medium text-emerald-600 dark:text-emerald-400">Active</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    onClick={() => openMoveBatch(student)}
-                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                    aria-label="Move Batch"
-                                  >
-                                    <ArrowRightLeft className="h-3.5 w-3.5" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent>Move Batch</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            {student.is_active === false && (
-                              <button
-                                onClick={() => handleReactivate(student.id, student.name)}
-                                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-neutral-200 hover:bg-neutral-300 dark:bg-white/15 dark:hover:bg-white/25 text-neutral-800 dark:text-white transition-colors cursor-pointer"
-                              >
-                                Enable
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : (
-        /* ── Batches Tab ── */
-        <div className="w-full overflow-hidden rounded-2xl border border-black/5 dark:border-white/10 bg-card shadow-2xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-black/5 dark:border-white/10 text-xs font-semibold text-[#696969]/80 dark:text-gray-400 bg-[#F2F2F2]/80 dark:bg-[#14161b]/90 backdrop-blur-xs">
-                  <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Batch Name" field="name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="alpha" />
-                  </th>
-                  <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Target Exam" field="exam_name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="alpha" />
-                  </th>
-                  <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Enrolled Students" field="student_count" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="number" />
-                  </th>
-                  <th className="py-2.5 px-4 font-semibold">
-                    <TableSortButton label="Scheduled End Date" field="end_date" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="date" />
-                  </th>
-                  <th className="py-2.5 px-4 font-semibold">Status</th>
-                  <th className="py-2.5 px-4 text-right font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm">
-                {filteredBatches.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-xs text-muted-foreground">
-                      No batches found.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredBatches.map(batch => {
-                    const endFormatted = batch.end_date 
-                      ? new Date(batch.end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-                      : "No scheduled end"
-                    const isPast = batch.end_date ? new Date(batch.end_date) < new Date(new Date().setHours(0,0,0,0)) : false
+                      return (
+                        <tr key={student.id} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                          {/* Rank */}
+                          <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
+                            {displayRank}
+                          </td>
 
-                    return (
-                      <tr key={batch.id} className="transition-colors">
-                        <td className="py-3 px-4 font-medium text-[#3B3B3B] dark:text-gray-200 text-xs sm:text-sm">
-                          {batch.name} ({batch.target_year})
-                        </td>
-                        <td className="py-3 px-4 text-xs text-[#696969] dark:text-gray-300">
-                          {batch.exam_name || "—"}
-                        </td>
-                        <td className="py-3 px-4 text-xs text-[#696969] dark:text-gray-300">
-                          <span className="font-semibold text-[#3B3B3B] dark:text-white">{batch.student_count || 0}</span> reviewees
-                          {batch.expired_count > 0 && (
-                            <span className="text-[#696969]/70 dark:text-gray-500 ml-1">({batch.expired_count} inactive/expired)</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-xs text-[#696969] dark:text-gray-300">
-                          <div>{endFormatted}</div>
-                          {batch.start_date && (
-                            <div className="text-[11px] text-muted-foreground mt-0.5">
-                              Start: {new Date(batch.start_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                          {/* Student Name with Avatar & Login ID */}
+                          <td className="px-4 py-2.5 text-left">
+                            <div className="flex items-center gap-3">
+                              <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
+                                {(student.avatar_url || student.avatarUrl) ? (
+                                  <img
+                                    src={student.avatar_url || student.avatarUrl}
+                                    alt={student.name || "Student"}
+                                    className="size-full object-cover rounded-full"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = "none"
+                                      if (e.currentTarget.nextElementSibling) {
+                                        e.currentTarget.nextElementSibling.style.display = "flex"
+                                      }
+                                    }}
+                                  />
+                                ) : null}
+                                <span
+                                  className={`size-full flex items-center justify-center ${(student.avatar_url || student.avatarUrl) ? "hidden" : ""}`}
+                                >
+                                  {(student.name || "U").charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <div>
+                                <div className="font-medium text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                  {student.name || "—"}
+                                </div>
+                                <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
+                                  {formatLoginId(student)}
+                                </div>
+                              </div>
                             </div>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-xs">
-                          {isPast ? (
-                            <span className="font-medium text-gray-500 dark:text-gray-400">Term Ended</span>
-                          ) : batch.status === "inactive" ? (
-                            <span className="font-medium text-rose-600 dark:text-rose-400">Inactive</span>
-                          ) : (
-                            <span className="font-medium text-emerald-600 dark:text-emerald-400">Active</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <button
-                            onClick={() => openEditSubscription(batch)}
-                            className="px-3 py-1 text-xs font-semibold rounded-lg bg-[#F2F2F2] hover:bg-[#E5E5E5] dark:bg-white/10 dark:hover:bg-white/20 text-[#3B3B3B] dark:text-white transition-colors cursor-pointer"
-                          >
-                            Edit Subscription
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
+                          </td>
+
+                          {/* Examination & Batch */}
+                          <td className="px-4 py-2.5 text-left text-xs">
+                            <div className="font-semibold text-xs text-[#3B3B3B] dark:text-gray-200">
+                              {student.batch_name || "—"}
+                            </div>
+                            <div className="text-[11px] text-[#696969] dark:text-gray-400 font-normal mt-0.5">
+                              {student.exam_name || "—"}
+                            </div>
+                          </td>
+
+                          {/* Scheduled End Date */}
+                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300">
+                            <div>{dateFormatted}</div>
+                            {student.subscription_end_date && (
+                              <span className="block text-[10px] text-neutral-400 dark:text-neutral-500 italic mt-0.5">
+                                Custom extension
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Remaining Term */}
+                          <td className="px-4 py-2.5 text-left text-xs">
+                            {student.days_remaining !== null ? (
+                              <span className={student.days_remaining < 0 ? "text-neutral-500 font-medium" : isExpiring ? "text-amber-700 dark:text-amber-400 font-medium" : "text-[#696969] dark:text-gray-400 font-normal"}>
+                                {student.days_remaining < 0 ? `${Math.abs(student.days_remaining)} days ago` : `${student.days_remaining} days left`}
+                              </span>
+                            ) : (
+                              <span className="text-[#696969]/60 dark:text-gray-500 font-normal">—</span>
+                            )}
+                          </td>
+
+                          {/* Status Pill Badge */}
+                          <td className="px-4 py-2.5 text-left text-xs">
+                            {student.is_active === false ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-rose-50 text-rose-700 border border-rose-200/60 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/40">
+                                Disabled
+                              </span>
+                            ) : isExpired ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-neutral-100 text-neutral-600 border border-neutral-200 dark:bg-white/10 dark:text-neutral-300 dark:border-white/10">
+                                Term Completed
+                              </span>
+                            ) : isExpiring ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-[#E9C46A]/20 text-[#A06010] dark:text-[#E9C46A] border border-[#E9C46A]/40 dark:border-[#E9C46A]/30">
+                                Expiring Soon
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/40">
+                                Active
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-4 py-2.5 text-right pr-6">
+                            <div className="flex items-center justify-end gap-1">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={() => openMoveBatch(student)}
+                                      className="size-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                      aria-label="Move Batch"
+                                    >
+                                      <ArrowRightLeft className="size-3.5" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Move Batch</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              {student.is_active === false && (
+                                <button
+                                  onClick={() => handleReactivate(student.id, student.name)}
+                                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-neutral-200 hover:bg-neutral-300 dark:bg-white/15 dark:hover:bg-white/25 text-neutral-800 dark:text-white transition-colors cursor-pointer"
+                                >
+                                  Enable
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalStudentPages > 1 && (
+              <div className="px-4 py-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-center gap-3 bg-white/20 dark:bg-white/[0.01] rounded-b-2xl">
+                <div className="flex items-center gap-3">
+                  {Array.from({ length: totalStudentPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setStudentPage(pageNum)}
+                      className={`text-xs transition-colors cursor-pointer ${
+                        pageNum === currentStudentPage
+                          ? "font-semibold text-[#3B3B3B] dark:text-white"
+                          : "font-normal text-neutral-400 hover:text-[#3B3B3B] dark:text-neutral-500 dark:hover:text-white"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        ) : (
+          /* ── Batches Tab ── */
+          <div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse" aria-label="Batches Subscriptions Table">
+                <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                  <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                    <th className="w-16 px-4 py-2.5 text-center font-semibold text-[#696969] dark:text-gray-400" scope="col">
+                      Rank
+                    </th>
+                    <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                      <TableSortButton label="Batch Name" field="name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="alpha" />
+                    </th>
+                    <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                      <TableSortButton label="Target Exam" field="exam_name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="alpha" />
+                    </th>
+                    <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                      <TableSortButton label="Enrolled Students" field="student_count" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="number" />
+                    </th>
+                    <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                      <TableSortButton label="Scheduled End Date" field="end_date" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} type="date" />
+                    </th>
+                    <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                      Status
+                    </th>
+                    <th className="px-4 py-2.5 text-right font-semibold pr-6" scope="col">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
+                  {filteredBatches.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                        {search ? `No batches found matching "${search}"` : "No batches found."}
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedBatches.map((batch, idx) => {
+                      const displayRank = batchStartIndex + idx + 1
+                      const endFormatted = batch.end_date 
+                        ? new Date(batch.end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                        : "No scheduled end"
+                      const isPast = batch.end_date ? new Date(batch.end_date) < new Date(new Date().setHours(0,0,0,0)) : false
+
+                      return (
+                        <tr key={batch.id} className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors">
+                          {/* Rank */}
+                          <td className="w-16 px-4 py-2.5 text-center font-normal text-xs text-[#696969] dark:text-gray-400">
+                            {displayRank}
+                          </td>
+
+                          {/* Batch Name */}
+                          <td className="px-4 py-2.5 text-left">
+                            <div className="font-semibold text-xs text-[#3B3B3B] dark:text-gray-100">
+                              {batch.name}
+                            </div>
+                            <div className="text-[11px] text-[#696969] dark:text-gray-400 font-normal mt-0.5">
+                              Target Year: {batch.target_year || "—"}
+                            </div>
+                          </td>
+
+                          {/* Target Exam */}
+                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300">
+                            {batch.exam_name || "—"}
+                          </td>
+
+                          {/* Enrolled Students */}
+                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300">
+                            <span className="font-semibold text-[#3B3B3B] dark:text-white">{batch.student_count || 0}</span> reviewees
+                            {batch.expired_count > 0 && (
+                              <span className="text-[#696969]/70 dark:text-gray-500 ml-1">({batch.expired_count} inactive/expired)</span>
+                            )}
+                          </td>
+
+                          {/* Scheduled End Date */}
+                          <td className="px-4 py-2.5 text-left text-xs text-[#696969] dark:text-gray-300">
+                            <div>{endFormatted}</div>
+                            {batch.start_date && (
+                              <div className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5">
+                                Start: {new Date(batch.start_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Status Pill Badge */}
+                          <td className="px-4 py-2.5 text-left text-xs">
+                            {isPast ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-neutral-100 text-neutral-600 border border-neutral-200 dark:bg-white/10 dark:text-neutral-300 dark:border-white/10">
+                                Term Ended
+                              </span>
+                            ) : batch.status === "inactive" ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-rose-50 text-rose-700 border border-rose-200/60 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/40">
+                                Inactive
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/40">
+                                Active
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-4 py-2.5 text-right pr-6">
+                            <button
+                              onClick={() => openEditSubscription(batch)}
+                              className="px-3 py-1 text-xs font-semibold rounded-lg bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-[#3B3B3B] dark:text-white transition-colors cursor-pointer"
+                            >
+                              Edit Subscription
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalBatchPages > 1 && (
+              <div className="px-4 py-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-center gap-3 bg-white/20 dark:bg-white/[0.01] rounded-b-2xl">
+                <div className="flex items-center gap-3">
+                  {Array.from({ length: totalBatchPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setBatchPage(pageNum)}
+                      className={`text-xs transition-colors cursor-pointer ${
+                        pageNum === currentBatchPage
+                          ? "font-semibold text-[#3B3B3B] dark:text-white"
+                          : "font-normal text-neutral-400 hover:text-[#3B3B3B] dark:text-neutral-500 dark:hover:text-white"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* ── Move Student Batch Modal ── */}
       {moveModal.isOpen && moveModal.student && (

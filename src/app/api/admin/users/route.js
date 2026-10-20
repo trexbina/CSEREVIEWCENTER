@@ -345,15 +345,26 @@ export async function PUT(request) {
     }
     const subEndDateVal = body.subscription_end_date ? body.subscription_end_date : null
 
+    let finalLoginId = body.login_id?.trim() || null
+    let finalLoginPrefix = body.login_prefix?.trim() || null
+    let finalLoginNumber = body.login_number?.trim() || null
+
+    if (finalLoginId) {
+      finalLoginPrefix = finalLoginPrefix || finalLoginId.replace(/[0-9]+$/, "")
+      const rawNum = finalLoginNumber || finalLoginId.replace(/^[^0-9]+/, "") || "1"
+      finalLoginNumber = String(rawNum).replace(/[^0-9]/g, "").padStart(5, "0")
+      finalLoginId = `${finalLoginPrefix}${finalLoginNumber}`
+    }
+
     // Check if login_id is taken by another user if updated
-    if (body.login_id) {
+    if (finalLoginId) {
       const existingLogin = await pool.query(
         "SELECT id FROM users WHERE LOWER(login_id) = $1 AND id != $2",
-        [body.login_id.toLowerCase().trim(), userId]
+        [finalLoginId.toLowerCase(), userId]
       )
       if (existingLogin.rows.length > 0) {
         return NextResponse.json(
-          { error: `Login ID "${body.login_id}" is already in use by another user.` },
+          { error: `Login ID "${finalLoginId}" is already in use by another user.` },
           { status: 409 }
         )
       }
@@ -407,9 +418,9 @@ export async function PUT(request) {
           personal_email?.toLowerCase().trim() || userEmail,
           isActiveVal,
           subEndDateVal,
-          body.login_id?.trim() || null,
-          body.login_prefix?.trim() || null,
-          body.login_number?.trim() || null,
+          finalLoginId,
+          finalLoginPrefix,
+          finalLoginNumber,
           userId,
         ]
       )
@@ -459,9 +470,9 @@ export async function PUT(request) {
           personal_email?.toLowerCase().trim() || userEmail,
           isActiveVal,
           subEndDateVal,
-          body.login_id?.trim() || null,
-          body.login_prefix?.trim() || null,
-          body.login_number?.trim() || null,
+          finalLoginId,
+          finalLoginPrefix,
+          finalLoginNumber,
           userId,
         ]
       )

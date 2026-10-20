@@ -231,11 +231,13 @@ export default function AddAdminUserDialog({
     const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(" ")
 
     if (isEditMode && userToEdit) {
-      // In edit mode: dynamically update login ID using surname prefix + user's existing sequence number
-      const seqNumber =
+      // In edit mode: dynamically update login ID using surname prefix + user's existing sequence number (always 5 digits)
+      const rawSeq =
         userToEdit.login_number ||
-        (userToEdit.login_id ? userToEdit.login_id.replace(/^[^0-9]+/, "") : "00001") ||
-        "00001"
+        (userToEdit.login_id ? userToEdit.login_id.replace(/^[^0-9]+/, "") : "") ||
+        String(userToEdit.id || 1)
+      const digitsOnly = String(rawSeq).replace(/[^0-9]/g, "") || "1"
+      const seqNumber = digitsOnly.padStart(5, "0")
 
       const rawSurname = (lastName || "").trim()
       let cleanPrefix = rawSurname.toLowerCase().replace(/[^a-z0-9]/g, "")
@@ -341,14 +343,16 @@ export default function AddAdminUserDialog({
       .trim()
 
     const cleanPrefix = loginIdPreview ? loginIdPreview.replace(/[0-9]+$/, "") : ""
-    const seqNumber = loginIdPreview ? loginIdPreview.replace(/^[^0-9]+/, "") : ""
+    const rawDigits = loginIdPreview ? loginIdPreview.replace(/^[^0-9]+/, "") : "1"
+    const seqNumber = String(rawDigits).replace(/[^0-9]/g, "").padStart(5, "0")
+    const finalLoginId = loginIdPreview ? `${cleanPrefix}${seqNumber}` : undefined
 
     const payload = {
       name: fullName,
       email: personalEmail || undefined,
       personal_email: personalEmail || null,
       role: selectedRole,
-      login_id: loginIdPreview || undefined,
+      login_id: finalLoginId,
       login_prefix: cleanPrefix || undefined,
       login_number: seqNumber || undefined,
       first_name: firstName.trim(),

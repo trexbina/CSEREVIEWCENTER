@@ -18,13 +18,10 @@ import {
 import { toast } from "@/components/ui/toast"
 import AddAdminUserDialog from "./AddAdminUserDialog"
 
-// Built-in standard roles in the system
-const DEFAULT_SYSTEM_ROLES = [
-  { role_key: "super_admin", name: "Super Admin (System Owner)" },
-  { role_key: "academic_admin", name: "Academic Coordinator" },
-  { role_key: "registrar", name: "Registrar" },
-  { role_key: "teacher", name: "Teacher" },
-  { role_key: "student", name: "Student (Reviewee)" }
+// Base built-in system user roles in PEAK
+const BASE_SYSTEM_USER_ROLES = [
+  { role_key: "teacher", name: "Teacher", is_system: true },
+  { role_key: "student", name: "Student (Reviewee)", is_system: true },
 ]
 
 export function isSuperAdminUser(user) {
@@ -147,18 +144,66 @@ export default function RoleUsersDialog({
     return () => clearTimeout(timer)
   }, [globalSearch, activeTab])
 
-  // Build the complete list of selectable destination roles
-  const destinationRoles = useMemo(() => {
-    const list = [...DEFAULT_SYSTEM_ROLES]
+  // Categorize selectable destination roles into System Roles and Custom Roles from currently existing roles
+  const { systemRoles, customRoles, destinationRoles } = useMemo(() => {
+    // 1. System Roles: Super Admin (from allRoles or fallback) + other is_system roles + standard user roles
+    const superAdminRole = allRoles.find(
+      (r) => r.role_key === "super_admin" || r.role_key === "admin"
+    )
+    const sysList = [
+      {
+        role_key: "super_admin",
+        name: superAdminRole?.name || "Super Admin",
+        is_system: true,
+      },
+    ]
+
     allRoles.forEach((r) => {
-      if (!list.some((item) => item.role_key === r.role_key)) {
-        list.push({
-          role_key: r.role_key,
-          name: r.name + (r.is_system ? "" : " (Custom)")
-        })
+      if (
+        r.is_system &&
+        !["super_admin", "admin", "teacher", "student"].includes(r.role_key)
+      ) {
+        if (!sysList.some((item) => item.role_key === r.role_key)) {
+          sysList.push({
+            role_key: r.role_key,
+            name: r.name,
+            is_system: true,
+          })
+        }
       }
     })
-    return list
+
+    // Include standard user roles
+    BASE_SYSTEM_USER_ROLES.forEach((ur) => {
+      if (!sysList.some((item) => item.role_key === ur.role_key)) {
+        sysList.push(ur)
+      }
+    })
+
+    // 2. Custom Roles: All non-system roles currently existing in allRoles (Master Data)
+    const custList = []
+    allRoles.forEach((r) => {
+      if (
+        !r.is_system &&
+        !["super_admin", "admin", "teacher", "student"].includes(r.role_key)
+      ) {
+        if (!custList.some((item) => item.role_key === r.role_key)) {
+          custList.push({
+            role_key: r.role_key,
+            name: r.name,
+            is_system: false,
+          })
+        }
+      }
+    })
+
+    const allDest = [...sysList, ...custList]
+
+    return {
+      systemRoles: sysList,
+      customRoles: custList,
+      destinationRoles: allDest,
+    }
   }, [allRoles])
 
   // Filter assigned users by local search
@@ -474,15 +519,15 @@ export default function RoleUsersDialog({
                           {!isProtectedSuperAdmin && (
                             <>
                               {/* Transfer Role Dropdown */}
-                              <div className="flex items-center gap-1.5">
-                                <label className="text-[11px] text-[#696969] dark:text-gray-400 font-medium hidden md:inline">
+                              <div className="flex items-center gap-1.5 font-sans">
+                                <label className="text-[11px] text-[#696969] dark:text-gray-400 font-medium hidden md:inline font-sans">
                                   Transfer:
                                 </label>
                                 <select
                                   value={user.role || role.role_key}
                                   onChange={(e) => {
                                     const newKey = e.target.value
-                                    if (newKey !== user.role) {
+                                    if (newKey && newKey !== user.role && newKey !== role.role_key) {
                                       const targetObj = destinationRoles.find((r) => r.role_key === newKey)
                                       setConfirmTransfer({
                                         isOpen: true,
@@ -492,20 +537,41 @@ export default function RoleUsersDialog({
                                       })
                                     }
                                   }}
-                                  className="h-8.5 text-xs px-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] cursor-pointer"
+                                  className="h-8.5 text-xs px-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] cursor-pointer font-sans"
                                   title="Transfer user to another role"
                                 >
-                                  <option value={role.role_key} disabled>
+                                  <option value={role.role_key} disabled className="font-sans text-neutral-400">
                                     (Current: {role.name})
                                   </option>
-                                  <optgroup label="Available Roles">
-                                    {destinationRoles
-                                      .filter((r) => r.role_key !== role.role_key)
-                                      .map((r) => (
-                                        <option key={r.role_key} value={r.role_key}>
-                                          {r.name}
-                                        </option>
-                                      ))}
+
+                                  {/* System Roles */}
+                                  {systemRoles.filter((r) => r.role_key !== role.role_key).length > 0 && (
+                                    <optgroup label="System Roles" className="font-sans font-semibold text-neutral-700 dark:text-neutral-200">
+                                      {systemRoles
+                                        .filter((r) => r.role_key !== role.role_key)
+                                        .map((r) => (
+                                          <option key={r.role_key} value={r.role_key} className="font-sans font-normal text-[#3B3B3B] dark:text-white">
+                                            {r.name}
+                                          </option>
+                                        ))}
+                                    </optgroup>
+                                  )}
+
+                                  {/* Custom Roles */}
+                                  <optgroup label="Custom Roles" className="font-sans font-semibold text-neutral-700 dark:text-neutral-200">
+                                    {customRoles.filter((r) => r.role_key !== role.role_key).length > 0 ? (
+                                      customRoles
+                                        .filter((r) => r.role_key !== role.role_key)
+                                        .map((r) => (
+                                          <option key={r.role_key} value={r.role_key} className="font-sans font-normal text-[#3B3B3B] dark:text-white">
+                                            {r.name}
+                                          </option>
+                                        ))
+                                    ) : (
+                                      <option value="" disabled className="font-sans italic text-neutral-400">
+                                        No custom roles available
+                                      </option>
+                                    )}
                                   </optgroup>
                                 </select>
                               </div>

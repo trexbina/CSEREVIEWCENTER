@@ -25,7 +25,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
@@ -813,12 +815,36 @@ export default function AddAdminUserDialog({
                   <SelectTrigger className="w-full h-9 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-[#3B3B3B] dark:text-white shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed">
                     <SelectValue placeholder="Select Admin Role" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-h-60">
-                    {availableAdminRoles.map((r) => (
-                      <SelectItem key={r.role_key} value={r.role_key}>
-                        {r.name}
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl max-h-60 font-sans">
+                    {availableAdminRoles.filter((r) => r.is_system).length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider px-2 py-1 font-sans">
+                          System Roles
+                        </SelectLabel>
+                        {availableAdminRoles
+                          .filter((r) => r.is_system)
+                          .map((r) => (
+                            <SelectItem key={r.role_key} value={r.role_key} className="font-sans">
+                              {r.name}
+                            </SelectItem>
+                          ))}
+                      </SelectGroup>
+                    )}
+
+                    {availableAdminRoles.filter((r) => !r.is_system).length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider px-2 py-1 font-sans">
+                          Custom Roles
+                        </SelectLabel>
+                        {availableAdminRoles
+                          .filter((r) => !r.is_system)
+                          .map((r) => (
+                            <SelectItem key={r.role_key} value={r.role_key} className="font-sans">
+                              {r.name}
+                            </SelectItem>
+                          ))}
+                      </SelectGroup>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

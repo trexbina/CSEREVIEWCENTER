@@ -419,59 +419,35 @@ export default function RoleUsersDialog({
                               <span className="font-semibold text-xs text-[#3B3B3B] dark:text-white truncate">
                                 {user.name}
                               </span>
-                              {isProtectedSuperAdmin && (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                                  <Shield className="size-2.5" />
-                                  Default Super Admin
-                                </span>
-                              )}
-                              {/* Status badge */}
+                              {/* Status pill matching batch management design */}
                               <span
-                                className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                                className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide ${
                                   isActive
-                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                                    : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                    ? "bg-[#2A9D8F]/15 text-[#1b6b61] dark:bg-[#2A9D8F]/25 dark:text-[#68c9be]"
+                                    : "bg-[#E17055]/15 text-[#b33920] dark:bg-[#E17055]/25 dark:text-[#f89b87]"
                                 }`}
                               >
-                                <span
-                                  className={`size-1.5 rounded-full ${
-                                    isActive ? "bg-emerald-500" : "bg-rose-500"
-                                  }`}
-                                />
                                 {isActive ? "Active" : "Disabled"}
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-2 text-[11px] text-[#696969] dark:text-gray-400 mt-0.5 flex-wrap">
-                              {user.login_id && (
-                                <span className="font-mono bg-black/[0.04] dark:bg-white/10 text-[#3B3B3B] dark:text-gray-300 px-1.5 py-0.2 rounded border border-black/5 dark:border-white/10">
-                                  {user.login_id}
-                                </span>
-                              )}
-                              <span className="truncate">
-                                {user.personal_email || user.email || "No email"}
-                              </span>
-                            </div>
+                            {user.login_id && (
+                              <p className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
+                                {user.login_id}
+                              </p>
+                            )}
                           </div>
                         </div>
 
                         {/* Actions: Transfer Role & Disable/Enable */}
                         <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                           {isProtectedSuperAdmin ? (
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20 flex items-center gap-1.5"
-                                title="The default Super Admin account is permanently assigned as Super Admin"
-                              >
-                                <Shield className="size-3" /> Fixed Role
-                              </span>
-                              <span
-                                className="text-xs font-medium text-neutral-400 dark:text-neutral-500 bg-black/[0.03] dark:bg-white/5 px-3 py-1.5 rounded-xl border border-black/5 dark:border-white/10 cursor-not-allowed opacity-60"
-                                title="Default Super Admin cannot be disabled"
-                              >
-                                Permanent Access
-                              </span>
-                            </div>
+                            <span
+                              className="px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-black/[0.05] dark:bg-white/[0.08] text-neutral-500 dark:text-neutral-400"
+                              title="The default Super Admin account is permanently assigned as Super Admin"
+                            >
+                              Fixed Role
+                            </span>
                           ) : (
                             <>
                               {/* Transfer Role Dropdown */}
@@ -632,26 +608,25 @@ export default function RoleUsersDialog({
                               <span className="font-semibold text-xs text-[#3B3B3B] dark:text-white truncate">
                                 {user.name}
                               </span>
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/10 text-[#696969] dark:text-gray-300 border border-black/5 dark:border-white/10">
+                              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-black/[0.05] dark:bg-white/[0.08] text-neutral-500 dark:text-neutral-400">
                                 Current: {user.role_name || user.role}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2 text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
-                              {user.login_id && <span className="font-mono">{user.login_id}</span>}
-                              <span className="truncate">{user.personal_email || user.email}</span>
-                            </div>
+                            {user.login_id && (
+                              <p className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
+                                {user.login_id}
+                              </p>
+                            )}
                           </div>
                         </div>
 
                         <div className="shrink-0">
                           {user.login_id?.toLowerCase() === "admin00001" || user.id === 1 ? (
-                            <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20 flex items-center gap-1.5">
-                              <Shield className="size-3" />
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-black/[0.05] dark:bg-white/[0.08] text-neutral-500 dark:text-neutral-400">
                               Primary Super Admin
                             </span>
                           ) : isAlreadyInThisRole ? (
-                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 flex items-center gap-1.5">
-                              <Check className="size-3.5 stroke-[3]" />
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-[#2A9D8F]/15 text-[#1b6b61] dark:bg-[#2A9D8F]/25 dark:text-[#68c9be]">
                               Already in this role
                             </span>
                           ) : (

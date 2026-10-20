@@ -8,7 +8,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import { motion } from "motion/react"
 
 // small icons used for buttons and cards
-import { Trash, Plus, Save, Clock, Settings, X, ArrowLeft, Calculator, Check, ChevronDown, ChevronRight, Maximize2, Minimize2, Pencil, Printer, Download, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { Trash, Plus, Save, Clock, Settings, X, ArrowLeft, Calculator, Check, ChevronDown, ChevronRight, Maximize2, Minimize2, Pencil, Printer, Download, ArrowUpDown, ArrowUp, ArrowDown, Search, Filter } from "lucide-react"
 
 // table styling helpers
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -912,10 +912,33 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
     })
   }
 
-  // filters and sorting state
+  // filters, search, pagination, and sorting state
   const [filterExam, setFilterExam] = useState("all")
   const [filterBatch, setFilterBatch] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [gradebookSearchQuery, setGradebookSearchQuery] = useState("")
+  const [isGradebookSearchOpen, setIsGradebookSearchOpen] = useState(false)
+  const [isGradebookFilterOpen, setIsGradebookFilterOpen] = useState(false)
+  const [gradebookCurrentPage, setGradebookCurrentPage] = useState(1)
+  const gradebookItemsPerPage = 10
+
+  const gradebookSearchRef = useRef(null)
+  const gradebookFilterRef = useRef(null)
+
+  // Close search/filter popover on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (gradebookSearchRef.current && !gradebookSearchRef.current.contains(e.target)) {
+        if (!gradebookSearchQuery) setIsGradebookSearchOpen(false)
+      }
+      if (gradebookFilterRef.current && !gradebookFilterRef.current.contains(e.target)) {
+        setIsGradebookFilterOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [gradebookSearchQuery])
+
   const [sortField, setSortField] = useState("name")
   const [sortDir, setSortDir] = useState("asc")
 
@@ -929,11 +952,24 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
     }
   }
 
+  const activeGradebookFilterCount = (filterExam !== "all" ? 1 : 0) + (filterBatch !== "all" ? 1 : 0)
+
   const filteredGradebooks = useMemo(() => {
     let result = (gradebooks || []).filter(gb => {
       if (filterExam !== "all" && gb.exam_id !== parseInt(filterExam)) return false
       if (filterBatch !== "all" && gb.batch_id !== parseInt(filterBatch)) return false
       if (filterStatus !== "all" && gb.status?.toLowerCase() !== filterStatus.toLowerCase()) return false
+
+      if (gradebookSearchQuery.trim()) {
+        const q = gradebookSearchQuery.toLowerCase()
+        const matchName = (gb.name || "").toLowerCase().includes(q)
+        const matchCode = (gb.code || "").toLowerCase().includes(q)
+        const matchBatch = (gb.batch_name || "").toLowerCase().includes(q)
+        const matchExam = (gb.exam_name || "").toLowerCase().includes(q)
+        const matchYear = String(gb.target_year || "").includes(q)
+        if (!matchName && !matchCode && !matchBatch && !matchExam && !matchYear) return false
+      }
+
       return true
     })
 
@@ -969,7 +1005,14 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
     })
 
     return result
-  }, [gradebooks, filterExam, filterBatch, filterStatus, sortField, sortDir])
+  }, [gradebooks, filterExam, filterBatch, filterStatus, gradebookSearchQuery, sortField, sortDir])
+
+  const totalPages = Math.ceil(filteredGradebooks.length / gradebookItemsPerPage)
+  const validPage = Math.max(1, Math.min(gradebookCurrentPage, totalPages || 1))
+  const paginatedGradebooks = useMemo(() => {
+    const start = (validPage - 1) * gradebookItemsPerPage
+    return filteredGradebooks.slice(start, start + gradebookItemsPerPage)
+  }, [filteredGradebooks, validPage, gradebookItemsPerPage])
 
   const SortButton = ({ label, field, sortField, sortDir, onSort }) => {
     const active = sortField === field
@@ -1115,155 +1158,405 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
       <div className="w-full bg-card border border-border/40 rounded-2xl p-6 shadow-xs">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4 pb-4 mb-6 border-b border-border/40">
-          <div className="flex items-center gap-4">
-            <button onClick={onBack} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer" title="Back to Master Data">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBack}
+              className="p-1.5 rounded-lg text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+              title="Back to Master Data"
+            >
               <ChevronRight className="h-5 w-5 rotate-180" />
             </button>
-            <div className="min-w-0">
-              <h2 className="text-lg font-bold text-foreground truncate">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
                 Gradebooks
               </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Configure grade formulas, weights, and student readiness scores.</p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Configure grade formulas, weights, and student readiness scores.
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+            <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 px-3 py-1.5 rounded-lg">
               {gradebooks.length} {gradebooks.length === 1 ? "Gradebook" : "Gradebooks"}
             </span>
-            <button onClick={handleOpenAdd} className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-3.5 rounded-lg transition-all text-xs cursor-pointer active:scale-95">
-              Add Gradebook
-            </button>
-          </div>
-        </div>
-
-        {/* Filters Row */}
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          {/* Target Examination Filter */}
-          <div className="relative inline-flex items-center gap-1.5 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1 text-xs font-medium text-foreground">
-            <span className="text-muted-foreground font-normal">Exam:</span>
-            <select 
-              value={filterExam} 
-              onChange={e => setFilterExam(e.target.value)}
-              className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1"
-            >
-              <option value="all">All</option>
-              {tree.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-            </select>
-          </div>
-
-          {/* Batch Filter */}
-          <div className="relative inline-flex items-center gap-1.5 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1 text-xs font-medium text-foreground">
-            <span className="text-muted-foreground font-normal">Batch:</span>
-            <select 
-              value={filterBatch} 
-              onChange={e => setFilterBatch(e.target.value)}
-              className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1"
-            >
-              <option value="all">All</option>
-              {batches.map(b => <option key={b.id} value={b.id}>{b.name} / {b.target_year}</option>)}
-            </select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="relative inline-flex items-center gap-1.5 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1 text-xs font-medium text-foreground">
-            <span className="text-muted-foreground font-normal">Status:</span>
-            <select 
-              value={filterStatus} 
-              onChange={e => setFilterStatus(e.target.value)}
-              className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1"
-            >
-              <option value="all">All</option>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-            </select>
-          </div>
-
-          {(filterExam !== "all" || filterBatch !== "all" || filterStatus !== "all") && (
             <button
-              onClick={() => {
-                setFilterExam("all")
-                setFilterBatch("all")
-                setFilterStatus("all")
-              }}
-              className="text-xs text-[#E9C46A] hover:underline self-center px-1 cursor-pointer"
+              onClick={handleOpenAdd}
+              className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-3.5 rounded-lg flex items-center gap-1.5 transition-all text-xs cursor-pointer shadow-xs active:scale-95"
             >
-              Reset filters
+              <Plus className="h-3.5 w-3.5" />
+              <span>Add Gradebook</span>
             </button>
-          )}
+          </div>
         </div>
 
-        {/* Gradebooks Table */}
-        <div className="min-h-[220px] flex flex-col">
-          {filteredGradebooks.length > 0 ? (
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-border/40 text-xs font-medium text-muted-foreground">
-                    <th className="py-2.5 px-4 w-[22%]" scope="col">
-                      <SortButton label="Gradebook Title" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th className="py-2.5 px-3 w-[13%]" scope="col">
-                      <SortButton label="Exam Code" field="code" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th className="py-2.5 px-3 w-[14%]" scope="col">
-                      <SortButton label="Batch / Target" field="batch" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th className="py-2.5 px-3 w-[11%]" scope="col">
-                      <SortButton label="Type" field="exam" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th className="py-2.5 px-3 w-[12%]" scope="col">
-                      <SortButton label="Students" field="students" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th className="py-2.5 px-3 w-[12%]" scope="col">
-                      <SortButton label="Date Created" field="created_at" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th className="py-2.5 px-3 w-[9%]" scope="col">
-                      <SortButton label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                    </th>
-                    <th className="py-2.5 px-4 w-[7%] text-right font-medium text-muted-foreground" scope="col">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {filteredGradebooks.map(gb => (
-                    <tr key={gb.id} className="border-b border-border/30 last:border-b-0 hover:bg-muted/20 transition-colors">
-                      <td className="py-3 px-4 text-[#4382DF] whitespace-nowrap font-medium cursor-pointer hover:underline" onClick={() => setBuildGradebookId(gb.id)}>
-                        {gb.name}
-                      </td>
-                      <td className="py-3 px-3 text-foreground whitespace-nowrap">{gb.code}</td>
-                      <td className="py-3 px-3 text-foreground whitespace-nowrap">
-                        {gb.batch_name} / {gb.target_year}
-                      </td>
-                      <td className="py-3 px-3 text-foreground whitespace-nowrap uppercase">{gb.exam_name || "—"}</td>
-                      <td className="py-3 px-3 text-foreground whitespace-nowrap">
-                        {gb.student_count || 0} enrolled
-                      </td>
-                      <td className="py-3 px-3 text-foreground whitespace-nowrap">{new Date(gb.created_at).toLocaleDateString()}</td>
-                      <td className="py-3 px-3 text-foreground whitespace-nowrap">
-                        <span className={gb.status === "ACTIVE" ? "text-emerald-600 font-medium" : "text-gray-500 font-medium"}>
-                          {gb.status === "ACTIVE" ? "Active" : "Inactive"}
+        {/* Unified Table Card matching Batch Management Data */}
+        <div className={`w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs relative ${isGradebookFilterOpen ? "z-50" : "z-10"}`}>
+          {/* Card Top Header: Status Tabs (left) + Filter & Search Controls (right) */}
+          <div className={`px-4 py-3 border-b border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 bg-white/40 dark:bg-white/[0.02] rounded-t-2xl relative ${isGradebookFilterOpen ? "z-50" : "z-20"}`}>
+            {/* Left: Quick Status Filter Pills */}
+            <div className="flex items-center gap-1 overflow-x-auto py-0.5">
+              {[
+                { key: "all", label: "All" },
+                { key: "ACTIVE", label: "Active" },
+                { key: "INACTIVE", label: "Inactive" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => {
+                    setFilterStatus(tab.key)
+                    setGradebookCurrentPage(1)
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                    filterStatus === tab.key
+                      ? "bg-black/[0.07] dark:bg-white/15 text-[#3B3B3B] dark:text-white font-semibold shadow-2xs"
+                      : "text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Right: Search & Filter Icons */}
+            <div className="flex items-center gap-2 ml-auto">
+              {/* Search Control */}
+              <div className="relative" ref={gradebookSearchRef}>
+                {isGradebookSearchOpen ? (
+                  <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400 pointer-events-none" />
+                      <input
+                        type="search"
+                        autoFocus
+                        placeholder="Search gradebook, code, batch…"
+                        value={gradebookSearchQuery}
+                        onChange={(e) => {
+                          setGradebookSearchQuery(e.target.value)
+                          setGradebookCurrentPage(1)
+                        }}
+                        className="w-44 sm:w-60 h-8 pl-8 pr-2.5 text-xs rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGradebookSearchQuery("")
+                        setGradebookCurrentPage(1)
+                        setIsGradebookSearchOpen(false)
+                      }}
+                      className="h-8 px-2 text-[11px] text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsGradebookSearchOpen(true)}
+                    className={`size-8 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center justify-center text-neutral-600 dark:text-neutral-300 ${
+                      gradebookSearchQuery ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white" : ""
+                    }`}
+                    title="Search gradebooks"
+                  >
+                    <Search className="size-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Filter Popover Button */}
+              <div className="relative" ref={gradebookFilterRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsGradebookFilterOpen((prev) => !prev)}
+                  className={`size-8 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center justify-center text-neutral-600 dark:text-neutral-300 relative ${
+                    activeGradebookFilterCount > 0 ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white font-medium" : ""
+                  }`}
+                  aria-expanded={isGradebookFilterOpen}
+                  aria-haspopup="true"
+                  title="Filter gradebooks"
+                >
+                  <Filter className="size-3.5" />
+                  {activeGradebookFilterCount > 0 && (
+                    <span className="absolute -top-1 -right-1 size-4 rounded-full bg-[#3B3B3B] text-white dark:bg-white dark:text-black text-[10px] font-bold flex items-center justify-center shadow-xs">
+                      {activeGradebookFilterCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Filter Dropdown Popover */}
+                {isGradebookFilterOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-2xl z-[100] p-3 space-y-3 max-h-[460px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                    {/* Section 1: Examination */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                          Target Examination
                         </span>
-                      </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center justify-end gap-1.5">
-                          <button onClick={() => handleOpenEdit(gb)} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => handleDelete(gb.id, gb.name)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors cursor-pointer" title="Delete"><Trash className="h-3.5 w-3.5" /></button>
+                        {filterExam !== "all" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFilterExam("all")
+                              setGradebookCurrentPage(1)
+                            }}
+                            className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                        <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                          <input
+                            type="radio"
+                            name="filter-gradebook-exam"
+                            checked={filterExam === "all"}
+                            onChange={() => {
+                              setFilterExam("all")
+                              setGradebookCurrentPage(1)
+                            }}
+                            className="size-3.5 text-[#3B3B3B] cursor-pointer accent-[#3B3B3B]"
+                          />
+                          <span>All Examinations</span>
+                        </label>
+                        {tree.map((ex) => (
+                          <label
+                            key={ex.id}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                          >
+                            <input
+                              type="radio"
+                              name="filter-gradebook-exam"
+                              checked={String(filterExam) === String(ex.id)}
+                              onChange={() => {
+                                setFilterExam(String(ex.id))
+                                setGradebookCurrentPage(1)
+                              }}
+                              className="size-3.5 text-[#3B3B3B] cursor-pointer accent-[#3B3B3B]"
+                            />
+                            <span className="truncate">{ex.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Section Divider */}
+                    <div className="border-t border-black/5 dark:border-white/10" />
+
+                    {/* Section 2: Batch */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                          Review Batch
+                        </span>
+                        {filterBatch !== "all" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFilterBatch("all")
+                              setGradebookCurrentPage(1)
+                            }}
+                            className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                        <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                          <input
+                            type="radio"
+                            name="filter-gradebook-batch"
+                            checked={filterBatch === "all"}
+                            onChange={() => {
+                              setFilterBatch("all")
+                              setGradebookCurrentPage(1)
+                            }}
+                            className="size-3.5 text-[#3B3B3B] cursor-pointer accent-[#3B3B3B]"
+                          />
+                          <span>All Batches</span>
+                        </label>
+                        {batches.map((b) => (
+                          <label
+                            key={b.id}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                          >
+                            <input
+                              type="radio"
+                              name="filter-gradebook-batch"
+                              checked={String(filterBatch) === String(b.id)}
+                              onChange={() => {
+                                setFilterBatch(String(b.id))
+                                setGradebookCurrentPage(1)
+                              }}
+                              className="size-3.5 text-[#3B3B3B] cursor-pointer accent-[#3B3B3B]"
+                            />
+                            <span className="truncate">{b.name} {b.target_year ? `(${b.target_year})` : ""}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Bottom Reset Strip */}
+                    {activeGradebookFilterCount > 0 && (
+                      <>
+                        <div className="border-t border-black/5 dark:border-white/10" />
+                        <div className="flex items-center justify-between px-1 pt-0.5 text-xs">
+                          <span className="text-neutral-400">
+                            {activeGradebookFilterCount} active filter{activeGradebookFilterCount > 1 ? "s" : ""}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFilterExam("all")
+                              setFilterBatch("all")
+                              setGradebookCurrentPage(1)
+                            }}
+                            className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
+                          >
+                            Reset all
+                          </button>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Gradebooks Table Area */}
+          {filteredGradebooks.length === 0 ? (
+            <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+              {gradebookSearchQuery || activeGradebookFilterCount > 0 || filterStatus !== "all"
+                ? "No matching gradebooks found for this criteria."
+                : "No gradebooks created yet. Click 'Add Gradebook' above to create one."}
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
-              <p className="text-sm font-semibold text-foreground mb-1">
-                {gradebooks.length === 0 ? "No Gradebooks Yet" : "No Matching Gradebooks"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {gradebooks.length === 0 
-                  ? "Click on the add gradebook button above to create your first gradebook."
-                  : "Try adjusting your filter criteria to view other gradebooks."}
-              </p>
+            <div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse" aria-label="Gradebooks Table">
+                  <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                    <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                      <th className="px-4 py-2.5 text-left min-w-[160px] whitespace-nowrap" scope="col">
+                        <SortButton label="Gradebook Title" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                      </th>
+                      <th className="px-4 py-2.5 text-left min-w-[110px] whitespace-nowrap" scope="col">
+                        <SortButton label="Exam Code" field="code" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                      </th>
+                      <th className="px-4 py-2.5 text-left min-w-[150px] whitespace-nowrap" scope="col">
+                        <SortButton label="Batch / Target" field="batch" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                      </th>
+                      <th className="px-4 py-2.5 text-left min-w-[160px] max-w-[220px] whitespace-nowrap" scope="col">
+                        <SortButton label="Type" field="exam" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                      </th>
+                      <th className="px-4 py-2.5 text-center min-w-[110px] whitespace-nowrap" scope="col">
+                        <SortButton label="Students" field="students" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                      </th>
+                      <th className="px-4 py-2.5 text-left min-w-[130px] whitespace-nowrap" scope="col">
+                        <SortButton label="Date Created" field="created_at" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                      </th>
+                      <th className="px-4 py-2.5 text-center min-w-[100px] whitespace-nowrap" scope="col">
+                        <SortButton label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                      </th>
+                      <th className="px-4 py-2.5 pr-6 text-right min-w-[90px] whitespace-nowrap font-semibold text-[#696969] dark:text-gray-300" scope="col">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
+                    {paginatedGradebooks.map((gb) => {
+                      const isActive = (gb.status || "").toUpperCase() === "ACTIVE"
+                      return (
+                        <tr
+                          key={gb.id}
+                          onClick={() => setBuildGradebookId(gb.id)}
+                          className="h-13 hover:bg-black/[0.025] dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
+                        >
+                          <td className="px-4 py-2.5 text-left font-medium text-[13px] text-[#3B3B3B] dark:text-gray-100 whitespace-nowrap">
+                            {gb.name}
+                          </td>
+                          <td className="px-4 py-2.5 text-left text-xs font-mono font-medium text-[#3B3B3B] dark:text-neutral-200 whitespace-nowrap">
+                            {gb.code}
+                          </td>
+                          <td className="px-4 py-2.5 text-left text-xs text-[#3B3B3B] dark:text-neutral-200 whitespace-nowrap">
+                            {gb.batch_name ? `${gb.batch_name} / ${gb.target_year || "—"}` : "—"}
+                          </td>
+                          <td className="px-4 py-2.5 text-left text-xs text-[#3B3B3B] dark:text-neutral-200 uppercase max-w-[220px] whitespace-nowrap" title={gb.exam_name || ""}>
+                            <span className="block truncate">{gb.exam_name || "—"}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-center text-xs text-neutral-500 dark:text-neutral-400 font-normal whitespace-nowrap">
+                            {gb.student_count || 0} enrolled
+                          </td>
+                          <td className="px-4 py-2.5 text-left text-xs text-neutral-600 dark:text-neutral-300 font-normal whitespace-nowrap">
+                            {gb.created_at ? new Date(gb.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "—"}
+                          </td>
+                          <td className="px-4 py-2.5 text-center whitespace-nowrap">
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide ${
+                                isActive
+                                  ? "bg-[#2A9D8F]/15 text-[#1b6b61] dark:bg-[#2A9D8F]/25 dark:text-[#68c9be]"
+                                  : "bg-black/[0.05] text-neutral-500 dark:bg-white/[0.08] dark:text-neutral-400"
+                              }`}
+                            >
+                              {isActive ? "Active" : "Inactive"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 pr-6 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                            <div className="inline-flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleOpenEdit(gb)
+                                }}
+                                className="h-7 w-7 flex items-center justify-center text-neutral-500 hover:text-[#3B3B3B] hover:bg-black/5 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                                title="Edit"
+                              >
+                                <Settings className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDelete(gb.id, gb.name)
+                                }}
+                                className="h-7 w-7 flex items-center justify-center text-neutral-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                                title="Delete"
+                              >
+                                <Trash className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination Controls matching Batch Management Data */}
+              {totalPages >= 1 && (
+                <div className="px-4 py-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-center gap-3 bg-white/20 dark:bg-white/[0.01] rounded-b-2xl">
+                  <div className="flex items-center gap-3">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        onClick={() => setGradebookCurrentPage(pageNum)}
+                        className={`text-xs transition-colors cursor-pointer ${
+                          pageNum === validPage
+                            ? "font-semibold text-[#3B3B3B] dark:text-white"
+                            : "font-normal text-neutral-400 hover:text-[#3B3B3B] dark:text-neutral-500 dark:hover:text-white"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

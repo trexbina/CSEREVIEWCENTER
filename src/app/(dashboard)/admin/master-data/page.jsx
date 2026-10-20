@@ -2,7 +2,7 @@
 "use client"
 
 // helper tools from react to handle data state and page effects
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo, useEffect, useRef } from "react"
 
 // animation helpers for smooth transitions
 import { motion, AnimatePresence } from "motion/react"
@@ -26,7 +26,8 @@ import {
   ArrowLeft,
   Calculator,
   Percent,
-  GraduationCap
+  GraduationCap,
+  Search
 } from "lucide-react"
 
 // table styling components
@@ -199,7 +200,7 @@ const BatchDialog = ({ isOpen, batchForm, setBatchForm, onSubmit, onCancel, tree
         </div>
         <form onSubmit={onSubmit} className="space-y-3">
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-foreground">Batch Name / Number</label>
+            <label className="text-xs font-semibold text-foreground">Batch Name</label>
             <input
               type="text"
               required
@@ -496,6 +497,28 @@ export default function MasterDataBuilderPage() {
   const [filterStatus, setFilterStatus] = useState("all")
   const [batchSortField, setBatchSortField] = useState("name")
   const [batchSortDir, setBatchSortDir] = useState("asc")
+  const [batchSearchQuery, setBatchSearchQuery] = useState("")
+  const [isBatchSearchOpen, setIsBatchSearchOpen] = useState(false)
+  const [isBatchFilterOpen, setIsBatchFilterOpen] = useState(false)
+  const [batchCurrentPage, setBatchCurrentPage] = useState(1)
+  const batchSearchRef = useRef(null)
+  const batchFilterRef = useRef(null)
+
+  // Close batch popovers on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (batchFilterRef.current && !batchFilterRef.current.contains(e.target)) {
+        setIsBatchFilterOpen(false)
+      }
+      if (batchSearchRef.current && !batchSearchRef.current.contains(e.target)) {
+        if (!batchSearchQuery.trim()) {
+          setIsBatchSearchOpen(false)
+        }
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [batchSearchQuery])
 
   const handleBatchSort = (field) => {
     if (batchSortField === field) {
@@ -658,7 +681,7 @@ export default function MasterDataBuilderPage() {
   }
 
   const handleOpenEditBatch = (batch) => {
-    const batchNum = batch.name ? batch.name.replace("Batch ", "") : ""
+    const batchNum = batch.name || ""
     const formatDt = (d) => d ? new Date(d).toISOString().split('T')[0] : ""
     setBatchForm({
       id: batch.id,
@@ -675,9 +698,9 @@ export default function MasterDataBuilderPage() {
 
   const handleBatchSubmit = async (e) => {
     e.preventDefault()
-    if (!batchForm.batchNumber || !batchForm.examId || !batchForm.year) return
+    if (!batchForm.batchNumber?.trim() || !batchForm.examId || !batchForm.year) return
 
-    const newName = `Batch ${batchForm.batchNumber}`
+    const newName = batchForm.batchNumber.trim()
     try {
       if (isBatchEdit) {
         await apiCall("UPDATE", "BATCH", {
@@ -735,20 +758,44 @@ export default function MasterDataBuilderPage() {
     return Array.from(years).sort((a, b) => b - a);
   }, [batches]);
 
+  // Helper to determine effective batch status (if term ended, status is 'completed')
+  const getEffectiveBatchStatus = (batch) => {
+    if (batch.end_date) {
+      const isPast = new Date(batch.end_date) < new Date(new Date().setHours(0, 0, 0, 0))
+      if (isPast) return "completed"
+    }
+    return (batch.status || "").toLowerCase()
+  }
+
   // Computed Batches Filter & Sort
   const filteredBatches = useMemo(() => {
     let result = batches.filter(batch => {
       if (filterExam !== "all" && batch.exam_id !== parseInt(filterExam)) return false;
-      if (filterStatus !== "all" && batch.status !== filterStatus) return false;
       if (filterYear !== "all" && batch.target_year !== parseInt(filterYear)) return false;
+      
+      // Status filtering is done strictly by top tabs:
+      // If term has ended (end_date < today), the batch is considered 'completed'
+      const effectiveStatus = getEffectiveBatchStatus(batch);
+      if (filterStatus !== "all" && effectiveStatus !== filterStatus) return false;
+
+      if (batchSearchQuery.trim()) {
+        const q = batchSearchQuery.trim().toLowerCase();
+        const examObj = tree.find(e => e.id === batch.exam_id);
+        const examName = (examObj?.name || "").toLowerCase();
+        const batchName = (batch.name || "").toLowerCase();
+        const yearStr = String(batch.target_year || "");
+        if (!batchName.includes(q) && !examName.includes(q) && !yearStr.includes(q)) {
+          return false;
+        }
+      }
       return true;
     });
 
     result.sort((a, b) => {
       let valA, valB;
       if (batchSortField === "status") {
-        valA = (a.status || "").toLowerCase();
-        valB = (b.status || "").toLowerCase();
+        valA = getEffectiveBatchStatus(a);
+        valB = getEffectiveBatchStatus(b);
       } else if (batchSortField === "name") {
         valA = (a.name || "").toLowerCase();
         valB = (b.name || "").toLowerCase();
@@ -768,10 +815,13 @@ export default function MasterDataBuilderPage() {
     });
 
     return result;
-  }, [batches, filterExam, filterStatus, filterYear, batchSortField, batchSortDir, tree]);
+  }, [batches, filterExam, filterStatus, filterYear, batchSearchQuery, batchSortField, batchSortDir, tree]);
+
+  // Status is filtered via the top tabs, so only Exam and Year count towards popover filters
+  const activeBatchFilterCount = (filterExam !== "all" ? 1 : 0) + (filterYear !== "all" ? 1 : 0);
 
   return (
-    <div className="space-y-6 w-full max-w-6xl mx-auto px-4 py-4 relative animate-in fade-in duration-300">
+    <div className="space-y-6 sm:space-y-8 pb-10 relative animate-in fade-in duration-300">
 
       <CustomPrompt
         isOpen={promptData.isOpen}
@@ -814,12 +864,9 @@ export default function MasterDataBuilderPage() {
 
         {/* Header */}
         <div className="border-b border-border/40 pb-4">
-          <div className="flex items-center gap-2.5 mb-1">
-            <Layers className="h-6 w-6 text-[#E9C46A]" />
-            <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase">
-              MASTER DATA
-            </h1>
-          </div>
+          <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase mb-1">
+            MASTER DATA
+          </h1>
           <p className="text-muted-foreground text-sm font-medium">
             Manage exams, review batches, schools, and grade settings.
           </p>
@@ -1153,191 +1200,440 @@ export default function MasterDataBuilderPage() {
             )}
 
             {/* TAB 2: BATCH MANAGEMENT DATA */}
-            {activeTab === "batches" && (
-              <motion.div
-                key="batches"
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-              >
-                <div className="w-full bg-card border border-border/40 rounded-2xl p-6 shadow-xs">
+            {activeTab === "batches" && (() => {
+              const BATCH_PAGE_SIZE = 10
+              const totalBatches = filteredBatches.length
+              const totalPages = Math.max(1, Math.ceil(totalBatches / BATCH_PAGE_SIZE))
+              const validPage = Math.min(Math.max(1, batchCurrentPage), totalPages)
+              const startIndex = (validPage - 1) * BATCH_PAGE_SIZE
+              const paginatedBatches = filteredBatches.slice(startIndex, startIndex + BATCH_PAGE_SIZE)
+
+              return (
+                <motion.div
+                  key="batches"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="space-y-4"
+                >
                   {/* Header */}
-                  <div className="flex items-center gap-4 mb-6 pb-4 border-b border-border/40">
-                    <button
-                      onClick={() => handleTabChange("menu")}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
-                      title="Back to Master Data"
-                    >
-                      <ChevronRight className="h-5 w-5 rotate-180" />
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-lg font-bold text-foreground truncate">
-                        Batch Management Data
-                      </h2>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Create and manage review batches and target exam years.
-                      </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleTabChange("menu")}
+                        className="p-1.5 rounded-lg text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                        title="Back to Master Data"
+                      >
+                        <ChevronRight className="h-5 w-5 rotate-180" />
+                      </button>
+                      <div>
+                        <h2 className="text-xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                          Batch Management Data
+                        </h2>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                          Create and manage review batches and target exam years.
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
+                    <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                      <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 px-3 py-1.5 rounded-lg">
                         {batches.length} {batches.length === 1 ? "Batch" : "Batches"}
                       </span>
                       <button
                         onClick={handleOpenAddBatch}
-                        className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-3.5 rounded-lg flex items-center gap-1.5 transition-all text-xs cursor-pointer active:scale-95"
+                        className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-3.5 rounded-lg flex items-center gap-1.5 transition-all text-xs cursor-pointer shadow-xs active:scale-95"
                       >
-                        Add New Batch
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>Add New Batch</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* Filters Row */}
-                  <div className="flex flex-wrap items-center gap-2 mb-6">
-                    {/* Examination Filter */}
-                    <div className="relative inline-flex items-center gap-1.5 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1 text-xs font-medium text-foreground">
-                      <span className="text-muted-foreground font-normal">Exam:</span>
-                      <select
-                        value={filterExam}
-                        onChange={e => setFilterExam(e.target.value)}
-                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1"
-                      >
-                        <option value="all">All</option>
-                        {tree.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-                      </select>
-                    </div>
+                  {/* Unified Table Card matching Analytical Overview */}
+                  <div className={`w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs relative ${isBatchFilterOpen ? "z-50" : "z-10"}`}>
+                    {/* Card Top Header: Status Pills (left) + Filter & Search Controls (right) */}
+                    <div className={`px-4 py-3 border-b border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 bg-white/40 dark:bg-white/[0.02] rounded-t-2xl relative ${isBatchFilterOpen ? "z-50" : "z-20"}`}>
+                      {/* Left: Quick Status Filter Pills */}
+                      <div className="flex items-center gap-1 overflow-x-auto py-0.5">
+                        {[
+                          { key: "all", label: "All" },
+                          { key: "active", label: "Active" },
+                          { key: "upcoming", label: "Upcoming" },
+                          { key: "completed", label: "Completed" },
+                        ].map((tab) => (
+                          <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => {
+                              setFilterStatus(tab.key)
+                              setBatchCurrentPage(1)
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide whitespace-nowrap transition-all cursor-pointer ${
+                              filterStatus === tab.key
+                                ? "bg-black/[0.07] dark:bg-white/15 text-[#3B3B3B] dark:text-white font-semibold shadow-2xs"
+                                : "text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white"
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
 
-                    {/* Target Year Filter */}
-                    <div className="relative inline-flex items-center gap-1.5 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1 text-xs font-medium text-foreground">
-                      <span className="text-muted-foreground font-normal">Year:</span>
-                      <select
-                        value={filterYear}
-                        onChange={e => setFilterYear(e.target.value)}
-                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1"
-                      >
-                        <option value="all">All</option>
-                        {yearsList.map(y => <option key={y} value={y}>{y}</option>)}
-                      </select>
-                    </div>
+                      {/* Right: Search & Filter Icons */}
+                      <div className="flex items-center gap-2 ml-auto">
+                        {/* Search Control */}
+                        <div className="relative" ref={batchSearchRef}>
+                          {isBatchSearchOpen ? (
+                            <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                              <div className="relative">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400 pointer-events-none" />
+                                <input
+                                  type="search"
+                                  autoFocus
+                                  placeholder="Search batch, examination, year…"
+                                  value={batchSearchQuery}
+                                  onChange={(e) => {
+                                    setBatchSearchQuery(e.target.value)
+                                    setBatchCurrentPage(1)
+                                  }}
+                                  className="w-44 sm:w-60 h-8 pl-8 pr-2.5 text-xs rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setBatchSearchQuery("")
+                                  setBatchCurrentPage(1)
+                                  setIsBatchSearchOpen(false)
+                                }}
+                                className="h-8 px-2 text-[11px] text-neutral-500 hover:text-[#3B3B3B] dark:text-neutral-400 dark:hover:text-white cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setIsBatchSearchOpen(true)}
+                              className={`size-8 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center justify-center text-neutral-600 dark:text-neutral-300 ${
+                                batchSearchQuery ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white" : ""
+                              }`}
+                              title="Search batches"
+                            >
+                              <Search className="size-3.5" />
+                            </button>
+                          )}
+                        </div>
 
-                    {/* Status Filter */}
-                    <div className="relative inline-flex items-center gap-1.5 bg-muted/30 border border-border/40 rounded-lg px-2.5 py-1 text-xs font-medium text-foreground">
-                      <span className="text-muted-foreground font-normal">Status:</span>
-                      <select
-                        value={filterStatus}
-                        onChange={e => setFilterStatus(e.target.value)}
-                        className="bg-transparent font-medium text-foreground outline-none cursor-pointer pr-1"
-                      >
-                        <option value="all">All</option>
-                        <option value="active">Active</option>
-                        <option value="upcoming">Upcoming</option>
-                        <option value="completed">Completed</option>
-                      </select>
-                    </div>
+                        {/* Filter Popover Button */}
+                        <div className="relative" ref={batchFilterRef}>
+                          <button
+                            type="button"
+                            onClick={() => setIsBatchFilterOpen((prev) => !prev)}
+                            className={`size-8 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 hover:bg-neutral-50 dark:hover:bg-white/15 transition-all shadow-2xs cursor-pointer inline-flex items-center justify-center text-neutral-600 dark:text-neutral-300 relative ${
+                              activeBatchFilterCount > 0 ? "ring-1 ring-black/20 dark:ring-white/20 text-[#3B3B3B] dark:text-white font-medium" : ""
+                            }`}
+                            aria-expanded={isBatchFilterOpen}
+                            aria-haspopup="true"
+                            title="Filter batches"
+                          >
+                            <Filter className="size-3.5" />
+                            {activeBatchFilterCount > 0 && (
+                              <span className="absolute -top-1 -right-1 size-4 rounded-full bg-[#3B3B3B] text-white dark:bg-white dark:text-black text-[10px] font-bold flex items-center justify-center shadow-xs">
+                                {activeBatchFilterCount}
+                              </span>
+                            )}
+                          </button>
 
-                    {(filterExam !== "all" || filterYear !== "all" || filterStatus !== "all") && (
-                      <button
-                        onClick={() => {
-                          setFilterExam("all")
-                          setFilterYear("all")
-                          setFilterStatus("all")
-                        }}
-                        className="text-xs text-[#E9C46A] hover:underline self-center px-1 cursor-pointer"
-                      >
-                        Reset filters
-                      </button>
-                    )}
-                  </div>
+                          {/* Filter Dropdown Popover */}
+                          {isBatchFilterOpen && (
+                            <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-2xl z-[100] p-3 space-y-3 max-h-[460px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                              {/* Section 1: Examination */}
+                              <div className="space-y-1.5">
+                                <div className="flex items-center justify-between px-1">
+                                  <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                                    Target Examination
+                                  </span>
+                                  {filterExam !== "all" && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setFilterExam("all")
+                                        setBatchCurrentPage(1)
+                                      }}
+                                      className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                                    >
+                                      Clear
+                                    </button>
+                                  )}
+                                </div>
+                                <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                                  <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                                    <input
+                                      type="radio"
+                                      name="filter-batch-exam"
+                                      checked={filterExam === "all"}
+                                      onChange={() => {
+                                        setFilterExam("all")
+                                        setBatchCurrentPage(1)
+                                      }}
+                                      className="size-3.5 text-[#3B3B3B] cursor-pointer accent-[#3B3B3B]"
+                                    />
+                                    <span>All Examinations</span>
+                                  </label>
+                                  {tree.map((ex) => (
+                                    <label
+                                      key={ex.id}
+                                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                                    >
+                                      <input
+                                        type="radio"
+                                        name="filter-batch-exam"
+                                        checked={String(filterExam) === String(ex.id)}
+                                        onChange={() => {
+                                          setFilterExam(String(ex.id))
+                                          setBatchCurrentPage(1)
+                                        }}
+                                        className="size-3.5 text-[#3B3B3B] cursor-pointer accent-[#3B3B3B]"
+                                      />
+                                      <span className="truncate">{ex.name}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
 
-                  {/* Batches Table / Content */}
-                  <div className="min-h-[220px] flex flex-col">
-                    {filteredBatches.length > 0 ? (
-                      <div className="overflow-x-auto flex-1">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="border-b border-border/40 text-xs font-medium text-muted-foreground">
-                              <th className="py-2.5 px-4 w-[16%]" scope="col">
-                                <SortButton label="Status" field="status" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
-                              </th>
-                              <th className="py-2.5 px-4 w-[18%]" scope="col">
-                                <SortButton label="Batch" field="name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
-                              </th>
-                              <th className="py-2.5 px-4 w-[22%]" scope="col">
-                                <SortButton label="Target Examination" field="exam" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
-                              </th>
-                              <th className="py-2.5 px-4 w-[14%]" scope="col">
-                                <SortButton label="Target Year" field="target_year" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
-                              </th>
-                              <th className="py-2.5 px-4 w-[20%]" scope="col">
-                                <span className="font-semibold text-foreground">Scheduled End Date</span>
-                              </th>
-                              <th className="py-2.5 px-4 w-[10%] text-right font-medium text-muted-foreground" scope="col">
-                                Actions
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="text-sm">
-                            {filteredBatches.map(batch => {
-                              const exam = tree.find(e => e.id === batch.exam_id)
-                              const endDateStr = batch.end_date ? new Date(batch.end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : null
-                              const isPast = batch.end_date ? new Date(batch.end_date) < new Date(new Date().setHours(0,0,0,0)) : false
-                              return (
-                                <tr key={batch.id} className="border-b border-border/30 last:border-b-0 hover:bg-muted/20 transition-colors">
-                                  <td className="py-3 px-4 text-foreground whitespace-nowrap">
-                                    <span className={getStatusStyle(batch.status)}>
-                                      {batch.status ? batch.status.charAt(0).toUpperCase() + batch.status.slice(1) : "Unknown"}
+                              {/* Section Divider */}
+                              <div className="border-t border-black/5 dark:border-white/10" />
+
+                              {/* Section 2: Target Year */}
+                              <div className="space-y-1.5">
+                                <div className="flex items-center justify-between px-1">
+                                  <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
+                                    Target Year
+                                  </span>
+                                  {filterYear !== "all" && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setFilterYear("all")
+                                        setBatchCurrentPage(1)
+                                      }}
+                                      className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
+                                    >
+                                      Clear
+                                    </button>
+                                  )}
+                                </div>
+                                <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
+                                  <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
+                                    <input
+                                      type="radio"
+                                      name="filter-batch-year"
+                                      checked={filterYear === "all"}
+                                      onChange={() => {
+                                        setFilterYear("all")
+                                        setBatchCurrentPage(1)
+                                      }}
+                                      className="size-3.5 text-[#3B3B3B] cursor-pointer accent-[#3B3B3B]"
+                                    />
+                                    <span>All Years</span>
+                                  </label>
+                                  {yearsList.map((yr) => (
+                                    <label
+                                      key={yr}
+                                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
+                                    >
+                                      <input
+                                        type="radio"
+                                        name="filter-batch-year"
+                                        checked={String(filterYear) === String(yr)}
+                                        onChange={() => {
+                                          setFilterYear(String(yr))
+                                          setBatchCurrentPage(1)
+                                        }}
+                                        className="size-3.5 text-[#3B3B3B] cursor-pointer accent-[#3B3B3B]"
+                                      />
+                                      <span className="truncate">{yr}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Bottom Reset Strip */}
+                              {activeBatchFilterCount > 0 && (
+                                <>
+                                  <div className="border-t border-black/5 dark:border-white/10" />
+                                  <div className="flex items-center justify-between px-1 pt-0.5 text-xs">
+                                    <span className="text-neutral-400">
+                                      {activeBatchFilterCount} active filter{activeBatchFilterCount > 1 ? "s" : ""}
                                     </span>
-                                  </td>
-                                  <td className="py-3 px-4 text-foreground whitespace-nowrap font-medium">
-                                    {batch.name}
-                                  </td>
-                                  <td className="py-3 px-4 text-foreground whitespace-nowrap">
-                                    {exam ? exam.name : "Unknown"}
-                                  </td>
-                                  <td className="py-3 px-4 text-foreground whitespace-nowrap">
-                                    {batch.target_year}
-                                  </td>
-                                  <td className="py-3 px-4 text-foreground whitespace-nowrap">
-                                    {endDateStr ? (
-                                      <div className="flex items-center gap-1.5">
-                                        <span className={`text-xs ${isPast ? "text-red-500 font-medium" : "text-muted-foreground"}`}>
-                                          {endDateStr}
-                                        </span>
-                                        {isPast && (
-                                          <span className="text-[10px] text-red-500/80 font-normal">(Term ended)</span>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground/60 italic">No end date</span>
-                                    )}
-                                  </td>
-                                  <td className="py-3 px-4 text-right whitespace-nowrap">
-                                    <div className="inline-flex items-center justify-end gap-1.5">
-                                      <SettingsBtn onClick={() => handleOpenEditBatch(batch)} />
-                                      <DeleteBtn onClick={() => handleDeleteBatch(batch.id, batch.name)} />
-                                    </div>
-                                  </td>
-                                </tr>
-                              )
-                            })}
-                          </tbody>
-                        </table>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setFilterExam("all")
+                                        setFilterYear("all")
+                                        setBatchCurrentPage(1)
+                                      }}
+                                      className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
+                                    >
+                                      Reset all
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Table Area */}
+                    {filteredBatches.length === 0 ? (
+                      <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                        {batchSearchQuery || activeBatchFilterCount > 0 || filterStatus !== "all"
+                          ? "No matching batches found for this criteria."
+                          : "No batches created yet. Click 'Add New Batch' above to create one."}
                       </div>
                     ) : (
-                      <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
-                        <p className="text-sm font-semibold text-foreground mb-1">
-                          {batches.length === 0 ? "No Batches Yet" : "No Matching Batches"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {batches.length === 0
-                            ? "Click on the add new batch button to create your first batch."
-                            : "Try adjusting your filter criteria to view other batches."}
-                        </p>
+                      <div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse" aria-label="Batches Table">
+                            <thead className="sticky top-0 z-10 bg-[#f8f8fa] dark:bg-[#16181d] backdrop-blur-md border-b border-black/5 dark:border-white/10">
+                              <tr className="h-11 text-xs font-semibold text-[#696969] dark:text-gray-300">
+                                <th className="px-4 py-2.5 text-center min-w-[100px] whitespace-nowrap" scope="col">
+                                  <SortButton label="Status" field="status" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                                </th>
+                                <th className="px-4 py-2.5 text-left min-w-[180px] whitespace-nowrap" scope="col">
+                                  <SortButton label="Batch" field="name" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                                </th>
+                                <th className="px-4 py-2.5 text-left min-w-[220px]" scope="col">
+                                  <SortButton label="Target Examination" field="exam" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                                </th>
+                                <th className="px-4 py-2.5 text-center min-w-[110px] whitespace-nowrap" scope="col">
+                                  <SortButton label="Target Year" field="target_year" sortField={batchSortField} sortDir={batchSortDir} onSort={handleBatchSort} />
+                                </th>
+                                <th className="px-4 py-2.5 text-left min-w-[170px] whitespace-nowrap" scope="col">
+                                  <span className="font-semibold text-[#696969] dark:text-gray-300">Scheduled End Date</span>
+                                </th>
+                                <th className="px-4 py-2.5 pr-6 text-right min-w-[90px] whitespace-nowrap font-semibold text-[#696969] dark:text-gray-300" scope="col">
+                                  Action
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
+                              {paginatedBatches.map((batch) => {
+                                const exam = tree.find((e) => e.id === batch.exam_id)
+                                const endDateStr = batch.end_date
+                                  ? new Date(batch.end_date).toLocaleDateString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                    })
+                                  : null
+                                const isPast = batch.end_date
+                                  ? new Date(batch.end_date) < new Date(new Date().setHours(0, 0, 0, 0))
+                                  : false
+                                const effectiveStatus = getEffectiveBatchStatus(batch)
+
+                                return (
+                                  <tr
+                                    key={batch.id}
+                                    className="h-13 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-colors"
+                                  >
+                                    <td className="px-4 py-2.5 text-center whitespace-nowrap">
+                                      <span
+                                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide ${
+                                          effectiveStatus === "active"
+                                            ? "bg-[#2A9D8F]/15 text-[#1b6b61] dark:bg-[#2A9D8F]/25 dark:text-[#68c9be]"
+                                            : effectiveStatus === "upcoming"
+                                            ? "bg-[#E9C46A]/20 text-[#a16207] dark:bg-[#E9C46A]/25 dark:text-[#fde047]"
+                                            : "bg-[#E17055]/15 text-[#b33920] dark:bg-[#E17055]/25 dark:text-[#f89b87]"
+                                        }`}
+                                      >
+                                        {effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1)}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-left font-medium text-[13px] text-[#3B3B3B] dark:text-gray-100 whitespace-nowrap">
+                                      {batch.name}
+                                    </td>
+                                    <td className="px-4 py-2.5 text-left text-xs text-[#3B3B3B] dark:text-neutral-200">
+                                      {exam ? exam.name : "Unknown"}
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center text-xs text-neutral-500 dark:text-neutral-400 font-normal whitespace-nowrap">
+                                      {batch.target_year || "—"}
+                                    </td>
+                                    <td className="px-4 py-2.5 text-left whitespace-nowrap">
+                                      {endDateStr ? (
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-xs text-neutral-600 dark:text-neutral-300 font-normal">
+                                            {endDateStr}
+                                          </span>
+                                          {isPast && (
+                                            <span className="text-[11px] text-neutral-400 dark:text-neutral-500 font-normal">
+                                              (Term ended)
+                                            </span>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <span className="text-xs text-neutral-400 dark:text-neutral-500 italic">
+                                          No end date
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-2.5 pr-6 text-right whitespace-nowrap">
+                                      <div className="inline-flex items-center justify-end gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenEditBatch(batch)}
+                                          className="h-7 w-7 flex items-center justify-center text-neutral-500 hover:text-[#3B3B3B] hover:bg-black/5 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                                          title="Settings"
+                                        >
+                                          <Settings className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteBatch(batch.id, batch.name)}
+                                          className="h-7 w-7 flex items-center justify-center text-neutral-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                                          title="Delete"
+                                        >
+                                          <Trash className="h-3.5 w-3.5" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Pagination Controls matching Analytical Overview */}
+                        {totalPages >= 1 && (
+                          <div className="px-4 py-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-center gap-3 bg-white/20 dark:bg-white/[0.01] rounded-b-2xl">
+                            <div className="flex items-center gap-3">
+                              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                                <button
+                                  key={pageNum}
+                                  type="button"
+                                  onClick={() => setBatchCurrentPage(pageNum)}
+                                  className={`text-xs transition-colors cursor-pointer ${
+                                    pageNum === validPage
+                                      ? "font-semibold text-[#3B3B3B] dark:text-white"
+                                      : "font-normal text-neutral-400 hover:text-[#3B3B3B] dark:text-neutral-500 dark:hover:text-white"
+                                  }`}
+                                >
+                                  {pageNum}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              )
+            })()}
 
             {/* TAB 4: EDUCATION MANAGEMENT DATA */}
             {activeTab === "education" && (

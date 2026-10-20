@@ -113,7 +113,6 @@ const superAdminNav = [
     { section: "GENERAL" },
     { label: "Admin Dashboard", href: "/admin", icon: "Home", description: "System overview, active users, and others" },
     { label: "User Management", href: "/admin/users", icon: "User", description: "Manage students, teachers, and accounts" },
-    { label: "Subscriptions", href: "/admin/subscriptions", icon: "Calendar", description: "Review terms, deadlines, and renewals" },
     { label: "Curriculum Manager", href: "/admin/curriculum", icon: "FileText", description: "Manage exam programs, subjects, and topics" },
     { label: "Mock Exams", href: "/admin/mock-exams", icon: "PencilLine", description: "Create and configure mock exams" },
     { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "Manage courses, batches, and gradebooks" },
@@ -136,7 +135,6 @@ const registrarNav = [
     { section: "GENERAL" },
     { label: "Admin Dashboard", href: "/admin", icon: "Home", description: "System overview & enrollment counts" },
     { label: "User Management", href: "/admin/users", icon: "User", description: "Manage students and pre-registrations" },
-    { label: "Subscriptions", href: "/admin/subscriptions", icon: "Calendar", description: "Review terms, deadlines, and renewals" },
     { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "Manage batches, programs, and schools" },
 ]
 

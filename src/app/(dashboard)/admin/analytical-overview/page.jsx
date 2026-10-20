@@ -715,8 +715,9 @@ export default function AnalyticalOverviewPage() {
     const allCandidates = raw.allCandidates || []
     const isSingleDay = raw.isSingleDay
 
-    // Filter candidates by selected examination and batch
+    // Filter candidates by student role, selected examination and batch
     const filteredCandidates = allCandidates.filter((c) => {
+      if (c.role && c.role !== "student") return false
       if (selectedRegExamIds.length > 0) {
         const matchId = selectedRegExamIds.includes(String(c.exam_id))
         const matchTrack = selectedRegExamIds.some((id) => {
@@ -4137,6 +4138,7 @@ export default function AnalyticalOverviewPage() {
                 {/* Tab B: Student Sign-Ups Table */}
                 {regTab === "log" && (() => {
                   const logList = (filteredRegistrationData?.tabB_candidateLog || []).filter((cand) => {
+                    if (cand.role && cand.role !== "student") return false
                     if (!regSearch.trim()) return true
                     const q = regSearch.trim().toLowerCase()
                     return (

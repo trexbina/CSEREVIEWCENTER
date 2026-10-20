@@ -743,24 +743,11 @@ export default function AddUserPage() {
                         <div className="space-y-1.5">
                             <Label className="text-sm font-semibold text-[#696969]">User Role *</Label>
                             <Select 
-                                value={
-                                    role !== "student" && role !== "teacher"
-                                        ? "admin_group"
-                                        : role
-                                } 
+                                value={role} 
                                 onValueChange={(val) => {
-                                    if (val === "admin_group") {
-                                        setRole("super_admin");
-                                        setExamId("");
-                                        setProgramId("");
-                                        setMajorId("");
+                                    setRole(val);
+                                    if (val === "teacher") {
                                         setBatchId("");
-                                    } else {
-                                        setRole(val);
-                                        setJobRoleDescription("");
-                                        if (val === "teacher") {
-                                            setBatchId("");
-                                        }
                                     }
                                 }}
                             >
@@ -768,35 +755,9 @@ export default function AddUserPage() {
                                 <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
                                     <SelectItem value="student">Student</SelectItem>
                                     <SelectItem value="teacher">Teacher (Instructor)</SelectItem>
-                                    <SelectItem value="admin_group">Administrator</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
-
-                        {role !== "student" && role !== "teacher" && (
-                            <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-150">
-                                <Label className="text-sm font-semibold text-[#696969]">Admin Role *</Label>
-                                <Select 
-                                    value={role === "admin" ? "super_admin" : role} 
-                                    onValueChange={(val) => setRole(val)}
-                                >
-                                    <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue /></SelectTrigger>
-                                    <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                                        <SelectItem value="super_admin">Super Admin (System Owner)</SelectItem>
-                                        <SelectItem value="academic_admin">Academic Coordinator (Curriculum & Exams)</SelectItem>
-                                        <SelectItem value="registrar">Registrar (Students & Admissions)</SelectItem>
-                                        {(dropdownData.roles || [])
-                                            .filter(r => !["super_admin", "academic_admin", "registrar"].includes(r.role_key))
-                                            .map(r => (
-                                                <SelectItem key={r.id || r.role_key} value={r.role_key}>
-                                                    {r.name}
-                                                </SelectItem>
-                                            ))
-                                        }
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        )}
 
 
                         {role === "teacher" && (

@@ -877,6 +877,7 @@ export async function GET(request) {
         LEFT JOIN examinations e ON u.exam_id = e.id
         LEFT JOIN batches b ON u.batch_id = b.id
         LEFT JOIN schools s ON u.school_id = s.id
+        WHERE u.role = 'student'
         ORDER BY u.created_at DESC
       `).catch(() => ({ rows: [] })),
       pool.query(`

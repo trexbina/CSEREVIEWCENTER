@@ -19,7 +19,15 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Pencil
+  Pencil,
+  LayoutDashboard,
+  CreditCard,
+  BookOpen,
+  FileText,
+  Database,
+  BarChart3,
+  Trash2,
+  ShieldCheck,
 } from "lucide-react"
 import {
   Table,
@@ -39,51 +47,61 @@ export const DASHBOARD_MODULES = [
   {
     path: "/admin",
     name: "Admin Dashboard",
+    icon: LayoutDashboard,
     description: "System overview, active users, and statistics"
   },
   {
     path: "/admin/users",
     name: "User Management",
+    icon: Users,
     description: "Manage students, teachers, and staff accounts"
   },
   {
     path: "/admin/subscriptions",
     name: "Subscriptions & Terms",
+    icon: CreditCard,
     description: "View student access periods and batch dates"
   },
   {
     path: "/admin/curriculum",
     name: "Curriculum Manager",
+    icon: BookOpen,
     description: "Manage exam programs, subjects, and topics"
   },
   {
     path: "/admin/mock-exams",
     name: "Mock Exams",
+    icon: FileText,
     description: "Create, schedule, and review mock exams"
   },
   {
     path: "/admin/master-data",
     name: "Master Data",
+    icon: Database,
     description: "Manage board exams, batches, and schools"
   },
   {
     path: "/admin/analytical-overview",
     name: "Analytical Overview",
+    icon: BarChart3,
     description: "View student performance reports and charts"
   },
   {
     path: "/admin/trash",
     name: "Trash & Recovery",
+    icon: Trash2,
     description: "Restore or permanently delete removed items"
   },
   {
     path: "/admin/settings",
     name: "Settings",
+    icon: Settings,
     description: "Manage general preferences and account passwords"
   },
   {
     path: "/admin/settings/security",
     name: "Security & Policies",
+    icon: ShieldCheck,
     description: "View active sessions, audit logs, and security"
   }
 ]
@@ -106,44 +124,41 @@ export function hasFullModuleAccess(role) {
   return hasAllDashboard && hasRoles
 }
 
-// Minimal neutral checkbox
-function NeutralCheckbox({ checked, onChange, label, description }) {
+// Minimal, clean module row item (no heavy bordered box)
+function MinimalModuleRow({ checked, onChange, label, icon: Icon }) {
   return (
-    <label
-      className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer select-none group ${
+    <div
+      onClick={onChange}
+      className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all cursor-pointer select-none group text-left ${
         checked
-          ? "border-black/20 dark:border-white/20 bg-black/[0.015] dark:bg-white/[0.03]"
-          : "border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
+          ? "bg-black/[0.035] dark:bg-white/[0.06] text-[#3B3B3B] dark:text-white"
+          : "hover:bg-black/[0.02] dark:hover:bg-white/[0.03] text-neutral-500 dark:text-neutral-400 hover:text-[#3B3B3B] dark:hover:text-white"
       }`}
     >
-      <div className="relative flex items-center justify-center mt-0.5">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={onChange}
-          className="sr-only"
-        />
-        <div
-          className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
+      <div
+        className={`w-4 h-4 rounded-[5px] border flex items-center justify-center shrink-0 transition-all ${
+          checked
+            ? "bg-[#E9C46A] border-[#E9C46A] text-white shadow-2xs"
+            : "border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 group-hover:border-neutral-400"
+        }`}
+      >
+        {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+      </div>
+      {Icon && (
+        <Icon
+          className={`size-3.5 shrink-0 transition-colors ${
             checked
-              ? "bg-[#3B3B3B] dark:bg-white border-[#3B3B3B] dark:border-white text-white dark:text-neutral-900 shadow-2xs"
-              : "border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 group-hover:border-neutral-400"
+              ? "text-[#a07415] dark:text-[#E9C46A]"
+              : "text-neutral-400 dark:text-neutral-500 group-hover:text-neutral-600 dark:group-hover:text-neutral-300"
           }`}
-        >
-          {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
-        </div>
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-[#3B3B3B] dark:text-gray-200 leading-tight">{label}</p>
-        {description && (
-          <p className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5 leading-snug">{description}</p>
-        )}
-      </div>
-    </label>
+        />
+      )}
+      <span className="text-xs font-medium truncate flex-1 leading-none">{label}</span>
+    </div>
   )
 }
 
-// Role Configure / Add Dialog
+// Role Configure / Add Dialog - Clean & Minimal Redesign
 function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit, isSaving }) {
   if (!isOpen) return null
 
@@ -201,12 +216,15 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
     }
   }
 
+  const isSuperAdmin = roleForm.role_key === "super_admin"
+
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#1E293B] border border-black/10 dark:border-white/10 rounded-2xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-150 font-sans">
-        <div className="flex justify-between items-center pb-3 border-b border-black/5 dark:border-white/10 shrink-0">
+      <div className="bg-white dark:bg-[#1E293B] border border-black/10 dark:border-white/10 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-150 font-sans overflow-hidden">
+        {/* Header */}
+        <div className="flex justify-between items-center px-6 py-4 border-b border-black/5 dark:border-white/10 shrink-0">
           <div>
-            <h3 className="font-bold text-[#3B3B3B] dark:text-white text-sm sm:text-base tracking-tight">
+            <h3 className="font-bold text-[#3B3B3B] dark:text-white text-base tracking-tight">
               {isEdit ? "Configure Role & Permissions" : "Add New Role"}
             </h3>
             <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
@@ -222,78 +240,121 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto pr-1 flex-1">
+        {/* Scrollable Form Body */}
+        <form onSubmit={onSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+          {/* Role Name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#696969]">Role Name *</label>
+            <label className="text-xs font-semibold text-[#696969] dark:text-gray-300">Role Name *</label>
             <input
               type="text"
               required
-              disabled={roleForm.role_key === "super_admin" && isEdit}
-              className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] disabled:opacity-50 transition-all"
+              disabled={isSuperAdmin && isEdit}
+              className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-neutral-400 shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] disabled:opacity-60 transition-all"
               value={roleForm.name}
               onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
               placeholder="e.g. Branch Coordinator, Admissions Head"
             />
-            {roleForm.role_key === "super_admin" && (
-              <p className="text-[11px] text-[#696969] dark:text-gray-400">
-                Super Admin role name cannot be modified.
+            {isSuperAdmin && (
+              <p className="text-[11px] text-neutral-400 italic">
+                Super Admin role name is protected by the system.
               </p>
             )}
           </div>
 
+          {/* Description */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#696969]">Description</label>
+            <label className="text-xs font-semibold text-[#696969] dark:text-gray-300">Description</label>
             <input
               type="text"
-              className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] transition-all"
+              className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-neutral-400 shadow-2xs focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] transition-all"
               value={roleForm.description || ""}
               onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })}
               placeholder="Short description of this role"
             />
           </div>
 
-          {/* Checklist of Dashboard Modules */}
-          <div className="space-y-2.5 pt-2 border-t border-black/5 dark:border-white/10">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-[#696969]">
-                Dashboard Pages ({selectedPerms.filter((p) => allRegularPaths.includes(p)).length}/{DASHBOARD_MODULES.length})
-              </label>
+          {/* Dashboard Modules (Clean Container) */}
+          <div className="space-y-2 pt-2">
+            <div className="flex items-center justify-between px-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-[#3B3B3B] dark:text-gray-200">
+                  Dashboard Pages
+                </span>
+                <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 rounded-full">
+                  {selectedPerms.filter((p) => allRegularPaths.includes(p)).length} / {DASHBOARD_MODULES.length}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={toggleAll}
-                className="text-xs text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white font-medium transition-colors cursor-pointer"
+                className="text-xs font-medium text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer"
               >
                 {allRegularSelected ? "Deselect All" : "Select All"}
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+            {/* Seamless 2-Column Module Panel without heavy individual borders */}
+            <div className="rounded-2xl p-1.5 bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-0.5">
               {DASHBOARD_MODULES.map((mod) => (
-                <NeutralCheckbox
+                <MinimalModuleRow
                   key={mod.path}
                   checked={selectedPerms.includes(mod.path)}
                   onChange={() => togglePermission(mod.path)}
                   label={mod.name}
-                  description={mod.description}
+                  icon={mod.icon}
                 />
               ))}
             </div>
 
-            {/* Elevated Access Control: Roles & Limitations */}
-            <div className="pt-3 border-t border-black/5 dark:border-white/10 space-y-2">
-              <label className="text-xs font-semibold text-[#696969] flex items-center gap-1.5">
-                <Shield className="size-3.5 text-[#E9C46A]" />
-                <span>Roles and Limitations</span>
-              </label>
-              <NeutralCheckbox
-                checked={hasRolesPerm}
-                onChange={toggleRolesPerm}
-                label="Allow access to roles and limitations"
-                description="Allow creating, editing, and assigning admin roles."
-              />
+            {/* Elevated Access: Roles & Limitations */}
+            <div className="pt-1.5">
+              <div
+                onClick={toggleRolesPerm}
+                className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer select-none group ${
+                  hasRolesPerm
+                    ? "bg-[#E9C46A]/10 border-[#E9C46A]/30 text-[#3B3B3B] dark:text-white"
+                    : "bg-black/[0.015] dark:bg-white/[0.02] border-black/5 dark:border-white/5 hover:border-black/10 dark:hover:border-white/10"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 pr-3">
+                  <div
+                    className={`size-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                      hasRolesPerm
+                        ? "bg-[#E9C46A]/20 text-[#a07415] dark:text-[#E9C46A]"
+                        : "bg-black/5 dark:bg-white/5 text-neutral-400"
+                    }`}
+                  >
+                    <Shield className="size-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold text-[#3B3B3B] dark:text-white">
+                        Roles & Limitations
+                      </span>
+                      <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-[#E9C46A]/20 text-[#966b12] dark:text-[#f4d48a]">
+                        Elevated
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#696969] dark:text-gray-400 truncate">
+                      Allow managing admin roles and permission policies
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={`w-4 h-4 rounded-[5px] border flex items-center justify-center shrink-0 transition-all ${
+                    hasRolesPerm
+                      ? "bg-[#E9C46A] border-[#E9C46A] text-white shadow-2xs"
+                      : "border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
+                  }`}
+                >
+                  {hasRolesPerm && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                </div>
+              </div>
             </div>
           </div>
 
+          {/* Footer */}
           <div className="flex justify-end items-center gap-2 pt-3 border-t border-black/5 dark:border-white/10 shrink-0">
             <button
               type="button"

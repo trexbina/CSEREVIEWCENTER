@@ -588,7 +588,7 @@ export default function AddAdminUserDialog({
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="top">
-                        Automatically assigned in sequential order (admin + 5-digit number).
+                        Automatically assigned in sequential order (surname + 5-digit number).
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -599,7 +599,7 @@ export default function AddAdminUserDialog({
                   readOnly
                   disabled
                   value={loginIdPreview || "Generating..."}
-                  className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white cursor-not-allowed shadow-2xs font-mono"
+                  className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white cursor-not-allowed shadow-2xs"
                 />
               </div>
 

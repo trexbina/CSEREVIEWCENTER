@@ -5,12 +5,6 @@ import pool from "@/lib/db"
  */
 export function sanitizeSurnamePrefix(lastName, fullName = "", role = "user") {
   const normalizedRole = (role || "user").toLowerCase()
-  const isAdmin = normalizedRole !== "student" && normalizedRole !== "teacher" && normalizedRole !== "user"
-
-  // All administrative roles use the "admin" prefix
-  if (isAdmin || normalizedRole.includes("admin")) {
-    return "admin"
-  }
 
   let raw = (lastName || "").trim()
   if (!raw && fullName) {
@@ -19,7 +13,12 @@ export function sanitizeSurnamePrefix(lastName, fullName = "", role = "user") {
   }
   let clean = raw.toLowerCase().replace(/[^a-z0-9]/g, "")
   if (!clean) {
-    clean = normalizedRole.replace(/[^a-z0-9]/g, "")
+    const isAdmin = normalizedRole !== "student" && normalizedRole !== "teacher" && normalizedRole !== "user"
+    if (isAdmin || normalizedRole.includes("admin")) {
+      clean = "admin"
+    } else {
+      clean = normalizedRole.replace(/[^a-z0-9]/g, "")
+    }
   }
   return clean || "user"
 }

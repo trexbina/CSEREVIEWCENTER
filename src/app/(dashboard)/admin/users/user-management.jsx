@@ -545,42 +545,14 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                 <p className="text-[10px] text-muted-foreground">Min. 6 characters. Only fill this if you want to reset this user's password.</p>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">User Role *</Label>
-                <Select 
-                  disabled={user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001"}
-                  value={
-                    role !== "student" && role !== "teacher"
-                      ? "admin_group"
-                      : role
-                  } 
-                  onValueChange={(val) => {
-                    if (val === "admin_group") {
-                      setRole("super_admin");
-                      setExamId("");
-                      setProgramId("");
-                      setMajorId("");
-                      setBatchId("");
-                    } else {
-                      setRole(val);
-                      setJobRoleDescription("");
-                      if (val === "teacher") {
-                        setBatchId("");
-                      }
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full disabled:opacity-75 disabled:cursor-not-allowed"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="teacher">Teacher (Instructor)</SelectItem>
-                    <SelectItem value="admin_group">Administrator</SelectItem>
-                  </SelectContent>
-                </Select>
-                {(user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001") && (
-                  <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1 mt-0.5">
-                    <Shield className="h-3 w-3" /> Default Super Admin account cannot have their role changed.
-                  </p>
-                )}
+                <Label className="text-xs font-semibold text-[#696969]">User Role</Label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={role === "student" ? "Student" : (role !== "student" && role !== "teacher" ? "Administrator" : role)}
+                  className="w-full h-9 px-3 text-xs rounded-xl border border-black/5 dark:border-white/10 bg-neutral-100/70 dark:bg-white/5 text-[#3B3B3B] dark:text-white font-medium cursor-default shadow-2xs select-none"
+                />
               </div>
 
               {role !== "student" && role !== "teacher" && (

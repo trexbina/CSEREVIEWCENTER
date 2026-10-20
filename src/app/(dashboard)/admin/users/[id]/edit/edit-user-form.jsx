@@ -778,42 +778,14 @@ export default function EditUserForm({ initialUser }) {
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-sm font-semibold text-[#696969]">User Role *</Label>
-                            <Select 
-                                disabled={initialUser.login_id?.toLowerCase() === "admin00001" || initialUser.id === 1}
-                                value={
-                                    role !== "student" && role !== "teacher"
-                                        ? "admin_group"
-                                        : role
-                                } 
-                                onValueChange={(val) => {
-                                    if (val === "admin_group") {
-                                        setRole("super_admin");
-                                        setExamId("");
-                                        setProgramId("");
-                                        setMajorId("");
-                                        setBatchId("");
-                                    } else {
-                                        setRole(val);
-                                        setJobRoleDescription("");
-                                        if (val === "teacher") {
-                                            setBatchId("");
-                                        }
-                                    }
-                                }}
-                            >
-                                <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs disabled:opacity-75 disabled:cursor-not-allowed"><SelectValue /></SelectTrigger>
-                                <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                                    <SelectItem value="student">Student</SelectItem>
-                                    <SelectItem value="teacher">Teacher (Instructor)</SelectItem>
-                                    <SelectItem value="admin_group">Administrator</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            {(initialUser.login_id?.toLowerCase() === "admin00001" || initialUser.id === 1) && (
-                                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
-                                    <Shield className="h-3 w-3" /> Default Super Admin account is permanently assigned as Super Admin.
-                                </p>
-                            )}
+                            <Label className="text-sm font-semibold text-[#696969]">User Role</Label>
+                            <input
+                                type="text"
+                                readOnly
+                                disabled
+                                value={role === "student" ? "Student" : (role !== "student" && role !== "teacher" ? "Administrator" : role)}
+                                className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-neutral-100/70 dark:bg-white/5 text-[#3B3B3B] dark:text-white font-medium cursor-default shadow-2xs select-none"
+                            />
                         </div>
 
                         {role !== "student" && role !== "teacher" && (

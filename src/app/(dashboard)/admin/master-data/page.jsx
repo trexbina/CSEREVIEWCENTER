@@ -972,10 +972,10 @@ export default function MasterDataBuilderPage() {
                   >
                     <div className="min-w-0">
                       <h3 className="font-bold text-[#4d4d4d] dark:text-gray-200 text-base group-hover:text-[#E9C46A] transition-colors truncate">
-                        Roles and Limitation
+                        Roles & Permissions
                       </h3>
                       <p className="text-xs sm:text-sm text-[#8c8c8c] dark:text-gray-400 mt-0.5 truncate">
-                        Configure administrator roles, permissions, and security restrictions
+                        Manage admin roles and control which pages each role can access
                       </p>
                     </div>
                     <div className="flex items-center shrink-0 ml-4">
@@ -1808,7 +1808,7 @@ export default function MasterDataBuilderPage() {
               ) : (
                 <div className="bg-card border border-border/40 rounded-2xl p-8 text-center space-y-3">
                   <p className="text-sm font-semibold text-foreground">Access Restricted</p>
-                  <p className="text-xs text-muted-foreground">You do not have permission to configure roles and limitations.</p>
+                  <p className="text-xs text-muted-foreground">You do not have permission to configure roles and permissions.</p>
                   <button
                     onClick={() => handleTabChange("menu")}
                     className="px-4 py-1.5 bg-[#E9C46A] text-white text-xs font-semibold rounded-lg"

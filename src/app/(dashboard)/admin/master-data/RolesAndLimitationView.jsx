@@ -589,10 +589,10 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
           )}
           <div>
             <h2 className="text-xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-              Roles and Limitation
+              Roles & Permissions
             </h2>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              Configure administrative roles and granular dashboard restrictions.
+              Manage admin roles and control which pages each role can access.
             </p>
           </div>
         </div>

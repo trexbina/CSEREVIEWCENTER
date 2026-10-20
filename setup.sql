@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict miqUq7ety6P1AVX9AbOxeAUokTPJ0SMZe9NChrsM0qDXBDGmX2qOgWyhzoqjrf5
+\restrict YK9Hsu6acqOYogWrw3LxjK1Rf0ZnBe2ehMnBGXFab3fF7AW0mexqU1eaF2BNnWM
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
@@ -1700,6 +1700,7 @@ COPY public.categories (id, name, description, has_subcategories, target_course,
 
 COPY public.custom_roles (id, role_key, name, description, permissions, is_system, created_at, updated_at) FROM stdin;
 1	super_admin	Super Admin	Full system access and master controls across all features	["/admin", "/admin/users", "/admin/curriculum", "/admin/mock-exams", "/admin/master-data", "/admin/analytical-overview", "/admin/trash", "/admin/settings", "/admin/subscriptions", "/admin/settings/security"]	t	2026-09-12 11:54:42.081351+08	2026-10-20 13:39:08.246456+08
+7	admin	Admin	\N	["/admin", "/admin/subscriptions", "/admin/users", "/admin/curriculum", "/admin/mock-exams", "/admin/master-data", "/admin/trash", "/admin/analytical-overview", "/admin/settings", "/admin/settings/security"]	f	2026-10-20 16:02:32.138413+08	2026-10-20 16:02:32.138413+08
 \.
 
 
@@ -1953,7 +1954,8 @@ COPY public.uploaded_files (id, filename, content_type, size, data, created_at) 
 --
 
 COPY public.users (id, name, email, password, role, first_name, middle_name, last_name, suffix, birthday, gender, phone, address, city, province, zip_code, school, course, year_graduated, highest_education, avatar, avatar_url, batch_id, exam_id, program_id, major_id, school_id, academic_course_id, job_role_description, lept_major_id, examinee_status, diagnostic_score, personal_target_score, font_preference, created_at, last_login_at, login_count, targets, personal_email, is_active, subscription_end_date, login_prefix, login_number, login_id, target_exam, target_exam_date, status) FROM stdin;
-1	Trisha Samson	christinasamson@email.com	$2b$10$zyrzb/7iICd63QRICDvozuw4G.7alQ9yW67BeT.t25K.LCK6fdBGy	super_admin	Trisha	\N	Samson	\N	1990-11-01	female	1231231234	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	geist	2026-09-11 16:31:05.297+08	\N	0	\N	christinasamson@email.com	t	\N	samson	00001	samson00001	General	\N	active
+2	Richard Gutierrez	gutierrez00002@peak.edu.ph	$2b$10$s1LGI3qvhIngun40Oe3iUunnVfpGjROmzHSXRiF.uVdbmKX3AxxQ6	super_admin	Richard	\N	Gutierrez	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	Full system access and master controls across all features	\N	\N	\N	\N	geist	2026-10-20 15:24:18.36664+08	2026-10-20 15:26:37.512659+08	1	[]	gutierrez00002@peak.edu.ph	t	\N	gutierrez	00002	gutierrez00002	\N	\N	active
+1	Trisha Samson	christinasamson@email.com	$2b$10$zyrzb/7iICd63QRICDvozuw4G.7alQ9yW67BeT.t25K.LCK6fdBGy	super_admin	Trisha	\N	Samson	\N	1990-11-01	female	1231231234	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	geist	2026-09-11 16:31:05.297+08	2026-10-20 15:51:51.522429+08	2	\N	christinasamson@email.com	t	\N	superadmin	00001	superadmin00001	General	\N	active
 \.
 
 
@@ -1996,7 +1998,7 @@ SELECT pg_catalog.setval('public.categories_id_seq', 4, true);
 -- Name: custom_roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.custom_roles_id_seq', 6, true);
+SELECT pg_catalog.setval('public.custom_roles_id_seq', 7, true);
 
 
 --
@@ -2185,7 +2187,7 @@ SELECT pg_catalog.setval('public.uploaded_files_id_seq', 1, true);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 1, true);
+SELECT pg_catalog.setval('public.users_id_seq', 2, true);
 
 
 --
@@ -3288,5 +3290,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict miqUq7ety6P1AVX9AbOxeAUokTPJ0SMZe9NChrsM0qDXBDGmX2qOgWyhzoqjrf5
+\unrestrict YK9Hsu6acqOYogWrw3LxjK1Rf0ZnBe2ehMnBGXFab3fF7AW0mexqU1eaF2BNnWM
 

@@ -824,11 +824,10 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                               e.stopPropagation()
                               setViewUsersRole(role)
                             }}
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 hover:bg-[#E9C46A]/20 hover:text-[#a16207] text-[#3B3B3B] dark:text-neutral-200 transition-all cursor-pointer group border border-transparent hover:border-[#E9C46A]/30 active:scale-95"
+                            className="text-xs font-medium text-[#3B3B3B] dark:text-neutral-200 hover:text-[#E9C46A] transition-colors cursor-pointer"
                             title={`View ${role.user_count || 0} user${role.user_count === 1 ? "" : "s"} under ${role.name}`}
                           >
-                            <Users className="h-3 w-3 opacity-60 group-hover:opacity-100" />
-                            <span>{role.user_count || 0}</span>
+                            {role.user_count || 0}
                           </button>
                         </td>
 

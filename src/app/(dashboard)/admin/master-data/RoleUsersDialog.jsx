@@ -302,15 +302,6 @@ export default function RoleUsersDialog({
             >
               <Users className="size-3.5" />
               <span>Assigned Users</span>
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  activeTab === "assigned"
-                    ? "bg-[#E9C46A] text-white"
-                    : "bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-400"
-                }`}
-              >
-                {users.length}
-              </span>
             </button>
 
             <button

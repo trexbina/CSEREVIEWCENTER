@@ -18,7 +18,8 @@ import {
   Filter,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Pencil
 } from "lucide-react"
 import {
   Table,
@@ -29,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
-import RoleUsersDialog from "./RoleUsersDialog"
+import RoleUsersDialog, { isSuperAdminUser } from "./RoleUsersDialog"
 import AddAdminUserDialog from "./AddAdminUserDialog"
 import { toast } from "@/components/ui/toast"
 
@@ -354,6 +355,54 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
   // State for Role Users Management Dialog
   const [viewUsersRole, setViewUsersRole] = useState(null)
   const [isAddUserOpen, setIsAddUserOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState(null)
+  const [currentUser, setCurrentUser] = useState(null)
+
+  // Fetch current user session to determine super admin privileges
+  React.useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.user) setCurrentUser(data.user)
+      })
+      .catch(console.error)
+  }, [])
+
+  const handleEditAdminProfile = async (role) => {
+    if (!role?.role_key) return
+    const isTargetSuperRole = role.role_key === "super_admin" || role.role_key === "admin"
+    const isCurrentSuper = !currentUser || isSuperAdminUser(currentUser)
+    if (isTargetSuperRole && !isCurrentSuper) {
+      toast("Only Super Admins can edit Super Admin profiles.")
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/admin/roles/users?role_key=${encodeURIComponent(role.role_key)}`)
+      const data = await res.json()
+      const roleUsers = data.users || []
+      
+      if (roleUsers.length === 0) {
+        toast(`No administrator account is assigned to "${role.name}" yet.`)
+        return
+      }
+
+      if (roleUsers.length === 1) {
+        const targetUser = roleUsers[0]
+        const isTargetSuper = isSuperAdminUser(targetUser)
+        if (isTargetSuper && !isCurrentSuper) {
+          toast("Only Super Admins can edit Super Admin profiles.")
+          return
+        }
+        setEditingUser(targetUser)
+      } else {
+        setViewUsersRole(role)
+      }
+    } catch (err) {
+      console.error("Error opening profile edit:", err)
+      toast("Failed to load user profile for editing.")
+    }
+  }
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -772,6 +821,8 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                   {paginatedRoles.map((role) => {
                     const perms = Array.isArray(role.permissions) ? role.permissions : []
                     const allAccess = perms.length === DASHBOARD_MODULES.length
+                    const isTargetSuperRole = role.role_key === "super_admin" || role.role_key === "admin"
+                    const isCurrentSuperAdmin = !currentUser || isSuperAdminUser(currentUser)
 
                     return (
                       <tr
@@ -832,7 +883,21 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
                         </td>
 
                         <td className="px-4 py-2.5 pr-6 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                          <div className="inline-flex items-center justify-end gap-1">
+                          <div className="inline-flex items-center justify-end gap-1.5">
+                            {(!isTargetSuperRole || isCurrentSuperAdmin) && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleEditAdminProfile(role)
+                                }}
+                                className="h-7 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold text-[#3B3B3B] dark:text-neutral-200 hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 transition-colors cursor-pointer shadow-2xs"
+                                title={`Edit profile of ${role.name} administrator`}
+                              >
+                                <Pencil className="h-3 w-3 text-[#E9C46A]" />
+                                <span>Edit Profile</span>
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={(e) => {
@@ -936,6 +1001,7 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
             : null
         }
         allRoles={roles}
+        currentUser={currentUser}
         onRoleUpdated={async () => {
           await fetchData()
         }}
@@ -950,6 +1016,20 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
           await fetchData()
         }}
       />
+
+      {/* Direct Edit Admin User Dialog from Roles Table */}
+      {editingUser && (
+        <AddAdminUserDialog
+          isOpen={Boolean(editingUser)}
+          onClose={() => setEditingUser(null)}
+          roles={roles}
+          userToEdit={editingUser}
+          onUserUpdated={async () => {
+            setEditingUser(null)
+            await fetchData()
+          }}
+        />
+      )}
     </div>
   )
 }

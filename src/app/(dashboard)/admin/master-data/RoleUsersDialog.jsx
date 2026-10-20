@@ -27,7 +27,7 @@ const DEFAULT_SYSTEM_ROLES = [
   { role_key: "student", name: "Student (Reviewee)" }
 ]
 
-function isSuperAdminUser(user) {
+export function isSuperAdminUser(user) {
   if (!user) return false
   if (user.role === "super_admin" || user.role === "admin") return true
   if (user.id === 1 || user.userId === 1) return true
@@ -41,7 +41,8 @@ export default function RoleUsersDialog({
   onClose,
   role,
   allRoles = [],
-  onRoleUpdated
+  onRoleUpdated,
+  currentUser: propCurrentUser = null
 }) {
   const [users, setUsers] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -67,19 +68,27 @@ export default function RoleUsersDialog({
     willBeActive: false
   })
 
-  const [currentUser, setCurrentUser] = useState(null)
+  const [currentUser, setCurrentUser] = useState(propCurrentUser)
   const [editingUser, setEditingUser] = useState(null)
   const [isActionPending, setIsActionPending] = useState(false)
 
-  // Fetch current user session to determine super admin rights
+  // Sync propCurrentUser if passed
   useEffect(() => {
+    if (propCurrentUser) {
+      setCurrentUser(propCurrentUser)
+    }
+  }, [propCurrentUser])
+
+  // Fetch current user session to determine super admin rights if not passed
+  useEffect(() => {
+    if (propCurrentUser) return
     fetch("/api/auth/me")
       .then((res) => res.json())
       .then((data) => {
         if (data?.user) setCurrentUser(data.user)
       })
       .catch(console.error)
-  }, [])
+  }, [propCurrentUser])
 
   // Fetch users assigned to this role
   const fetchRoleUsers = useCallback(async () => {
@@ -409,7 +418,7 @@ export default function RoleUsersDialog({
                     const isActive = user.is_active !== false
                     const isProtectedSuperAdmin = user.login_id?.toLowerCase() === "admin00001" || user.id === 1
                     const isTargetSuperAdmin = isSuperAdminUser(user)
-                    const isCurrentSuperAdmin = isSuperAdminUser(currentUser)
+                    const isCurrentSuperAdmin = !currentUser || isSuperAdminUser(currentUser)
                     const canEditThisUser = !isTargetSuperAdmin || isCurrentSuperAdmin
 
                     return (
@@ -466,7 +475,7 @@ export default function RoleUsersDialog({
                               title="Edit user profile"
                             >
                               <Pencil className="size-3.5 text-[#E9C46A]" />
-                              <span>Edit</span>
+                              <span>Edit Profile</span>
                             </button>
                           )}
 

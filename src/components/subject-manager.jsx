@@ -412,7 +412,7 @@ function SubjectViewDialog({ open, onOpenChange, subject }) {
                     <DialogTitle className="flex items-center gap-2 text-lg">
                         <Eye className="h-5 w-5 text-primary" />
                         {subject.title}
-                        <Badge variant="outline" className="ml-1 font-mono text-xs">
+                        <Badge variant="outline" className="ml-1 text-xs">
                             {subject.code}
                         </Badge>
                     </DialogTitle>
@@ -667,7 +667,7 @@ export default function SubjectManager() {
                                 <TableBody>
                                     {filtered.map((subject) => (
                                         <TableRow key={subject.id}>
-                                            <TableCell className="font-mono text-sm font-medium">
+                                            <TableCell className="text-sm font-medium">
                                                 {subject.code}
                                             </TableCell>
                                             <TableCell className="font-medium">{subject.title}</TableCell>

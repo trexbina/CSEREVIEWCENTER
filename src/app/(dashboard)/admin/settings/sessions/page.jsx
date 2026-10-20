@@ -784,7 +784,7 @@ export default function ActiveSessionsPage() {
                             <div className="flex items-center gap-1.5">
                               <span className="font-semibold text-foreground truncate">{sess.name}</span>
                               {sess.login_id && (
-                                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
+                                <span className="text-[10px] px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
                                   {sess.login_id}
                                 </span>
                               )}
@@ -834,7 +834,7 @@ export default function ActiveSessionsPage() {
                       <td className="py-3.5 px-4">
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-1.5">
-                            <code className="font-mono text-xs text-foreground bg-muted/40 px-1 rounded">
+                            <code className="text-xs text-foreground bg-muted/40 px-1 rounded">
                               {sess.ip}
                             </code>
                             <button
@@ -981,7 +981,7 @@ export default function ActiveSessionsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">IP Address:</span>
-                  <span className="font-mono text-[11px] text-foreground">{confirmModal.session.ip}</span>
+                  <span className="text-[11px] text-foreground">{confirmModal.session.ip}</span>
                 </div>
               </div>
             )}

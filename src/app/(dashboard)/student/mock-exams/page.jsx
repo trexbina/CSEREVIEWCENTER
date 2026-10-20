@@ -370,7 +370,7 @@ export default function StudentMockExamsPage() {
                 <strong>Offline Mode:</strong> Internet disconnected. You can keep answering questions uninterrupted — your progress is safely cached locally.
               </span>
             </div>
-            <span className="text-[11px] font-mono opacity-75 shrink-0 hidden sm:inline">
+            <span className="text-[11px] opacity-75 shrink-0 hidden sm:inline">
               Saved locally
             </span>
           </div>
@@ -410,7 +410,7 @@ export default function StudentMockExamsPage() {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground font-mono mt-0.5">{activeExam.exam_code}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{activeExam.exam_code}</p>
             </div>
           </div>
           {!isCompleted ? (
@@ -464,7 +464,7 @@ export default function StudentMockExamsPage() {
               <Clock className="h-4 w-4 animate-pulse" />
               <span>Time Remaining</span>
             </div>
-            <div className={`font-mono font-bold text-base tracking-tight ${timeRemaining < 300 ? 'text-red-600 animate-pulse' : 'text-foreground'}`}>
+            <div className={`font-bold text-base tracking-tight ${timeRemaining < 300 ? 'text-red-600 animate-pulse' : 'text-foreground'}`}>
               {formatTime(timeRemaining)}
             </div>
           </div>
@@ -727,7 +727,7 @@ export default function StudentMockExamsPage() {
             <div key={exam.id} className="border border-gray-100 rounded-2xl p-6 sm:p-7 bg-white shadow-2xs hover:border-gray-200/80 transition-all flex flex-col justify-between space-y-5 min-h-[220px]">
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
-                  <span className="font-mono text-xs bg-gray-50 px-2.5 py-1 rounded-md text-gray-600 border border-gray-200/60 font-bold uppercase tracking-wider shadow-2xs">
+                  <span className="text-xs bg-gray-50 px-2.5 py-1 rounded-md text-gray-600 border border-gray-200/60 font-bold uppercase tracking-wider shadow-2xs">
                     {exam.exam_code}
                   </span>
                   {hasTaken ? (

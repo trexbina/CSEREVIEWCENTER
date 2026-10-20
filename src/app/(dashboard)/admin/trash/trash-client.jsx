@@ -414,7 +414,7 @@ export function TrashClient() {
                         {/* Details / Location */}
                         <td className="px-4 py-3 text-xs text-[#696969] dark:text-gray-400">
                           {item.original_location ? (
-                            <span className="font-mono text-[11px] opacity-75">{item.original_location}</span>
+                            <span className="text-[11px] opacity-75">{item.original_location}</span>
                           ) : (
                             "—"
                           )}

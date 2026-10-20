@@ -86,7 +86,7 @@ export function UpcomingExamTimer({ upcomingExam }) {
         <div className="inline-flex items-center gap-2 px-3.5 h-8 rounded-xl text-xs font-medium text-[#3B3B3B] dark:text-neutral-200 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md border border-black/5 dark:border-white/10 shadow-2xs select-none">
           <AlarmClock className="size-3.5 text-[#E9C46A] shrink-0" />
           <span className="text-neutral-400 dark:text-neutral-500 text-[11px]">Starts in</span>
-          <span className="font-mono font-semibold tabular-nums text-[#3B3B3B] dark:text-white">
+          <span className="font-semibold tabular-nums text-[#3B3B3B] dark:text-white">
             {countdownText}
           </span>
         </div>

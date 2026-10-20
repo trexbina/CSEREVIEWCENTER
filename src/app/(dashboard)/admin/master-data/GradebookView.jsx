@@ -556,7 +556,7 @@ const SpreadsheetView = ({ gradebookId, onBack }) => {
               {data.gradebook.name}
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              <span className="font-mono bg-muted/60 text-foreground px-2 py-0.5 rounded text-xs border border-border">{data.gradebook.code}</span>
+              <span className="bg-muted/60 text-foreground px-2 py-0.5 rounded text-xs border border-border">{data.gradebook.code}</span>
               <span className="ml-2">{data.batch?.batch_name} / {data.batch?.target_year} — {data.batch?.exam_name}</span>
             </p>
           </div>
@@ -1477,7 +1477,7 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
                           <td className="px-4 py-2.5 text-left font-medium text-[13px] text-[#3B3B3B] dark:text-gray-100 whitespace-nowrap">
                             {gb.name}
                           </td>
-                          <td className="px-4 py-2.5 text-left text-xs font-mono font-medium text-[#3B3B3B] dark:text-neutral-200 whitespace-nowrap">
+                          <td className="px-4 py-2.5 text-left text-xs font-medium text-[#3B3B3B] dark:text-neutral-200 whitespace-nowrap">
                             {gb.code}
                           </td>
                           <td className="px-4 py-2.5 text-left text-xs text-[#3B3B3B] dark:text-neutral-200 whitespace-nowrap">
@@ -1584,7 +1584,7 @@ const GradebookView = ({ onBack, batches = [], tree = [], schools = [], gradeboo
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Gradebook Code</label>
-                  <input type="text" required value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} placeholder="e.g. LEPT-2026-B1" className="w-full h-10 bg-white border border-gray-200 rounded-xl px-3.5 text-sm uppercase font-mono tracking-wide text-gray-800 focus:outline-none focus:border-gray-400 font-medium" />
+                  <input type="text" required value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} placeholder="e.g. LEPT-2026-B1" className="w-full h-10 bg-white border border-gray-200 rounded-xl px-3.5 text-sm uppercase tracking-wide text-gray-800 focus:outline-none focus:border-gray-400 font-medium" />
                 </div>
               </div>
 

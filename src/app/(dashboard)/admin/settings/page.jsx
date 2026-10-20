@@ -581,7 +581,7 @@ export default function SystemSettingsPage() {
                                                                     <span className="truncate">{sess.device}</span>
                                                                 </div>
                                                             </td>
-                                                            <td className="py-2.5 px-4 font-mono text-[11px] text-muted-foreground">
+                                                            <td className="py-2.5 px-4 text-[11px] text-muted-foreground">
                                                                 {sess.ip}
                                                             </td>
                                                             <td className="py-2.5 px-4 text-muted-foreground">

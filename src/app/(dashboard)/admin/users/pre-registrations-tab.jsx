@@ -1070,7 +1070,7 @@ export function PreRegistrationsTab() {
                           readOnly
                           disabled
                           value={previewLoginId || "Generating..."}
-                          className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 cursor-not-allowed font-mono font-medium"
+                          className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 cursor-not-allowed font-medium"
                         />
                         <span className="text-[11px] text-[#696969] dark:text-gray-400 block truncate min-h-[16px]">
                           Permanent identifier for portal login.
@@ -1120,7 +1120,7 @@ export function PreRegistrationsTab() {
                           value={customPassword}
                           onChange={(e) => setCustomPassword(e.target.value)}
                           placeholder="Student@123"
-                          className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10 font-mono"
+                          className="text-sm h-9.5 rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-white/10"
                         />
                         <span className="text-[11px] text-[#696969] dark:text-gray-400 block truncate min-h-[16px]">
                           Temporary initial password.
@@ -1241,7 +1241,7 @@ export function PreRegistrationsTab() {
                 <div className="flex items-center justify-between text-xs pt-2 border-t border-black/5 dark:border-white/5">
                   <span className="text-[#696969] dark:text-gray-400">Student Login ID</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-[#3B3B3B] dark:text-white">{approvedResult.loginId}</span>
+                    <span className="font-bold text-[#3B3B3B] dark:text-white">{approvedResult.loginId}</span>
                     <button
                       type="button"
                       onClick={() => handleCopy(approvedResult.loginId, "loginId")}
@@ -1255,7 +1255,7 @@ export function PreRegistrationsTab() {
                 <div className="flex items-center justify-between text-xs pt-2 border-t border-black/5 dark:border-white/5">
                   <span className="text-[#696969] dark:text-gray-400">Initial Password</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-[#3B3B3B] dark:text-white">{approvedResult.initialPassword}</span>
+                    <span className="font-bold text-[#3B3B3B] dark:text-white">{approvedResult.initialPassword}</span>
                     <button
                       type="button"
                       onClick={() => handleCopy(approvedResult.initialPassword, "password")}
@@ -1326,7 +1326,7 @@ export function PreRegistrationsTab() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#696969] dark:text-gray-400">Login ID (Assigned)</span>
-                  <span className="font-mono font-bold text-[#3B3B3B] dark:text-white">{previewLoginId || "Auto-assigned"}</span>
+                  <span className="font-bold text-[#3B3B3B] dark:text-white">{previewLoginId || "Auto-assigned"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#696969] dark:text-gray-400">Account Email</span>
@@ -1334,7 +1334,7 @@ export function PreRegistrationsTab() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#696969] dark:text-gray-400">Initial Password</span>
-                  <span className="font-mono font-medium text-[#3B3B3B] dark:text-white">{customPassword}</span>
+                  <span className="font-medium text-[#3B3B3B] dark:text-white">{customPassword}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#696969] dark:text-gray-400">Assigned Batch</span>

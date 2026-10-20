@@ -1330,7 +1330,7 @@ export default function MockExamsPage() {
                                                         {exam.title}
                                                     </button>
                                                 </td>
-                                                <td className="px-4 py-2.5 text-xs text-neutral-500 dark:text-neutral-400 font-mono whitespace-nowrap">
+                                                <td className="px-4 py-2.5 text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
                                                     {exam.exam_code || "—"}
                                                 </td>
                                                 <td className="px-4 py-2.5 text-xs text-neutral-600 dark:text-neutral-300 whitespace-nowrap">
@@ -1457,7 +1457,7 @@ export default function MockExamsPage() {
                                         placeholder="e.g. LEPT-2026-B1-001"
                                         value={formData.examCode}
                                         onChange={e => setFormData({ ...formData, examCode: e.target.value.toUpperCase() })}
-                                        className="w-full h-10 rounded-xl border border-gray-200 px-3 text-sm uppercase font-mono tracking-wide focus:outline-none focus:border-gray-400 font-medium text-gray-800"
+                                        className="w-full h-10 rounded-xl border border-gray-200 px-3 text-sm uppercase tracking-wide focus:outline-none focus:border-gray-400 font-medium text-gray-800"
                                         maxLength={30}
                                         required
                                     />

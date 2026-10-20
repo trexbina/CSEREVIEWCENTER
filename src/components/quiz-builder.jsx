@@ -1053,7 +1053,7 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                 {isStudent && !onToggleViewMode && !internalPreview && quizSettings.timeLimitMinutes > 0 && effectiveQuizStarted && !isSubmitted && !isQuizLocked && (
                                     <div className="bg-white border border-gray-200/80 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-2xs">
                                         <Clock className={`h-4 w-4 ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-500 animate-pulse' : 'text-[#E9C46A]'}`} />
-                                        <span className={`font-mono font-bold text-sm tracking-tight ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-600 animate-pulse' : 'text-gray-800'}`}>
+                                        <span className={`font-bold text-sm tracking-tight ${timeRemaining !== null && timeRemaining < 300 ? 'text-red-600 animate-pulse' : 'text-gray-800'}`}>
                                             {formatTime(timeRemaining)}
                                         </span>
                                     </div>
@@ -1477,7 +1477,7 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
     ]
   }
 ]'
-                                            className="w-full h-80 p-3 bg-gray-900 text-emerald-400 font-mono text-xs rounded-xl border border-gray-800 outline-none focus:border-emerald-500 transition-colors resize-none leading-relaxed custom-scrollbar"
+                                            className="w-full h-80 p-3 bg-gray-900 text-emerald-400 text-xs rounded-xl border border-gray-800 outline-none focus:border-emerald-500 transition-colors resize-none leading-relaxed custom-scrollbar"
                                         />
                                     </div>
 

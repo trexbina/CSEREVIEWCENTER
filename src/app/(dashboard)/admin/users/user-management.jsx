@@ -1663,7 +1663,7 @@ export function AssignSubjectsDialog({ open, onOpenChange, user }) {
                         className="flex items-center justify-between rounded-md border bg-card px-3 py-2"
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <Badge variant="outline" className="font-mono text-[10px] shrink-0">
+                          <Badge variant="outline" className="text-[10px] shrink-0">
                             {s.code}
                           </Badge>
                           <span className="text-sm font-medium truncate">
@@ -1713,7 +1713,7 @@ export function AssignSubjectsDialog({ open, onOpenChange, user }) {
                         className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2"
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <Badge variant="outline" className="font-mono text-[10px] shrink-0">
+                          <Badge variant="outline" className="text-[10px] shrink-0">
                             {s.code}
                           </Badge>
                           <span className="text-sm truncate">

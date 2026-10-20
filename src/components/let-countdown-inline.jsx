@@ -57,7 +57,7 @@ export function LETCountdownInline({ targetDate }) {
             <div className="flex gap-2">
                 {segments.map((seg) => (
                     <div key={seg.label} className="flex flex-col items-center leading-none">
-                        <span className="countdown font-mono text-sm font-bold text-foreground">
+                        <span className="countdown text-sm font-bold text-foreground">
                             <span style={{ "--value": seg.value }} aria-live="polite" aria-label={`${seg.value} ${seg.label}`}>
                                 {seg.value}
                             </span>

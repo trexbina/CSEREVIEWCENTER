@@ -1272,7 +1272,7 @@ export default function MyProgressPage() {
                             {item.title || "Untitled Assessment"}
                           </div>
                           {item.code && (
-                            <div className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5 font-mono">
+                            <div className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
                               {item.code}
                             </div>
                           )}
@@ -1349,7 +1349,7 @@ export default function MyProgressPage() {
                               >
                                 {percentage}%
                               </span>
-                              <span className="text-[10px] text-[#696969]/70 dark:text-gray-400 font-mono">
+                              <span className="text-[10px] text-[#696969]/70 dark:text-gray-400">
                                 {item.score}/{item.maxScore} pts
                               </span>
                             </div>

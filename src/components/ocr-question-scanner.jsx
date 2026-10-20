@@ -512,7 +512,7 @@ export default function OcrQuestionScanner({ hideActionButtons = false } = {}) {
                             <p className="font-medium text-foreground truncate text-xs" title={fileInfo.name}>
                                 {fileInfo.name}
                             </p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
                                 {fileInfo.type} {fileInfo.size ? `• ${fileInfo.size}` : ""}
                             </p>
                         </div>
@@ -539,7 +539,7 @@ export default function OcrQuestionScanner({ hideActionButtons = false } = {}) {
                             <Loader2 className="size-3.5 animate-spin text-muted-foreground shrink-0" />
                             <span className="truncate text-xs">{progressStatus || "Scanning document..."}</span>
                         </span>
-                        <span className="font-mono text-muted-foreground font-medium shrink-0 ml-2 text-xs">
+                        <span className="text-muted-foreground font-medium shrink-0 ml-2 text-xs">
                             {progressPercent}%
                         </span>
                     </div>
@@ -571,7 +571,7 @@ export default function OcrQuestionScanner({ hideActionButtons = false } = {}) {
                     </div>
 
                     {showRawText && (
-                        <div className="p-2.5 rounded-lg border border-border bg-muted/40 font-mono text-[10px] text-muted-foreground max-h-36 overflow-y-auto whitespace-pre-wrap">
+                        <div className="p-2.5 rounded-lg border border-border bg-muted/40 text-[10px] text-muted-foreground max-h-36 overflow-y-auto whitespace-pre-wrap">
                             {rawExtractedText}
                         </div>
                     )}
@@ -584,7 +584,7 @@ export default function OcrQuestionScanner({ hideActionButtons = false } = {}) {
                                 className="p-2.5 rounded-lg border border-border bg-card text-xs space-y-1 hover:border-border/80 transition-colors"
                             >
                                 <div className="flex items-start gap-1.5">
-                                    <span className="font-semibold text-muted-foreground shrink-0 font-mono text-[11px]">
+                                    <span className="font-semibold text-muted-foreground shrink-0 text-[11px]">
                                         {idx + 1}.
                                     </span>
                                     <p className="font-normal text-foreground line-clamp-2 leading-snug text-xs">

@@ -420,20 +420,15 @@ export default function AddAdminUserDialog({
       <div className="bg-white dark:bg-[#1E293B] border border-black/10 dark:border-white/10 rounded-2xl max-w-3xl w-full shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10 shrink-0 bg-white/50 dark:bg-white/[0.02]">
-          <div className="flex items-center gap-2.5">
-            <div className="size-9 rounded-xl bg-[#E9C46A]/15 text-[#b08826] dark:text-[#E9C46A] flex items-center justify-center">
-              {isEditMode ? <Pencil className="size-4.5" /> : <UserPlus className="size-4.5" />}
-            </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-[#3B3B3B] dark:text-white">
-                {isEditMode ? "Edit Admin Profile" : "Add New Admin User"}
-              </h2>
-              <p className="text-xs text-[#696969] dark:text-gray-400">
-                {isEditMode
-                  ? `Update administrative details and profile information for ${userToEdit?.name || userToEdit?.login_id || "admin"}.`
-                  : "Create and configure an administrator account with dashboard access."}
-              </p>
-            </div>
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-[#3B3B3B] dark:text-white">
+              {isEditMode ? "Edit Admin Profile" : "Add New Admin User"}
+            </h2>
+            <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
+              {isEditMode
+                ? `Update administrative details and profile information for ${userToEdit?.name || userToEdit?.login_id || "admin"}.`
+                : "Create and configure an administrator account with dashboard access."}
+            </p>
           </div>
           <button
             type="button"

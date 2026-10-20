@@ -284,18 +284,13 @@ export default function RoleUsersDialog({
       <div className="bg-white dark:bg-[#1E293B] border border-black/10 dark:border-white/10 rounded-2xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10 shrink-0 bg-white/50 dark:bg-white/[0.02]">
-          <div className="flex items-center gap-3">
-            <div className="size-9 rounded-xl bg-[#E9C46A]/15 text-[#b08826] dark:text-[#E9C46A] flex items-center justify-center shrink-0">
-              <Users className="size-4.5" />
-            </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-[#3B3B3B] dark:text-white">
-                {role?.name || "Role Users"}
-              </h2>
-              <p className="text-xs text-[#696969] dark:text-gray-400">
-                Manage accounts assigned to this role, transfer roles, or disable access.
-              </p>
-            </div>
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-[#3B3B3B] dark:text-white">
+              {role?.name || "Role Users"}
+            </h2>
+            <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
+              Manage accounts assigned to this role, transfer roles, or disable access.
+            </p>
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -326,27 +321,25 @@ export default function RoleUsersDialog({
             <button
               type="button"
               onClick={() => setActiveTab("assigned")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                 activeTab === "assigned"
                   ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
                   : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
               }`}
             >
-              <Users className="size-3.5" />
-              <span>Assigned Users</span>
+              Assigned Users
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("assign_new")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                 activeTab === "assign_new"
                   ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-xs"
                   : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
               }`}
             >
-              <UserPlus className="size-3.5" />
-              <span>Transfer User Here</span>
+              Transfer User Here
             </button>
           </div>
 

@@ -272,12 +272,12 @@ function RoleDialog({ isOpen, roleForm, setRoleForm, onSubmit, onCancel, isEdit,
             <div className="pt-3 border-t border-black/5 dark:border-white/10 space-y-2">
               <label className="text-xs font-semibold text-[#696969] flex items-center gap-1.5">
                 <Shield className="size-3.5 text-[#E9C46A]" />
-                <span>Admin Access Control</span>
+                <span>Roles and Limitations</span>
               </label>
               <NeutralCheckbox
                 checked={hasRolesPerm}
                 onChange={toggleRolesPerm}
-                label="Manage Roles & Permissions"
+                label="Allow access to roles and limitations"
                 description="Allow creating, editing, and assigning admin roles."
               />
             </div>

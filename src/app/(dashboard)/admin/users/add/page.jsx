@@ -741,111 +741,76 @@ export default function AddUserPage() {
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-sm font-semibold text-[#696969]">User Role *</Label>
-                            <Select 
-                                value={role} 
-                                onValueChange={(val) => {
-                                    setRole(val);
-                                    if (val === "teacher") {
-                                        setBatchId("");
-                                    }
-                                }}
-                            >
-                                <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue /></SelectTrigger>
+                            <Label className="text-sm font-semibold text-[#696969]">User Role</Label>
+                            <input
+                                type="text"
+                                readOnly
+                                disabled
+                                value="Student"
+                                className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-neutral-100/70 dark:bg-white/5 text-[#3B3B3B] dark:text-white font-medium cursor-default shadow-2xs select-none"
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-semibold text-[#696969]">Target Examination *</Label>
+                            <Select value={examId || "none"} onValueChange={(val) => { setExamId(val === "none" ? "" : val); setProgramId(""); setMajorId(""); }}>
+                                <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Exam" /></SelectTrigger>
                                 <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                                    <SelectItem value="student">Student</SelectItem>
-                                    <SelectItem value="teacher">Teacher (Instructor)</SelectItem>
+                                    <SelectItem value="none">None</SelectItem>
+                                    {dropdownData.examinations.map(e => (
+                                        <SelectItem key={e.id} value={e.id.toString()}>{e.name}</SelectItem>
+                                    ))}
+                                    {dropdownData.examinations.length === 0 && <SelectItem value="no_exams" disabled>No exams available</SelectItem>}
                                 </SelectContent>
                             </Select>
                         </div>
-
-
-                        {role === "teacher" && (
-                            <div className="space-y-3 sm:col-span-2">
-                                <div className="space-y-1.5">
-                                    <Label className="text-sm font-semibold text-[#696969]">Target Examination / Courses / Specializations *</Label>
-                                    <CourseMultiSelect
-                                        selected={teacherTargets}
-                                        onChange={(newTargets) => {
-                                            setTeacherTargets(newTargets)
-                                            const firstExam = newTargets.find(t => String(t).startsWith("exam_"))
-                                            if (firstExam) {
-                                                setExamId(firstExam.replace("exam_", ""))
-                                            }
-                                        }}
-                                        tree={courseTree}
-                                    />
-                                    <p className="text-xs text-[#696969] mt-1">
-                                        Select the examination, programs, or specific major specializations this teacher can teach or access.
-                                    </p>
-                                </div>
+                        {examId && dropdownData.programs?.some(p => p.exam_id.toString() === examId) && (
+                            <div className="space-y-1.5">
+                                <Label className="text-sm font-semibold text-[#696969]">Course / Program</Label>
+                                <Select value={programId || "none"} onValueChange={(val) => { setProgramId(val === "none" ? "" : val); setMajorId(""); }}>
+                                    <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Program" /></SelectTrigger>
+                                    <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                                        <SelectItem value="none">None</SelectItem>
+                                        {dropdownData.programs
+                                            .filter(p => p.exam_id.toString() === examId)
+                                            .map(p => (
+                                            <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         )}
-
-                        {role === "student" && (
-                            <>
-                                <div className="space-y-1.5">
-                                    <Label className="text-sm font-semibold text-[#696969]">Target Examination *</Label>
-                                    <Select value={examId || "none"} onValueChange={(val) => { setExamId(val === "none" ? "" : val); setProgramId(""); setMajorId(""); }}>
-                                        <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Exam" /></SelectTrigger>
-                                        <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                                            <SelectItem value="none">None</SelectItem>
-                                            {dropdownData.examinations.map(e => (
-                                                <SelectItem key={e.id} value={e.id.toString()}>{e.name}</SelectItem>
-                                            ))}
-                                            {dropdownData.examinations.length === 0 && <SelectItem value="no_exams" disabled>No exams available</SelectItem>}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                {examId && dropdownData.programs?.some(p => p.exam_id.toString() === examId) && (
-                                    <div className="space-y-1.5">
-                                        <Label className="text-sm font-semibold text-[#696969]">Course / Program</Label>
-                                        <Select value={programId || "none"} onValueChange={(val) => { setProgramId(val === "none" ? "" : val); setMajorId(""); }}>
-                                            <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Program" /></SelectTrigger>
-                                            <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                                                <SelectItem value="none">None</SelectItem>
-                                                {dropdownData.programs
-                                                    .filter(p => p.exam_id.toString() === examId)
-                                                    .map(p => (
-                                                    <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                )}
-                                {programId && dropdownData.majors?.some(m => m.program_id.toString() === programId) && (
-                                    <div className="space-y-1.5">
-                                        <Label className="text-sm font-semibold text-[#696969]">Major Specialization</Label>
-                                        <Select value={majorId || "none"} onValueChange={(val) => setMajorId(val === "none" ? "" : val)}>
-                                            <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Major" /></SelectTrigger>
-                                            <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                                                <SelectItem value="none">None</SelectItem>
-                                                {dropdownData.majors
-                                                    .filter(m => m.program_id.toString() === programId)
-                                                    .map(m => (
-                                                    <SelectItem key={m.id} value={m.id.toString()}>{m.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                )}
-                                <div className="space-y-1.5">
-                                    <Label className="text-sm font-semibold text-[#696969]">Assigned Batch *</Label>
-                                    <Select value={batchId || "none"} onValueChange={(val) => setBatchId(val === "none" ? "" : val)}>
-                                        <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Batch" /></SelectTrigger>
-                                        <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                                            <SelectItem value="none">None</SelectItem>
-                                            {dropdownData.batches
-                                                .filter(b => !examId || b.exam_id.toString() === examId)
-                                                .map(b => (
-                                                <SelectItem key={b.id} value={b.id.toString()}>{b.name} ({b.target_year})</SelectItem>
-                                            ))}
-                                            {dropdownData.batches.length === 0 && <SelectItem value="no_batches" disabled>No batches available</SelectItem>}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </>
+                        {programId && dropdownData.majors?.some(m => m.program_id.toString() === programId) && (
+                            <div className="space-y-1.5">
+                                <Label className="text-sm font-semibold text-[#696969]">Major Specialization</Label>
+                                <Select value={majorId || "none"} onValueChange={(val) => setMajorId(val === "none" ? "" : val)}>
+                                    <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Major" /></SelectTrigger>
+                                    <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                                        <SelectItem value="none">None</SelectItem>
+                                        {dropdownData.majors
+                                            .filter(m => m.program_id.toString() === programId)
+                                            .map(m => (
+                                            <SelectItem key={m.id} value={m.id.toString()}>{m.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         )}
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-semibold text-[#696969]">Assigned Batch *</Label>
+                            <Select value={batchId || "none"} onValueChange={(val) => setBatchId(val === "none" ? "" : val)}>
+                                <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Batch" /></SelectTrigger>
+                                <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
+                                    <SelectItem value="none">None</SelectItem>
+                                    {dropdownData.batches
+                                        .filter(b => !examId || b.exam_id.toString() === examId)
+                                        .map(b => (
+                                        <SelectItem key={b.id} value={b.id.toString()}>{b.name} ({b.target_year})</SelectItem>
+                                    ))}
+                                    {dropdownData.batches.length === 0 && <SelectItem value="no_batches" disabled>No batches available</SelectItem>}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </section>
 

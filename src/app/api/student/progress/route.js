@@ -156,7 +156,16 @@ export async function GET() {
     const curriculumCtx = await getStudentCurriculumContext(studentId)
     const curriculumSubjectIds = curriculumCtx.subjectIds
 
-    const [subjectsRes, subjectItemsRes, completedLessonsRes, completedQuizzesRes, studentActivityDatesRes, nowRes] = await Promise.all([
+    const [
+      subjectsRes,
+      subjectItemsRes,
+      completedLessonsRes,
+      completedQuizzesRes,
+      quizMasteryRes,
+      subjectModulesRes,
+      studentActivityDatesRes,
+      nowRes
+    ] = await Promise.all([
       // A. Active subjects belonging to student's curriculum
       pool.query(
         `SELECT 
@@ -223,7 +232,40 @@ export async function GET() {
         [studentId]
       ).catch(() => ({ rows: [] })),
 
-      // E. Unique activity dates for this student (across activities, quizzes, exams, sessions)
+      // E. Quiz mastery per subject for this student
+      pool.query(
+        `SELECT 
+           sm.subject_id,
+           COUNT(sqs.id) AS attempted_quizzes_count,
+           ROUND(AVG(
+             CASE 
+               WHEN sqs.total_points > 0 
+               THEN (sqs.earned_points::numeric / sqs.total_points::numeric) * 100 
+               ELSE 0 
+             END
+           ), 1) AS avg_mastery_pct
+         FROM student_quiz_submissions sqs
+         JOIN subject_contents sc ON sc.id = sqs.content_id
+         JOIN subject_modules sm ON sm.id = sc.module_id
+         WHERE sqs.student_id = $1
+         GROUP BY sm.subject_id`,
+        [studentId]
+      ).catch(() => ({ rows: [] })),
+
+      // F. Modules per subject
+      pool.query(
+        `SELECT 
+           sm.id,
+           sm.subject_id,
+           sm.title,
+           COUNT(sc.id) AS total_items
+         FROM subject_modules sm
+         LEFT JOIN subject_contents sc ON sc.module_id = sm.id
+         GROUP BY sm.id, sm.subject_id, sm.title
+         ORDER BY sm.id ASC`
+      ).catch(() => ({ rows: [] })),
+
+      // G. Unique activity dates for this student (across activities, quizzes, exams, sessions)
       pool.query(
         `SELECT DISTINCT to_char(act_timestamp AT TIME ZONE 'Asia/Manila', 'YYYY-MM-DD') AS act_date
          FROM (
@@ -240,7 +282,7 @@ export async function GET() {
         [studentId]
       ).catch(() => ({ rows: [] })),
 
-      // F. Current Manila today and yesterday dates
+      // H. Current Manila today and yesterday dates
       pool.query(
         `SELECT 
            to_char(NOW() AT TIME ZONE 'Asia/Manila', 'YYYY-MM-DD') AS today,
@@ -295,6 +337,27 @@ export async function GET() {
       }
     })
 
+    const masteryMap = {}
+    ;(quizMasteryRes?.rows || []).forEach(q => {
+      if (q.subject_id) {
+        masteryMap[String(q.subject_id)] = {
+          attemptedQuizzesCount: parseInt(q.attempted_quizzes_count || "0", 10),
+          avgMasteryPct: parseFloat(q.avg_mastery_pct || "0"),
+        }
+      }
+    })
+
+    const modulesMap = {}
+    ;(subjectModulesRes?.rows || []).forEach(m => {
+      const sid = String(m.subject_id)
+      if (!modulesMap[sid]) modulesMap[sid] = []
+      modulesMap[sid].push({
+        id: m.id,
+        title: m.title,
+        totalItems: parseInt(m.total_items || "0", 10),
+      })
+    })
+
     // Compute progression per subject & persist into student_subject_progress in DB
     const subjectProgression = []
     const upsertPromises = []
@@ -309,6 +372,10 @@ export async function GET() {
       const completedItems = Math.min(totalItems, openedLessons + doneQuizzes)
 
       const progressPct = totalItems > 0 ? Math.min(100, Math.round((completedItems / totalItems) * 100)) : (completedItems > 0 ? 100 : 0)
+
+      const subMastery = masteryMap[sid] || { attemptedQuizzesCount: 0, avgMasteryPct: 0 }
+      const hasQuizAttempts = subMastery.attemptedQuizzesCount > 0
+      const masteryPct = hasQuizAttempts ? Math.round(subMastery.avgMasteryPct || 0) : 0
 
       upsertPromises.push(
         pool.query(
@@ -337,6 +404,9 @@ export async function GET() {
         completedItems,
         totalItems,
         progressPct,
+        masteryPct,
+        hasQuizAttempts,
+        modules: modulesMap[sid] || [],
         activeDays: totalActiveDays,
         studyStreak,
       })

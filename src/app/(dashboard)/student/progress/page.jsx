@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import Link from "next/link"
 import {
   Search,
   RefreshCw,
@@ -22,7 +23,12 @@ import {
   MessageSquare,
   Check,
   Target,
-  Flame
+  Flame,
+  Filter,
+  LayoutGrid,
+  List,
+  ExternalLink,
+  Layers
 } from "lucide-react"
 import { LordIcon } from "@/components/ui/lord-icon"
 
@@ -48,6 +54,14 @@ export default function MyProgressPage() {
   const [isQuizCardExpanded, setIsQuizCardExpanded] = useState(false)
   const [isAssignmentCardExpanded, setIsAssignmentCardExpanded] = useState(false)
   const [isMockExamCardExpanded, setIsMockExamCardExpanded] = useState(false)
+
+  // Subject Progression States (Category division, category filter, pagination, interactive modules)
+  const [selectedSubjectCategory, setSelectedSubjectCategory] = useState("ALL")
+  const [subjectSearch, setSubjectSearch] = useState("")
+  const [subjectPage, setSubjectPage] = useState(1)
+  const [expandedSubjectCards, setExpandedSubjectCards] = useState({})
+  const [subjectViewMode, setSubjectViewMode] = useState("grid") // "grid" | "table"
+  const [isSubjectFilterOpen, setIsSubjectFilterOpen] = useState(false)
 
   const fetchProgress = async () => {
     setLoading(true)
@@ -190,6 +204,78 @@ export default function MyProgressPage() {
       return sortDir === "asc" ? aVal - bVal : bVal - aVal
     })
   }, [data, activeTab, search, statusFilter, selectedSubject, selectedSubcategory, sortField, sortDir])
+
+  // ── Subject Progression Data & Calculations ──
+  const subjectCategoryStats = useMemo(() => {
+    const list = data.subjects || []
+    const catMap = {}
+
+    list.forEach((sub) => {
+      const cat = sub.categoryName || "General Education"
+      if (!catMap[cat]) {
+        catMap[cat] = {
+          name: cat,
+          count: 0,
+          completedItems: 0,
+          totalItems: 0,
+          sumPct: 0,
+        }
+      }
+      catMap[cat].count += 1
+      catMap[cat].completedItems += (sub.completedItems || 0)
+      catMap[cat].totalItems += (sub.totalItems || 0)
+      catMap[cat].sumPct += (sub.progressPct || 0)
+    })
+
+    return Object.values(catMap).map((c) => ({
+      ...c,
+      avgProgress: c.count > 0 ? Math.round(c.sumPct / c.count) : 0,
+    })).sort((a, b) => a.name.localeCompare(b.name))
+  }, [data.subjects])
+
+  // Filter subjects by category & search
+  const filteredSubjects = useMemo(() => {
+    let list = data.subjects || []
+
+    if (selectedSubjectCategory !== "ALL") {
+      list = list.filter((s) => (s.categoryName || "General Education") === selectedSubjectCategory)
+    }
+
+    if (subjectSearch.trim()) {
+      const q = subjectSearch.trim().toLowerCase()
+      list = list.filter((s) => {
+        return (
+          s.title?.toLowerCase().includes(q) ||
+          s.code?.toLowerCase().includes(q) ||
+          s.subcategoryName?.toLowerCase().includes(q) ||
+          s.categoryName?.toLowerCase().includes(q)
+        )
+      })
+    }
+
+    return list
+  }, [data.subjects, selectedSubjectCategory, subjectSearch])
+
+  const SUBJECTS_PER_PAGE = 6
+  const totalSubjectPages = Math.max(1, Math.ceil(filteredSubjects.length / SUBJECTS_PER_PAGE))
+  const currentSubjectPage = Math.min(Math.max(1, subjectPage), totalSubjectPages)
+  const paginatedSubjects = useMemo(() => {
+    const start = (currentSubjectPage - 1) * SUBJECTS_PER_PAGE
+    return filteredSubjects.slice(start, start + SUBJECTS_PER_PAGE)
+  }, [filteredSubjects, currentSubjectPage, SUBJECTS_PER_PAGE])
+
+  const toggleSubjectCardExpanded = (subId) => {
+    setExpandedSubjectCards((prev) => ({
+      ...prev,
+      [subId]: !prev[subId],
+    }))
+  }
+
+  const handleCategoryFilterSelect = (catName) => {
+    setSelectedSubjectCategory(catName)
+    setSubjectPage(1)
+    setIsSubjectFilterOpen(false)
+  }
 
   // Helper to compute category statistics (quizzes, assignments, mock exams)
   const computeStats = (list = [], itemTypeSingular = "quiz", itemTypePlural = "quizzes") => {
@@ -889,6 +975,7 @@ export default function MyProgressPage() {
 
       {/* ═══ SECTION: User Subject Progression ═══ */}
       <div className="space-y-4">
+        {/* Header & Badges */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
           <div>
             <h2 className="text-base sm:text-lg font-semibold text-[#3B3B3B] dark:text-white tracking-tight">
@@ -913,18 +1000,250 @@ export default function MyProgressPage() {
           </div>
         </div>
 
-        {/* Dynamic Subject Cards Grid */}
-        {data.subjects && data.subjects.length > 0 ? (
+        {/* ── Category Division Overview Cards ── */}
+        {subjectCategoryStats.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* All Categories Chip */}
+            <div
+              onClick={() => handleCategoryFilterSelect("ALL")}
+              className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none flex flex-col justify-between gap-2.5 ${
+                selectedSubjectCategory === "ALL"
+                  ? "bg-white dark:bg-white/10 border-[#2A9D8F]/60 dark:border-[#2A9D8F]/60 shadow-xs ring-1 ring-[#2A9D8F]/30"
+                  : "bg-white/70 dark:bg-white/[0.03] border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-[#3B3B3B] dark:text-white truncate">
+                  All Categories
+                </span>
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-[#696969] dark:text-neutral-300">
+                  {data.subjects?.length || 0}
+                </span>
+              </div>
+              <div>
+                <div className="flex justify-between items-center text-[11px] mb-1">
+                  <span className="text-neutral-400 dark:text-neutral-500">Overall</span>
+                  <span className="font-semibold text-[#3B3B3B] dark:text-white">
+                    {data.subjects?.length > 0
+                      ? Math.round(
+                          data.subjects.reduce((sum, s) => sum + (s.progressPct || 0), 0) /
+                            data.subjects.length
+                        )
+                      : 0}
+                    %
+                  </span>
+                </div>
+                <div className="w-full bg-black/5 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#2A9D8F] rounded-full transition-all duration-500"
+                    style={{
+                      width: `${
+                        data.subjects?.length > 0
+                          ? Math.round(
+                              data.subjects.reduce((sum, s) => sum + (s.progressPct || 0), 0) /
+                                data.subjects.length
+                            )
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Individual Category Chips */}
+            {subjectCategoryStats.map((cat) => {
+              const isSelected = selectedSubjectCategory === cat.name
+              return (
+                <div
+                  key={cat.name}
+                  onClick={() => handleCategoryFilterSelect(isSelected ? "ALL" : cat.name)}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none flex flex-col justify-between gap-2.5 ${
+                    isSelected
+                      ? "bg-white dark:bg-white/10 border-[#2A9D8F]/60 dark:border-[#2A9D8F]/60 shadow-xs ring-1 ring-[#2A9D8F]/30"
+                      : "bg-white/70 dark:bg-white/[0.03] border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-[#3B3B3B] dark:text-white truncate" title={cat.name}>
+                      {cat.name}
+                    </span>
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-[#696969] dark:text-neutral-300 whitespace-nowrap">
+                      {cat.count} {cat.count === 1 ? "subject" : "subjects"}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex justify-between items-center text-[11px] mb-1">
+                      <span className="text-neutral-400 dark:text-neutral-500">Progress</span>
+                      <span className="font-semibold text-[#3B3B3B] dark:text-white">
+                        {cat.avgProgress}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-black/5 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#2A9D8F] rounded-full transition-all duration-500"
+                        style={{ width: `${cat.avgProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* ── Toolbar: Filter Button, Search & View Mode Switcher ── */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
+          {/* Left: Category Filter Button with Dropdown + Search */}
+          <div className="flex flex-1 flex-wrap items-center gap-2">
+            {/* Category Filter Button */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsSubjectFilterOpen(!isSubjectFilterOpen)}
+                className={`inline-flex items-center gap-2 px-3 h-8 rounded-xl text-xs font-medium border transition-all cursor-pointer shadow-2xs ${
+                  selectedSubjectCategory !== "ALL"
+                    ? "bg-[#2A9D8F]/10 border-[#2A9D8F]/40 text-[#2A9D8F] dark:text-[#2A9D8F] font-semibold"
+                    : "bg-white dark:bg-white/10 border-black/5 dark:border-white/10 text-[#696969] dark:text-gray-300 hover:text-[#3B3B3B] dark:hover:text-white"
+                }`}
+              >
+                <Filter className="size-3 text-[#2A9D8F]" />
+                <span className="max-w-[180px] truncate">
+                  {selectedSubjectCategory === "ALL" ? "Filter Category" : selectedSubjectCategory}
+                </span>
+                <ChevronDown className={`size-3 transition-transform ${isSubjectFilterOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {/* Filter Dropdown Menu */}
+              {isSubjectFilterOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-20"
+                    onClick={() => setIsSubjectFilterOpen(false)}
+                  />
+                  <div className="absolute left-0 top-full mt-1.5 z-30 w-64 rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1A1D21] shadow-lg py-1.5 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="px-3 py-1.5 text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 border-b border-black/5 dark:border-white/10">
+                      Filter by Category
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCategoryFilterSelect("ALL")}
+                      className={`w-full px-3 py-2 text-xs flex items-center justify-between text-left transition-colors cursor-pointer ${
+                        selectedSubjectCategory === "ALL"
+                          ? "bg-[#2A9D8F]/10 text-[#2A9D8F] font-semibold"
+                          : "text-[#3B3B3B] dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      <span>All Categories</span>
+                      <span className="text-[10px] text-neutral-400">{data.subjects?.length || 0}</span>
+                    </button>
+                    {subjectCategoryStats.map((cat) => (
+                      <button
+                        key={cat.name}
+                        type="button"
+                        onClick={() => handleCategoryFilterSelect(cat.name)}
+                        className={`w-full px-3 py-2 text-xs flex items-center justify-between text-left transition-colors cursor-pointer ${
+                          selectedSubjectCategory === cat.name
+                            ? "bg-[#2A9D8F]/10 text-[#2A9D8F] font-semibold"
+                            : "text-[#3B3B3B] dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5"
+                        }`}
+                      >
+                        <span className="truncate pr-2">{cat.name}</span>
+                        <span className="text-[10px] text-neutral-400 whitespace-nowrap">{cat.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Quick Search Input */}
+            <div className="relative flex-1 min-w-[180px] max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#696969]/60 dark:text-gray-400" />
+              <input
+                type="search"
+                placeholder="Search subjects…"
+                value={subjectSearch}
+                onChange={(e) => {
+                  setSubjectSearch(e.target.value)
+                  setSubjectPage(1)
+                }}
+                className="w-full h-8 pl-8 pr-3 text-xs rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
+              />
+            </div>
+          </div>
+
+          {/* Right: View Mode Toggle */}
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <div className="inline-flex items-center gap-1 p-0.5 bg-black/[0.04] dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => setSubjectViewMode("grid")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  subjectViewMode === "grid"
+                    ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                    : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                }`}
+                title="Card Grid View"
+              >
+                <LayoutGrid className="size-3" />
+                <span className="hidden sm:inline">Cards</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubjectViewMode("table")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  subjectViewMode === "table"
+                    ? "bg-white dark:bg-white/15 text-[#3B3B3B] dark:text-white shadow-2xs"
+                    : "text-[#696969] dark:text-gray-400 hover:text-[#3B3B3B] dark:hover:text-white"
+                }`}
+                title="Analytical Overview Table View"
+              >
+                <List className="size-3" />
+                <span className="hidden sm:inline">Table</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Content View: Card Grid or Analytical Table ── */}
+        {filteredSubjects.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/15 p-8 text-center text-xs text-neutral-400 dark:text-neutral-500">
+            No subjects match the selected category or search filter.
+          </div>
+        ) : subjectViewMode === "grid" ? (
+          /* ── 1. Card Grid View ── */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {data.subjects.map((sub) => {
+            {paginatedSubjects.map((sub) => {
               const pct = sub.progressPct || 0
+              const isExpanded = !!expandedSubjectCards[sub.id]
+              const modules = sub.modules || []
+
+              // Mastery badge style
+              let masteryBadgeClass = "bg-gray-100 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
+              let masteryBarColor = "bg-neutral-400"
+              if (sub.hasQuizAttempts) {
+                if (sub.masteryPct >= 80) {
+                  masteryBadgeClass = "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 dark:text-emerald-400"
+                  masteryBarColor = "bg-emerald-500"
+                } else if (sub.masteryPct >= 70) {
+                  masteryBadgeClass = "bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:text-blue-400"
+                  masteryBarColor = "bg-blue-500"
+                } else if (sub.masteryPct >= 60) {
+                  masteryBadgeClass = "bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:text-amber-400"
+                  masteryBarColor = "bg-amber-500"
+                } else {
+                  masteryBadgeClass = "bg-rose-500/10 text-rose-600 border border-rose-500/20 dark:text-rose-400"
+                  masteryBarColor = "bg-rose-500"
+                }
+              }
 
               return (
                 <div
                   key={sub.id}
                   className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between transition-all hover:border-black/15 dark:hover:border-white/20"
                 >
-                  {/* Signature Card Header */}
+                  {/* Card Header */}
                   <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)] bg-[#2A9D8F]/20 dark:bg-[#2A9D8F]/25">
                     <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 truncate select-none">
                       {sub.code || "SUBJECT"}
@@ -941,7 +1260,7 @@ export default function MyProgressPage() {
                         {sub.title}
                       </h3>
                       <p className="text-xs text-neutral-400 dark:text-neutral-500 line-clamp-1">
-                        {sub.subcategoryName || "Curriculum"}
+                        {sub.categoryName || sub.subcategoryName || "Curriculum"}
                       </p>
 
                       {/* Progress Bar */}
@@ -953,7 +1272,7 @@ export default function MyProgressPage() {
                       </div>
                     </div>
 
-                    {/* Bottom Stats: Out of (Completed / Total), Progress Day & Study Streak */}
+                    {/* Quick Stats: Completed, Progress Day & Study Streak */}
                     <div className="pt-3 border-t border-black/5 dark:border-white/5 grid grid-cols-3 gap-2 text-center">
                       <div>
                         <span className="text-[10px] text-neutral-400 dark:text-neutral-500 block font-normal">
@@ -994,14 +1313,244 @@ export default function MyProgressPage() {
                         </span>
                       </div>
                     </div>
+
+                    {/* Interactive Accordion Button (Toggle Modules & Analytical Breakdown) */}
+                    <button
+                      type="button"
+                      onClick={() => toggleSubjectCardExpanded(sub.id)}
+                      className="w-full pt-2.5 mt-1 border-t border-black/5 dark:border-white/5 text-[11px] font-medium text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer flex items-center justify-between"
+                    >
+                      <span className="font-semibold">
+                        {isExpanded ? "Hide Details" : "View Details & Modules"}
+                      </span>
+                      {isExpanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                    </button>
+
+                    {/* Expanded Drawer: Modules Breakdown & Direct Subject Link */}
+                    {isExpanded && (
+                      <div className="pt-2.5 space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                        {/* Mastery Row */}
+                        <div className="p-2.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-neutral-400 font-medium">Quiz Mastery</span>
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${masteryBadgeClass}`}>
+                              {sub.hasQuizAttempts ? `${sub.masteryPct}%` : "No attempts yet"}
+                            </span>
+                          </div>
+                          {sub.hasQuizAttempts && (
+                            <div className="w-full bg-black/5 dark:bg-white/10 h-1 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full ${masteryBarColor} rounded-full`}
+                                style={{ width: `${sub.masteryPct}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Modules List if available */}
+                        {modules.length > 0 ? (
+                          <div className="space-y-1.5">
+                            <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block">
+                              Modules ({modules.length})
+                            </span>
+                            <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                              {modules.map((m) => (
+                                <div
+                                  key={m.id}
+                                  className="p-2 rounded-lg bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 flex items-center justify-between text-xs"
+                                >
+                                  <span className="text-neutral-700 dark:text-neutral-200 font-medium truncate max-w-[180px]">
+                                    {m.title}
+                                  </span>
+                                  <span className="text-[10px] text-neutral-400">
+                                    {m.totalItems || 0} items
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {/* Direct Navigation Button */}
+                        <Link
+                          href={`/student/subjects/${sub.id}`}
+                          className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#2A9D8F]/10 hover:bg-[#2A9D8F]/20 text-[#2A9D8F] font-semibold text-xs transition-colors"
+                        >
+                          <span>Open Subject Curriculum</span>
+                          <ExternalLink className="size-3" />
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 </div>
               )
             })}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/15 p-6 text-center text-xs text-neutral-400 dark:text-neutral-500">
-            No subject curriculum is currently active or assigned.
+          /* ── 2. Analytical Overview Table View (Matching user-profile-detail.jsx) ── */
+          <div className="rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-xs font-semibold text-neutral-400">
+                    <th className="py-3 px-4 sm:px-6">Subject / Module</th>
+                    <th className="py-3 px-4">Category</th>
+                    <th className="py-3 px-4">Progress</th>
+                    <th className="py-3 px-4">Mastery</th>
+                    <th className="py-3 px-4 sm:px-6 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
+                  {paginatedSubjects.map((sub) => {
+                    const isExpanded = !!expandedSubjectCards[sub.id]
+                    const modules = sub.modules || []
+
+                    let masteryBadgeClass = "bg-gray-100 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
+                    let masteryBarColor = "bg-neutral-400"
+                    if (sub.hasQuizAttempts) {
+                      if (sub.masteryPct >= 80) {
+                        masteryBadgeClass = "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 dark:text-emerald-400"
+                        masteryBarColor = "bg-emerald-500"
+                      } else if (sub.masteryPct >= 70) {
+                        masteryBadgeClass = "bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:text-blue-400"
+                        masteryBarColor = "bg-blue-500"
+                      } else if (sub.masteryPct >= 60) {
+                        masteryBadgeClass = "bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:text-amber-400"
+                        masteryBarColor = "bg-amber-500"
+                      } else {
+                        masteryBadgeClass = "bg-rose-500/10 text-rose-600 border border-rose-500/20 dark:text-rose-400"
+                        masteryBarColor = "bg-rose-500"
+                      }
+                    }
+
+                    return (
+                      <tr key={sub.id} className="hover:bg-black/[0.015] dark:hover:bg-white/[0.015] transition-colors">
+                        {/* Subject Title & Code */}
+                        <td className="py-3.5 px-4 sm:px-6">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleSubjectCardExpanded(sub.id)}
+                              className="text-neutral-400 hover:text-[#3B3B3B] dark:hover:text-white cursor-pointer"
+                              title="Toggle Details"
+                            >
+                              {isExpanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                            </button>
+                            <div>
+                              <div className="font-semibold text-[#3B3B3B] dark:text-white text-xs sm:text-sm">
+                                {sub.title}
+                              </div>
+                              <div className="text-[11px] text-neutral-400 mt-0.5">
+                                {sub.code} • {sub.completedItems} / {sub.totalItems} completed
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Category */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span className="inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium bg-black/5 dark:bg-white/10 text-[#696969] dark:text-neutral-300">
+                            {sub.categoryName}
+                          </span>
+                        </td>
+
+                        {/* Progress */}
+                        <td className="py-3.5 px-4 min-w-[130px]">
+                          <div className="space-y-1">
+                            <span className="text-xs font-semibold text-[#3B3B3B] dark:text-white block">
+                              {sub.progressPct || 0}%
+                            </span>
+                            <div className="w-full bg-black/5 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-[#2A9D8F] rounded-full transition-all duration-500"
+                                style={{ width: `${sub.progressPct || 0}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Mastery */}
+                        <td className="py-3.5 px-4 min-w-[120px]">
+                          <div className="space-y-1">
+                            <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-semibold ${masteryBadgeClass}`}>
+                              {sub.hasQuizAttempts ? `${sub.masteryPct}%` : "—"}
+                            </span>
+                            {sub.hasQuizAttempts && (
+                              <div className="w-full bg-black/5 dark:bg-white/10 h-1 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${masteryBarColor} rounded-full`}
+                                  style={{ width: `${sub.masteryPct}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Action */}
+                        <td className="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">
+                          <Link
+                            href={`/student/subjects/${sub.id}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-[#2A9D8F] hover:bg-[#2A9D8F]/10 transition-colors"
+                          >
+                            <span>Open</span>
+                            <ExternalLink className="size-3" />
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── Pagination Controls (Matching admin analytical overview tables) ── */}
+        {totalSubjectPages >= 1 && (
+          <div className="px-4 py-3 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 bg-white/20 dark:bg-white/[0.01] rounded-2xl">
+            <span className="text-xs text-neutral-400 dark:text-neutral-500 font-normal">
+              Showing{" "}
+              {filteredSubjects.length === 0
+                ? 0
+                : (currentSubjectPage - 1) * SUBJECTS_PER_PAGE + 1}{" "}
+              to {Math.min(currentSubjectPage * SUBJECTS_PER_PAGE, filteredSubjects.length)} of{" "}
+              {filteredSubjects.length} subjects
+            </span>
+
+            <div className="flex items-center gap-1 sm:gap-2">
+              <button
+                type="button"
+                disabled={currentSubjectPage === 1}
+                onClick={() => setSubjectPage((p) => Math.max(1, p - 1))}
+                className="px-2.5 py-1 text-xs rounded-lg text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                Prev
+              </button>
+
+              {Array.from({ length: totalSubjectPages }, (_, i) => i + 1).map((pageNum) => (
+                <button
+                  key={pageNum}
+                  type="button"
+                  onClick={() => setSubjectPage(pageNum)}
+                  className={`min-w-7 h-7 text-xs rounded-lg transition-colors cursor-pointer flex items-center justify-center ${
+                    pageNum === currentSubjectPage
+                      ? "font-semibold text-[#3B3B3B] dark:text-white bg-black/5 dark:bg-white/10"
+                      : "font-normal text-neutral-400 hover:text-[#3B3B3B] dark:text-neutral-500 dark:hover:text-white"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                disabled={currentSubjectPage === totalSubjectPages}
+                onClick={() => setSubjectPage((p) => Math.min(totalSubjectPages, p + 1))}
+                className="px-2.5 py-1 text-xs rounded-lg text-neutral-500 hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>

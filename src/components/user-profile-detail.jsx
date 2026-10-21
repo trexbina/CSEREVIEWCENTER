@@ -84,6 +84,9 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
   const [loadingActivities, setLoadingActivities] = useState(false)
   const [isActivitiesExpanded, setIsActivitiesExpanded] = useState(false)
 
+  const [analyticsData, setAnalyticsData] = useState(null)
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false)
+
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -192,6 +195,21 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
         })
         .catch(() => { })
         .finally(() => setLoadingActivities(false))
+    }
+  }, [user.id, user.role])
+
+  useEffect(() => {
+    if (user.role === 'student' && user.id) {
+      setLoadingAnalytics(true)
+      fetch(`/api/users/${user.id}/analytics`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.success) {
+            setAnalyticsData(data)
+          }
+        })
+        .catch((err) => console.error("Failed to load user analytics:", err))
+        .finally(() => setLoadingAnalytics(false))
     }
   }, [user.id, user.role])
 
@@ -691,78 +709,124 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
         {user.role === 'student' && (
           <div id="profile-analytics" className="scroll-mt-24 space-y-6 border-t border-border pt-8">
             <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 space-y-6">
-              <div className="border-b border-border pb-4">
+              <div className="border-b border-border pb-4 flex items-center justify-between">
                 <h3 className="text-lg font-bold text-foreground">Analytical Overview</h3>
+                {loadingAnalytics && (
+                  <span className="text-xs text-muted-foreground animate-pulse">Calculating progress…</span>
+                )}
               </div>
 
-              <div className="grid gap-8 md:grid-cols-5 items-center">
-                {/* Readiness Score Donut */}
-                <div className="md:col-span-2 flex flex-col items-center justify-center text-center md:border-r border-border md:pr-8 py-2 space-y-3">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Overall Readiness
-                  </h4>
+              {(() => {
+                const readiness = analyticsData?.readiness || {
+                  percentage: 0,
+                  target: 80,
+                  ratingLabel: "FOR MONITORING",
+                  badgeClass: "bg-amber-500/10 text-amber-600 border border-amber-500/25 dark:text-amber-400",
+                  donutColor: "#eed48f",
+                }
 
-                  <div className="relative h-40 w-40 flex items-center justify-center my-1">
-                    <svg className="h-full w-full transform -rotate-90" viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        className="stroke-slate-100 dark:stroke-slate-800"
-                        strokeWidth="8"
-                        fill="transparent"
-                      />
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        className="stroke-[#eed48f]"
-                        strokeWidth="8"
-                        fill="transparent"
-                        strokeDasharray={`${2 * Math.PI * 40}`}
-                        strokeDashoffset={`${2 * Math.PI * 40 * (1 - 0.62)}`}
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <div className="absolute flex flex-col items-center">
-                      <span className="text-3xl font-extrabold text-foreground">62%</span>
-                      <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">Target: 80%</span>
-                    </div>
-                  </div>
+                // If no dynamic competencies returned yet, fallback to structure based on student program
+                const defaultCompetencies = [
+                  { name: "General Education", score: 0, color: "bg-[#eed48f]" },
+                  { name: "Professional Education", score: 0, color: "bg-orange-500" },
+                ]
+                if (majorName && majorName !== "—") {
+                  defaultCompetencies.push({
+                    name: `Specialization (${majorName})`,
+                    score: 0,
+                    color: "bg-amber-500",
+                  })
+                }
 
-                  <span className="inline-flex items-center rounded-full bg-amber-500/10 border border-amber-500/25 px-4 py-1 text-xs font-semibold text-amber-600 uppercase tracking-wider">
-                    FOR MONITORING
-                  </span>
-                </div>
+                const competencies =
+                  analyticsData?.competencies && analyticsData.competencies.length > 0
+                    ? analyticsData.competencies
+                    : defaultCompetencies
 
-                {/* Competency Breakdown */}
-                <div className="md:col-span-3 space-y-4">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Competency Breakdown
-                  </h4>
+                const readinessPct = Math.min(100, Math.max(0, readiness.percentage || 0))
+                const radius = 40
+                const circumference = 2 * Math.PI * radius
+                const strokeOffset = circumference * (1 - readinessPct / 100)
 
-                  <div className="space-y-4 pt-1">
-                    {[
-                      { name: "General Education", score: 65, color: "bg-[#eed48f]" },
-                      { name: "Professional Education", score: 58, color: "bg-orange-400" },
-                      { name: "Specialization (English)", score: 64, color: "bg-amber-400" }
-                    ].map((comp) => (
-                      <div key={comp.name} className="space-y-1.5">
-                        <div className="flex justify-between text-sm font-medium">
-                          <span className="text-foreground">{comp.name}</span>
-                          <span className="text-muted-foreground">{comp.score}%</span>
-                        </div>
-                        <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${comp.color} rounded-full transition-all duration-500`}
-                            style={{ width: `${comp.score}%` }}
+                return (
+                  <div className="grid gap-8 md:grid-cols-5 items-center">
+                    {/* Readiness Score Donut */}
+                    <div className="md:col-span-2 flex flex-col items-center justify-center text-center md:border-r border-border md:pr-8 py-2 space-y-3">
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Overall Readiness
+                      </h4>
+
+                      <div className="relative h-40 w-40 flex items-center justify-center my-1">
+                        <svg className="h-full w-full transform -rotate-90" viewBox="0 0 100 100">
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r={radius}
+                            className="stroke-slate-100 dark:stroke-slate-800"
+                            strokeWidth="8"
+                            fill="transparent"
                           />
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r={radius}
+                            stroke={readiness.donutColor || "#eed48f"}
+                            strokeWidth="8"
+                            fill="transparent"
+                            strokeDasharray={`${circumference}`}
+                            strokeDashoffset={`${strokeOffset}`}
+                            strokeLinecap="round"
+                            className="transition-all duration-700 ease-out"
+                          />
+                        </svg>
+                        <div className="absolute flex flex-col items-center">
+                          <span className="text-3xl font-extrabold text-foreground">
+                            {readinessPct}%
+                          </span>
+                          <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
+                            Target: {readiness.target || 80}%
+                          </span>
                         </div>
                       </div>
-                    ))}
+
+                      <span
+                        className={`inline-flex items-center rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                          readiness.badgeClass ||
+                          "bg-amber-500/10 text-amber-600 border border-amber-500/25"
+                        }`}
+                      >
+                        {readiness.ratingLabel || "FOR MONITORING"}
+                      </span>
+                    </div>
+
+                    {/* Competency Breakdown */}
+                    <div className="md:col-span-3 space-y-4">
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Competency Breakdown
+                      </h4>
+
+                      <div className="space-y-4 pt-1">
+                        {competencies.map((comp) => (
+                          <div key={comp.name || comp.key} className="space-y-1.5">
+                            <div className="flex justify-between text-sm font-medium">
+                              <span className="text-foreground">{comp.name}</span>
+                              <span className="text-muted-foreground font-semibold">
+                                {comp.score}%
+                              </span>
+                            </div>
+                            <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full ${comp.color || "bg-[#eed48f]"} rounded-full transition-all duration-500`}
+                                style={{ width: `${Math.min(100, Math.max(0, comp.score))}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                )
+              })()}
             </div>
           </div>
         )}

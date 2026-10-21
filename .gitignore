@@ -45,6 +45,7 @@ next-env.d.ts
 
 # local knowledge graph
 .graphify/
+graphify-out/
 
 # database dumps
 vercel_prisma_postgres_*.sql

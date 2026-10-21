@@ -316,6 +316,7 @@ export default function MockExamBuilder({ examId, isStudent = false, onToggleVie
         const handleExternalOpenSettings = () => {
             setShowSettings((prev) => !prev)
         }
+        window.__peak_open_settings = handleExternalOpenSettings
         window.addEventListener("peak:add-ocr-question", handleAddOcrQuestion)
         window.addEventListener("peak:add-question", handleExternalAddQuestion)
         window.addEventListener("peak:add-title-desc", handleExternalAddTitleDesc)
@@ -325,6 +326,7 @@ export default function MockExamBuilder({ examId, isStudent = false, onToggleVie
             delete window.__peak_import_questions
             delete window.__peak_add_question
             delete window.__peak_add_title_desc
+            delete window.__peak_open_settings
             window.removeEventListener("peak:add-ocr-question", handleAddOcrQuestion)
             window.removeEventListener("peak:add-question", handleExternalAddQuestion)
             window.removeEventListener("peak:add-title-desc", handleExternalAddTitleDesc)
@@ -1073,8 +1075,8 @@ export default function MockExamBuilder({ examId, isStudent = false, onToggleVie
                 {/* Header Actions */}
                 {!effectiveIsStudent && (
                     <div className="border-b border-gray-200/80 pb-3 relative flex items-center justify-between gap-3 flex-wrap">
-                        {/* Left: Mock Exam Title & Action Buttons */}
-                        <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+                        {/* Left: Mock Exam Title */}
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                             <input
                                 type="text"
                                 value={lessonTitle}
@@ -1082,15 +1084,6 @@ export default function MockExamBuilder({ examId, isStudent = false, onToggleVie
                                 className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-slate-400 outline-none pb-0.5 w-full max-w-sm"
                                 placeholder="Mock Exam Title"
                             />
-
-                            <button
-                                type="button"
-                                onClick={() => setShowSettings(!showSettings)}
-                                className={`p-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center justify-center shrink-0 ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-600 hover:text-gray-900'}`}
-                                title="Exam Settings"
-                            >
-                                <Settings className="h-4 w-4" />
-                            </button>
                         </div>
 
                         {/* Right: Fullscreen + Student View + Save Changes */}

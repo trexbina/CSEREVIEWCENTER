@@ -104,7 +104,11 @@ export default function MockExamBuilderLayout({ children, params }) {
                         type="button"
                         onClick={() => {
                             if (typeof window !== "undefined") {
-                                window.dispatchEvent(new CustomEvent("peak:open-settings"))
+                                if (typeof window.__peak_open_settings === "function") {
+                                    window.__peak_open_settings()
+                                } else {
+                                    window.dispatchEvent(new CustomEvent("peak:open-settings"))
+                                }
                             }
                         }}
                         className="p-1.5 rounded-xl border border-border/80 bg-card hover:bg-muted/60 text-muted-foreground hover:text-foreground text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center justify-center shrink-0"

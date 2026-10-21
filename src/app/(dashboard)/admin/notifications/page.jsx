@@ -408,17 +408,13 @@ export default function AdminNotificationsPage() {
                     </Button>
                   )}
 
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="text-xs h-8 rounded-xl border-border/80 cursor-pointer"
+                  <Link
+                    href={notif.link || "/admin/settings/sessions"}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 h-8 text-xs font-semibold rounded-xl border border-border/80 bg-background hover:bg-muted text-foreground transition-colors cursor-pointer"
                   >
-                    <Link href={notif.link || "/admin/settings/sessions"}>
-                      Investigate
-                      <ExternalLink className="size-3 ml-1" />
-                    </Link>
-                  </Button>
+                    Investigate
+                    <ExternalLink className="size-3 ml-1" />
+                  </Link>
 
                   <Button
                     variant="ghost"

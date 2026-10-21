@@ -43,15 +43,13 @@ export default function SecurityViolationPage() {
                         <RefreshCw className="w-4 h-4" />
                         Reload Page
                     </Button>
-                    <Button
-                        asChild
-                        className="w-full gap-2 bg-primary hover:bg-primary/90 text-white"
+                    <Link
+                        href="/student"
+                        className="inline-flex items-center justify-center w-full gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-primary hover:bg-primary/90 text-white transition-colors cursor-pointer"
                     >
-                        <Link href="/student">
-                            <ArrowLeft className="w-4 h-4" />
-                            Back to Student
-                        </Link>
-                    </Button>
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Student
+                    </Link>
                 </div>
             </div>
         </div>

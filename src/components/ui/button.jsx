@@ -40,6 +40,7 @@ function Button({
   className,
   variant,
   size,
+  asChild,
   ...props
 }) {
   return (

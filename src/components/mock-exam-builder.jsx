@@ -1067,33 +1067,45 @@ export default function MockExamBuilder({ examId, isStudent = false, onToggleVie
 
                 {/* Header Actions */}
                 {!effectiveIsStudent && (
-                    <div className="border-b border-gray-200/80 pb-3 relative flex items-center justify-between gap-4 flex-wrap">
-                        {/* Left: Mock Exam Title & Settings */}
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                            {examId ? (
-                                <input
-                                    type="text"
-                                    value={lessonTitle}
-                                    onChange={(e) => setLessonTitle(e.target.value)}
-                                    className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-slate-400 outline-none pb-0.5 w-full max-w-xl"
-                                    placeholder="Mock Exam Title"
-                                />
-                            ) : (
-                                <h1 className="text-xl font-bold text-gray-800 tracking-tight truncate">
-                                    {lessonTitle}
-                                </h1>
-                            )}
+                    <div className="border-b border-gray-200/80 pb-3 relative flex items-center justify-between gap-3 flex-wrap">
+                        {/* Left: Mock Exam Title & Action Buttons */}
+                        <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+                            <input
+                                type="text"
+                                value={lessonTitle}
+                                onChange={(e) => setLessonTitle(e.target.value)}
+                                className="text-xl font-bold text-gray-800 tracking-tight bg-transparent border-b border-transparent hover:border-gray-300 focus:border-slate-400 outline-none pb-0.5 w-full max-w-sm"
+                                placeholder="Mock Exam Title"
+                            />
 
-                            {!examId && (
-                                <button
-                                    type="button"
-                                    onClick={() => setShowSettings(!showSettings)}
-                                    className={`p-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center justify-center shrink-0 ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-600 hover:text-gray-900'}`}
-                                    title="Quiz Settings"
-                                >
-                                    <Settings className="h-4 w-4" />
-                                </button>
-                            )}
+                            <button
+                                type="button"
+                                onClick={() => setShowSettings(!showSettings)}
+                                className={`p-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-all cursor-pointer flex items-center justify-center shrink-0 ${showSettings ? 'bg-[#E9C46A]/10 border-[#E9C46A]/40 text-[#E9C46A]' : 'bg-white border-gray-200/80 hover:bg-gray-50 text-gray-600 hover:text-gray-900'}`}
+                                title="Exam Settings"
+                            >
+                                <Settings className="h-4 w-4" />
+                            </button>
+
+                            <div className="h-4 w-[1px] bg-gray-200 mx-0.5 shrink-0" />
+
+                            <button
+                                type="button"
+                                onClick={addQuestion}
+                                className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                            >
+                                <Plus className="h-3.5 w-3.5 text-gray-500" />
+                                <span>Add Question</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={addTitleDescription}
+                                className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                            >
+                                <Plus className="h-3.5 w-3.5 text-gray-500" />
+                                <span>Add Description</span>
+                            </button>
                         </div>
 
                         {/* Right: Fullscreen + Student View + Save Changes */}
@@ -1656,9 +1668,27 @@ export default function MockExamBuilder({ examId, isStudent = false, onToggleVie
                                     />
                                 </div>
                                 <h3 className="text-sm font-bold text-gray-700 mb-1">No questions added yet</h3>
-                                <p className="text-xs text-gray-400 max-w-xs">
+                                <p className="text-xs text-gray-400 max-w-xs mb-4">
                                     Click &quot;Add Question&quot; above to start building your mock exam.
                                 </p>
+                                <div className="flex items-center gap-2.5">
+                                    <button
+                                        type="button"
+                                        onClick={addQuestion}
+                                        className="bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                        <Plus className="h-3.5 w-3.5" />
+                                        <span>Add Question</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={addTitleDescription}
+                                        className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-semibold px-3.5 py-2 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                        <Plus className="h-3.5 w-3.5 text-gray-400" />
+                                        <span>Add Description</span>
+                                    </button>
+                                </div>
                             </div>
                         )}
 

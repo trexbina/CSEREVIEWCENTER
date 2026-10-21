@@ -235,9 +235,9 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                 // Toast after state update, outside the updater
                 setTimeout(() => {
                     if (addedCount === 0) {
-                        toast.info("All scanned questions are already present in the exam.")
+                        toast.info("All scanned questions are already present in the quiz.")
                     } else {
-                        toast.success(`${addedCount} questions added to exam!`)
+                        toast.success(`${addedCount} questions added to quiz!`)
                     }
                 }, 0)
             } else if (payload && payload.text) {
@@ -258,9 +258,9 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                 })
                 setTimeout(() => {
                     if (wasAdded) {
-                        toast.success("Question added to exam from RapidOCR!")
+                        toast.success("Question added to quiz from RapidOCR!")
                     } else {
-                        toast.info("This question is already in the exam.")
+                        toast.info("This question is already in the quiz.")
                     }
                 }, 0)
             }
@@ -1109,9 +1109,9 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                 {/* Header Actions */}
                 {!effectiveIsStudent && (
                     <div className="border-b border-gray-200/80 pb-3 relative flex items-center justify-between gap-4 flex-wrap">
-                        {/* Left: Quiz Title & Settings */}
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <h1 className="text-xl font-bold text-gray-800 tracking-tight truncate">
+                        {/* Left: Quiz Title & Settings & Add Action Buttons */}
+                        <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+                            <h1 className="text-xl font-bold text-gray-800 tracking-tight truncate max-w-[280px]">
                                 {lessonTitle}
                             </h1>
 
@@ -1122,6 +1122,26 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                 title="Quiz Settings"
                             >
                                 <Settings className="h-4 w-4" />
+                            </button>
+
+                            <div className="h-4 w-[1px] bg-gray-200 mx-0.5 shrink-0" />
+
+                            <button
+                                type="button"
+                                onClick={addQuestion}
+                                className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                            >
+                                <Plus className="h-3.5 w-3.5 text-gray-500" />
+                                <span>Add Question</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={addTitleDescription}
+                                className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                            >
+                                <Plus className="h-3.5 w-3.5 text-gray-500" />
+                                <span>Add Description</span>
                             </button>
                         </div>
 
@@ -1430,8 +1450,8 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                                 <Braces className="h-4 w-4" />
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-gray-800 text-sm">Exam Questions JSON</h3>
-                                                <p className="text-[11px] text-gray-400">View, copy, or paste raw JSON questions into your exam</p>
+                                                <h3 className="font-bold text-gray-800 text-sm">Quiz Questions JSON</h3>
+                                                <p className="text-[11px] text-gray-400">View, copy, or paste raw JSON questions into your quiz</p>
                                             </div>
                                         </div>
                                         <button
@@ -1507,7 +1527,7 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                                 }}
                                                 className="px-3.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-100 text-gray-700 font-semibold text-xs transition-all cursor-pointer shadow-2xs"
                                             >
-                                                Append to Exam
+                                                Append to Quiz
                                             </button>
                                             <button
                                                 type="button"
@@ -1522,14 +1542,14 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                                         }
                                                         setQuestions(parsed)
                                                         setShowJsonModal(false)
-                                                        toast.success(`Applied ${parsed.length} questions to exam!`)
+                                                        toast.success(`Applied ${parsed.length} questions to quiz!`)
                                                     } catch (err) {
                                                         toast.error("Invalid JSON: " + err.message)
                                                     }
                                                 }}
                                                 className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold text-xs px-4 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs"
                                             >
-                                                Replace Exam Questions
+                                                Replace Quiz Questions
                                             </button>
                                         </div>
                                     </div>
@@ -1683,9 +1703,27 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                     />
                                 </div>
                                 <h3 className="text-sm font-bold text-gray-700 mb-1">No questions added yet</h3>
-                                <p className="text-xs text-gray-400 max-w-xs">
+                                <p className="text-xs text-gray-400 max-w-xs mb-4">
                                     Click &quot;Add Question&quot; above to start building your quiz.
                                 </p>
+                                <div className="flex items-center gap-2.5">
+                                    <button
+                                        type="button"
+                                        onClick={addQuestion}
+                                        className="bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                        <Plus className="h-3.5 w-3.5" />
+                                        <span>Add Question</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={addTitleDescription}
+                                        className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-semibold px-3.5 py-2 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                        <Plus className="h-3.5 w-3.5 text-gray-400" />
+                                        <span>Add Description</span>
+                                    </button>
+                                </div>
                             </div>
                         )}
 

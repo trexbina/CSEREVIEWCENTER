@@ -3158,11 +3158,8 @@ export default function AnalyticalOverviewPage() {
                               <th className="px-4 py-2.5 font-semibold text-center" scope="col">
                                 Tests Completed
                               </th>
-                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                              <th className="px-4 py-2.5 font-semibold text-left pr-6" scope="col">
                                 Last Active
-                              </th>
-                              <th className="px-4 py-2.5 pr-6 font-semibold text-right" scope="col">
-                                Action
                               </th>
                             </tr>
                           </thead>
@@ -3238,22 +3235,8 @@ export default function AnalyticalOverviewPage() {
                                   </td>
 
                                   {/* Last Active */}
-                                  <td className="px-4 py-2.5 text-left text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap font-normal">
+                                  <td className="px-4 py-2.5 text-left text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap font-normal pr-6">
                                     {st.lastActiveText || "—"}
-                                  </td>
-
-                                  {/* Action */}
-                                  <td className="px-4 py-2.5 pr-6 text-right whitespace-nowrap">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setSearch(st.name)
-                                        window.scrollTo({ top: 0, behavior: "smooth" })
-                                      }}
-                                      className="inline-flex items-center justify-center px-3 h-7 rounded-xl text-[11px] font-normal text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 shadow-2xs hover:bg-neutral-50 dark:hover:bg-white/15 transition-all cursor-pointer whitespace-nowrap"
-                                    >
-                                      View Log
-                                    </button>
                                   </td>
                                 </tr>
                               )
@@ -4156,11 +4139,8 @@ export default function AnalyticalOverviewPage() {
                               <th className="px-4 py-2.5 font-semibold text-center" scope="col">
                                 Status
                               </th>
-                              <th className="px-4 py-2.5 font-semibold text-left" scope="col">
+                              <th className="px-4 py-2.5 font-semibold text-left pr-6" scope="col">
                                 Date Registered
-                              </th>
-                              <th className="px-4 py-2.5 pr-6 font-semibold text-right" scope="col">
-                                Action
                               </th>
                             </tr>
                           </thead>
@@ -4218,20 +4198,8 @@ export default function AnalyticalOverviewPage() {
                                       {cand.status === "active" ? "Active" : (cand.status || "Inactive")}
                                     </span>
                                   </td>
-                                  <td className="px-4 py-2.5 text-left text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap font-normal">
+                                  <td className="px-4 py-2.5 text-left text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap font-normal pr-6">
                                     {cand.created_formatted || "—"}
-                                  </td>
-                                  <td className="px-4 py-2.5 pr-6 text-right whitespace-nowrap">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setSearch(cand.name)
-                                        window.scrollTo({ top: 0, behavior: "smooth" })
-                                      }}
-                                      className="inline-flex items-center justify-center px-3 h-7 rounded-xl text-[11px] font-normal text-[#3B3B3B] dark:text-white bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 shadow-2xs hover:bg-neutral-50 dark:hover:bg-white/15 transition-all cursor-pointer whitespace-nowrap"
-                                    >
-                                      View Log
-                                    </button>
                                   </td>
                                 </tr>
                               )

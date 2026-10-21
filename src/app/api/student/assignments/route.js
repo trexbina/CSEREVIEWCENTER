@@ -6,13 +6,13 @@ import { getSession } from "@/lib/auth-session"
 export async function GET() {
   try {
     const session = await getSession()
-    if (!session?.userId || session.role !== "student") {
+    if (!session?.userId) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 })
     }
 
     const studentId = session.userId
 
-    // 1. Fetch only active subject contents where lesson_type is explicitly 'quiz'
+    // 1. Fetch only active subject contents where lesson_type is quiz or assignment
     const contentsRes = await pool.query(`
       SELECT 
         sc.id,
@@ -28,7 +28,7 @@ export async function GET() {
       FROM subject_contents sc
       INNER JOIN subject_modules sm ON sm.id = sc.module_id
       INNER JOIN subjects sub ON sub.id = sm.subject_id
-      WHERE LOWER(COALESCE(sc.lesson_type, '')) = 'quiz'
+      WHERE LOWER(COALESCE(sc.lesson_type, '')) IN ('quiz', 'assignment')
         AND sub.status = 'active'
       ORDER BY sc.created_at DESC
     `)
@@ -67,7 +67,9 @@ export async function GET() {
         parsed = { settings: {}, questions: [] }
       }
       const settings = parsed.settings || {}
-      const isAssignment = !!settings.isAssignment
+      const isAssignment = !!settings.isAssignment ||
+        row.lesson_type?.toLowerCase() === 'assignment' ||
+        row.title?.toLowerCase().startsWith('assignment')
 
       const questions = Array.isArray(parsed.questions) ? parsed.questions : (Array.isArray(parsed) ? parsed : [])
       const qOnly = questions.filter(q => q.type === 'question')

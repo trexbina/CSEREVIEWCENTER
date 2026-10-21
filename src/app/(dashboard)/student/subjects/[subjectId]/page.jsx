@@ -5,7 +5,7 @@ import SubjectBuilderClient from "@/components/subject-builder-client"
 
 export default async function StudentSubjectContentPage({ params }) {
     const session = await getSession()
-    if (!session || session.role !== "student") redirect("/?login=1")
+    if (!session?.userId) redirect("/?login=1")
 
     const userResult = await pool.query(
         "SELECT name FROM users WHERE id = $1",

@@ -128,7 +128,7 @@ const BLOCK_CATEGORIES = [
 
 function normalizeLessonType(rawType, hasPdfFiles = false) {
     const value = String(rawType || "").trim().toLowerCase()
-    if (value === "quiz") return "quiz"
+    if (value === "quiz" || value === "assignment") return "quiz"
     if (value === "pdf" || value === "file" || value === "files") return "pdf"
     if (value === "module") return "module"
     return hasPdfFiles ? "pdf" : "module"

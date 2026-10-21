@@ -16,7 +16,7 @@ import { getStudentCurriculumContext } from "@/lib/student-curriculum"
 export async function GET() {
   try {
     const session = await getSession()
-    if (!session?.userId || session.role !== "student") {
+    if (!session?.userId) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 })
     }
 
@@ -47,7 +47,7 @@ export async function GET() {
          LEFT JOIN categories cat ON cat.id = sub.category_id OR LOWER(cat.name) = LOWER(sub.category)
          LEFT JOIN subcategories subcat ON subcat.id = sub.subcategory_id
          LEFT JOIN student_quiz_submissions sqs ON sqs.content_id = sc.id AND sqs.student_id = $1
-         WHERE LOWER(COALESCE(sc.lesson_type, '')) = 'quiz'
+         WHERE LOWER(COALESCE(sc.lesson_type, '')) IN ('quiz', 'assignment')
            AND sub.status = 'active'
          ORDER BY COALESCE(sqs.submitted_at, sc.created_at) DESC`,
         [studentId]
@@ -91,7 +91,9 @@ export async function GET() {
       }
 
       const settings = parsed?.settings || {}
-      const isAssignment = !!settings.isAssignment
+      const isAssignment = !!settings.isAssignment ||
+        row.lesson_type?.toLowerCase() === 'assignment' ||
+        row.title?.toLowerCase().startsWith('assignment')
       const questions = Array.isArray(parsed?.questions) ? parsed.questions : []
       const qOnly = questions.filter(q => q.type === "question")
 
@@ -198,24 +200,36 @@ export async function GET() {
          GROUP BY sm.subject_id`
       ).catch(() => ({ rows: [] })),
 
-      // C. Lessons opened/completed by student per subject
+      // C. Lessons & Quizzes completed by student per subject
       pool.query(
         `SELECT 
-           COALESCE(
-             SUBSTRING(details FROM 'SubjectID: ([0-9]+)'),
-             sm.subject_id::text
-           ) AS subject_id,
-           COUNT(DISTINCT SUBSTRING(details FROM 'LessonID: ([0-9]+)')) AS opened_lessons
-         FROM student_activities sa
-         LEFT JOIN subject_contents sc ON sc.id = (
-           CASE WHEN SUBSTRING(sa.details FROM 'LessonID: ([0-9]+)') ~ '^[0-9]+$' 
-                THEN SUBSTRING(sa.details FROM 'LessonID: ([0-9]+)')::int 
-                ELSE NULL END
-         )
-         LEFT JOIN subject_modules sm ON sm.id = sc.module_id
-         WHERE sa.student_id = $1 
-           AND sa.activity_type IN ('lesson_open', 'module_complete')
-         GROUP BY 1`,
+           u.subject_id,
+           COUNT(DISTINCT u.item_id) AS completed_items
+         FROM (
+           SELECT 
+             sc.id AS item_id,
+             sm.subject_id
+           FROM student_activities sa
+           JOIN subject_contents sc ON sc.id = (
+             CASE WHEN SUBSTRING(sa.details FROM 'LessonID: ([0-9]+)') ~ '^[0-9]+$' 
+                  THEN SUBSTRING(sa.details FROM 'LessonID: ([0-9]+)')::int 
+                  ELSE NULL END
+           )
+           JOIN subject_modules sm ON sm.id = sc.module_id
+           WHERE sa.student_id = $1 
+             AND sa.activity_type IN ('lesson_open', 'module_complete', 'quiz_complete', 'quiz_retry')
+
+           UNION
+
+           SELECT 
+             sqs.content_id AS item_id,
+             sm.subject_id
+           FROM student_quiz_submissions sqs
+           JOIN subject_contents sc ON sc.id = sqs.content_id
+           JOIN subject_modules sm ON sm.id = sc.module_id
+           WHERE sqs.student_id = $1
+         ) u
+         GROUP BY u.subject_id`,
         [studentId]
       ).catch(() => ({ rows: [] })),
 
@@ -323,10 +337,10 @@ export async function GET() {
       }
     })
 
-    const openedLessonsMap = {}
+    const completedItemsMap = {}
     completedLessonsRes.rows.forEach(r => {
       if (r.subject_id) {
-        openedLessonsMap[String(r.subject_id)] = parseInt(r.opened_lessons || "0", 10)
+        completedItemsMap[String(r.subject_id)] = parseInt(r.completed_items || "0", 10)
       }
     })
 
@@ -367,10 +381,7 @@ export async function GET() {
       const counts = subjectItemCounts[sid] || { totalItems: 0, totalLessons: 0, totalQuizzes: 0 }
       const totalItems = counts.totalItems || 0
 
-      const openedLessons = openedLessonsMap[sid] || 0
-      const doneQuizzes = completedQuizzesMap[sid] || 0
-      const completedItems = Math.min(totalItems, openedLessons + doneQuizzes)
-
+      const completedItems = Math.min(totalItems, completedItemsMap[sid] || 0)
       const progressPct = totalItems > 0 ? Math.min(100, Math.round((completedItems / totalItems) * 100)) : (completedItems > 0 ? 100 : 0)
 
       const subMastery = masteryMap[sid] || { attemptedQuizzesCount: 0, avgMasteryPct: 0 }

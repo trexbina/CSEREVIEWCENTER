@@ -76,8 +76,28 @@ export async function POST(request) {
 
     // Log activity entry in student_activities table
     try {
-      const contentRes = await pool.query(`SELECT title FROM subject_contents WHERE id = $1`, [parseInt(contentId)])
-      const lessonTitle = contentRes.rows[0]?.title || "Quiz"
+      const contentRes = await pool.query(
+        `SELECT sc.title, sc.quiz_content, sc.lesson_type, sm.subject_id 
+         FROM subject_contents sc 
+         JOIN subject_modules sm ON sm.id = sc.module_id 
+         WHERE sc.id = $1`, 
+        [parseInt(contentId)]
+      )
+      const lessonRow = contentRes.rows[0]
+      const lessonTitle = lessonRow?.title || "Quiz"
+      const subjectId = lessonRow?.subject_id || null
+
+      let isAssignment = false
+      if (lessonRow?.quiz_content) {
+        try {
+          const parsed = typeof lessonRow.quiz_content === "string" ? JSON.parse(lessonRow.quiz_content) : lessonRow.quiz_content
+          isAssignment = !!parsed?.settings?.isAssignment
+        } catch {}
+      }
+      if (lessonRow?.lesson_type?.toLowerCase() === "assignment" || lessonTitle.toLowerCase().startsWith("assignment")) {
+        isAssignment = true
+      }
+
       const total = totalPoints || 1
       const earned = earnedPoints || 0
       const pct = Math.round((earned / total) * 100)
@@ -86,11 +106,12 @@ export async function POST(request) {
       const secs = duration % 60
       const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
       const isRetry = (submission.attempts_count || 1) > 1
+      const itemLabel = isAssignment ? "Assignment" : "Quiz"
 
       const actTitle = isRetry 
-        ? `Retook Quiz: ${lessonTitle} (Attempt #${submission.attempts_count})`
-        : `Completed Quiz: ${lessonTitle}`
-      const actDetails = `LessonID: ${contentId} | Score: ${earned}/${total} (${pct}%) · Time taken: ${timeStr}`
+        ? `Retook ${itemLabel}: ${lessonTitle} (Attempt #${submission.attempts_count})`
+        : `Completed ${itemLabel}: ${lessonTitle}`
+      const actDetails = `LessonID: ${contentId} | SubjectID: ${subjectId || ""} | Score: ${earned}/${total} (${pct}%) · Time taken: ${timeStr}`
       const actStatus = pct >= 75 ? "success" : "warning"
 
       await pool.query(

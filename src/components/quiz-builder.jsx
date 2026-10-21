@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import dynamic from "next/dynamic"
 import { Loader2, Image as ImageIcon, Trash, Plus, ArrowRight, GripVertical, Save, HelpCircle, Clock, Calendar, AlertCircle, Settings, X, RotateCcw, Eye, PenTool, ArrowLeft, Maximize, Minimize, Play, CheckCircle2, FileText, ExternalLink, Braces, Copy, Check } from "lucide-react"
 
@@ -750,34 +751,32 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
             duration = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000))
             setTimeTakenSeconds(duration)
         }
-        setIsSubmitted(true)
-        window.scrollTo({ top: 0, behavior: 'smooth' })
 
-        if (!internalPreview && isStudent && lessonId) {
-            // Calculate total and earned points to save
-            let totalPts = 0
-            let earnedPts = 0
-            questions.filter(q => q.type === 'question').forEach(q => {
-                const pts = q.points !== undefined ? q.points : 1
-                totalPts += pts
-                let isQCorrect = false
-                if (q.questionType === "True or False" || q.questionType === "Multiple Choice") {
-                    const correctOptionIds = q.options?.filter(o => o.isCorrect).map(o => o.id) || []
-                    const studentSelectedIds = studentAnswers[q.id] || []
-                    if (correctOptionIds.length > 0 &&
-                        correctOptionIds.length === studentSelectedIds.length &&
-                        correctOptionIds.every(id => studentSelectedIds.includes(id))) {
-                        isQCorrect = true
-                    }
-                } else if (q.questionType === "Short Answer") {
-                    const correctAns = q.correctAnswer || ""
-                    if (correctAns.trim() !== "" && (studentAnswers[q.id] || "").trim().toLowerCase() === correctAns.trim().toLowerCase()) {
-                        isQCorrect = true
-                    }
+        // Calculate total and earned points to save
+        let totalPts = 0
+        let earnedPts = 0
+        questions.filter(q => q.type === 'question').forEach(q => {
+            const pts = q.points !== undefined ? q.points : 1
+            totalPts += pts
+            let isQCorrect = false
+            if (q.questionType === "True or False" || q.questionType === "Multiple Choice") {
+                const correctOptionIds = q.options?.filter(o => o.isCorrect).map(o => o.id) || []
+                const studentSelectedIds = studentAnswers[q.id] || []
+                if (correctOptionIds.length > 0 &&
+                    correctOptionIds.length === studentSelectedIds.length &&
+                    correctOptionIds.every(id => studentSelectedIds.includes(id))) {
+                    isQCorrect = true
                 }
-                if (isQCorrect) earnedPts += pts
-            })
+            } else if (q.questionType === "Short Answer") {
+                const correctAns = q.correctAnswer || ""
+                if (correctAns.trim() !== "" && (studentAnswers[q.id] || "").trim().toLowerCase() === correctAns.trim().toLowerCase()) {
+                    isQCorrect = true
+                }
+            }
+            if (isQCorrect) earnedPts += pts
+        })
 
+        if (!internalPreview && effectiveIsStudent && lessonId) {
             try {
                 const res = await fetch('/api/student/quiz-submissions', {
                     method: 'POST',
@@ -795,11 +794,19 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                     if (data.submission && data.submission.attempts_count) {
                         setAttemptsCount(data.submission.attempts_count)
                     }
+                    toast.success(quizSettings.isAssignment ? "Assignment submitted! Your progress has been updated." : "Quiz submitted! Your progress has been updated.")
+                } else {
+                    const errData = await res.json().catch(() => ({}))
+                    toast.error(errData.error || "Failed to save submission.")
                 }
             } catch (err) {
                 console.error("Failed to save student quiz submission:", err)
+                toast.error("Network error while submitting answers.")
             }
         }
+
+        setIsSubmitted(true)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     const handleRetryQuiz = () => {
@@ -1098,6 +1105,14 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                                                     <span>Retry Quiz</span>
                                                 </button>
                                             )}
+
+                                            <Link
+                                                href="/student/progress"
+                                                className="bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold px-3.5 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                                            >
+                                                <span>View Progress</span>
+                                                <ArrowRight className="h-3.5 w-3.5" />
+                                            </Link>
                                         </div>
                                     )
                                 })()}
@@ -2126,14 +2141,14 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                             )
                         })}
 
-                        {isStudent && !onToggleViewMode && !internalPreview && questions.length > 0 && !isTooEarly && !isSubmitted && (
+                        {effectiveIsStudent && !internalPreview && questions.length > 0 && !isTooEarly && !isSubmitted && (
                             <div className="pt-10 flex justify-center border-t border-gray-100 mt-10">
                                 <button
                                     onClick={submitQuiz}
                                     disabled={isQuizLocked}
-                                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm px-7 py-2.5 rounded-xl transition-colors cursor-pointer"
+                                    className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm px-7 py-2.5 rounded-xl transition-colors cursor-pointer shadow-2xs"
                                 >
-                                    Submit Quiz
+                                    {quizSettings.isAssignment ? "Submit Assignment" : "Submit Quiz"}
                                 </button>
                             </div>
                         )}

@@ -407,48 +407,6 @@ export default function StudentSubjectsPage() {
                                                     {isInactive && <div className="absolute inset-0 bg-black/10" />}
                                                 </div>
 
-                                                {/* Top-Right Circular Progress Indicator (matching Modules card design) */}
-                                                <div 
-                                                    className="absolute top-2.5 right-2.5 z-10 bg-white/95 backdrop-blur-sm rounded-xl px-2 py-1.5 shadow-sm border border-black/5 flex items-center gap-2 pointer-events-none"
-                                                    title={`Progress: ${subPct}% (${subCompletedItems} of ${subTotalItems} completed)`}
-                                                >
-                                                    <div className="relative size-8 flex items-center justify-center shrink-0">
-                                                        <svg className="size-full -rotate-90" viewBox="0 0 36 36">
-                                                            <circle
-                                                                cx="18"
-                                                                cy="18"
-                                                                r={radius}
-                                                                stroke="#F3F4F6"
-                                                                strokeWidth="3"
-                                                                fill="transparent"
-                                                            />
-                                                            <circle
-                                                                cx="18"
-                                                                cy="18"
-                                                                r={radius}
-                                                                stroke={subStrokeColor}
-                                                                strokeWidth="3"
-                                                                strokeDasharray={circumference}
-                                                                strokeDashoffset={strokeDashoffset}
-                                                                strokeLinecap="round"
-                                                                fill="transparent"
-                                                                className="transition-all duration-700 ease-out"
-                                                            />
-                                                        </svg>
-                                                        <span className="absolute text-[8px] font-bold text-gray-700">
-                                                            {subPct}%
-                                                        </span>
-                                                    </div>
-                                                    <div className="hidden sm:block text-left">
-                                                        <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider block leading-none">
-                                                            Progress
-                                                        </span>
-                                                        <span className="text-[8px] text-gray-400 block mt-0.5 leading-none">
-                                                            {subCompletedItems}/{subTotalItems} done
-                                                        </span>
-                                                    </div>
-                                                </div>
-
                                                 {/* Sliding White Info Overlay */}
                                                 <div className={sub.description?.trim() ? "subcard-overlay" : "subcard-overlay-compact"}>
                                                     <div className="overflow-hidden flex-1 flex flex-col justify-start">
@@ -456,23 +414,55 @@ export default function StudentSubjectsPage() {
                                                             <span className="block text-xs sm:text-[13px] font-bold tracking-wider text-[#4d4d4d] uppercase flex-1 leading-snug break-words line-clamp-2 group-hover:line-clamp-none">
                                                                 {sub.name}
                                                             </span>
-                                                            <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                                                            <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                                                                {/* Circular Progress Indicator (Moved inside overlay, transparent background, enlarged) */}
+                                                                <div 
+                                                                    className="flex items-center gap-2 pointer-events-none"
+                                                                    title={`Progress: ${subPct}% (${subCompletedItems} of ${subTotalItems} completed)`}
+                                                                >
+                                                                    <div className="relative size-10 flex items-center justify-center shrink-0">
+                                                                        <svg className="size-full -rotate-90" viewBox="0 0 36 36">
+                                                                            <circle
+                                                                                cx="18"
+                                                                                cy="18"
+                                                                                r={radius}
+                                                                                stroke="#F3F4F6"
+                                                                                strokeWidth="3.2"
+                                                                                fill="transparent"
+                                                                            />
+                                                                            <circle
+                                                                                cx="18"
+                                                                                cy="18"
+                                                                                r={radius}
+                                                                                stroke={subStrokeColor}
+                                                                                strokeWidth="3.2"
+                                                                                strokeDasharray={circumference}
+                                                                                strokeDashoffset={strokeDashoffset}
+                                                                                strokeLinecap="round"
+                                                                                fill="transparent"
+                                                                                className="transition-all duration-700 ease-out"
+                                                                            />
+                                                                        </svg>
+                                                                        <span className="absolute text-[10px] font-bold text-gray-700">
+                                                                            {subPct}%
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="hidden sm:block text-left">
+                                                                        <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider block leading-none">
+                                                                            Progress
+                                                                        </span>
+                                                                        <span className="text-[8px] text-gray-400 block mt-0.5 leading-none">
+                                                                            {subCompletedItems}/{subTotalItems} done
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+
                                                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200/60 shadow-2xs">
                                                                     {subjectCount}
                                                                 </span>
                                                                 {isInactive && (
                                                                     <Lock className="h-3.5 w-3.5 text-gray-400 shrink-0" title="Locked for students" />
                                                                 )}
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Horizontal Progress Bar */}
-                                                        <div className="w-full mt-1 pt-1 border-t border-gray-100/80">
-                                                            <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className="h-full bg-[#10B981] rounded-full transition-all duration-500"
-                                                                    style={{ width: `${subPct}%` }}
-                                                                />
                                                             </div>
                                                         </div>
 

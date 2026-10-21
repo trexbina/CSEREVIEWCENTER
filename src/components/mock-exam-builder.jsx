@@ -1086,26 +1086,6 @@ export default function MockExamBuilder({ examId, isStudent = false, onToggleVie
                             >
                                 <Settings className="h-4 w-4" />
                             </button>
-
-                            <div className="h-4 w-[1px] bg-gray-200 mx-0.5 shrink-0" />
-
-                            <button
-                                type="button"
-                                onClick={addQuestion}
-                                className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-                            >
-                                <Plus className="h-3.5 w-3.5 text-gray-500" />
-                                <span>Add Question</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={addTitleDescription}
-                                className="bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-                            >
-                                <Plus className="h-3.5 w-3.5 text-gray-500" />
-                                <span>Add Description</span>
-                            </button>
                         </div>
 
                         {/* Right: Fullscreen + Student View + Save Changes */}

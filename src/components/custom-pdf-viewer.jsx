@@ -280,9 +280,9 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
                                                 (stampIdx === 0 ? "20%" : stampIdx === 1 ? "50%" : "80%")
 
                                             const fontSizeClamped =
-                                                watermarkConfig.size === "small"
+                                                watermarkConfig.size === "small" || watermarkConfig.size === "1" || watermarkConfig.size === 1
                                                     ? "clamp(13px, 1.4vw, 20px)"
-                                                    : watermarkConfig.size === "large"
+                                                    : watermarkConfig.size === "large" || watermarkConfig.size === "3" || watermarkConfig.size === 3
                                                     ? "clamp(24px, 3.2vw, 44px)"
                                                     : "clamp(18px, 2.2vw, 32px)"
 

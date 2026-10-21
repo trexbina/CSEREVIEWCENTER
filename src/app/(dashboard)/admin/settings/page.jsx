@@ -922,35 +922,45 @@ export default function SystemSettingsPage() {
                                 />
                             </div>
 
-                            {/* Watermark Size Selection (Max 3) */}
+                            {/* Watermark Size Slider (Scroll Bar - Max 3 levels) */}
                             <div className="space-y-1.5">
                                 <div className="flex justify-between text-xs">
-                                    <label className="font-semibold text-foreground">Size of Watermark</label>
-                                    <span className="text-muted-foreground text-[11px] capitalize">{watermarkForm.watermark_size || "medium"}</span>
-                                </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {[
-                                        { id: "small", label: "Small", sub: "Discreet" },
-                                        { id: "medium", label: "Medium", sub: "Standard" },
-                                        { id: "large", label: "Large", sub: "Prominent" }
-                                    ].map((opt) => {
-                                        const isSelected = (watermarkForm.watermark_size || "medium") === opt.id
-                                        return (
-                                            <button
-                                                key={opt.id}
-                                                type="button"
-                                                onClick={() => setWatermarkForm(prev => ({ ...prev, watermark_size: opt.id }))}
-                                                className={`py-2 px-2.5 text-center rounded-xl border transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
-                                                    isSelected
-                                                        ? "bg-[#E9C46A]/20 border-[#E9C46A] text-foreground font-bold shadow-xs ring-1 ring-[#E9C46A]/50"
-                                                        : "bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-                                                }`}
-                                            >
-                                                <span className="text-xs font-semibold">{opt.label}</span>
-                                                <span className="text-[10px] opacity-75">{opt.sub}</span>
-                                            </button>
+                                    <label className="font-semibold text-foreground">
+                                        Size of Watermark (
+                                        {watermarkForm.watermark_size === "small"
+                                            ? "Small"
+                                            : watermarkForm.watermark_size === "large"
+                                            ? "Large"
+                                            : "Medium"}
                                         )
-                                    })}
+                                    </label>
+                                    <span className="text-muted-foreground text-[11px]">
+                                        Level {watermarkForm.watermark_size === "small" ? 1 : watermarkForm.watermark_size === "large" ? 3 : 2} of 3
+                                    </span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="3"
+                                    step="1"
+                                    value={
+                                        watermarkForm.watermark_size === "small"
+                                            ? 1
+                                            : watermarkForm.watermark_size === "large"
+                                            ? 3
+                                            : 2
+                                    }
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value, 10)
+                                        const sizeStr = val === 1 ? "small" : val === 3 ? "large" : "medium"
+                                        setWatermarkForm(prev => ({ ...prev, watermark_size: sizeStr }))
+                                    }}
+                                    className="w-full cursor-pointer accent-[#E9C46A]"
+                                />
+                                <div className="flex justify-between text-[11px] text-muted-foreground px-0.5">
+                                    <span className={watermarkForm.watermark_size === "small" ? "font-bold text-[#E9C46A]" : ""}>1 (Small)</span>
+                                    <span className={(watermarkForm.watermark_size || "medium") === "medium" ? "font-bold text-[#E9C46A]" : ""}>2 (Medium)</span>
+                                    <span className={watermarkForm.watermark_size === "large" ? "font-bold text-[#E9C46A]" : ""}>3 (Large)</span>
                                 </div>
                             </div>
 
@@ -1006,9 +1016,9 @@ export default function SystemSettingsPage() {
                                             (idx === 0 ? "18%" : idx === 1 ? "50%" : "82%")
 
                                         const fontClass =
-                                            watermarkForm.watermark_size === "small"
+                                            watermarkForm.watermark_size === "small" || watermarkForm.watermark_size === "1" || watermarkForm.watermark_size === 1
                                                 ? "text-[9px] font-semibold tracking-wide"
-                                                : watermarkForm.watermark_size === "large"
+                                                : watermarkForm.watermark_size === "large" || watermarkForm.watermark_size === "3" || watermarkForm.watermark_size === 3
                                                 ? "text-[13px] font-black tracking-widest"
                                                 : "text-[11px] font-bold tracking-wider"
 

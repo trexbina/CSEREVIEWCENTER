@@ -7,7 +7,8 @@ import { isAdminRole } from "@/lib/auth"
 import {
   Calendar, MapPin, GraduationCap, Phone, Mail, User,
   Edit, BarChart3, Clock, ArrowLeft, Loader2, Save, X, AlertCircle,
-  Key, Lock, Eye, EyeOff, Shield, Info, Camera
+  Key, Lock, Eye, EyeOff, Shield, Info, Camera,
+  ChevronDown, ChevronUp
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"

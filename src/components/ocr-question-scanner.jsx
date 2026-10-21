@@ -14,8 +14,7 @@ import {
     Eye,
     EyeOff,
     Plus,
-    Sparkles,
-    Settings
+    Sparkles
 } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 
@@ -430,60 +429,41 @@ export default function OcrQuestionScanner({ hideActionButtons = false } = {}) {
                 }}
             />
 
-            {/* Action Buttons: Exam Settings, Add Question, and Add Title/Desc */}
+            {/* Action Buttons: Add Question and Add Title/Desc */}
             {!hideActionButtons && (
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
                     <button
                         type="button"
                         onClick={() => {
                             if (typeof window !== "undefined") {
-                                if (typeof window.__peak_open_settings === "function") {
-                                    window.__peak_open_settings()
+                                if (typeof window.__peak_add_question === "function") {
+                                    window.__peak_add_question()
                                 } else {
-                                    window.dispatchEvent(new CustomEvent("peak:open-settings"))
+                                    window.dispatchEvent(new CustomEvent("peak:add-question"))
                                 }
                             }
                         }}
-                        className="w-full bg-white hover:bg-muted/80 text-foreground border border-border/80 text-xs font-semibold px-3 py-2 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                        title="Configure exam time limit, schedule, and options"
+                        className="w-full bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-2 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                        <Settings className="size-3.5 text-muted-foreground" />
-                        <span>Exam Settings</span>
+                        <Plus className="size-3 text-gray-500" />
+                        <span>Add Question</span>
                     </button>
-                    <div className="grid grid-cols-2 gap-2">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (typeof window !== "undefined") {
-                                    if (typeof window.__peak_add_question === "function") {
-                                        window.__peak_add_question()
-                                    } else {
-                                        window.dispatchEvent(new CustomEvent("peak:add-question"))
-                                    }
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (typeof window !== "undefined") {
+                                if (typeof window.__peak_add_title_desc === "function") {
+                                    window.__peak_add_title_desc()
+                                } else {
+                                    window.dispatchEvent(new CustomEvent("peak:add-title-desc"))
                                 }
-                            }}
-                            className="w-full bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-2 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                            <Plus className="size-3 text-gray-500" />
-                            <span>Add Question</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (typeof window !== "undefined") {
-                                    if (typeof window.__peak_add_title_desc === "function") {
-                                        window.__peak_add_title_desc()
-                                    } else {
-                                        window.dispatchEvent(new CustomEvent("peak:add-title-desc"))
-                                    }
-                                }
-                            }}
-                            className="w-full bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-2 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                            <Plus className="size-3 text-gray-500" />
-                            <span>Add Title/Desc</span>
-                        </button>
-                    </div>
+                            }
+                        }}
+                        className="w-full bg-gray-100/90 hover:bg-gray-200/80 text-gray-700 border border-gray-200/60 text-xs font-semibold px-3 py-2 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                        <Plus className="size-3 text-gray-500" />
+                        <span>Add Title/Desc</span>
+                    </button>
                 </div>
             )}
 

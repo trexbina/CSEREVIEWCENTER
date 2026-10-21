@@ -202,7 +202,7 @@ export default function StudentSubjectLayout({ children }) {
                             router.push('/student/subjects')
                         }}
                         className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200/50 bg-gray-100 text-gray-600 transition-all hover:bg-gray-200 hover:text-gray-900 shadow-sm shrink-0 cursor-pointer"
-                        title="Back to Subjects"
+                        title="Back to Modules"
                     >
                         <ChevronLeft className="h-4 w-4" />
                     </button>
@@ -216,7 +216,7 @@ export default function StudentSubjectLayout({ children }) {
                                     : "text-gray-400 hover:text-gray-600 font-medium"
                             }`}
                         >
-                            Modules
+                            Chapters
                         </button>
                         <button
                             onClick={() => setActiveTab("files")}
@@ -243,10 +243,10 @@ export default function StudentSubjectLayout({ children }) {
                         {subjectFiles.length === 0 ? (
                             <div className="py-16 text-center px-4">
                                 <p className="text-xs font-medium text-gray-500">
-                                    No files available yet in this subject.
+                                    No files available yet in this module.
                                 </p>
                                 <p className="text-[11px] text-gray-400 mt-1">
-                                    Files uploaded to lessons and quizzes will appear here.
+                                    Files uploaded to chapters, lessons, or quizzes will appear here.
                                 </p>
                             </div>
                         ) : (
@@ -290,10 +290,10 @@ export default function StudentSubjectLayout({ children }) {
 
                             return (
                                 <div key={module.id} className="space-y-2 pb-4 border-b border-gray-100/80 last:border-0">
-                                    {/* Module Header */}
+                                    {/* Chapter Header */}
                                     <div className="px-1.5 pt-0.5 pb-0.5">
                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                                            Module
+                                            Chapter
                                         </p>
                                         <h3 className="text-[14px] text-gray-800 tracking-tight leading-normal" title={module.title}>
                                             {hasModPrefix ? (

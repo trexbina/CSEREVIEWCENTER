@@ -1225,7 +1225,7 @@ export default function MyProgressPage() {
                     </th>
                     {activeTab !== "mockExams" && (
                       <th className="px-4 py-2.5" scope="col">
-                        Subject & Module
+                        Module & Chapter
                       </th>
                     )}
                     <th className="px-4 py-2.5 text-center" scope="col">

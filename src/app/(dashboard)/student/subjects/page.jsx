@@ -290,7 +290,7 @@ export default function StudentSubjectsPage() {
                 </div>
             )}
 
-            {/* ════════════════════ SUB-CATEGORY SECTION ════════════════════ */}
+            {/* ════════════════════ SUBJECTS SECTION ════════════════════ */}
             {!selectedSubcategory && selectedCategory && selectedCategory.has_subcategories !== false && (
                 <div className="space-y-6 flex-1 animate-in fade-in duration-300">
                     {(() => {
@@ -316,13 +316,13 @@ export default function StudentSubjectsPage() {
                                 <div className="border-b border-gray-200/50 pb-4">
                                     <div className="flex items-center gap-2">
                                         <h2 className="text-lg font-bold tracking-wider text-[#4d4d4d] uppercase">
-                                            SUB-CATEGORY
+                                            SUBJECTS
                                         </h2>
                                         <span className="ml-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-500 uppercase tracking-wider">
                                             {activeSubcategories.length} AVAILABLE
                                         </span>
                                     </div>
-                                    <p className="text-[#8c8c8c] text-sm font-medium mt-0.5">Select a sub-category to view subjects.</p>
+                                    <p className="text-[#8c8c8c] text-sm font-medium mt-0.5">Select a subject to view modules.</p>
                                 </div>
 
                                 {/* Second Row Below Line Divider: Sorting (Left) & Pagination (Right) */}
@@ -442,7 +442,7 @@ export default function StudentSubjectsPage() {
                         const paginatedSubjects = sortedSubjects.slice((currentSubjPage - 1) * SUBJECT_ITEMS_PER_PAGE, currentSubjPage * SUBJECT_ITEMS_PER_PAGE)
 
                         const rawTitle = selectedSubcategory ? selectedSubcategory.name : (selectedCategory?.name || "")
-                        const cleanTitle = rawTitle.replace(/\s*\/\s*SUBJECTS$/i, "")
+                        const cleanTitle = rawTitle.replace(/\s*\/\s*(SUBJECTS|MODULES)$/i, "")
 
                         return (
                             <>
@@ -469,17 +469,17 @@ export default function StudentSubjectsPage() {
                                                 }
                                             }}
                                             className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200/50 bg-gray-100 text-gray-600 transition-all hover:bg-gray-200 hover:text-gray-900 shadow-sm shrink-0 cursor-pointer"
-                                            title={selectedSubcategory ? "Back to subcategories" : "Back to categories"}
+                                            title={selectedSubcategory ? "Back to subjects" : "Back to categories"}
                                         >
                                             <ChevronLeft className="h-4 w-4" />
                                         </button>
                                         <div className="flex items-center gap-2 min-w-0 overflow-hidden flex-1">
-                                            <h2 className="text-base sm:text-lg font-bold uppercase tracking-wider text-[#4d4d4d] flex items-center min-w-0 overflow-hidden" title={`${cleanTitle} / SUBJECTS`}>
+                                            <h2 className="text-base sm:text-lg font-bold uppercase tracking-wider text-[#4d4d4d] flex items-center min-w-0 overflow-hidden" title={`${cleanTitle} / MODULES`}>
                                                 <span className="truncate max-w-[240px] sm:max-w-[400px] md:max-w-[600px]">
                                                     {cleanTitle}
                                                 </span>
                                                 <span className="text-gray-300 mx-1.5 shrink-0">/</span>
-                                                <span className="shrink-0 text-[#7a7a7a]">SUBJECTS</span>
+                                                <span className="shrink-0 text-[#7a7a7a]">MODULES</span>
                                             </h2>
                                             <span className="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-500 uppercase tracking-wider">
                                                 {currentSubjects.length} AVAILABLE
@@ -491,10 +491,10 @@ export default function StudentSubjectsPage() {
                                 {currentSubjects.length === 0 ? (
                                     <div className="flex-1 flex flex-col items-center justify-center min-h-[48vh] px-4 text-center animate-in fade-in duration-300">
                                         <h3 className="text-base font-bold text-[#4d4d4d] uppercase tracking-wider mb-1">
-                                            No Subjects Available Yet
+                                            No Modules Available Yet
                                         </h3>
                                         <p className="text-xs text-gray-400 max-w-sm leading-relaxed">
-                                            Please check back later or select another category/sub-category.
+                                            Please check back later or select another category/subject.
                                         </p>
                                     </div>
                                 ) : (
@@ -710,7 +710,7 @@ export default function StudentSubjectsPage() {
                                                                     </button>
                                                                 ) : (
                                                                     <button className="group/btn inline-flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-gray-950 px-2.5 py-1 rounded-lg hover:bg-gray-100/80 transition-all cursor-pointer">
-                                                                        <span>Open Subject</span>
+                                                                        <span>Open Module</span>
                                                                         <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
                                                                     </button>
                                                                 )}

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { ensureStudentSubjectProgressTable } from "@/lib/student-progress-db"
+import { getStudentCurriculumContext } from "@/lib/student-curriculum"
 
 /**
  * GET /api/student/progress
@@ -152,8 +153,11 @@ export async function GET() {
     })
 
     // 3. Compute dynamic User Subject Progression, Active Study Days, and Study Streak
+    const curriculumCtx = await getStudentCurriculumContext(studentId)
+    const curriculumSubjectIds = curriculumCtx.subjectIds
+
     const [subjectsRes, subjectItemsRes, completedLessonsRes, completedQuizzesRes, studentActivityDatesRes, nowRes] = await Promise.all([
-      // A. All active subjects accessible to student
+      // A. Active subjects belonging to student's curriculum
       pool.query(
         `SELECT 
            s.id,
@@ -168,7 +172,9 @@ export async function GET() {
          LEFT JOIN categories cat ON cat.id = s.category_id OR LOWER(cat.name) = LOWER(s.category)
          LEFT JOIN subcategories subcat ON subcat.id = s.subcategory_id
          WHERE s.status = 'active'
-         ORDER BY s.id ASC`
+           AND ($1::int[] IS NULL OR s.id = ANY($1::int[]))
+         ORDER BY s.id ASC`,
+        [curriculumSubjectIds.length > 0 ? curriculumSubjectIds : null]
       ).catch(() => ({ rows: [] })),
 
       // B. Total content items (lessons + quizzes) per subject
@@ -308,15 +314,16 @@ export async function GET() {
         pool.query(
           `INSERT INTO student_subject_progress 
              (student_id, subject_id, completed_items, total_items, progress_pct, active_days, study_streak, last_activity_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
            ON CONFLICT (student_id, subject_id) DO UPDATE SET
              completed_items = EXCLUDED.completed_items,
              total_items = EXCLUDED.total_items,
              progress_pct = EXCLUDED.progress_pct,
              active_days = EXCLUDED.active_days,
              study_streak = EXCLUDED.study_streak,
+             last_activity_at = CASE WHEN EXCLUDED.completed_items > 0 THEN NOW() ELSE student_subject_progress.last_activity_at END,
              updated_at = NOW()`,
-          [studentId, sub.id, completedItems, totalItems, progressPct, totalActiveDays, studyStreak]
+          [studentId, sub.id, completedItems, totalItems, progressPct, totalActiveDays, studyStreak, completedItems > 0 ? new Date() : null]
         ).catch(err => console.error("Error upserting student_subject_progress:", err))
       )
 

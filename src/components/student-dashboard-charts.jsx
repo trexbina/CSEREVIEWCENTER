@@ -110,11 +110,13 @@ export function LearningPerformanceChart({
 
 /* ── Dynamic Subject Focus Donut ── */
 export function SubjectFocusChart({
-    focusData = []
+    focusData = [],
+    totalSubjects = null,
 }) {
     // If no focus data, show a friendly empty state placeholder or default subjects
     const hasData = focusData && focusData.length > 0 && focusData.some(d => d.value > 0)
     const displayData = hasData ? focusData : (focusData && focusData.length > 0 ? focusData.map(f => ({ ...f, value: Math.round(100 / focusData.length) })) : [{ name: "Subjects", value: 100 }])
+    const count = totalSubjects != null ? totalSubjects : (displayData.length)
 
     return (
         <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between">
@@ -123,7 +125,7 @@ export function SubjectFocusChart({
                     Subject Focus
                 </span>
                 <span className="text-[11px] font-semibold text-[#3B3B3B] dark:text-white">
-                    {displayData.length} {displayData.length === 1 ? "Subject" : "Subjects"}
+                    {count} {count === 1 ? "Subject" : "Subjects"}
                 </span>
             </div>
 
@@ -155,10 +157,10 @@ export function SubjectFocusChart({
                         </ResponsiveContainer>
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                             <span className="text-sm font-semibold text-[#3B3B3B] dark:text-white">
-                                {displayData.length}
+                                {count}
                             </span>
                             <span className="text-[10px] text-neutral-400 dark:text-neutral-500">
-                                {displayData.length === 1 ? "Subject" : "Subjects"}
+                                {count === 1 ? "Subject" : "Subjects"}
                             </span>
                         </div>
                     </div>

@@ -7,6 +7,7 @@ import { UpcomingExamTimer } from "@/components/upcoming-exam-timer"
 import { StudentTodoWidget } from "./student-todo-widget"
 import { StudentCalendarWidget } from "./student-calendar-widget"
 import { LordIcon } from "@/components/ui/lord-icon"
+import { getStudentCurriculumContext } from "@/lib/student-curriculum"
 
 const DashboardCarousel = dynamic(
   () => import("@/components/dashboard-carousel").then((m) => m.DashboardCarousel),
@@ -45,6 +46,10 @@ const RecentLearningActivityList = dynamic(
 )
 
 async function getStudentDashboardData(userId) {
+  const curriculumCtx = await getStudentCurriculumContext(userId)
+  const curriculumSubjectIds = curriculumCtx.subjectIds
+  const subjectIdsParam = curriculumSubjectIds.length > 0 ? curriculumSubjectIds : null
+
   const [
     resumeRes,
     overviewStatsRes,
@@ -79,9 +84,10 @@ async function getStudentDashboardData(userId) {
        LEFT JOIN subject_modules sm ON sm.id = sc.module_id
        WHERE sa.student_id = $1 
          AND (sa.activity_type = 'lesson_open' OR sa.details LIKE '%SubjectID:%')
+         AND ($2::int[] IS NULL OR NULLIF(SUBSTRING(sa.details FROM 'SubjectID: ([0-9]+)'), '')::int IS NULL OR NULLIF(SUBSTRING(sa.details FROM 'SubjectID: ([0-9]+)'), '')::int = ANY($2::int[]))
        ORDER BY sa.created_at DESC
        LIMIT 1`,
-      [userId]
+      [userId, subjectIdsParam]
     ).catch(() => ({ rows: [] })),
 
     // 2. High-level Overview Counters (quizzes taken, mock exams completed, study streak, active days)
@@ -106,7 +112,7 @@ async function getStudentDashboardData(userId) {
       [userId]
     ).catch(() => ({ rows: [{}] })),
 
-    // 3. User Subjects with Progression (for curriculum overview)
+    // 3. User Subjects with Progression (scoped strictly to student's curriculum)
     pool.query(
       `SELECT 
          s.id,
@@ -123,9 +129,13 @@ async function getStudentDashboardData(userId) {
        FROM subjects s
        LEFT JOIN student_subject_progress ssp ON ssp.subject_id = s.id AND ssp.student_id = $1
        WHERE s.status = 'active'
-       ORDER BY ssp.last_activity_at DESC NULLS LAST, s.id ASC
+         AND ($2::int[] IS NULL OR s.id = ANY($2::int[]))
+       ORDER BY 
+         CASE WHEN COALESCE(ssp.completed_items, 0) > 0 THEN 0 ELSE 1 END ASC,
+         ssp.last_activity_at DESC NULLS LAST, 
+         s.id ASC
        LIMIT 4`,
-      [userId]
+      [userId, subjectIdsParam]
     ).catch(() => ({ rows: [] })),
 
     // 4. Recent Real Activity Feed
@@ -204,7 +214,7 @@ async function getStudentDashboardData(userId) {
       [userId]
     ).catch(() => ({ rows: [] })),
 
-    // 7. Dynamic Subject Focus Allocation (Study seconds & activity hits per subject)
+    // 7. Dynamic Subject Focus Allocation (Study seconds & activity hits per curriculum subject)
     pool.query(
       `SELECT 
          s.id,
@@ -217,9 +227,10 @@ async function getStudentDashboardData(userId) {
        LEFT JOIN daily_student_stats dss ON dss.subject_id = s.id AND dss.user_id = $1
        LEFT JOIN student_subject_progress ssp ON ssp.subject_id = s.id AND ssp.student_id = $1
        WHERE s.status = 'active'
+         AND ($2::int[] IS NULL OR s.id = ANY($2::int[]))
        GROUP BY s.id, s.title, s.code, ssp.progress_pct
-        ORDER BY s.id ASC`,
-      [userId]
+       ORDER BY s.id ASC`,
+      [userId, subjectIdsParam]
     ).catch(() => ({ rows: [] })),
 
     // 8. Upcoming or Active Mock Exam for Alarm/Timer
@@ -275,20 +286,62 @@ async function getStudentDashboardData(userId) {
     score: Number(r.avg_score || 0)
   }))
 
-  // Format Subject Focus Donut data
+  // Format Subject Focus Donut data strictly scoped to student curriculum
   const rawFocus = subjectFocusRes.rows || []
-  let totalWeight = 0
-  const focusList = rawFocus.map(sub => {
-    // Weight by seconds spent + activity hits + progress %
-    const weight = Math.max(1, Number(sub.total_seconds || 0) + (Number(sub.hits || 0) * 60) + Number(sub.progress_pct || 0))
-    totalWeight += weight
-    return { name: sub.title || sub.code || "Subject", rawWeight: weight }
-  })
+  const totalCurriculumSubjects = curriculumSubjectIds.length > 0 ? curriculumSubjectIds.length : rawFocus.length
 
-  const focusData = focusList.map(f => ({
-    name: f.name,
-    value: totalWeight > 0 ? Math.max(1, Math.round((f.rawWeight / totalWeight) * 100)) : 100
-  }))
+  const engagedFocus = rawFocus.filter(
+    (sub) => Number(sub.total_seconds || 0) > 0 || Number(sub.hits || 0) > 0 || Number(sub.progress_pct || 0) > 0
+  )
+
+  let focusData = []
+  if (engagedFocus.length > 0) {
+    engagedFocus.sort((a, b) => {
+      const wa = Number(a.total_seconds || 0) + (Number(a.hits || 0) * 60) + Number(a.progress_pct || 0)
+      const wb = Number(b.total_seconds || 0) + (Number(b.hits || 0) * 60) + Number(b.progress_pct || 0)
+      return wb - wa
+    })
+    const topEngaged = engagedFocus.slice(0, 5)
+    const remaining = engagedFocus.slice(5)
+
+    let totalWeight = 0
+    topEngaged.forEach((s) => {
+      const w = Number(s.total_seconds || 0) + (Number(s.hits || 0) * 60) + Number(s.progress_pct || 0)
+      totalWeight += w
+    })
+    let remainingWeight = 0
+    remaining.forEach((s) => {
+      const w = Number(s.total_seconds || 0) + (Number(s.hits || 0) * 60) + Number(s.progress_pct || 0)
+      remainingWeight += w
+    })
+    totalWeight += remainingWeight
+
+    focusData = topEngaged.map((s) => {
+      const w = Number(s.total_seconds || 0) + (Number(s.hits || 0) * 60) + Number(s.progress_pct || 0)
+      return {
+        name: s.title || s.code || "Subject",
+        value: totalWeight > 0 ? Math.max(1, Math.round((w / totalWeight) * 100)) : 100,
+      }
+    })
+
+    if (remainingWeight > 0) {
+      focusData.push({
+        name: "Other Subjects",
+        value: Math.max(1, Math.round((remainingWeight / totalWeight) * 100)),
+      })
+    }
+  } else {
+    // If student has no study activity yet, display top 5 subjects from their curriculum
+    const topCurriculum = rawFocus.slice(0, 5)
+    if (topCurriculum.length > 0) {
+      const eachVal = Math.floor(100 / topCurriculum.length)
+      const remainder = 100 - (eachVal * topCurriculum.length)
+      focusData = topCurriculum.map((s, idx) => ({
+        name: s.title || s.code || `Subject ${idx + 1}`,
+        value: idx === 0 ? eachVal + remainder : eachVal,
+      }))
+    }
+  }
 
   return {
     resume,
@@ -325,6 +378,7 @@ async function getStudentDashboardData(userId) {
     }),
     performanceData,
     focusData,
+    totalCurriculumSubjects,
     upcomingExam
   }
 }
@@ -341,6 +395,7 @@ export default async function StudentDashboard() {
     mockExams: [],
     performanceData: [],
     focusData: [],
+    totalCurriculumSubjects: 0,
     upcomingExam: null
   }
 
@@ -348,7 +403,7 @@ export default async function StudentDashboard() {
     data = await getStudentDashboardData(session.userId)
   }
 
-  const { resume, overview, subjects, activities, mockExams, performanceData, focusData, upcomingExam } = data
+  const { resume, overview, subjects, activities, mockExams, performanceData, focusData, totalCurriculumSubjects, upcomingExam } = data
 
   // Resume URL builder
   let resumeUrl = "/student/subjects"
@@ -676,7 +731,7 @@ export default async function StudentDashboard() {
           overallAverage={overview.avgQuizScore}
           trendLabel={overview.completedQuizzes > 0 ? "Scores over the last 7 days" : "Take quizzes to track your progress"}
         />
-        <SubjectFocusChart focusData={focusData} />
+        <SubjectFocusChart focusData={focusData} totalSubjects={totalCurriculumSubjects} />
       </div>
 
   {/* ── Line Divider ── */ }

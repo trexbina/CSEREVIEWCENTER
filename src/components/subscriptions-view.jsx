@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
+import Link from "next/link"
 import { Search, ChevronDown, Check, X, Clock, Calendar, AlertCircle, Filter, ArrowRightLeft, ArrowUpDown, ArrowUp, ArrowDown, UserX, UserCheck } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 import {
@@ -1035,8 +1036,11 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                         <tr key={student.id} className="h-13 transition-colors">
                           {/* Student Name with Avatar & Login ID */}
                           <td className="px-4 py-2.5 text-left pl-6">
-                            <div className="flex items-center gap-3">
-                              <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
+                            <Link
+                              href={`/admin/users/${student.id || student.user_id}`}
+                              className="flex items-center gap-3 group cursor-pointer"
+                            >
+                              <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden transition-transform group-hover:scale-105">
                                 {(student.avatar_url || student.avatarUrl) ? (
                                   <img
                                     src={student.avatar_url || student.avatarUrl}
@@ -1057,14 +1061,14 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
                                 </span>
                               </div>
                               <div>
-                                <div className="font-medium text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                <div className="font-medium text-[13px] text-[#3B3B3B] dark:text-gray-100 group-hover:text-black dark:group-hover:text-white group-hover:underline transition-colors">
                                   {student.name || "—"}
                                 </div>
                                 <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
                                   {formatLoginId(student)}
                                 </div>
                               </div>
-                            </div>
+                            </Link>
                           </td>
 
                           {/* Examination & Batch */}

@@ -3,6 +3,7 @@
 
 // helper tools from react to handle state and lifecycle
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react"
+import Link from "next/link"
 
 // animation helpers for smooth view transitions
 import { motion } from "motion/react"
@@ -677,7 +678,19 @@ const SpreadsheetView = ({ gradebookId, onBack }) => {
               return (
                 <tr key={student.id} className="h-11 border-b border-border">
                   <td className="border-r border-border bg-muted/20 text-center text-xs text-muted-foreground select-none font-medium">{ri + 1}</td>
-                  <td className="border-r border-border px-4 font-medium text-foreground">{student.name}</td>
+                  <td className="border-r border-border px-4 font-medium text-foreground">
+                    {student.id ? (
+                      <Link
+                        href={`/admin/users/${student.id}`}
+                        className="hover:underline hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                        title={`View profile for ${student.name}`}
+                      >
+                        {student.name}
+                      </Link>
+                    ) : (
+                      student.name
+                    )}
+                  </td>
                   <td className="border-r border-border px-4 text-muted-foreground">{student.school_name}</td>
                   {mockExams.map(m => {
                     const val = localScores[student.id]?.[m.id]?.score

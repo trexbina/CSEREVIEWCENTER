@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
+import Link from "next/link"
 import {
   Search,
   RefreshCw,
@@ -1668,8 +1669,11 @@ export default function AnalyticalOverviewPage() {
 
                                   {/* Student Name with Avatar & Login ID */}
                                   <td className="px-4 py-2.5 text-left">
-                                    <div className="flex items-center gap-3">
-                                      <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
+                                    <Link
+                                      href={`/admin/users/${st.id || st.student_id}`}
+                                      className="flex items-center gap-3 group cursor-pointer"
+                                    >
+                                      <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden transition-transform group-hover:scale-105">
                                         {(st.avatarUrl || st.avatar_url) ? (
                                           <img
                                             src={st.avatarUrl || st.avatar_url}
@@ -1690,14 +1694,14 @@ export default function AnalyticalOverviewPage() {
                                         </span>
                                       </div>
                                       <div>
-                                        <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                        <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100 group-hover:text-black dark:group-hover:text-white group-hover:underline transition-colors">
                                           {st.name || "—"}
                                         </div>
                                         <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
                                           {formatLoginId(st)}
                                         </div>
                                       </div>
-                                    </div>
+                                    </Link>
                                   </td>
 
                                   {/* Performance Rating Status Pill */}
@@ -1939,8 +1943,11 @@ export default function AnalyticalOverviewPage() {
 
                                   {/* Student Name with Avatar & Login ID */}
                                   <td className="px-4 py-2.5 text-left">
-                                    <div className="flex items-center gap-3">
-                                      <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
+                                    <Link
+                                      href={`/admin/users/${st.id || st.student_id}`}
+                                      className="flex items-center gap-3 group cursor-pointer"
+                                    >
+                                      <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden transition-transform group-hover:scale-105">
                                         {(st.avatarUrl || st.avatar_url) ? (
                                           <img
                                             src={st.avatarUrl || st.avatar_url}
@@ -1961,14 +1968,14 @@ export default function AnalyticalOverviewPage() {
                                         </span>
                                       </div>
                                       <div>
-                                        <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                        <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100 group-hover:text-black dark:group-hover:text-white group-hover:underline transition-colors">
                                           {st.name || "—"}
                                         </div>
                                         <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
                                           {formatLoginId(st)}
                                         </div>
                                       </div>
-                                    </div>
+                                    </Link>
                                   </td>
 
                                   {/* Performance Rating Status Pill */}
@@ -3296,8 +3303,11 @@ export default function AnalyticalOverviewPage() {
                                 <tr key={st.id || idx} className="h-13">
                                   {/* Student Name with Avatar & Login ID */}
                                   <td className="px-4 py-2.5 text-left pl-6">
-                                    <div className="flex items-center gap-3">
-                                      <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
+                                    <Link
+                                      href={`/admin/users/${st.id || st.student_id}`}
+                                      className="flex items-center gap-3 group cursor-pointer"
+                                    >
+                                      <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden transition-transform group-hover:scale-105">
                                         {(st.avatarUrl || st.avatar_url) ? (
                                           <img
                                             src={st.avatarUrl || st.avatar_url}
@@ -3318,14 +3328,14 @@ export default function AnalyticalOverviewPage() {
                                         </span>
                                       </div>
                                       <div>
-                                        <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                        <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100 group-hover:text-black dark:group-hover:text-white group-hover:underline transition-colors">
                                           {st.name || "—"}
                                         </div>
                                         <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
                                           {formatLoginId(st)}
                                         </div>
                                       </div>
-                                    </div>
+                                    </Link>
                                   </td>
 
                                   {/* Status Badge */}
@@ -4276,8 +4286,11 @@ export default function AnalyticalOverviewPage() {
                               return (
                                 <tr key={cand.id || idx} className="h-13">
                                   <td className="px-4 py-2.5 text-left pl-6">
-                                    <div className="flex items-center gap-3">
-                                      <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden">
+                                    <Link
+                                      href={`/admin/users/${cand.id || cand.user_id}`}
+                                      className="flex items-center gap-3 group cursor-pointer"
+                                    >
+                                      <div className="size-9 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-center font-medium text-xs text-[#3B3B3B] dark:text-gray-200 shrink-0 overflow-hidden transition-transform group-hover:scale-105">
                                         {(cand.avatarUrl || cand.avatar_url) ? (
                                           <img
                                             src={cand.avatarUrl || cand.avatar_url}
@@ -4296,14 +4309,14 @@ export default function AnalyticalOverviewPage() {
                                         </span>
                                       </div>
                                       <div>
-                                        <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100">
+                                        <div className="font-normal text-[13px] text-[#3B3B3B] dark:text-gray-100 group-hover:text-black dark:group-hover:text-white group-hover:underline transition-colors">
                                           {cand.name || "—"}
                                         </div>
                                         <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
                                           {formatLoginId(cand)}
                                         </div>
                                       </div>
-                                    </div>
+                                    </Link>
                                   </td>
                                   <td className="px-4 py-2.5 text-center text-xs text-[#3B3B3B] dark:text-neutral-200 font-normal whitespace-nowrap">
                                     {cand.target_exam || "General"}

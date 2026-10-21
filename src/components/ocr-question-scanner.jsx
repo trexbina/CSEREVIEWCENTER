@@ -13,7 +13,8 @@ import {
     X,
     Eye,
     EyeOff,
-    Plus
+    Plus,
+    Sparkles
 } from "lucide-react"
 import { toast } from "@/components/ui/toast"
 
@@ -465,6 +466,17 @@ export default function OcrQuestionScanner({ hideActionButtons = false } = {}) {
                     </button>
                 </div>
             )}
+
+            {/* OCR Explanatory Description */}
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-3 space-y-1">
+                <div className="flex items-center gap-1.5 text-foreground font-semibold text-xs">
+                    <Sparkles className="size-3.5 text-[#E9C46A] shrink-0" />
+                    <span>OCR Question Scanner</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Automatically scans and detects multiple-choice quiz questions from PDF reviewers or screenshots to build exams significantly faster.
+                </p>
+            </div>
 
             {/* Direct Upload / Dropzone Box */}
             {!fileInfo && (

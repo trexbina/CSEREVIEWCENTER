@@ -313,9 +313,13 @@ export default function MockExamBuilder({ examId, isStudent = false, onToggleVie
                 window.__peak_add_title_desc()
             }
         }
+        const handleExternalOpenSettings = () => {
+            setShowSettings((prev) => !prev)
+        }
         window.addEventListener("peak:add-ocr-question", handleAddOcrQuestion)
         window.addEventListener("peak:add-question", handleExternalAddQuestion)
         window.addEventListener("peak:add-title-desc", handleExternalAddTitleDesc)
+        window.addEventListener("peak:open-settings", handleExternalOpenSettings)
 
         return () => {
             delete window.__peak_import_questions
@@ -324,6 +328,7 @@ export default function MockExamBuilder({ examId, isStudent = false, onToggleVie
             window.removeEventListener("peak:add-ocr-question", handleAddOcrQuestion)
             window.removeEventListener("peak:add-question", handleExternalAddQuestion)
             window.removeEventListener("peak:add-title-desc", handleExternalAddTitleDesc)
+            window.removeEventListener("peak:open-settings", handleExternalOpenSettings)
         }
     }, [])
 

@@ -152,12 +152,88 @@ export default function AnalyticalOverviewPage() {
   const activityTableFilterRef = useRef(null)
   const [activitySubjectPage, setActivitySubjectPage] = useState(1)
   const [activityRosterPage, setActivityRosterPage] = useState(1)
+  const [selectedActivityCourse, setSelectedActivityCourse] = useState("all") // 'all' | 'bsed' | 'beed' | 'beced' | 'bsned'
   const ACTIVITY_PAGE_SIZE = 8
   const [subjectSortField, setSubjectSortField] = useState("totalHoursDecimal")
   const [subjectSortDir, setSubjectSortDir] = useState("desc")
   const [rosterSortField, setRosterSortField] = useState("name")
   const [rosterSortDir, setRosterSortDir] = useState("asc")
   const [activityLoading, setActivityLoading] = useState(false)
+
+  // Filter subjects by LEPT course (e.g. BSEd, BEEd, BECEd, BSNEd)
+  const matchesActivityCourse = (sub, courseKey) => {
+    if (!courseKey || courseKey === "all") return true
+
+    const cat = (sub.category || "").toLowerCase()
+    const targetProg = (sub.target_program || "").toLowerCase()
+    const targetCourse = (sub.target_course || "").toLowerCase()
+
+    // Core curriculum common to all teacher education candidates
+    const isGenEd = cat.includes("general education") || cat.includes("gen ed")
+    const isProfEd = cat.includes("professional education") || cat.includes("prof ed")
+    const isCoreCommon = isGenEd || isProfEd
+
+    // Secondary specializations / majors (BSEd)
+    const isSecondarySpec =
+      cat.includes("specialization") ||
+      cat.includes("major") ||
+      cat.includes("secondary") ||
+      targetProg.includes("bsed") ||
+      targetCourse.includes("bsed") ||
+      cat.includes("physical science") ||
+      cat.includes("biological science") ||
+      cat.includes("english") ||
+      cat.includes("filipino") ||
+      cat.includes("mathematics") ||
+      cat.includes("social science") ||
+      cat.includes("social studies") ||
+      cat.includes("values education")
+
+    // Elementary Education (BEEd)
+    const isElementary =
+      cat.includes("elementary") ||
+      cat.includes("beed") ||
+      targetProg.includes("beed") ||
+      targetCourse.includes("beed")
+
+    // Early Childhood (BECEd)
+    const isEarlyChildhood =
+      cat.includes("early childhood") ||
+      cat.includes("beced") ||
+      targetProg.includes("beced") ||
+      targetCourse.includes("beced")
+
+    // Special Needs (BSNEd)
+    const isSpecialNeeds =
+      cat.includes("special needs") ||
+      cat.includes("bsned") ||
+      targetProg.includes("bsned") ||
+      targetCourse.includes("bsned")
+
+    if (courseKey === "beed") {
+      if (isSecondarySpec && !isElementary && !isCoreCommon) return false
+      if (isCoreCommon || isElementary) return true
+      return !isSecondarySpec && !isEarlyChildhood && !isSpecialNeeds
+    }
+
+    if (courseKey === "bsed") {
+      if (isCoreCommon || isSecondarySpec) return true
+      if (isElementary || isEarlyChildhood || isSpecialNeeds) return false
+      return true
+    }
+
+    if (courseKey === "beced") {
+      if (isCoreCommon || isEarlyChildhood) return true
+      return false
+    }
+
+    if (courseKey === "bsned") {
+      if (isCoreCommon || isSpecialNeeds) return true
+      return false
+    }
+
+    return true
+  }
 
   const examinationOptions = data?.filters?.examinations || []
   const allBatchOptions = data?.filters?.batches || []
@@ -594,7 +670,10 @@ export default function AnalyticalOverviewPage() {
         "Practice Tests Taken",
         "Completion Rate (%)",
       ])
-      ;(act.tabA_subjectBreakdown || []).forEach((row) => {
+      const exportSubjects = (act.tabA_subjectBreakdown || []).filter((row) =>
+        matchesActivityCourse(row, selectedActivityCourse)
+      )
+      exportSubjects.forEach((row) => {
         csvRows.push([
           `"${(row.name || "").replace(/"/g, '""')}"`,
           `"${(row.category || "").replace(/"/g, '""')}"`,
@@ -2852,6 +2931,28 @@ export default function AnalyticalOverviewPage() {
 
                   {/* Right: Filter & Search Controls */}
                   <div className="flex items-center gap-2 ml-auto">
+                    {/* LEPT Course Filter Dropdown (Subject Progress tab) */}
+                    {activityTab === "subjects" && (
+                      <div className="relative">
+                        <select
+                          aria-label="Filter by LEPT Course"
+                          value={selectedActivityCourse}
+                          onChange={(e) => {
+                            setSelectedActivityCourse(e.target.value)
+                            setActivitySubjectPage(1)
+                          }}
+                          className="h-8 pl-2.5 pr-7 text-xs font-normal rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white hover:bg-neutral-50 dark:hover:bg-white/15 focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all shadow-2xs cursor-pointer appearance-none"
+                        >
+                          <option value="all" className="bg-white dark:bg-[#1a1b20] text-[#3B3B3B] dark:text-white">All Courses</option>
+                          <option value="bsed" className="bg-white dark:bg-[#1a1b20] text-[#3B3B3B] dark:text-white">BSEd (Secondary)</option>
+                          <option value="beed" className="bg-white dark:bg-[#1a1b20] text-[#3B3B3B] dark:text-white">BEEd (Elementary)</option>
+                          <option value="beced" className="bg-white dark:bg-[#1a1b20] text-[#3B3B3B] dark:text-white">BECEd (Early Childhood)</option>
+                          <option value="bsned" className="bg-white dark:bg-[#1a1b20] text-[#3B3B3B] dark:text-white">BSNEd (Special Needs)</option>
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 size-3 text-neutral-400 pointer-events-none" />
+                      </div>
+                    )}
+
                     {/* Examination Filter Button & Dropdown */}
                     <div className="relative" ref={activityTableFilterRef}>
                       <button
@@ -2996,6 +3097,7 @@ export default function AnalyticalOverviewPage() {
                 {/* Tab A: Subject Performance Breakdown Table */}
                 {activityTab === "subjects" && (() => {
                   const subjectList = (filteredActivityAnalytics?.tabA_subjectBreakdown || []).filter((sub) => {
+                    if (!matchesActivityCourse(sub, selectedActivityCourse)) return false
                     if (!activitySearch.trim()) return true
                     const q = activitySearch.trim().toLowerCase()
                     return (
@@ -3012,7 +3114,11 @@ export default function AnalyticalOverviewPage() {
 
                   return totalSubjects === 0 ? (
                     <div className="py-16 text-center text-xs font-normal text-neutral-400 dark:text-neutral-500">
-                      {activitySearch ? `No subjects found matching "${activitySearch}"` : "No subjects configured or recorded yet."}
+                      {activitySearch
+                        ? `No subjects found matching "${activitySearch}"`
+                        : selectedActivityCourse !== "all"
+                        ? "No subjects found for this course filter."
+                        : "No subjects configured or recorded yet."}
                     </div>
                   ) : (
                     <div>

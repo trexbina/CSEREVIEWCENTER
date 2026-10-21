@@ -434,12 +434,14 @@ export async function GET(request) {
 
       // 3. Subjects list with category and modules count
       pool.query(
-        `SELECT s.id, s.title, COALESCE(s.category, 'General Education') as category_name,
+        `SELECT s.id, s.title, COALESCE(s.category, c.name, 'General Education') as category_name,
+                c.target_course, c.target_program, c.target_major,
                 COUNT(DISTINCT sm.id)::int as modules_count
          FROM subjects s
+         LEFT JOIN categories c ON s.category_id = c.id
          LEFT JOIN subject_modules sm ON sm.subject_id = s.id
          WHERE s.status = 'active'
-         GROUP BY s.id, s.title, s.category
+         GROUP BY s.id, s.title, s.category, c.name, c.target_course, c.target_program, c.target_major
          ORDER BY s.title ASC`
       ).catch(() => ({ rows: [] })),
 
@@ -720,6 +722,9 @@ export async function GET(request) {
         id: sub.id,
         name: sub.title,
         category: sub.category_name || "General Education",
+        target_course: sub.target_course || null,
+        target_program: sub.target_program || null,
+        target_major: sub.target_major || null,
         activeReviewees: subjectUsers.size,
         totalEnrolled,
         totalHoursStr: `${totalH}h ${totalM}m`,

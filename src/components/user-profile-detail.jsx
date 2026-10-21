@@ -86,6 +86,19 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
 
   const [analyticsData, setAnalyticsData] = useState(null)
   const [loadingAnalytics, setLoadingAnalytics] = useState(false)
+  const [expandedCompetency, setExpandedCompetency] = useState(null)
+  const [expandedSubjects, setExpandedSubjects] = useState({})
+
+  const toggleCompetency = (key) => {
+    setExpandedCompetency((prev) => (prev === key ? null : key))
+  }
+
+  const toggleSubject = (subId) => {
+    setExpandedSubjects((prev) => ({
+      ...prev,
+      [subId]: !prev[subId],
+    }))
+  }
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -832,9 +845,9 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                 }
 
                 return (
-                  <div className="grid gap-8 md:grid-cols-5 items-center">
+                  <div className="grid gap-8 md:grid-cols-5 items-start">
                     {/* Readiness Score Donut */}
-                    <div className="md:col-span-2 flex flex-col items-center justify-center text-center md:border-r border-border md:pr-8 py-2 space-y-3">
+                    <div className="md:col-span-2 flex flex-col items-center justify-center text-center md:border-r border-border md:pr-8 py-2 space-y-3 md:sticky md:top-24">
                       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Overall Readiness
                       </h4>
@@ -881,27 +894,248 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
 
                     {/* Competency Breakdown */}
                     <div className="md:col-span-3 space-y-4">
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Competency Breakdown
-                      </h4>
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          Competency Breakdown
+                        </h4>
+                        <span className="text-[11px] text-muted-foreground">
+                          Click to expand subjects & modules
+                        </span>
+                      </div>
 
-                      <div className="space-y-4 pt-1">
-                        {competencies.map((comp) => (
-                          <div key={comp.name || comp.key} className="space-y-1.5">
-                            <div className="flex justify-between text-sm font-medium">
-                              <span className="text-foreground">{comp.name}</span>
-                              <span className="text-muted-foreground font-semibold">
-                                {comp.score}%
-                              </span>
+                      <div className="space-y-3 pt-1">
+                        {competencies.map((comp) => {
+                          const compKey = comp.key || comp.name
+                          const isCompExpanded = expandedCompetency === compKey
+                          const compSubjects = comp.subjects || []
+
+                          return (
+                            <div
+                              key={compKey}
+                              className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+                                isCompExpanded
+                                  ? "border-primary/40 bg-accent/15 shadow-sm"
+                                  : "border-border/70 hover:border-border hover:bg-accent/10"
+                              }`}
+                            >
+                              {/* Pressable Competency Header */}
+                              <button
+                                type="button"
+                                onClick={() => toggleCompetency(compKey)}
+                                className="w-full text-left p-3.5 flex flex-col gap-2.5 transition-colors focus:outline-none"
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-semibold text-sm text-foreground">
+                                      {comp.name}
+                                    </span>
+                                    {compSubjects.length > 0 && (
+                                      <span className="text-[10px] font-medium text-muted-foreground px-2 py-0.5 rounded-md bg-muted/70 border border-border/50">
+                                        {compSubjects.length} {compSubjects.length === 1 ? "subject" : "subjects"}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <span className="text-sm font-bold text-foreground">
+                                      {comp.score}%
+                                    </span>
+                                    <span className="text-muted-foreground transition-transform duration-200">
+                                      {isCompExpanded ? (
+                                        <ChevronUp className="h-4 w-4 text-primary" />
+                                      ) : (
+                                        <ChevronDown className="h-4 w-4" />
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full ${comp.color || "bg-[#eed48f]"} rounded-full transition-all duration-500`}
+                                    style={{ width: `${Math.min(100, Math.max(0, comp.score))}%` }}
+                                  />
+                                </div>
+                              </button>
+
+                              {/* Expanded Table: Subjects */}
+                              {isCompExpanded && (
+                                <div className="border-t border-border/70 bg-card p-3 sm:p-4 space-y-3">
+                                  {compSubjects.length === 0 ? (
+                                    <div className="text-center py-6 text-xs text-muted-foreground">
+                                      No subjects found under this category yet.
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                                        <span>Subjects in {comp.name}</span>
+                                        <span>Click subject to view modules</span>
+                                      </div>
+
+                                      <div className="rounded-lg border border-border/60 overflow-hidden divide-y divide-border/60">
+                                        {compSubjects.map((subject) => {
+                                          const subId = String(subject.id)
+                                          const isSubExpanded = !!expandedSubjects[subId]
+                                          const subModules = subject.modules || []
+
+                                          return (
+                                            <div key={subId} className="bg-card">
+                                              {/* Subject Row (Clickable) */}
+                                              <button
+                                                type="button"
+                                                onClick={() => toggleSubject(subId)}
+                                                className="w-full text-left p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-accent/25 transition-colors focus:outline-none"
+                                              >
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                  <BookOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                                                  <span className="text-xs sm:text-sm font-semibold text-foreground truncate">
+                                                    {subject.name}
+                                                  </span>
+                                                  {subModules.length > 0 && (
+                                                    <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded bg-muted/80 flex-shrink-0">
+                                                      {subModules.length} {subModules.length === 1 ? "module" : "modules"}
+                                                    </span>
+                                                  )}
+                                                </div>
+
+                                                <div className="flex items-center gap-3 sm:w-60 flex-shrink-0 self-end sm:self-center w-full sm:w-auto">
+                                                  <div className="flex-1 space-y-1">
+                                                    <div className="flex justify-between text-[11px]">
+                                                      <span className="text-muted-foreground">Subject Progress</span>
+                                                      <span className="font-bold text-foreground">
+                                                        {subject.progressPct}%
+                                                      </span>
+                                                    </div>
+                                                    <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                      <div
+                                                        className="h-full bg-primary rounded-full transition-all duration-300"
+                                                        style={{ width: `${Math.min(100, Math.max(0, subject.progressPct))}%` }}
+                                                      />
+                                                    </div>
+                                                  </div>
+                                                  <span className="text-muted-foreground/80">
+                                                    {isSubExpanded ? (
+                                                      <ChevronUp className="h-3.5 w-3.5" />
+                                                    ) : (
+                                                      <ChevronDown className="h-3.5 w-3.5" />
+                                                    )}
+                                                  </span>
+                                                </div>
+                                              </button>
+
+                                              {/* Expanded Modules List */}
+                                              {isSubExpanded && (
+                                                <div className="bg-muted/30 border-t border-border/50 p-3 sm:p-4 space-y-2.5">
+                                                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-between px-1">
+                                                    <span>Modules ({subModules.length})</span>
+                                                    <span>Progress & Mastery Indicators</span>
+                                                  </div>
+
+                                                  {subModules.length === 0 ? (
+                                                    <div className="text-center py-4 text-xs text-muted-foreground">
+                                                      No modules found inside this subject.
+                                                    </div>
+                                                  ) : (
+                                                    <div className="space-y-2">
+                                                      {subModules.map((module) => {
+                                                        const hasAttempts = module.hasQuizAttempts
+                                                        const mPct = hasAttempts ? module.masteryPct : 0
+
+                                                        let masteryColor = "bg-slate-300 dark:bg-slate-700"
+                                                        let masteryBadge = "Not assessed"
+                                                        let masteryBadgeStyle = "bg-muted text-muted-foreground border-border"
+
+                                                        if (hasAttempts) {
+                                                          if (mPct >= 80) {
+                                                            masteryColor = "bg-emerald-500"
+                                                            masteryBadge = "Mastered"
+                                                            masteryBadgeStyle = "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
+                                                          } else if (mPct >= 70) {
+                                                            masteryColor = "bg-blue-500"
+                                                            masteryBadge = "Proficient"
+                                                            masteryBadgeStyle = "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400"
+                                                          } else if (mPct >= 60) {
+                                                            masteryColor = "bg-amber-500"
+                                                            masteryBadge = "Developing"
+                                                            masteryBadgeStyle = "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
+                                                          } else {
+                                                            masteryColor = "bg-rose-500"
+                                                            masteryBadge = "Beginning"
+                                                            masteryBadgeStyle = "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400"
+                                                          }
+                                                        }
+
+                                                        return (
+                                                          <div
+                                                            key={module.id}
+                                                            className="rounded-lg border border-border/50 bg-background/90 p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs"
+                                                          >
+                                                            <div className="space-y-0.5 min-w-0">
+                                                              <div className="text-xs font-semibold text-foreground truncate">
+                                                                {module.title}
+                                                              </div>
+                                                              <div className="text-[10px] text-muted-foreground">
+                                                                {module.completedItems} / {module.totalItems} items completed
+                                                              </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-2 gap-4 md:w-72 flex-shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-border/40">
+                                                              {/* Module Progress Bar */}
+                                                              <div className="space-y-1">
+                                                                <div className="flex justify-between items-center text-[10px]">
+                                                                  <span className="text-muted-foreground">Progress</span>
+                                                                  <span className="font-bold text-foreground">
+                                                                    {module.progressPct}%
+                                                                  </span>
+                                                                </div>
+                                                                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                                  <div
+                                                                    className="h-full bg-primary rounded-full transition-all duration-300"
+                                                                    style={{ width: `${Math.min(100, Math.max(0, module.progressPct))}%` }}
+                                                                  />
+                                                                </div>
+                                                              </div>
+
+                                                              {/* Module Mastery Bar */}
+                                                              <div className="space-y-1">
+                                                                <div className="flex justify-between items-center text-[10px]">
+                                                                  <span className="text-muted-foreground">Mastery</span>
+                                                                  <span className="font-bold text-foreground">
+                                                                    {hasAttempts ? `${module.masteryPct}%` : "—"}
+                                                                  </span>
+                                                                </div>
+                                                                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                                  <div
+                                                                    className={`h-full ${masteryColor} rounded-full transition-all duration-300`}
+                                                                    style={{ width: `${Math.min(100, Math.max(0, mPct))}%` }}
+                                                                  />
+                                                                </div>
+                                                                <div className="flex justify-end pt-0.5">
+                                                                  <span
+                                                                    className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border ${masteryBadgeStyle}`}
+                                                                  >
+                                                                    {masteryBadge}
+                                                                  </span>
+                                                                </div>
+                                                              </div>
+                                                            </div>
+                                                          </div>
+                                                        )
+                                                      })}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full ${comp.color || "bg-[#eed48f]"} rounded-full transition-all duration-500`}
-                                style={{ width: `${Math.min(100, Math.max(0, comp.score))}%` }}
-                              />
-                            </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                   </div>

@@ -108,6 +108,7 @@ function isMatch(targetValue, userValue) {
       completedItemsRes,
       progressTableRes,
       majorsRes,
+      quizMasteryRes,
     ] = await Promise.all([
       // Modules with subject (subcategory) and category mapping
       pool.query(`
@@ -196,6 +197,25 @@ function isMatch(targetValue, userValue) {
 
       // Query all known majors from database
       pool.query(`SELECT name FROM majors`).catch(() => ({ rows: [] })),
+
+      // Module quiz mastery per module for this student
+      pool.query(`
+        SELECT 
+          sm.subject_id AS module_id,
+          COUNT(sqs.id)::int AS attempted_quizzes_count,
+          ROUND(AVG(
+            CASE 
+              WHEN sqs.total_points > 0 
+              THEN (sqs.earned_points::numeric / sqs.total_points::numeric) * 100 
+              ELSE 0 
+            END
+          ), 1) AS avg_mastery_pct
+        FROM student_quiz_submissions sqs
+        JOIN subject_contents sc ON sc.id = sqs.content_id
+        JOIN subject_modules sm ON sm.id = sc.module_id
+        WHERE sqs.student_id = $1
+        GROUP BY sm.subject_id
+      `, [targetUserId]).catch(() => ({ rows: [] })),
     ])
 
     const allDbMajors = (majorsRes?.rows || [])
@@ -211,6 +231,14 @@ function isMatch(targetValue, userValue) {
     const completedItemsMap = {}
     completedItemsRes.rows.forEach((r) => {
       completedItemsMap[String(r.module_id)] = parseInt(r.completed_count, 10) || 0
+    })
+
+    const masteryMap = {}
+    ;(quizMasteryRes?.rows || []).forEach((q) => {
+      masteryMap[String(q.module_id)] = {
+        attemptedQuizzesCount: parseInt(q.attempted_quizzes_count || "0", 10),
+        avgMasteryPct: parseFloat(q.avg_mastery_pct || "0"),
+      }
     })
 
     // Complement from student_subject_progress
@@ -293,16 +321,35 @@ function isMatch(targetValue, userValue) {
           totalItems: 0,
           completedItems: 0,
           moduleCount: 0,
+          modules: [],
         }
       }
 
       const mid = String(mod.module_id)
       const tot = totalItemsMap[mid] || 0
       const comp = Math.min(tot, completedItemsMap[mid] || 0)
+      const modProgressPct =
+        tot > 0
+          ? Math.min(100, Math.round((comp / tot) * 100))
+          : comp > 0
+          ? 100
+          : 0
+      const modMastery = masteryMap[mid] || { attemptedQuizzesCount: 0, avgMasteryPct: 0 }
+      const hasQuizAttempts = modMastery.attemptedQuizzesCount > 0
+      const masteryPct = hasQuizAttempts ? Math.round(modMastery.avgMasteryPct || 0) : 0
 
       subjectsMap[subKey].totalItems += tot
       subjectsMap[subKey].completedItems += comp
       subjectsMap[subKey].moduleCount += 1
+      subjectsMap[subKey].modules.push({
+        id: mod.module_id,
+        title: mod.module_title,
+        totalItems: tot,
+        completedItems: comp,
+        progressPct: modProgressPct,
+        masteryPct,
+        hasQuizAttempts,
+      })
     })
 
     // Calculate each subject's progress percentage
@@ -404,6 +451,16 @@ function isMatch(targetValue, userValue) {
         subjectCount: matchedSubjects.length,
         totalItems,
         completedItems,
+        subjects: matchedSubjects.map((s) => ({
+          id: s.id,
+          name: s.name,
+          categoryName: s.categoryName,
+          totalItems: s.totalItems,
+          completedItems: s.completedItems,
+          progressPct: s.progressPct,
+          moduleCount: s.moduleCount,
+          modules: s.modules || [],
+        })),
       }
     })
 
@@ -486,6 +543,16 @@ function isMatch(targetValue, userValue) {
         subjectCount: extra.subjects.length,
         totalItems: extra.totalItems,
         completedItems: extra.completedItems,
+        subjects: extra.subjects.map((s) => ({
+          id: s.id,
+          name: s.name,
+          categoryName: s.categoryName,
+          totalItems: s.totalItems,
+          completedItems: s.completedItems,
+          progressPct: s.progressPct,
+          moduleCount: s.moduleCount,
+          modules: s.modules || [],
+        })),
       })
       paletteIdx++
     })

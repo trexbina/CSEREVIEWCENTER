@@ -409,69 +409,113 @@ export default function StudentSubjectsPage() {
 
                                                 {/* Sliding White Info Overlay */}
                                                 <div className={sub.description?.trim() ? "subcard-overlay" : "subcard-overlay-compact"}>
-                                                    <div className="overflow-hidden flex-1 flex flex-col justify-start">
-                                                        <div className="flex items-start justify-between gap-2 mb-1 shrink-0">
-                                                            <span className="block text-xs sm:text-[13px] font-bold tracking-wider text-[#4d4d4d] uppercase flex-1 leading-snug break-words line-clamp-2 group-hover:line-clamp-none">
-                                                                {sub.name}
-                                                            </span>
-                                                            <div className="flex items-center gap-2 shrink-0 pt-0.5">
-                                                                {/* Circular Progress Indicator (Moved inside overlay, transparent background, enlarged) */}
-                                                                <div 
-                                                                    className="flex items-center gap-2 pointer-events-none"
-                                                                    title={`Progress: ${subPct}% (${subCompletedItems} of ${subTotalItems} completed)`}
-                                                                >
-                                                                    <div className="relative size-10 flex items-center justify-center shrink-0">
-                                                                        <svg className="size-full -rotate-90" viewBox="0 0 36 36">
-                                                                            <circle
-                                                                                cx="18"
-                                                                                cy="18"
-                                                                                r={radius}
-                                                                                stroke="#F3F4F6"
-                                                                                strokeWidth="3.2"
-                                                                                fill="transparent"
-                                                                            />
-                                                                            <circle
-                                                                                cx="18"
-                                                                                cy="18"
-                                                                                r={radius}
-                                                                                stroke={subStrokeColor}
-                                                                                strokeWidth="3.2"
-                                                                                strokeDasharray={circumference}
-                                                                                strokeDashoffset={strokeDashoffset}
-                                                                                strokeLinecap="round"
-                                                                                fill="transparent"
-                                                                                className="transition-all duration-700 ease-out"
-                                                                            />
-                                                                        </svg>
-                                                                        <span className="absolute text-[10px] font-bold text-gray-700">
-                                                                            {subPct}%
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="hidden sm:block text-left">
-                                                                        <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider block leading-none">
-                                                                            Progress
-                                                                        </span>
-                                                                        <span className="text-[8px] text-gray-400 block mt-0.5 leading-none">
-                                                                            {subCompletedItems}/{subTotalItems} done
-                                                                        </span>
-                                                                    </div>
+                                                    {/* Top Header Row */}
+                                                    <div className="flex items-start justify-between gap-2 shrink-0">
+                                                        <span className="block text-xs sm:text-[13px] font-bold tracking-wider text-[#4d4d4d] uppercase flex-1 leading-snug break-words line-clamp-2 group-hover:line-clamp-none">
+                                                            {sub.name}
+                                                        </span>
+                                                        <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                                                            {/* Circular Progress Indicator: visible when collapsed, transferred to bottom when expanded */}
+                                                            <div 
+                                                                className={`flex items-center pointer-events-none ${sub.description?.trim() ? 'group-hover:hidden' : ''}`}
+                                                                title={`Progress: ${subPct}% (${subCompletedItems} of ${subTotalItems} completed)`}
+                                                            >
+                                                                <div className="relative size-10 flex items-center justify-center shrink-0">
+                                                                    <svg className="size-full -rotate-90" viewBox="0 0 36 36">
+                                                                        <circle
+                                                                            cx="18"
+                                                                            cy="18"
+                                                                            r={radius}
+                                                                            stroke="#F3F4F6"
+                                                                            strokeWidth="3.2"
+                                                                            fill="transparent"
+                                                                        />
+                                                                        <circle
+                                                                            cx="18"
+                                                                            cy="18"
+                                                                            r={radius}
+                                                                            stroke={subStrokeColor}
+                                                                            strokeWidth="3.2"
+                                                                            strokeDasharray={circumference}
+                                                                            strokeDashoffset={strokeDashoffset}
+                                                                            strokeLinecap="round"
+                                                                            fill="transparent"
+                                                                            className="transition-all duration-700 ease-out"
+                                                                        />
+                                                                    </svg>
+                                                                    <span className="absolute text-[10px] font-bold text-gray-700">
+                                                                        {subPct}%
+                                                                    </span>
                                                                 </div>
-
-                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200/60 shadow-2xs">
-                                                                    {subjectCount}
-                                                                </span>
-                                                                {isInactive && (
-                                                                    <Lock className="h-3.5 w-3.5 text-gray-400 shrink-0" title="Locked for students" />
-                                                                )}
                                                             </div>
-                                                        </div>
 
-                                                        {sub.description?.trim() && (
-                                                            <p className="text-xs leading-relaxed text-[#8c8c8c] line-clamp-3 group-hover:line-clamp-none overflow-y-auto custom-scrollbar mt-1.5">
+                                                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500 border border-gray-200/60 shadow-2xs">
+                                                                {subjectCount}
+                                                            </span>
+                                                            {isInactive && (
+                                                                <Lock className="h-3.5 w-3.5 text-gray-400 shrink-0" title="Locked for students" />
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Middle: Subject Description (Completely hidden until hovered) */}
+                                                    {sub.description?.trim() && (
+                                                        <div className="subcard-desc flex-1 overflow-hidden min-h-0 my-2">
+                                                            <p className="text-xs leading-relaxed text-[#8c8c8c] line-clamp-4 group-hover:line-clamp-none overflow-y-auto custom-scrollbar h-full">
                                                                 {sub.description}
                                                             </p>
-                                                        )}
-                                                    </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Bottom: Transferred Progress Bar & Words (Transferred to bottom when expanded) */}
+                                                    {sub.description?.trim() && (
+                                                        <div className="subcard-desc pt-2.5 mt-auto border-t border-gray-100/90 shrink-0 flex items-center justify-between">
+                                                            <div className="flex items-center gap-2.5">
+                                                                {/* Circular Progress Bar */}
+                                                                <div className="relative size-10 flex items-center justify-center shrink-0">
+                                                                    <svg className="size-full -rotate-90" viewBox="0 0 36 36">
+                                                                        <circle
+                                                                            cx="18"
+                                                                            cy="18"
+                                                                            r={radius}
+                                                                            stroke="#F3F4F6"
+                                                                            strokeWidth="3.2"
+                                                                            fill="transparent"
+                                                                        />
+                                                                        <circle
+                                                                            cx="18"
+                                                                            cy="18"
+                                                                            r={radius}
+                                                                            stroke={subStrokeColor}
+                                                                            strokeWidth="3.2"
+                                                                            strokeDasharray={circumference}
+                                                                            strokeDashoffset={strokeDashoffset}
+                                                                            strokeLinecap="round"
+                                                                            fill="transparent"
+                                                                            className="transition-all duration-700 ease-out"
+                                                                        />
+                                                                    </svg>
+                                                                    <span className="absolute text-[10px] font-bold text-gray-700">
+                                                                        {subPct}%
+                                                                    </span>
+                                                                </div>
+                                                                {/* Words */}
+                                                                <div className="text-left">
+                                                                    <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider block leading-none">
+                                                                        Progress
+                                                                    </span>
+                                                                    <span className="text-[9px] text-gray-400 block mt-1 leading-none font-medium">
+                                                                        {subCompletedItems}/{subTotalItems} done
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            {isInactive && (
+                                                                <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
+                                                                    Locked
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         )

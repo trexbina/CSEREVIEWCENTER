@@ -372,13 +372,25 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transform: translateY(calc(100% - 76px));
+  transform: translateY(calc(100% - 64px));
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
 }
 
 .group:hover .subcard-overlay {
   transform: translateY(0%);
+}
+
+/* Subcard description: completely hidden until hovered */
+.subcard-desc {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease 0.05s, visibility 0.25s ease 0.05s;
+}
+
+.group:hover .subcard-desc {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Compact overlay for cards with NO description */

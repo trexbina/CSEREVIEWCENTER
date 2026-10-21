@@ -389,7 +389,7 @@ export default function TeacherModulesPage() {
                                                             </div>
                                                         </div>
                                                         {sub.description?.trim() && (
-                                                            <p className="text-xs leading-relaxed text-[#8c8c8c] line-clamp-3 group-hover:line-clamp-none overflow-y-auto custom-scrollbar">
+                                                            <p className="subcard-desc text-xs leading-relaxed text-[#8c8c8c] line-clamp-3 group-hover:line-clamp-none overflow-y-auto custom-scrollbar">
                                                                 {sub.description}
                                                             </p>
                                                         )}

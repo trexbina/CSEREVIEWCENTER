@@ -414,6 +414,7 @@ export async function GET(request) {
       rawSessionsRes,
       quizSubsRes,
       activitiesRes,
+      subjectProgressRes,
     ] = await Promise.all([
       // 1. Pre-aggregated stats for date window
       pool.query(

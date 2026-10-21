@@ -372,7 +372,25 @@ export default function StudentSubjectsPage() {
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                     {paginatedSubcategories.map((sub) => {
                                         const isInactive = sub.status === 'inactive'
-                                        const subjectCount = sub.subject_count ?? subjects.filter(s => s.subcategory_id === sub.id).length
+                                        const subModules = subjects.filter(s => s.subcategory_id === sub.id)
+                                        const subjectCount = sub.subject_count ?? subModules.length
+                                        const subTotalItems = subModules.reduce((acc, m) => acc + (m.totalItems || (m.totalLessons || 0) + (m.totalQuizzes || 0)), 0)
+                                        const subCompletedItems = subModules.reduce((acc, m) => acc + (m.completedItems ?? (m.openedLessons || 0)), 0)
+                                        const subPct = subTotalItems > 0 
+                                            ? Math.min(100, Math.round((subCompletedItems / subTotalItems) * 100))
+                                            : (subCompletedItems > 0 ? 100 : 0)
+
+                                        const radius = 15
+                                        const circumference = 2 * Math.PI * radius
+                                        const strokeDashoffset = circumference - (subPct / 100) * circumference
+                                        const subStrokeColor = subPct >= 100 
+                                            ? "#10B981" 
+                                            : subPct >= 60 
+                                            ? "#F59E0B" 
+                                            : subPct > 0 
+                                            ? "#4B5563" 
+                                            : "#E5E7EB"
+
                                         return (
                                             <div
                                                 key={sub.id}
@@ -389,10 +407,52 @@ export default function StudentSubjectsPage() {
                                                     {isInactive && <div className="absolute inset-0 bg-black/10" />}
                                                 </div>
 
+                                                {/* Top-Right Circular Progress Indicator (matching Modules card design) */}
+                                                <div 
+                                                    className="absolute top-2.5 right-2.5 z-10 bg-white/95 backdrop-blur-sm rounded-xl px-2 py-1.5 shadow-sm border border-black/5 flex items-center gap-2 pointer-events-none"
+                                                    title={`Progress: ${subPct}% (${subCompletedItems} of ${subTotalItems} completed)`}
+                                                >
+                                                    <div className="relative size-8 flex items-center justify-center shrink-0">
+                                                        <svg className="size-full -rotate-90" viewBox="0 0 36 36">
+                                                            <circle
+                                                                cx="18"
+                                                                cy="18"
+                                                                r={radius}
+                                                                stroke="#F3F4F6"
+                                                                strokeWidth="3"
+                                                                fill="transparent"
+                                                            />
+                                                            <circle
+                                                                cx="18"
+                                                                cy="18"
+                                                                r={radius}
+                                                                stroke={subStrokeColor}
+                                                                strokeWidth="3"
+                                                                strokeDasharray={circumference}
+                                                                strokeDashoffset={strokeDashoffset}
+                                                                strokeLinecap="round"
+                                                                fill="transparent"
+                                                                className="transition-all duration-700 ease-out"
+                                                            />
+                                                        </svg>
+                                                        <span className="absolute text-[8px] font-bold text-gray-700">
+                                                            {subPct}%
+                                                        </span>
+                                                    </div>
+                                                    <div className="hidden sm:block text-left">
+                                                        <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider block leading-none">
+                                                            Progress
+                                                        </span>
+                                                        <span className="text-[8px] text-gray-400 block mt-0.5 leading-none">
+                                                            {subCompletedItems}/{subTotalItems} done
+                                                        </span>
+                                                    </div>
+                                                </div>
+
                                                 {/* Sliding White Info Overlay */}
                                                 <div className={sub.description?.trim() ? "subcard-overlay" : "subcard-overlay-compact"}>
                                                     <div className="overflow-hidden flex-1 flex flex-col justify-start">
-                                                        <div className="flex items-start justify-between gap-2 mb-1.5 shrink-0">
+                                                        <div className="flex items-start justify-between gap-2 mb-1 shrink-0">
                                                             <span className="block text-xs sm:text-[13px] font-bold tracking-wider text-[#4d4d4d] uppercase flex-1 leading-snug break-words line-clamp-2 group-hover:line-clamp-none">
                                                                 {sub.name}
                                                             </span>
@@ -405,8 +465,19 @@ export default function StudentSubjectsPage() {
                                                                 )}
                                                             </div>
                                                         </div>
+
+                                                        {/* Horizontal Progress Bar */}
+                                                        <div className="w-full mt-1 pt-1 border-t border-gray-100/80">
+                                                            <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="h-full bg-[#10B981] rounded-full transition-all duration-500"
+                                                                    style={{ width: `${subPct}%` }}
+                                                                />
+                                                            </div>
+                                                        </div>
+
                                                         {sub.description?.trim() && (
-                                                            <p className="text-xs leading-relaxed text-[#8c8c8c] line-clamp-3 group-hover:line-clamp-none overflow-y-auto custom-scrollbar">
+                                                            <p className="text-xs leading-relaxed text-[#8c8c8c] line-clamp-3 group-hover:line-clamp-none overflow-y-auto custom-scrollbar mt-1.5">
                                                                 {sub.description}
                                                             </p>
                                                         )}
@@ -585,6 +656,8 @@ export default function StudentSubjectsPage() {
                                                                     <div className="flex items-center gap-4 shrink-0 pt-0.5">
                                                                         {/* Circular Progress Indicator */}
                                                                         {(() => {
+                                                                            const total = subject.totalItems ?? ((subject.totalLessons || 0) + (subject.totalQuizzes || 0))
+                                                                            const completed = subject.completedItems ?? (subject.openedLessons || 0)
                                                                             const pct = Math.min(100, Math.max(0, subject.progressPct ?? 0))
                                                                             const radius = 15
                                                                             const circumference = 2 * Math.PI * radius
@@ -598,7 +671,7 @@ export default function StudentSubjectsPage() {
                                                                                 : "#E5E7EB"
 
                                                                             return (
-                                                                                <div className="flex items-center gap-2.5" title={`Progress: ${pct}% (${subject.openedLessons ?? 0} of ${subject.totalLessons ?? 0} lessons opened)`}>
+                                                                                <div className="flex items-center gap-2.5" title={`Progress: ${pct}% (${completed} of ${total} finished)`}>
                                                                                     <div className="relative size-10 flex items-center justify-center shrink-0">
                                                                                         <svg className="size-full -rotate-90" viewBox="0 0 36 36">
                                                                                             <circle
@@ -631,7 +704,7 @@ export default function StudentSubjectsPage() {
                                                                                             Progress
                                                                                         </span>
                                                                                         <span className="text-[9px] text-gray-400 block mt-1 leading-none">
-                                                                                            {subject.openedLessons ?? 0}/{subject.totalLessons ?? 0} lessons
+                                                                                            {completed}/{total} done
                                                                                         </span>
                                                                                     </div>
                                                                                 </div>
@@ -640,20 +713,31 @@ export default function StudentSubjectsPage() {
 
                                                                         {/* Circular Mastery Indicator */}
                                                                         {(() => {
-                                                                            const pct = Math.min(100, Math.max(0, subject.masteryPct ?? 0))
+                                                                            const hasAttempts = subject.hasQuizAttempts ?? (subject.completedQuizzes ?? 0) > 0
+                                                                            const pct = hasAttempts ? Math.min(100, Math.max(0, subject.masteryPct ?? 0)) : 0
                                                                             const radius = 15
                                                                             const circumference = 2 * Math.PI * radius
                                                                             const strokeDashoffset = circumference - (pct / 100) * circumference
-                                                                            const strokeColor = pct >= 80 
+                                                                            const strokeColor = !hasAttempts
+                                                                                ? "#E5E7EB"
+                                                                                : pct >= 80 
                                                                                 ? "#10B981" 
                                                                                 : pct >= 60 
                                                                                 ? "#F59E0B" 
                                                                                 : pct > 0 
-                                                                                ? "#4B5563" 
+                                                                                ? "#EF4444" 
                                                                                 : "#E5E7EB"
 
+                                                                            const masteryLabel = !hasAttempts 
+                                                                                ? "Not assessed" 
+                                                                                : pct >= 80 
+                                                                                ? "Proficient" 
+                                                                                : pct >= 60 
+                                                                                ? "Developing" 
+                                                                                : "Needs Review"
+
                                                                             return (
-                                                                                <div className="flex items-center gap-2.5" title={`Mastery: ${pct}% (${pct >= 75 ? "Proficient" : pct > 0 ? "Developing" : "Not assessed"})`}>
+                                                                                <div className="flex items-center gap-2.5" title={`Mastery: ${hasAttempts ? `${pct}% (${masteryLabel})` : "Not assessed yet"}`}>
                                                                                     <div className="relative size-10 flex items-center justify-center shrink-0">
                                                                                         <svg className="size-full -rotate-90" viewBox="0 0 36 36">
                                                                                             <circle
@@ -671,22 +755,24 @@ export default function StudentSubjectsPage() {
                                                                                                 stroke={strokeColor}
                                                                                                 strokeWidth="3"
                                                                                                 strokeDasharray={circumference}
-                                                                                                strokeDashoffset={strokeDashoffset}
+                                                                                                strokeDashoffset={hasAttempts ? strokeDashoffset : circumference}
                                                                                                 strokeLinecap="round"
                                                                                                 fill="transparent"
                                                                                                 className="transition-all duration-700 ease-out"
                                                                                             />
                                                                                         </svg>
                                                                                         <span className="absolute text-[9px] font-bold text-gray-700">
-                                                                                            {pct}%
+                                                                                            {hasAttempts ? `${pct}%` : "0%"}
                                                                                         </span>
                                                                                     </div>
                                                                                     <div className="hidden sm:block text-left">
                                                                                         <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block leading-none">
                                                                                             Mastery
                                                                                         </span>
-                                                                                        <span className="text-[9px] text-gray-400 block mt-1 leading-none">
-                                                                                            {pct >= 75 ? "Proficient" : pct > 0 ? "Developing" : "Not assessed"}
+                                                                                        <span className={`text-[9px] block mt-1 leading-none font-medium ${
+                                                                                            !hasAttempts ? "text-gray-400" : pct >= 80 ? "text-emerald-600" : pct >= 60 ? "text-amber-600" : "text-rose-500"
+                                                                                        }`}>
+                                                                                            {masteryLabel}
                                                                                         </span>
                                                                                     </div>
                                                                                 </div>

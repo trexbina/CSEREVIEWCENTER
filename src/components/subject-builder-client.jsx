@@ -200,7 +200,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                         body: JSON.stringify({
                             activityType: 'module_complete',
                             title: `Completed Study Module: ${currentLessonTitle || 'Module'}`,
-                            details: `Subject: ${subject.name || subject.title || 'Subject'}`,
+                            details: `LessonID: ${lessonId} | SubjectID: ${subject.id} | Subject: ${subject.name || subject.title || 'Subject'}`,
                             status: 'success'
                         })
                     }).catch(err => console.error("Scroll completion log error:", err))

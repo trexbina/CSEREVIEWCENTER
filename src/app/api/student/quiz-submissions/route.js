@@ -90,7 +90,7 @@ export async function POST(request) {
       const actTitle = isRetry 
         ? `Retook Quiz: ${lessonTitle} (Attempt #${submission.attempts_count})`
         : `Completed Quiz: ${lessonTitle}`
-      const actDetails = `Score: ${earned}/${total} (${pct}%) · Time taken: ${timeStr}`
+      const actDetails = `LessonID: ${contentId} | Score: ${earned}/${total} (${pct}%) · Time taken: ${timeStr}`
       const actStatus = pct >= 75 ? "success" : "warning"
 
       await pool.query(

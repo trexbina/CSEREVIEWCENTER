@@ -201,7 +201,10 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
   useEffect(() => {
     if (user.role === 'student' && user.id) {
       setLoadingAnalytics(true)
-      fetch(`/api/users/${user.id}/analytics`)
+      fetch(`/api/users/${user.id}/analytics?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache, no-store" },
+      })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.success) {
@@ -738,15 +741,95 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                   })
                 }
 
-                const competencies =
+                const rawCompetencies =
                   analyticsData?.competencies && analyticsData.competencies.length > 0
                     ? analyticsData.competencies
                     : defaultCompetencies
 
-                const readinessPct = Math.min(100, Math.max(0, readiness.percentage || 0))
+                // Filter competencies strictly: only include competencies matching the student's program and major
+                const competencies = rawCompetencies.filter((comp) => {
+                  const compNameLower = (comp.name || "").toLowerCase().trim()
+                  // Always keep core Gen Ed and Prof Ed
+                  if (compNameLower.includes("general") || compNameLower.includes("gen ed")) return true
+                  if (compNameLower.includes("prof")) return true
+
+                  // If student has a major (e.g. English)
+                  if (majorName && majorName !== "—") {
+                    const mLower = majorName.toLowerCase().trim()
+                    // Match own specialization / major
+                    if (compNameLower.includes(mLower)) return true
+                    // Block other known major names
+                    const otherMajorNames = [
+                      "filipino",
+                      "mathematics",
+                      "math",
+                      "biological",
+                      "biology",
+                      "physical science",
+                      "values education",
+                      "values",
+                      "social studies",
+                      "social science",
+                      "mapeh",
+                      "agriculture",
+                      "fishery",
+                      "technology",
+                      "livelihood",
+                      "tle",
+                    ].filter((m) => !mLower.includes(m) && !m.includes(mLower))
+
+                    if (otherMajorNames.some((om) => compNameLower.includes(om))) {
+                      return false
+                    }
+
+                    // Otherwise if it's specialization/major without conflicting with another major
+                    return compNameLower.includes("specializ") || compNameLower.includes("major")
+                  }
+
+                  // If student has no major (e.g. BEEd, BSNEd), exclude all specializations & other majors
+                  return false
+                })
+
+                // Recalculate readiness percentage based on the active, filtered competencies
+                const computedPct =
+                  competencies.length > 0
+                    ? Math.round(
+                        competencies.reduce((acc, c) => acc + (c.score || 0), 0) /
+                          competencies.length
+                      )
+                    : (readiness.percentage || 0)
+                const readinessPct = Math.min(100, Math.max(0, computedPct))
                 const radius = 40
                 const circumference = 2 * Math.PI * radius
                 const strokeOffset = circumference * (1 - readinessPct / 100)
+
+                let ratingLabel = readiness.ratingLabel || "FOR MONITORING"
+                let badgeClass =
+                  readiness.badgeClass ||
+                  "bg-amber-500/10 text-amber-600 border border-amber-500/25"
+                let donutColor = readiness.donutColor || "#eed48f"
+
+                if (computedPct >= 80) {
+                  ratingLabel = "SUPERIOR / IT PREPARED"
+                  badgeClass =
+                    "bg-emerald-500/10 text-emerald-600 border border-emerald-500/25 dark:text-emerald-400"
+                  donutColor = "#10b981"
+                } else if (computedPct >= 70) {
+                  ratingLabel = "ADEQUATELY PREPARED"
+                  badgeClass =
+                    "bg-blue-500/10 text-blue-600 border border-blue-500/25 dark:text-blue-400"
+                  donutColor = "#3b82f6"
+                } else if (computedPct >= 60) {
+                  ratingLabel = "FOR MONITORING"
+                  badgeClass =
+                    "bg-amber-500/10 text-amber-600 border border-amber-500/25 dark:text-amber-400"
+                  donutColor = "#eed48f"
+                } else {
+                  ratingLabel = "AT RISK / NEEDS REINFORCEMENT"
+                  badgeClass =
+                    "bg-rose-500/10 text-rose-600 border border-rose-500/25 dark:text-rose-400"
+                  donutColor = "#f43f5e"
+                }
 
                 return (
                   <div className="grid gap-8 md:grid-cols-5 items-center">
@@ -770,7 +853,7 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                             cx="50"
                             cy="50"
                             r={radius}
-                            stroke={readiness.donutColor || "#eed48f"}
+                            stroke={donutColor}
                             strokeWidth="8"
                             fill="transparent"
                             strokeDasharray={`${circumference}`}
@@ -790,12 +873,9 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                       </div>
 
                       <span
-                        className={`inline-flex items-center rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-wider transition-colors ${
-                          readiness.badgeClass ||
-                          "bg-amber-500/10 text-amber-600 border border-amber-500/25"
-                        }`}
+                        className={`inline-flex items-center rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-wider transition-colors ${badgeClass}`}
                       >
-                        {readiness.ratingLabel || "FOR MONITORING"}
+                        {ratingLabel}
                       </span>
                     </div>
 

@@ -3,6 +3,9 @@ import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { ADMIN_ROLES } from "@/lib/auth"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 /**
  * GET /api/users/[id]/analytics
  * Dynamically computes a student's:
@@ -98,12 +101,13 @@ function isMatch(targetValue, userValue) {
       programName.toLowerCase().includes("bsed") ||
       Boolean(majorName)
 
-    // 2. Fetch curriculum modules, subjects, and categories
+    // 2. Fetch curriculum modules, subjects, categories, and master majors
     const [
       curriculumRes,
       contentCountsRes,
       completedItemsRes,
       progressTableRes,
+      majorsRes,
     ] = await Promise.all([
       // Modules with subject (subcategory) and category mapping
       pool.query(`
@@ -132,6 +136,8 @@ function isMatch(targetValue, userValue) {
           OR (s.category ILIKE '%social%' AND c.name ILIKE '%social%')
           OR (s.category ILIKE '%mapeh%' AND c.name ILIKE '%mapeh%')
           OR (s.category ILIKE '%agriculture%' AND c.name ILIKE '%agriculture%')
+          OR (s.category ILIKE '%technology%' AND c.name ILIKE '%technology%')
+          OR (s.category ILIKE '%livelihood%' AND c.name ILIKE '%livelihood%')
         )
         WHERE s.status = 'active'
         ORDER BY s.id ASC
@@ -187,7 +193,14 @@ function isMatch(targetValue, userValue) {
         FROM student_subject_progress 
         WHERE student_id = $1
       `, [targetUserId]).catch(() => ({ rows: [] })),
+
+      // Query all known majors from database
+      pool.query(`SELECT name FROM majors`).catch(() => ({ rows: [] })),
     ])
+
+    const allDbMajors = (majorsRes?.rows || [])
+      .map((m) => String(m.name || "").toLowerCase().trim())
+      .filter(Boolean)
 
     // Build lookup maps for modules
     const totalItemsMap = {}
@@ -224,24 +237,35 @@ function isMatch(targetValue, userValue) {
 
       // Safety check: ensure categories targeting other majors are never included
       if (majorName) {
-        const catNameLower = (mod.category_name || "").toLowerCase()
+        const catNameLower = (mod.category_name || "").toLowerCase().trim()
+        const mLower = majorName.toLowerCase().trim()
         const otherKnownMajors = [
+          ...allDbMajors,
           "filipino",
           "mathematics",
+          "math",
           "biological science",
+          "biological",
+          "biology",
           "physical science",
           "values education",
+          "values",
           "social studies",
           "social science",
           "mapeh",
           "agriculture",
+          "fishery",
+          "technology and livelihood education",
+          "technology",
+          "livelihood",
+          "tle",
         ].filter(
           (m) =>
-            !majorName.toLowerCase().includes(m) && !m.includes(majorName.toLowerCase())
+            !mLower.includes(m) && !m.includes(mLower)
         )
 
         const matchesOtherMajor = otherKnownMajors.some((om) => catNameLower.includes(om))
-        if (matchesOtherMajor && !catNameLower.includes(majorName.toLowerCase())) {
+        if (matchesOtherMajor && !catNameLower.includes(mLower)) {
           return false
         }
       } else if (!isSecondary) {
@@ -392,20 +416,31 @@ function isMatch(targetValue, userValue) {
       if (sub.categoryTargetMajor && !isMatch(sub.categoryTargetMajor, majorName)) return false
 
       if (majorName) {
-        const catNameLower = (sub.categoryName || "").toLowerCase()
+        const catNameLower = (sub.categoryName || "").toLowerCase().trim()
+        const mLower = majorName.toLowerCase().trim()
         const otherKnownMajors = [
+          ...allDbMajors,
           "filipino",
           "mathematics",
+          "math",
           "biological science",
+          "biological",
+          "biology",
           "physical science",
           "values education",
+          "values",
           "social studies",
           "social science",
           "mapeh",
           "agriculture",
+          "fishery",
+          "technology and livelihood education",
+          "technology",
+          "livelihood",
+          "tle",
         ].filter(
           (m) =>
-            !majorName.toLowerCase().includes(m) && !m.includes(majorName.toLowerCase())
+            !mLower.includes(m) && !m.includes(mLower)
         )
         if (otherKnownMajors.some((om) => catNameLower.includes(om))) {
           return false
@@ -495,31 +530,40 @@ function isMatch(targetValue, userValue) {
       donutColor = "#f43f5e"
     }
 
-    return NextResponse.json({
-      success: true,
-      isStudent: true,
-      userId: targetUserId,
-      studentName: user.name,
-      programName,
-      majorName,
-      isSecondary,
-      readiness: {
-        percentage: overallPercentage,
-        target: 80,
-        ratingLabel,
-        ratingStatus,
-        badgeClass,
-        donutColor,
+    return NextResponse.json(
+      {
+        success: true,
+        isStudent: true,
+        userId: targetUserId,
+        studentName: user.name,
+        programName,
+        majorName,
+        isSecondary,
+        readiness: {
+          percentage: overallPercentage,
+          target: 80,
+          ratingLabel,
+          ratingStatus,
+          badgeClass,
+          donutColor,
+        },
+        competencies: competencyResults,
+        subjectsSummary: subjectsList.map((s) => ({
+          id: s.id,
+          name: s.name,
+          category: s.categoryName,
+          progressPct: s.progressPct,
+          moduleCount: s.moduleCount,
+        })),
       },
-      competencies: competencyResults,
-      subjectsSummary: subjectsList.map((s) => ({
-        id: s.id,
-        name: s.name,
-        category: s.categoryName,
-        progressPct: s.progressPct,
-        moduleCount: s.moduleCount,
-      })),
-    })
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    )
   } catch (error) {
     console.error("Error calculating user profile analytics:", error)
     return NextResponse.json(

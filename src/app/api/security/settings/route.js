@@ -11,20 +11,24 @@ export async function GET() {
     }
 
     const { rows } = await pool.query(
-      `SELECT watermark_enabled, watermark_text, watermark_opacity FROM system_security_settings WHERE id = 1`
+      `SELECT watermark_enabled, watermark_text, watermark_opacity, watermark_size, watermark_count FROM system_security_settings WHERE id = 1`
     ).catch(() => ({ rows: [] }))
 
     const config = rows[0] || {
       watermark_enabled: true,
       watermark_text: "{name} - {email}",
-      watermark_opacity: 15
+      watermark_opacity: 15,
+      watermark_size: "medium",
+      watermark_count: 1
     }
 
     return NextResponse.json({
       watermark: {
         enabled: config.watermark_enabled ?? true,
         template: config.watermark_text || "{name} - {email}",
-        opacity: (config.watermark_opacity ?? 15) / 100
+        opacity: (config.watermark_opacity ?? 15) / 100,
+        size: config.watermark_size || "medium",
+        count: Math.min(3, Math.max(1, parseInt(config.watermark_count, 10) || 1))
       },
       user: {
         name: session.name || "Student",
@@ -37,7 +41,9 @@ export async function GET() {
       watermark: {
         enabled: true,
         template: "{name} - {email}",
-        opacity: 0.15
+        opacity: 0.15,
+        size: "medium",
+        count: 1
       }
     })
   }

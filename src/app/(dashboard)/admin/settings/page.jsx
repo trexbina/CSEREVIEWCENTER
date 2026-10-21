@@ -34,7 +34,9 @@ export default function SystemSettingsPage() {
         audit_logging_enabled: true,
         watermark_enabled: true,
         watermark_text: "{name} - {email}",
-        watermark_opacity: 15
+        watermark_opacity: 15,
+        watermark_size: "medium",
+        watermark_count: 1
     })
     const [auditLogs, setAuditLogs] = useState([])
     const [sessions, setSessions] = useState([])
@@ -59,7 +61,9 @@ export default function SystemSettingsPage() {
     const [activeModal, setActiveModal] = useState(null) // 'sessions' | 'logs' | 'watermark' | null
     const [watermarkForm, setWatermarkForm] = useState({
         watermark_text: "{name} - {email}",
-        watermark_opacity: 15
+        watermark_opacity: 15,
+        watermark_size: "medium",
+        watermark_count: 1
     })
 
     // Fetch initial security data
@@ -76,7 +80,9 @@ export default function SystemSettingsPage() {
                         setSettings(data.settings)
                         setWatermarkForm({
                             watermark_text: data.settings.watermark_text || "{name} - {email}",
-                            watermark_opacity: data.settings.watermark_opacity ?? 15
+                            watermark_opacity: data.settings.watermark_opacity ?? 15,
+                            watermark_size: data.settings.watermark_size || "medium",
+                            watermark_count: data.settings.watermark_count ?? 1
                         })
                     }
                     if (data.logs) setAuditLogs(data.logs)
@@ -465,15 +471,29 @@ export default function SystemSettingsPage() {
                                     <p className="text-xs text-muted-foreground leading-relaxed">
                                         Adds the student&apos;s name on handouts and reviewer files to prevent unauthorized leaks.
                                     </p>
-                                    <div className="pt-1 text-[11px] text-muted-foreground truncate">
-                                        Format: <code className="text-xs">{settings.watermark_text || "{name} - {email}"}</code> ({settings.watermark_opacity ?? 15}% opacity)
+                                    <div className="pt-1 text-[11px] text-muted-foreground flex flex-wrap items-center gap-1.5">
+                                        <span className="truncate">Format: <code className="text-xs">{settings.watermark_text || "{name} - {email}"}</code></span>
+                                        <span className="text-muted-foreground/40">•</span>
+                                        <span>{settings.watermark_opacity ?? 15}% opacity</span>
+                                        <span className="text-muted-foreground/40">•</span>
+                                        <span className="capitalize">{settings.watermark_size || "medium"} size</span>
+                                        <span className="text-muted-foreground/40">•</span>
+                                        <span>{settings.watermark_count || 1} {(settings.watermark_count || 1) === 1 ? "stamp" : "stamps"}</span>
                                     </div>
                                 </div>
 
                                 <div className="pt-2.5 flex items-center justify-end border-t border-border/60">
                                     <button
                                         type="button"
-                                        onClick={() => setActiveModal("watermark")}
+                                        onClick={() => {
+                                            setWatermarkForm({
+                                                watermark_text: settings.watermark_text || "{name} - {email}",
+                                                watermark_opacity: settings.watermark_opacity ?? 15,
+                                                watermark_size: settings.watermark_size || "medium",
+                                                watermark_count: settings.watermark_count ?? 1
+                                            })
+                                            setActiveModal("watermark")
+                                        }}
                                         className="text-xs font-semibold text-foreground hover:underline cursor-pointer"
                                     >
                                         Configure
@@ -902,16 +922,114 @@ export default function SystemSettingsPage() {
                                 />
                             </div>
 
+                            {/* Watermark Size Selection (Max 3) */}
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between text-xs">
+                                    <label className="font-semibold text-foreground">Size of Watermark</label>
+                                    <span className="text-muted-foreground text-[11px] capitalize">{watermarkForm.watermark_size || "medium"}</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { id: "small", label: "Small", sub: "Discreet" },
+                                        { id: "medium", label: "Medium", sub: "Standard" },
+                                        { id: "large", label: "Large", sub: "Prominent" }
+                                    ].map((opt) => {
+                                        const isSelected = (watermarkForm.watermark_size || "medium") === opt.id
+                                        return (
+                                            <button
+                                                key={opt.id}
+                                                type="button"
+                                                onClick={() => setWatermarkForm(prev => ({ ...prev, watermark_size: opt.id }))}
+                                                className={`py-2 px-2.5 text-center rounded-xl border transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                                                    isSelected
+                                                        ? "bg-[#E9C46A]/20 border-[#E9C46A] text-foreground font-bold shadow-xs ring-1 ring-[#E9C46A]/50"
+                                                        : "bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                                                }`}
+                                            >
+                                                <span className="text-xs font-semibold">{opt.label}</span>
+                                                <span className="text-[10px] opacity-75">{opt.sub}</span>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Number of Watermarks Selection (Max 3) */}
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between text-xs">
+                                    <label className="font-semibold text-foreground">Number of Watermarks</label>
+                                    <span className="text-muted-foreground text-[11px] font-medium">
+                                        {watermarkForm.watermark_count || 1} {(watermarkForm.watermark_count || 1) === 1 ? "stamp" : "stamps"} (Max 3)
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { count: 1, label: "1 Stamp", sub: "Center" },
+                                        { count: 2, label: "2 Stamps", sub: "Dual diagonal" },
+                                        { count: 3, label: "3 Stamps", sub: "Full coverage" }
+                                    ].map((opt) => {
+                                        const isSelected = (watermarkForm.watermark_count || 1) === opt.count
+                                        return (
+                                            <button
+                                                key={opt.count}
+                                                type="button"
+                                                onClick={() => setWatermarkForm(prev => ({ ...prev, watermark_count: opt.count }))}
+                                                className={`py-2 px-2.5 text-center rounded-xl border transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                                                    isSelected
+                                                        ? "bg-[#E9C46A]/20 border-[#E9C46A] text-foreground font-bold shadow-xs ring-1 ring-[#E9C46A]/50"
+                                                        : "bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                                                }`}
+                                            >
+                                                <span className="text-xs font-semibold">{opt.label}</span>
+                                                <span className="text-[10px] opacity-75">{opt.sub}</span>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
                             {/* Live Minimal Preview Box */}
-                            <div className="rounded-xl border border-border/80 bg-background/50 p-4 relative overflow-hidden h-20 flex items-center justify-center text-center">
-                                <span className="text-xs text-muted-foreground pointer-events-none select-none">
-                                    [ Sample Study Material Content ]
-                                </span>
-                                <div
-                                    className="absolute inset-0 flex items-center justify-center pointer-events-none select-none text-foreground font-black tracking-widest text-xs uppercase -rotate-12"
-                                    style={{ opacity: watermarkForm.watermark_opacity / 100 }}
-                                >
-                                    {watermarkForm.watermark_text.replace("{name}", "Juan Dela Cruz").replace("{email}", "juan@gmail.com").replace("{date}", "2026-08-26")}
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-[11px] text-muted-foreground">
+                                    <span>Live Preview</span>
+                                    <span>{watermarkForm.watermark_count || 1}x {watermarkForm.watermark_size || "medium"}</span>
+                                </div>
+                                <div className="rounded-xl border border-border/80 bg-background/50 p-4 relative overflow-hidden h-28 flex items-center justify-center text-center">
+                                    <span className="text-xs text-muted-foreground pointer-events-none select-none">
+                                        [ Sample Study Material Content ]
+                                    </span>
+                                    {Array.from({ length: watermarkForm.watermark_count || 1 }).map((_, idx) => {
+                                        const count = watermarkForm.watermark_count || 1
+                                        const topPos =
+                                            count === 1 ? "50%" :
+                                            count === 2 ? (idx === 0 ? "26%" : "74%") :
+                                            (idx === 0 ? "18%" : idx === 1 ? "50%" : "82%")
+
+                                        const fontClass =
+                                            watermarkForm.watermark_size === "small"
+                                                ? "text-[9px] font-semibold tracking-wide"
+                                                : watermarkForm.watermark_size === "large"
+                                                ? "text-[13px] font-black tracking-widest"
+                                                : "text-[11px] font-bold tracking-wider"
+
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className="absolute inset-x-0 flex items-center justify-center pointer-events-none select-none -translate-y-1/2"
+                                                style={{ top: topPos }}
+                                            >
+                                                <div
+                                                    className={`text-foreground uppercase -rotate-12 ${fontClass}`}
+                                                    style={{ opacity: watermarkForm.watermark_opacity / 100 }}
+                                                >
+                                                    {watermarkForm.watermark_text
+                                                        .replace("{name}", "Juan Dela Cruz")
+                                                        .replace("{email}", "juan@gmail.com")
+                                                        .replace("{date}", "2026-08-26")}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
                                 </div>
                             </div>
 

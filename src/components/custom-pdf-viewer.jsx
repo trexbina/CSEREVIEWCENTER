@@ -23,6 +23,8 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
         enabled: true,
         template: "{name} - {email}",
         opacity: 0.15,
+        size: "medium",
+        count: 1,
         userEmail: ""
     })
     const qualityTier = 1 // Default High Quality Tier
@@ -39,6 +41,8 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
                         enabled: data.watermark.enabled ?? true,
                         template: data.watermark.template || "{name} - {email}",
                         opacity: data.watermark.opacity ?? 0.15,
+                        size: data.watermark.size || "medium",
+                        count: Math.min(3, Math.max(1, parseInt(data.watermark.count, 10) || 1)),
                         userEmail: data.user?.email || ""
                     })
                 }
@@ -268,14 +272,39 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
                                     />
 
                                     <div className="pointer-events-none absolute inset-0 overflow-hidden select-none z-10">
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <div
-                                                className="rotate-[-22deg] whitespace-nowrap text-center text-[clamp(18px,2.2vw,32px)] font-semibold tracking-[0.18em] uppercase"
-                                                style={{ color: "#111111", opacity: watermarkOpacity }}
-                                            >
-                                                {watermarkText}
-                                            </div>
-                                        </div>
+                                        {Array.from({ length: watermarkConfig.count || 1 }).map((_, stampIdx) => {
+                                            const totalCount = watermarkConfig.count || 1
+                                            const topPercent =
+                                                totalCount === 1 ? "50%" :
+                                                totalCount === 2 ? (stampIdx === 0 ? "28%" : "72%") :
+                                                (stampIdx === 0 ? "20%" : stampIdx === 1 ? "50%" : "80%")
+
+                                            const fontSizeClamped =
+                                                watermarkConfig.size === "small"
+                                                    ? "clamp(13px, 1.4vw, 20px)"
+                                                    : watermarkConfig.size === "large"
+                                                    ? "clamp(24px, 3.2vw, 44px)"
+                                                    : "clamp(18px, 2.2vw, 32px)"
+
+                                            return (
+                                                <div
+                                                    key={stampIdx}
+                                                    className="absolute inset-x-0 flex items-center justify-center -translate-y-1/2"
+                                                    style={{ top: topPercent }}
+                                                >
+                                                    <div
+                                                        className="rotate-[-22deg] whitespace-nowrap text-center font-semibold tracking-[0.18em] uppercase select-none"
+                                                        style={{
+                                                            color: "#111111",
+                                                            opacity: watermarkOpacity,
+                                                            fontSize: fontSizeClamped
+                                                        }}
+                                                    >
+                                                        {watermarkText}
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
                                     </div>
                                 </div>
                             ))}

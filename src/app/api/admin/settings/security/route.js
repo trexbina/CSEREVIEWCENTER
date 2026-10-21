@@ -14,11 +14,16 @@ async function ensureTables() {
       watermark_enabled BOOLEAN DEFAULT true,
       watermark_text VARCHAR(100) DEFAULT '{name} - {email}',
       watermark_opacity INT DEFAULT 15,
+      watermark_size VARCHAR(20) DEFAULT 'medium',
+      watermark_count INT DEFAULT 1,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    INSERT INTO system_security_settings (id, single_session_enabled, audit_logging_enabled, watermark_enabled, watermark_text, watermark_opacity)
-    VALUES (1, true, true, true, '{name} - {email}', 15)
+    ALTER TABLE system_security_settings ADD COLUMN IF NOT EXISTS watermark_size VARCHAR(20) DEFAULT 'medium';
+    ALTER TABLE system_security_settings ADD COLUMN IF NOT EXISTS watermark_count INT DEFAULT 1;
+
+    INSERT INTO system_security_settings (id, single_session_enabled, audit_logging_enabled, watermark_enabled, watermark_text, watermark_opacity, watermark_size, watermark_count)
+    VALUES (1, true, true, true, '{name} - {email}', 15, 'medium', 1)
     ON CONFLICT (id) DO NOTHING;
 
     CREATE TABLE IF NOT EXISTS security_audit_logs (
@@ -200,7 +205,7 @@ export async function POST(request) {
     const adminName = adminUserRes.rows[0]?.name || session.email || "Admin"
 
     if (body.action === "update_settings") {
-      const { single_session_enabled, audit_logging_enabled, watermark_enabled, watermark_text, watermark_opacity } = body
+      const { single_session_enabled, audit_logging_enabled, watermark_enabled, watermark_text, watermark_opacity, watermark_size, watermark_count } = body
       
       await pool.query(`
         UPDATE system_security_settings
@@ -209,9 +214,19 @@ export async function POST(request) {
             watermark_enabled = $3,
             watermark_text = $4,
             watermark_opacity = $5,
+            watermark_size = $6,
+            watermark_count = $7,
             updated_at = NOW()
         WHERE id = 1
-      `, [single_session_enabled, audit_logging_enabled, watermark_enabled, watermark_text || "{name} - {email}", watermark_opacity || 15])
+      `, [
+        single_session_enabled, 
+        audit_logging_enabled, 
+        watermark_enabled, 
+        watermark_text || "{name} - {email}", 
+        watermark_opacity || 15,
+        watermark_size || "medium",
+        Math.min(3, Math.max(1, parseInt(watermark_count, 10) || 1))
+      ])
 
       await pool.query(`
         INSERT INTO security_audit_logs (user_id, user_name, user_role, event_type, description, ip_address, status, created_at)

@@ -57,8 +57,42 @@ export async function GET(request, { params }) {
       })
     }
 
+// Helper to check multi-target match against student attributes (handles 'all', comma-separated, or JSON arrays)
+function isMatch(targetValue, userValue) {
+  if (!targetValue || targetValue === "all") return true
+  let targets = []
+  try {
+    if (typeof targetValue === "string") {
+      const trimmed = targetValue.trim()
+      if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+        targets = JSON.parse(trimmed)
+      } else {
+        targets = trimmed.split(",").map((t) => t.trim())
+      }
+    } else if (Array.isArray(targetValue)) {
+      targets = targetValue
+    } else {
+      targets = [String(targetValue).trim()]
+    }
+  } catch (e) {
+    targets = [String(targetValue).trim()]
+  }
+
+  targets = targets.map((t) => String(t).trim()).filter(Boolean)
+  if (targets.length === 0 || targets.some((t) => t.toLowerCase() === "all")) return true
+
+  if (!userValue || userValue === "—") return false
+
+  const uLower = String(userValue).toLowerCase().trim()
+  return targets.some((t) => {
+    const tLower = t.toLowerCase()
+    return uLower.includes(tLower) || tLower.includes(uLower)
+  })
+}
+
     const programName = user.program_name || ""
     const majorName = user.major_name && user.major_name !== "—" ? user.major_name : ""
+    const examName = user.exam_name || ""
     const isSecondary =
       programName.toLowerCase().includes("secondary") ||
       programName.toLowerCase().includes("bsed") ||
@@ -80,11 +114,25 @@ export async function GET(request, { params }) {
           COALESCE(sc.name, s.title) AS subject_name,
           COALESCE(sc.category_id, s.category_id, c.id) AS category_id,
           COALESCE(c.name, s.category, 'General Education') AS category_name,
+          c.target_course,
           c.target_program,
           c.target_major
         FROM subjects s
         LEFT JOIN subcategories sc ON s.subcategory_id = sc.id
-        LEFT JOIN categories c ON (sc.category_id = c.id OR s.category_id = c.id)
+        LEFT JOIN categories c ON (
+          sc.category_id = c.id 
+          OR s.category_id = c.id 
+          OR LOWER(TRIM(c.name)) = LOWER(TRIM(s.category))
+          OR (s.category ILIKE '%filipino%' AND c.name ILIKE '%filipino%')
+          OR (s.category ILIKE '%mathematics%' AND c.name ILIKE '%mathematics%')
+          OR (s.category ILIKE '%biological%' AND c.name ILIKE '%biological%')
+          OR (s.category ILIKE '%physical science%' AND c.name ILIKE '%physical science%')
+          OR (s.category ILIKE '%values education%' AND c.name ILIKE '%values education%')
+          OR (s.category ILIKE '%english%' AND c.name ILIKE '%english%')
+          OR (s.category ILIKE '%social%' AND c.name ILIKE '%social%')
+          OR (s.category ILIKE '%mapeh%' AND c.name ILIKE '%mapeh%')
+          OR (s.category ILIKE '%agriculture%' AND c.name ILIKE '%agriculture%')
+        )
         WHERE s.status = 'active'
         ORDER BY s.id ASC
       `).catch(() => ({ rows: [] })),
@@ -165,15 +213,59 @@ export async function GET(request, { params }) {
       }
     })
 
+    // Filter curriculum modules strictly based on the student's exam, program, and major
+    const relevantCurriculumRows = curriculumRes.rows.filter((mod) => {
+      // 1. Course / Exam check
+      if (mod.target_course && !isMatch(mod.target_course, examName)) return false
+      // 2. Program check
+      if (mod.target_program && !isMatch(mod.target_program, programName)) return false
+      // 3. Major check
+      if (mod.target_major && !isMatch(mod.target_major, majorName)) return false
+
+      // Safety check: ensure categories targeting other majors are never included
+      if (majorName) {
+        const catNameLower = (mod.category_name || "").toLowerCase()
+        const otherKnownMajors = [
+          "filipino",
+          "mathematics",
+          "biological science",
+          "physical science",
+          "values education",
+          "social studies",
+          "social science",
+          "mapeh",
+          "agriculture",
+        ].filter(
+          (m) =>
+            !majorName.toLowerCase().includes(m) && !m.includes(majorName.toLowerCase())
+        )
+
+        const matchesOtherMajor = otherKnownMajors.some((om) => catNameLower.includes(om))
+        if (matchesOtherMajor && !catNameLower.includes(majorName.toLowerCase())) {
+          return false
+        }
+      } else if (!isSecondary) {
+        const catNameLower = (mod.category_name || "").toLowerCase()
+        if (catNameLower.includes("specializ") || catNameLower.includes("major")) {
+          return false
+        }
+      }
+
+      return true
+    })
+
     // 3. Roll up modules into Subjects (subcategories)
     const subjectsMap = {}
-    curriculumRes.rows.forEach((mod) => {
+    relevantCurriculumRows.forEach((mod) => {
       const subKey = String(mod.subject_id || `direct_${mod.module_id}`)
       if (!subjectsMap[subKey]) {
         subjectsMap[subKey] = {
           id: subKey,
           name: mod.subject_name || mod.module_title,
           categoryName: mod.category_name || "General Education",
+          categoryTargetCourse: mod.target_course,
+          categoryTargetProgram: mod.target_program,
+          categoryTargetMajor: mod.target_major,
           totalItems: 0,
           completedItems: 0,
           moduleCount: 0,
@@ -230,10 +322,29 @@ export async function GET(request, { params }) {
         key: "specialization",
         name: specLabel,
         color: "bg-amber-500",
-        match: (cat, name) =>
-          cat.includes("specializ") ||
-          cat.includes("major") ||
-          (majorName && (cat.includes(majorName.toLowerCase()) || name.includes(majorName.toLowerCase()))),
+        match: (cat, name) => {
+          if (!majorName) {
+            return cat.includes("specializ") || cat.includes("major")
+          }
+          const mLower = majorName.toLowerCase()
+          return (
+            cat.includes(mLower) ||
+            name.includes(mLower) ||
+            ((cat.includes("specializ") || cat.includes("major")) &&
+              ![
+                "filipino",
+                "mathematics",
+                "biological",
+                "physical",
+                "values",
+                "social",
+                "mapeh",
+                "agriculture",
+              ]
+                .filter((m) => !mLower.includes(m))
+                .some((m) => cat.includes(m) || name.includes(m)))
+          )
+        },
       })
     }
 
@@ -273,7 +384,36 @@ export async function GET(request, { params }) {
     })
 
     // Capture any remaining active categories that didn't match standard LEPT names
-    const remainingSubjects = subjectsList.filter((sub) => !processedSubjectKeys.has(sub.id))
+    // but ONLY if they are valid for this student's exam, program, and major
+    const remainingSubjects = subjectsList.filter((sub) => {
+      if (processedSubjectKeys.has(sub.id)) return false
+      if (sub.categoryTargetCourse && !isMatch(sub.categoryTargetCourse, examName)) return false
+      if (sub.categoryTargetProgram && !isMatch(sub.categoryTargetProgram, programName)) return false
+      if (sub.categoryTargetMajor && !isMatch(sub.categoryTargetMajor, majorName)) return false
+
+      if (majorName) {
+        const catNameLower = (sub.categoryName || "").toLowerCase()
+        const otherKnownMajors = [
+          "filipino",
+          "mathematics",
+          "biological science",
+          "physical science",
+          "values education",
+          "social studies",
+          "social science",
+          "mapeh",
+          "agriculture",
+        ].filter(
+          (m) =>
+            !majorName.toLowerCase().includes(m) && !m.includes(majorName.toLowerCase())
+        )
+        if (otherKnownMajors.some((om) => catNameLower.includes(om))) {
+          return false
+        }
+      }
+      return true
+    })
+
     const extraCategoryMap = {}
 
     remainingSubjects.forEach((sub) => {

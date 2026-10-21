@@ -7,7 +7,8 @@
     "dev:turbo": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "pull:cloud:data": "node scripts/fetch-cloud-data.mjs"
   },
   "dependencies": {
     "@1771technologies/lytenyte-core": "^2.0.1",

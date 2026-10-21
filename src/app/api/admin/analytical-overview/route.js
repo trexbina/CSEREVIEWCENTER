@@ -432,25 +432,40 @@ export async function GET(request) {
         [prevDayDateStr]
       ).catch(() => ({ rows: [] })),
 
-      // 3. Subjects list with category and modules count
+      // 3. Curriculum Subjects list (from subcategories table, reflecting the curriculum manager subjects)
       pool.query(
-        `SELECT s.id, s.title, COALESCE(s.category, c.name, 'General Education') as category_name,
+        `SELECT sc.id, sc.name as title, COALESCE(c.name, 'General Education') as category_name,
                 c.target_course, c.target_program, c.target_major,
-                COUNT(DISTINCT sm.id)::int as modules_count
+                COUNT(DISTINCT s.id)::int as modules_count,
+                COALESCE(ARRAY_AGG(DISTINCT s.id) FILTER (WHERE s.id IS NOT NULL), '{}') as module_ids
+         FROM subcategories sc
+         LEFT JOIN categories c ON sc.category_id = c.id
+         LEFT JOIN subjects s ON s.subcategory_id = sc.id AND s.status = 'active'
+         WHERE sc.status = 'active' OR sc.status IS NULL
+         GROUP BY sc.id, sc.name, c.name, c.target_course, c.target_program, c.target_major
+
+         UNION ALL
+
+         SELECT s.id, s.title, COALESCE(s.category, c.name, 'General Education') as category_name,
+                c.target_course, c.target_program, c.target_major,
+                1::int as modules_count,
+                ARRAY[s.id] as module_ids
          FROM subjects s
          LEFT JOIN categories c ON s.category_id = c.id
-         LEFT JOIN subject_modules sm ON sm.subject_id = s.id
-         WHERE s.status = 'active'
-         GROUP BY s.id, s.title, s.category, c.name, c.target_course, c.target_program, c.target_major
-         ORDER BY s.title ASC`
+         WHERE s.status = 'active' 
+           AND (s.subcategory_id IS NULL OR s.subcategory_id NOT IN (SELECT id FROM subcategories WHERE status = 'active' OR status IS NULL))
+         ORDER BY title ASC`
       ).catch(() => ({ rows: [] })),
 
       // 4. Raw study sessions in date window (for exact hourly distribution & peak concurrent calculation)
       pool.query(
-        `SELECT ss.id, ss.user_id, ss.subject_id, ss.activity_type, ss.session_start, ss.duration_seconds,
-                sub.title as subject_title, COALESCE(sub.category, 'General Education') as category_name
+        `SELECT ss.id, ss.user_id, ss.subject_id, sub.subcategory_id, ss.activity_type, ss.session_start, ss.duration_seconds,
+                COALESCE(sc.name, sub.title) as subject_title,
+                COALESCE(cat.name, sub.category, 'General Education') as category_name
          FROM study_sessions ss
          LEFT JOIN subjects sub ON ss.subject_id = sub.id
+         LEFT JOIN subcategories sc ON sub.subcategory_id = sc.id
+         LEFT JOIN categories cat ON sc.category_id = cat.id OR sub.category_id = cat.id
          WHERE ss.session_start >= ($1::date) 
            AND ss.session_start < (($2::date) + INTERVAL '1 day')
          ORDER BY ss.session_start ASC`,
@@ -474,6 +489,12 @@ export async function GET(request) {
            AND sa.created_at < (($2::date) + INTERVAL '1 day')`,
         [startDateStr, endDateStr]
       ).catch(() => ({ rows: [] })),
+
+      // 7. Student subject progress for accurate completion calculation
+      pool.query(
+        `SELECT ssp.student_id, ssp.subject_id, ssp.progress_pct
+         FROM student_subject_progress ssp`
+      ).catch(() => ({ rows: [] })),
     ])
 
     const dbStatsRows = statsWindowRes.rows || []
@@ -482,6 +503,7 @@ export async function GET(request) {
     const rawSessions = rawSessionsRes.rows || []
     const quizSubs = quizSubsRes.rows || []
     const studentActs = activitiesRes.rows || []
+    const progressRows = subjectProgressRes?.rows || []
 
     // ── Build User Active Metrics Directly from DB ──
     const activeUserIds = new Set()
@@ -696,11 +718,16 @@ export async function GET(request) {
       }
     })
 
-    // ── Tab A: "Subject Performance Breakdown" Table (Directly from subjects & stats) ──
+    // ── Tab A: "Subject Performance Breakdown" Table (Directly from curriculum subjects & aggregated stats) ──
     const subjectBreakdownTable = allSubjects.map((sub) => {
-      // Find actual stats for this subject
-      const subjectStats = dbStatsRows.filter((r) => String(r.subject_id) === String(sub.id))
-      const subjectSessions = rawSessions.filter((s) => String(s.subject_id) === String(sub.id))
+      // Find actual stats for this curriculum subject and its child modules
+      const moduleIdsSet = new Set((sub.module_ids || []).map((id) => String(id)))
+      moduleIdsSet.add(String(sub.id))
+
+      const subjectStats = dbStatsRows.filter((r) => moduleIdsSet.has(String(r.subject_id)))
+      const subjectSessions = rawSessions.filter(
+        (s) => moduleIdsSet.has(String(s.subject_id)) || (s.subcategory_id && String(s.subcategory_id) === String(sub.id))
+      )
 
       const subjectUsers = new Set()
       subjectStats.forEach((r) => subjectUsers.add(r.user_id))
@@ -710,18 +737,28 @@ export async function GET(request) {
         || subjectSessions.reduce((acc, s) => acc + (parseInt(s.duration_seconds, 10) || 0), 0)
 
       const subjectTests = subjectStats.reduce((acc, r) => acc + (parseInt(r.quiz_attempts, 10) || 0), 0)
-        || quizSubs.filter((q) => q.subject_id === sub.id).length
+        || quizSubs.filter((q) => moduleIdsSet.has(String(q.subject_id))).length
 
       const subHours = Math.round((subjectSeconds / 3600) * 10) / 10
       const totalH = Math.floor(subHours)
       const totalM = Math.round((subHours % 1) * 60)
       const avgSessionMins = subjectUsers.size > 0 ? Math.round(subjectSeconds / subjectUsers.size / 60) : 0
-      const completionRate = totalEnrolled > 0 ? Math.min(100, Math.round((subjectUsers.size / totalEnrolled) * 100)) : 0
+
+      // Calculate completion rate from student_subject_progress if available, else from participation
+      const subProgressList = progressRows.filter((p) => moduleIdsSet.has(String(p.subject_id)))
+      let completionRate = 0
+      if (subProgressList.length > 0) {
+        const sumProg = subProgressList.reduce((acc, p) => acc + (parseFloat(p.progress_pct) || 0), 0)
+        completionRate = Math.min(100, Math.round(sumProg / subProgressList.length))
+      } else {
+        completionRate = totalEnrolled > 0 ? Math.min(100, Math.round((subjectUsers.size / totalEnrolled) * 100)) : 0
+      }
 
       return {
         id: sub.id,
         name: sub.title,
         category: sub.category_name || "General Education",
+        modules_count: sub.modules_count || (sub.module_ids ? sub.module_ids.length : 0),
         target_course: sub.target_course || null,
         target_program: sub.target_program || null,
         target_major: sub.target_major || null,

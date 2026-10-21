@@ -165,12 +165,13 @@ export default function AnalyticalOverviewPage() {
     if (!courseKey || courseKey === "all") return true
 
     const cat = (sub.category || "").toLowerCase()
+    const name = (sub.name || "").toLowerCase()
     const targetProg = (sub.target_program || "").toLowerCase()
     const targetCourse = (sub.target_course || "").toLowerCase()
 
     // Core curriculum common to all teacher education candidates
-    const isGenEd = cat.includes("general education") || cat.includes("gen ed")
-    const isProfEd = cat.includes("professional education") || cat.includes("prof ed")
+    const isGenEd = cat.includes("general education") || cat.includes("gen ed") || name.includes("general education")
+    const isProfEd = cat.includes("professional education") || cat.includes("prof ed") || name.includes("professional education")
     const isCoreCommon = isGenEd || isProfEd
 
     // Secondary specializations / majors (BSEd)
@@ -187,12 +188,23 @@ export default function AnalyticalOverviewPage() {
       cat.includes("mathematics") ||
       cat.includes("social science") ||
       cat.includes("social studies") ||
-      cat.includes("values education")
+      cat.includes("science") ||
+      name.includes("physical science") ||
+      name.includes("biological science") ||
+      name.includes("english") ||
+      name.includes("filipino") ||
+      name.includes("mathematics") ||
+      name.includes("social science") ||
+      name.includes("social studies") ||
+      name.includes("science") ||
+      name.includes("values education")
 
     // Elementary Education (BEEd)
     const isElementary =
       cat.includes("elementary") ||
       cat.includes("beed") ||
+      name.includes("elementary") ||
+      name.includes("beed") ||
       targetProg.includes("beed") ||
       targetCourse.includes("beed")
 
@@ -200,6 +212,8 @@ export default function AnalyticalOverviewPage() {
     const isEarlyChildhood =
       cat.includes("early childhood") ||
       cat.includes("beced") ||
+      name.includes("early childhood") ||
+      name.includes("beced") ||
       targetProg.includes("beced") ||
       targetCourse.includes("beced")
 
@@ -207,6 +221,8 @@ export default function AnalyticalOverviewPage() {
     const isSpecialNeeds =
       cat.includes("special needs") ||
       cat.includes("bsned") ||
+      name.includes("special needs") ||
+      name.includes("bsned") ||
       targetProg.includes("bsned") ||
       targetCourse.includes("bsned")
 
@@ -661,8 +677,9 @@ export default function AnalyticalOverviewPage() {
     let csvRows = []
     if (activityTab === "subjects") {
       csvRows.push([
-        "Subject / Module Name",
+        "Curriculum Subject",
         "Category",
+        "Modules Count",
         "Active Reviewees",
         "Total Enrolled",
         "Total Hours Spent",
@@ -677,6 +694,7 @@ export default function AnalyticalOverviewPage() {
         csvRows.push([
           `"${(row.name || "").replace(/"/g, '""')}"`,
           `"${(row.category || "").replace(/"/g, '""')}"`,
+          row.modules_count || 0,
           row.activeReviewees,
           row.totalEnrolled,
           `"${row.totalHoursStr}"`,
@@ -3158,6 +3176,9 @@ export default function AnalyticalOverviewPage() {
                                       </div>
                                       <div className="text-[11px] font-normal text-[#696969] dark:text-gray-400 mt-0.5">
                                         {sub.category || "General"}
+                                        {sub.modules_count !== undefined && sub.modules_count > 0 && (
+                                          <span> • {sub.modules_count} {sub.modules_count === 1 ? "module" : "modules"}</span>
+                                        )}
                                       </div>
                                     </div>
                                   </td>

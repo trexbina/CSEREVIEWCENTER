@@ -1,10 +1,6 @@
 import { SecurityShield } from "@/components/security-shield"
 
 export default function StudentLayout({ children }) {
-  // TEMPORARILY DISABLED: Student screenshot & security shield restrictions
-  return <>{children}</>
-
-  /*
   return (
     <SecurityShield
       blurOnFocusLoss={true}
@@ -14,6 +10,5 @@ export default function StudentLayout({ children }) {
       {children}
     </SecurityShield>
   )
-  */
 }
 

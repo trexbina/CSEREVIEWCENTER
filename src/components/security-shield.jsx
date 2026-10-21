@@ -38,6 +38,9 @@ export function SecurityShield({
 
         /* ──────── 8. Anti-debugging & Instant Frontend Destruction ──────────── */
         const triggerDestructionAndRedirect = () => {
+            if (typeof window !== "undefined" && window.location.pathname === redirectToOnDevTools) {
+                return
+            }
             // Immediate synchronous wipe of child DOM to prevent DevTools inspection/source extraction
             setIsDestroyed(true)
             document.documentElement.classList.add("shield-active")

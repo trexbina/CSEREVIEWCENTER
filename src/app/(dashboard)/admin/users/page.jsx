@@ -34,7 +34,8 @@ async function getAllUsers() {
             b.name AS batch_name,
             b.end_date AS batch_end_date,
             b.start_date AS batch_start_date,
-            e.name AS exam_name
+            e.name AS exam_name,
+            COALESCE(cr.name, u.role) AS role_name
          FROM users u
          LEFT JOIN academic_courses c ON u.academic_course_id = c.id
          LEFT JOIN programs p ON u.program_id = p.id
@@ -42,6 +43,7 @@ async function getAllUsers() {
          LEFT JOIN schools s ON u.school_id = s.id
          LEFT JOIN batches b ON u.batch_id = b.id
          LEFT JOIN examinations e ON u.exam_id = e.id
+         LEFT JOIN custom_roles cr ON cr.role_key = u.role
          ORDER BY u.created_at DESC`
     )
     return result.rows

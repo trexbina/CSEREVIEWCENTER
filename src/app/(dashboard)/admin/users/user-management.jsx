@@ -11,6 +11,18 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { isAdminRole } from "@/lib/auth"
 
+export function getRoleDisplayName(user) {
+  if (!user) return "—"
+  if (user.role_name && user.role_name !== user.role) return user.role_name
+  const r = String(user.role || "").toLowerCase()
+  if (r === "super_admin" || r === "admin") return "Super Admin"
+  if (r === "academic_admin") return "Academic Coord."
+  if (r === "registrar" || r === "registar") return "Registrar"
+  if (r === "teacher" || r === "teachers") return "Instructor"
+  if (r === "student") return "Student"
+  return user.role_name || user.role || "User"
+}
+
 // icons for actions and table headers
 import {
   Pencil, Trash, BookOpen, Plus, X, Save,
@@ -822,14 +834,19 @@ export function UserSearchTable({ users, currentUserId }) {
     let list = users
     if (hasQuery) {
       const q = debouncedQuery.toLowerCase().trim()
-      list = list.filter((u) =>
-        u.name?.toLowerCase().includes(q) ||
-        (u.login_id || "").toLowerCase().includes(q) ||
-        (u.email || "").toLowerCase().includes(q) ||
-        (u.role || "").toLowerCase().includes(q) ||
-        (u.batch_name || "").toLowerCase().includes(q) ||
-        (u.exam_name || "").toLowerCase().includes(q)
-      )
+      list = list.filter((u) => {
+        const roleDisplay = getRoleDisplayName(u).toLowerCase()
+        return (
+          u.name?.toLowerCase().includes(q) ||
+          (u.login_id || "").toLowerCase().includes(q) ||
+          (u.email || "").toLowerCase().includes(q) ||
+          (u.role || "").toLowerCase().includes(q) ||
+          (u.role_name || "").toLowerCase().includes(q) ||
+          roleDisplay.includes(q) ||
+          (u.batch_name || "").toLowerCase().includes(q) ||
+          (u.exam_name || "").toLowerCase().includes(q)
+        )
+      })
     }
     return list
       .sort((a, b) => {
@@ -1035,42 +1052,15 @@ export function UserSearchTable({ users, currentUserId }) {
                       <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{user.login_id || user.email}</td>
                       <td className="px-4 text-sm whitespace-nowrap">
                         {(() => {
-                          const r = user.role
-                          if (r === "super_admin" || r === "admin") {
-                            return (
-                              <span className="font-normal text-[#696969] dark:text-gray-300">
-                                Super Admin
-                              </span>
-                            )
-                          }
-                          if (r === "academic_admin") {
-                            return (
-                              <span className="font-normal text-[#696969] dark:text-gray-300">
-                                Academic Coord.
-                              </span>
-                            )
-                          }
-                          if (r === "registrar") {
-                            return (
-                              <span className="font-normal text-[#696969] dark:text-gray-300">
-                                Registrar
-                              </span>
-                            )
-                          }
-                          if (r === "teacher") {
-                            return (
-                              <span className="font-normal text-[#696969] dark:text-gray-300">
-                                Instructor
-                              </span>
-                            )
-                          }
+                          const roleLabel = getRoleDisplayName(user)
+                          const isStudent = user.role === "student"
                           const isManualDisabled = user.is_active === false
                           return (
                             <div className="flex items-center gap-1.5">
-                              <span className="font-normal capitalize text-[#696969] dark:text-gray-300">
-                                Student
+                              <span className="font-normal text-[#696969] dark:text-gray-300">
+                                {roleLabel}
                               </span>
-                              {isManualDisabled && (
+                              {isStudent && isManualDisabled && (
                                 <span className="text-[11px] px-1.5 py-0.5 rounded border border-border/40 text-[#888888]">
                                   Disabled
                                 </span>
@@ -1103,7 +1093,15 @@ export function UserSearchTable({ users, currentUserId }) {
         <p className="mt-3 text-xs text-[#696969] text-right">
           Showing {filtered.length} of {users.filter((u) => {
             const q = debouncedQuery.toLowerCase().trim()
-            return u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.role?.toLowerCase().includes(q)
+            const roleDisplay = getRoleDisplayName(u).toLowerCase()
+            return (
+              u.name?.toLowerCase().includes(q) ||
+              u.email?.toLowerCase().includes(q) ||
+              (u.login_id || "").toLowerCase().includes(q) ||
+              (u.role || "").toLowerCase().includes(q) ||
+              (u.role_name || "").toLowerCase().includes(q) ||
+              roleDisplay.includes(q)
+            )
           }).length} matching users.{" "}
           <button onClick={() => router.push("/admin/users/all")} className="underline text-[#3B3B3B] dark:text-white hover:text-black font-semibold transition-colors">
             View all {users.length} users →
@@ -1181,18 +1179,22 @@ export function UserTable({ users, currentUserId }) {
         roleFilter === "ALL"
           ? true
           : roleFilter === "admin"
-          ? (u.role === "admin" || u.role === "super_admin" || u.role === "academic_admin" || u.role === "registrar")
+          ? isAdminRole(u.role)
           : u.role === roleFilter
       const matchesExam =
         examFilter === "ALL"
           ? true
           : u.exam_name === examFilter
       const fullName = (u.name || "").toLowerCase()
+      const roleDisplay = getRoleDisplayName(u).toLowerCase()
       const matchesSearch =
         !q ||
         fullName.includes(q) ||
         (u.login_id || "").toLowerCase().includes(q) ||
         (u.email || "").toLowerCase().includes(q) ||
+        (u.role || "").toLowerCase().includes(q) ||
+        (u.role_name || "").toLowerCase().includes(q) ||
+        roleDisplay.includes(q) ||
         (u.academic_course_name || u.course || "").toLowerCase().includes(q) ||
         (u.program_name || "").toLowerCase().includes(q) ||
         (u.major_name || "").toLowerCase().includes(q) ||
@@ -1273,8 +1275,8 @@ export function UserTable({ users, currentUserId }) {
   }
 
   const studentCount = users.filter((u) => u.role === "student").length
-  const teacherCount = users.filter((u) => u.role === "teacher").length
-  const adminCount = users.filter((u) => u.role === "admin" || u.role === "super_admin" || u.role === "academic_admin" || u.role === "registrar").length
+  const teacherCount = users.filter((u) => u.role === "teacher" || u.role === "teachers").length
+  const adminCount = users.filter((u) => isAdminRole(u.role)).length
 
   return (
     <div className="space-y-6">
@@ -1488,42 +1490,14 @@ export function UserTable({ users, currentUserId }) {
                       </td>
                       <td className="px-4 text-sm whitespace-nowrap">
                         {(() => {
-                          const r = user.role
-                          if (r === "super_admin" || r === "admin") {
-                            return (
-                              <span className="font-normal text-[#696969] dark:text-gray-300">
-                                Super Admin
-                              </span>
-                            )
-                          }
-                          if (r === "academic_admin") {
-                            return (
-                              <span className="font-normal text-[#696969] dark:text-gray-300">
-                                Academic Coord.
-                              </span>
-                            )
-                          }
-                          if (r === "registrar") {
-                            return (
-                              <span className="font-normal text-[#696969] dark:text-gray-300">
-                                Registrar
-                              </span>
-                            )
-                          }
-                          if (r === "teacher") {
-                            return (
-                              <span className="font-normal text-[#696969] dark:text-gray-300">
-                                Instructor
-                              </span>
-                            )
-                          }
+                          const roleLabel = getRoleDisplayName(user)
                           const isManualDisabled = user.is_active === false
                           return (
                             <div className="flex items-center gap-1.5">
-                              <span className="font-normal capitalize text-[#696969] dark:text-gray-300">
-                                Student
+                              <span className="font-normal text-[#696969] dark:text-gray-300">
+                                {roleLabel}
                               </span>
-                              {isManualDisabled && (
+                              {isStudent && isManualDisabled && (
                                 <span className="text-[11px] px-1.5 py-0.5 rounded border border-border/40 text-[#888888]">
                                   Disabled
                                 </span>

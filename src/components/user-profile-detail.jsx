@@ -472,11 +472,11 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
               </h1>
               {user.role !== 'student' || showBackBtn ? (
                 <div className="flex justify-center items-center gap-2">
-                  <span className={`inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium uppercase tracking-wider ${user.role === 'admin' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-                    user.role === 'teacher' ? 'bg-teal-50 text-teal-700 border border-teal-100' :
+                  <span className={`inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium uppercase tracking-wider ${isAdminRole(user.role) ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+                    (user.role === 'teacher' || user.role === 'teachers') ? 'bg-teal-50 text-teal-700 border border-teal-100' :
                       'bg-blue-50 text-[#E9C46A] border border-blue-100/80'
                     }`}>
-                    {user.role}
+                    {user.role_name || (user.role === 'registar' ? 'Registrar' : user.role)}
                   </span>
                 </div>
               ) : null}

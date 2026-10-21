@@ -209,15 +209,49 @@ export function DashboardSidebar({ role, permissions, roleName }) {
             for (const item of superAdminNav) {
                 if (item.section) {
                     pendingSection = item
-                } else if (
-                    allowed.includes(item.href) ||
-                    (item.href === "/admin/settings" && allowed.includes("/admin/settings/security"))
-                ) {
-                    if (pendingSection) {
-                        result.push(pendingSection)
-                        pendingSection = null
+                } else {
+                    const isMasterData = item.href === "/admin/master-data"
+                    const hasMasterDataPerm = isMasterData && (
+                        allowed.includes("/admin/master-data") ||
+                        allowed.includes("/admin/master-data/tree") ||
+                        allowed.includes("/admin/master-data/batches") ||
+                        allowed.includes("/admin/master-data/education") ||
+                        allowed.includes("/admin/master-data/gradebook") ||
+                        allowed.includes("/admin/master-data/roles") ||
+                        allowed.includes("/admin/roles")
+                    )
+
+                    const isAllowed = 
+                        allowed.includes(item.href) ||
+                        (item.href === "/admin/settings" && allowed.includes("/admin/settings/security")) ||
+                        hasMasterDataPerm
+
+                    if (isAllowed) {
+                        if (pendingSection) {
+                            result.push(pendingSection)
+                            pendingSection = null
+                        }
+
+                        // If user only has access to a single master data section, link directly to it
+                        if (isMasterData && !allowed.includes("/admin/master-data")) {
+                            const permitted = []
+                            if (allowed.includes("/admin/master-data/tree")) permitted.push("tree")
+                            if (allowed.includes("/admin/master-data/batches")) permitted.push("batches")
+                            if (allowed.includes("/admin/master-data/education")) permitted.push("education")
+                            if (allowed.includes("/admin/master-data/gradebook")) permitted.push("gradebook")
+                            if (allowed.includes("/admin/master-data/roles") || allowed.includes("/admin/roles")) permitted.push("roles")
+
+                            if (permitted.length === 1) {
+                                result.push({
+                                    ...item,
+                                    href: `/admin/master-data?tab=${permitted[0]}`
+                                })
+                                continue
+                            }
+                        }
+
+                        result.push(item)
                     }
-                    result.push(item)
                 }
             }
             return result

@@ -62,9 +62,24 @@ export const DASHBOARD_MODULES = [
     description: "Create, schedule, and review mock exams"
   },
   {
-    path: "/admin/master-data",
-    name: "Master Data",
-    description: "Manage board exams, batches, and schools"
+    path: "/admin/master-data/tree",
+    name: "Examination Management",
+    description: "Set up board exams, programs, and majors"
+  },
+  {
+    path: "/admin/master-data/batches",
+    name: "Batch Management Data",
+    description: "Create and manage review batches and target exam years"
+  },
+  {
+    path: "/admin/master-data/education",
+    name: "Academic Institutions & Courses",
+    description: "Manage schools, universities, and college degrees"
+  },
+  {
+    path: "/admin/master-data/gradebook",
+    name: "Gradebook",
+    description: "Configure grade formulas and student readiness scores"
   },
   {
     path: "/admin/analytical-overview",
@@ -101,7 +116,9 @@ export function hasFullModuleAccess(role) {
   if (!role) return false
   if (role.role_key === "super_admin") return true
   const perms = Array.isArray(role.permissions) ? role.permissions : []
-  const hasAllDashboard = DASHBOARD_MODULES.every((mod) => perms.includes(mod.path))
+  const hasAllDashboard = DASHBOARD_MODULES.every((mod) => 
+    perms.includes(mod.path) || (mod.path.startsWith("/admin/master-data/") && perms.includes("/admin/master-data"))
+  )
   const hasRoles = perms.includes("/admin/master-data/roles") || perms.includes("/admin/roles")
   return hasAllDashboard && hasRoles
 }
@@ -513,11 +530,25 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
   }
 
   const handleOpenEdit = (role) => {
+    let perms = Array.isArray(role.permissions) ? [...role.permissions] : []
+    if (perms.includes("/admin/master-data")) {
+      perms = perms.filter((p) => p !== "/admin/master-data")
+      const masterSub = [
+        "/admin/master-data/tree",
+        "/admin/master-data/batches",
+        "/admin/master-data/education",
+        "/admin/master-data/gradebook"
+      ]
+      for (const sub of masterSub) {
+        if (!perms.includes(sub)) perms.push(sub)
+      }
+    }
+
     setRoleForm({
       id: role.id,
       name: role.name,
       description: role.description || "",
-      permissions: Array.isArray(role.permissions) ? role.permissions : [],
+      permissions: perms,
       is_system: Boolean(role.is_system)
     })
     setIsEdit(true)

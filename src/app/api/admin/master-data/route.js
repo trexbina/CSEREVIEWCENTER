@@ -3,6 +3,7 @@ import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { ADMIN_ROLES, isAdminRole } from "@/lib/auth"
 import { moveToTrash } from "@/lib/trash"
+import { hasPermission } from "@/lib/role-permissions"
 
 export async function POST(req) {
   try {
@@ -13,6 +14,30 @@ export async function POST(req) {
 
     const { action, entity, payload } = await req.json()
 
+    if (["EXAM", "PROGRAM", "MAJOR"].includes(entity)) {
+      const allowed = await hasPermission(session, "/admin/master-data/tree")
+      if (!allowed) {
+        return NextResponse.json({ error: "Forbidden: You do not have permission for Examination Management Data." }, { status: 403 })
+      }
+    }
+    if (entity === "BATCH") {
+      const allowed = await hasPermission(session, "/admin/master-data/batches")
+      if (!allowed) {
+        return NextResponse.json({ error: "Forbidden: You do not have permission for Batch Management Data." }, { status: 403 })
+      }
+    }
+    if (["SCHOOL", "ACADEMIC_COURSE"].includes(entity)) {
+      const allowed = await hasPermission(session, "/admin/master-data/education")
+      if (!allowed) {
+        return NextResponse.json({ error: "Forbidden: You do not have permission for Academic Institutions & Courses." }, { status: 403 })
+      }
+    }
+    if (entity === "GRADEBOOK") {
+      const allowed = await hasPermission(session, "/admin/master-data/gradebook")
+      if (!allowed) {
+        return NextResponse.json({ error: "Forbidden: You do not have permission for Gradebook." }, { status: 403 })
+      }
+    }
 
     // ── EXAM ──
     if (entity === "EXAM") {

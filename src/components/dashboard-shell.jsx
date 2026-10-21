@@ -50,6 +50,17 @@ export function DashboardShell({ role, permissions, roleName, children }) {
                 if (mod === "/admin/settings" && permissions.includes("/admin/settings/security")) {
                     return false
                 }
+                if (mod === "/admin/master-data" && (
+                    permissions.includes("/admin/master-data") ||
+                    permissions.includes("/admin/master-data/tree") ||
+                    permissions.includes("/admin/master-data/batches") ||
+                    permissions.includes("/admin/master-data/education") ||
+                    permissions.includes("/admin/master-data/gradebook") ||
+                    permissions.includes("/admin/master-data/roles") ||
+                    permissions.includes("/admin/roles")
+                )) {
+                    return false
+                }
                 return !permissions.includes(mod)
             }
         }

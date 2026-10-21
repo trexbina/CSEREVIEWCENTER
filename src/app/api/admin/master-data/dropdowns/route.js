@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { ADMIN_ROLES, isAdminRole } from "@/lib/auth"
-import { canManageRoles } from "@/lib/role-permissions"
+import { canManageRoles, isSuperAdmin } from "@/lib/role-permissions"
 
 export async function GET() {
   try {
@@ -12,6 +12,14 @@ export async function GET() {
     }
 
     const canManage = await canManageRoles(session)
+    const isSuper = isSuperAdmin(session)
+    let userPermissions = []
+    if (!isSuper && session.role) {
+      const roleRes = await pool.query("SELECT permissions FROM custom_roles WHERE role_key = $1", [session.role])
+      if (roleRes.rows.length > 0 && Array.isArray(roleRes.rows[0].permissions)) {
+        userPermissions = roleRes.rows[0].permissions
+      }
+    }
 
     const [examsResult, batchesResult, programsResult, majorsResult, schoolsResult, academicCoursesResult, categoriesResult, gradebooksResult, rolesResult] = await Promise.all([
       pool.query("SELECT id, name FROM examinations ORDER BY name ASC"),
@@ -52,7 +60,9 @@ export async function GET() {
       categories: categoriesResult.rows,
       gradebooks: gradebooksResult.rows,
       roles: canManage ? rolesResult.rows : [],
-      canManageRoles: canManage
+      canManageRoles: canManage,
+      isSuperAdmin: isSuper,
+      userPermissions: isSuper ? ["ALL"] : userPermissions
     })
   } catch (err) {
     console.error("[admin/master-data/dropdowns GET] error:", err)

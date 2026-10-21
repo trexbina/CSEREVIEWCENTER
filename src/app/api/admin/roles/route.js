@@ -22,6 +22,16 @@ async function ensureTable() {
     WHERE role_key = 'super_admin' AND NOT (permissions @> '["/admin/settings/security"]'::jsonb);
 
     UPDATE custom_roles
+    SET permissions = (
+      SELECT jsonb_agg(DISTINCT elem)
+      FROM jsonb_array_elements_text(
+        (permissions - '/admin/master-data') || 
+        '["/admin/master-data/tree", "/admin/master-data/batches", "/admin/master-data/education", "/admin/master-data/gradebook"]'::jsonb
+      ) AS elem
+    )
+    WHERE permissions @> '["/admin/master-data"]'::jsonb;
+
+    UPDATE custom_roles
     SET description = 'Full system access and master controls across all features'
     WHERE role_key = 'super_admin' AND (description IS NULL OR description = '');
   `).catch(console.error)

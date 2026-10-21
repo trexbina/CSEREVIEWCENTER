@@ -363,6 +363,8 @@ export default function MasterDataBuilderPage() {
       setGradebooks(data.gradebooks || [])
       setRoles(data.roles || [])
       setCanManageRoles(Boolean(data.canManageRoles))
+      setIsSuperAdmin(Boolean(data.isSuperAdmin))
+      setUserPermissions(Array.isArray(data.userPermissions) ? data.userPermissions : [])
       setIsLoading(false)
     } catch (e) {
       console.error("Failed to fetch master data", e)
@@ -536,6 +538,30 @@ export default function MasterDataBuilderPage() {
   const closePrompt = () => setPromptData({ ...promptData, isOpen: false })
 
   const [canManageRoles, setCanManageRoles] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [userPermissions, setUserPermissions] = useState([])
+
+  const canAccessTree = isSuperAdmin || userPermissions.includes("ALL") || userPermissions.includes("/admin/master-data") || userPermissions.includes("/admin/master-data/tree")
+  const canAccessBatches = isSuperAdmin || userPermissions.includes("ALL") || userPermissions.includes("/admin/master-data") || userPermissions.includes("/admin/master-data/batches")
+  const canAccessEducation = isSuperAdmin || userPermissions.includes("ALL") || userPermissions.includes("/admin/master-data") || userPermissions.includes("/admin/master-data/education")
+  const canAccessGradebook = isSuperAdmin || userPermissions.includes("ALL") || userPermissions.includes("/admin/master-data") || userPermissions.includes("/admin/master-data/gradebook")
+
+  // Auto-route to the only accessible tab if user has strictly 1 permission in master data
+  useEffect(() => {
+    if (isLoading) return
+    if (activeTab === "menu") {
+      const accessible = []
+      if (canAccessTree) accessible.push("tree")
+      if (canAccessBatches) accessible.push("batches")
+      if (canAccessEducation) accessible.push("education")
+      if (canAccessGradebook) accessible.push("gradebook")
+      if (canManageRoles) accessible.push("roles")
+
+      if (accessible.length === 1) {
+        handleTabChange(accessible[0], false)
+      }
+    }
+  }, [isLoading, activeTab, canAccessTree, canAccessBatches, canAccessEducation, canAccessGradebook, canManageRoles])
 
   const apiCall = async (action, entity, payload) => {
     if (entity === "ROLE") {
@@ -893,76 +919,84 @@ export default function MasterDataBuilderPage() {
                 className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-100"
               >
                 {/* Examination Management Data */}
-                <div
-                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
-                  onClick={() => handleTabChange("tree")}
-                >
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
-                      Examination Management Data
-                    </h3>
-                    <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
-                      Set up board exams, programs, and majors
-                    </p>
+                {canAccessTree && (
+                  <div
+                    className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
+                    onClick={() => handleTabChange("tree")}
+                  >
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
+                        Examination Management Data
+                      </h3>
+                      <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
+                        Set up board exams, programs, and majors
+                      </p>
+                    </div>
+                    <div className="flex items-center shrink-0 ml-4">
+                      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
+                    </div>
                   </div>
-                  <div className="flex items-center shrink-0 ml-4">
-                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                </div>
+                )}
 
                 {/* Batch Management Data */}
-                <div
-                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
-                  onClick={() => handleTabChange("batches")}
-                >
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
-                      Batch Management Data
-                    </h3>
-                    <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
-                      Create and manage review batches and target exam years
-                    </p>
+                {canAccessBatches && (
+                  <div
+                    className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
+                    onClick={() => handleTabChange("batches")}
+                  >
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
+                        Batch Management Data
+                      </h3>
+                      <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
+                        Create and manage review batches and target exam years
+                      </p>
+                    </div>
+                    <div className="flex items-center shrink-0 ml-4">
+                      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
+                    </div>
                   </div>
-                  <div className="flex items-center shrink-0 ml-4">
-                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                </div>
+                )}
 
                 {/* Academic Institutions & Courses */}
-                <div
-                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
-                  onClick={() => handleTabChange("education")}
-                >
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
-                      Academic Institutions & Courses
-                    </h3>
-                    <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
-                      Manage schools, universities, and college degrees
-                    </p>
+                {canAccessEducation && (
+                  <div
+                    className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
+                    onClick={() => handleTabChange("education")}
+                  >
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
+                        Academic Institutions & Courses
+                      </h3>
+                      <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
+                        Manage schools, universities, and college degrees
+                      </p>
+                    </div>
+                    <div className="flex items-center shrink-0 ml-4">
+                      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
+                    </div>
                   </div>
-                  <div className="flex items-center shrink-0 ml-4">
-                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                </div>
+                )}
 
                 {/* Gradebook */}
-                <div
-                  className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
-                  onClick={() => handleTabChange("gradebook")}
-                >
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
-                      Gradebook
-                    </h3>
-                    <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
-                      Configure grade formulas and student readiness scores
-                    </p>
+                {canAccessGradebook && (
+                  <div
+                    className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
+                    onClick={() => handleTabChange("gradebook")}
+                  >
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
+                        Gradebook
+                      </h3>
+                      <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
+                        Configure grade formulas and student readiness scores
+                      </p>
+                    </div>
+                    <div className="flex items-center shrink-0 ml-4">
+                      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
+                    </div>
                   </div>
-                  <div className="flex items-center shrink-0 ml-4">
-                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                </div>
+                )}
 
                 {/* Roles and Limitation (Only shown if user has separate role management permission) */}
                 {canManageRoles && (
@@ -983,18 +1017,25 @@ export default function MasterDataBuilderPage() {
                     </div>
                   </div>
                 )}
+
+                {!canAccessTree && !canAccessBatches && !canAccessEducation && !canAccessGradebook && !canManageRoles && (
+                  <div className="p-8 text-center text-muted-foreground text-sm">
+                    You do not have permission to access any Master Data sections. Please contact an administrator.
+                  </div>
+                )}
               </motion.div>
             )}
 
             {/* TAB 1: EXAMINATION MANAGEMENT DATA */}
             {activeTab === "tree" && (
-              <motion.div
-                key="tree"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="bg-card border border-border/40 rounded-2xl p-6 shadow-xs relative"
-              >
+              canAccessTree ? (
+                <motion.div
+                  key="tree"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="bg-card border border-border/40 rounded-2xl p-6 shadow-xs relative"
+                >
                 <AnimatePresence mode="wait">
 
                   {/* === LIST VIEW === */}
@@ -1192,10 +1233,22 @@ export default function MasterDataBuilderPage() {
 
                 </AnimatePresence>
               </motion.div>
-            )}
+            ) : (
+              <div className="bg-card border border-border/40 rounded-2xl p-8 text-center space-y-3">
+                <p className="text-sm font-semibold text-foreground">Access Restricted</p>
+                <p className="text-xs text-muted-foreground">You do not have permission to access Examination Management Data.</p>
+                <button
+                  onClick={() => handleTabChange("menu")}
+                  className="px-4 py-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                >
+                  Back to Master Data
+                </button>
+              </div>
+            ))}
 
             {/* TAB 2: BATCH MANAGEMENT DATA */}
-            {activeTab === "batches" && (() => {
+            {activeTab === "batches" && (
+              canAccessBatches ? (() => {
               const BATCH_PAGE_SIZE = 10
               const totalBatches = filteredBatches.length
               const totalPages = Math.max(1, Math.ceil(totalBatches / BATCH_PAGE_SIZE))
@@ -1628,11 +1681,23 @@ export default function MasterDataBuilderPage() {
                   </div>
                 </motion.div>
               )
-            })()}
+            })() : (
+              <div className="bg-card border border-border/40 rounded-2xl p-8 text-center space-y-3">
+                <p className="text-sm font-semibold text-foreground">Access Restricted</p>
+                <p className="text-xs text-muted-foreground">You do not have permission to access Batch Management Data.</p>
+                <button
+                  onClick={() => handleTabChange("menu")}
+                  className="px-4 py-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                >
+                  Back to Master Data
+                </button>
+              </div>
+            ))}
 
             {/* TAB 4: EDUCATION MANAGEMENT DATA */}
             {activeTab === "education" && (
-              <motion.div
+              canAccessEducation ? (
+                <motion.div
                 key="education"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1780,20 +1845,44 @@ export default function MasterDataBuilderPage() {
                   )}
                 </div>
               </motion.div>
-            )}
+            ) : (
+              <div className="bg-card border border-border/40 rounded-2xl p-8 text-center space-y-3">
+                <p className="text-sm font-semibold text-foreground">Access Restricted</p>
+                <p className="text-xs text-muted-foreground">You do not have permission to access Academic Institutions & Courses.</p>
+                <button
+                  onClick={() => handleTabChange("menu")}
+                  className="px-4 py-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                >
+                  Back to Master Data
+                </button>
+              </div>
+            ))}
 
             {activeTab === "gradebook" && (
-              <GradebookView
-                onBack={() => handleTabChange("menu")}
-                batches={batches}
-                tree={tree}
-                schools={schools}
-                gradebooks={gradebooks}
-                fetchData={fetchData}
-                apiCall={apiCall}
-                programs={tree.flatMap(exam => (exam.programs || []).map(p => ({ ...p, exam_id: exam.id })))}
-                majors={tree.flatMap(exam => (exam.programs || []).flatMap(p => (p.majors || []).map(m => ({ ...m, program_id: p.id }))))}
-              />
+              canAccessGradebook ? (
+                <GradebookView
+                  onBack={() => handleTabChange("menu")}
+                  batches={batches}
+                  tree={tree}
+                  schools={schools}
+                  gradebooks={gradebooks}
+                  fetchData={fetchData}
+                  apiCall={apiCall}
+                  programs={tree.flatMap(exam => (exam.programs || []).map(p => ({ ...p, exam_id: exam.id })))}
+                  majors={tree.flatMap(exam => (exam.programs || []).flatMap(p => (p.majors || []).map(m => ({ ...m, program_id: p.id }))))}
+                />
+              ) : (
+                <div className="bg-card border border-border/40 rounded-2xl p-8 text-center space-y-3">
+                  <p className="text-sm font-semibold text-foreground">Access Restricted</p>
+                  <p className="text-xs text-muted-foreground">You do not have permission to access Gradebook.</p>
+                  <button
+                    onClick={() => handleTabChange("menu")}
+                    className="px-4 py-1.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                  >
+                    Back to Master Data
+                  </button>
+                </div>
+              )
             )}
 
             {/* TAB 5: ROLES AND LIMITATION */}

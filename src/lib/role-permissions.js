@@ -29,7 +29,8 @@ export async function hasPermission(session, requiredPath) {
     if (res.rows.length > 0) {
       const perms = res.rows[0].permissions
       if (Array.isArray(perms)) {
-        return perms.includes(requiredPath)
+        if (perms.includes(requiredPath)) return true
+        if (requiredPath.startsWith("/admin/master-data/") && perms.includes("/admin/master-data")) return true
       }
     }
   } catch (err) {

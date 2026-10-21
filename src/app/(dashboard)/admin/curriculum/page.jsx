@@ -767,23 +767,66 @@ export default function CurriculumManagerPage() {
                                         {showMoreDropdown && (
                                             <>
                                                 <div className="fixed inset-0 z-30" onClick={() => setShowMoreDropdown(false)} />
-                                                <div className="absolute left-0 mt-2 z-40 w-56 rounded-xl bg-popover border border-border shadow-xl py-1.5 animate-in fade-in zoom-in-95 duration-150">
+                                                <div className="absolute left-0 mt-2 z-40 w-64 sm:w-72 rounded-xl bg-popover border border-border shadow-xl py-1.5 animate-in fade-in zoom-in-95 duration-150">
                                                     <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border mb-1">
                                                         More Categories
                                                     </div>
                                                     <div className="max-h-56 overflow-y-auto space-y-0.5 px-1">
-                                                        {overflowCategories.map(cat => (
-                                                            <div
-                                                                key={cat.id}
-                                                                onClick={() => {
-                                                                    handleSelectCategory(cat)
-                                                                    setShowMoreDropdown(false)
-                                                                }}
-                                                                className="group flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase text-foreground hover:bg-muted transition-all duration-150 cursor-pointer"
-                                                            >
-                                                                <span className="truncate pr-2">{cat.name}</span>
-                                                            </div>
-                                                        ))}
+                                                        {overflowCategories.map(cat => {
+                                                            const isSelected = selectedCategory?.id === cat.id
+                                                            return (
+                                                                <div
+                                                                    key={cat.id}
+                                                                    onClick={() => {
+                                                                        handleSelectCategory(cat)
+                                                                        setShowMoreDropdown(false)
+                                                                    }}
+                                                                    className={`group flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold uppercase transition-all duration-150 cursor-pointer ${
+                                                                        isSelected
+                                                                            ? "bg-[#E9C46A] text-white"
+                                                                            : "text-foreground hover:bg-muted"
+                                                                    }`}
+                                                                >
+                                                                    <span className="truncate pr-2 select-none">{cat.name}</span>
+
+                                                                    {/* edit and delete buttons when hovering on category */}
+                                                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation()
+                                                                                setShowMoreDropdown(false)
+                                                                                openCatModal("edit", cat)
+                                                                            }}
+                                                                            className={`p-1 rounded-md transition-colors ${
+                                                                                isSelected
+                                                                                    ? "text-white/80 hover:text-white hover:bg-white/20"
+                                                                                    : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10"
+                                                                            }`}
+                                                                            title="Edit category"
+                                                                        >
+                                                                            <Pencil className="h-3.5 w-3.5" />
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation()
+                                                                                setShowMoreDropdown(false)
+                                                                                handleDeleteCategory(cat.id)
+                                                                            }}
+                                                                            className={`p-1 rounded-md transition-colors ${
+                                                                                isSelected
+                                                                                    ? "text-white/80 hover:text-white hover:bg-rose-500/80"
+                                                                                    : "text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10"
+                                                                            }`}
+                                                                            title="Delete category"
+                                                                        >
+                                                                            <Trash className="h-3.5 w-3.5" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        })}
                                                     </div>
                                                 </div>
                                             </>

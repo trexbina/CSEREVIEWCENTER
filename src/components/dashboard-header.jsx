@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
-import { Search, Bell, Maximize, Minimize, Trash, ChevronRight, User, Settings, ShieldCheck, CheckCheck } from "lucide-react"
+import { Search, Bell, Maximize, Minimize, Trash, ChevronRight, User, Settings, ShieldCheck, CheckCheck, ShieldAlert, AlertTriangle } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { AdminHeaderSearch } from "@/components/admin-header-search"
 
@@ -79,26 +79,55 @@ export function DashboardHeader({ role }) {
     return { href, label, isLast }
   })
 
+  const isAdmin = role !== "student" && role !== "teacher"
+
+  const loadNotifications = async (force = false) => {
+    const endpoint = isAdmin ? "/api/admin/notifications" : "/api/student/notifications"
+    const cacheKey = isAdmin ? "admin_notifications_cache" : "student_notifications_cache"
+
+    // Bandwidth reduction: Check sessionStorage cache (3-minute TTL)
+    if (!force) {
+      try {
+        const cached = sessionStorage.getItem(cacheKey)
+        if (cached) {
+          const parsed = JSON.parse(cached)
+          // 3 minutes validity (180000ms)
+          if (Date.now() - parsed.timestamp < 180000) {
+            setNotifications(parsed.notifications || [])
+            setUnreadCount(parsed.unreadCount || 0)
+            return
+          }
+        }
+      } catch {}
+    }
+
+    try {
+      const res = await fetch(endpoint)
+      if (res.ok) {
+        const d = await res.json()
+        const notifs = d.notifications || []
+        const count = d.unreadCount || 0
+        setNotifications(notifs)
+        setUnreadCount(count)
+        try {
+          sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({ notifications: notifs, unreadCount: count, timestamp: Date.now() })
+          )
+        } catch {}
+      }
+    } catch (e) {
+      console.error("Failed to fetch notifications:", e)
+    }
+  }
+
   useEffect(() => {
     fetch("/api/auth/me")
-      .then((r) => {
-        if (!r.ok) return null
-        return r.json()
-      })
+      .then((r) => (r.ok ? r.json() : null))
       .then((d) => d && d.user && setUser(d.user))
-      .catch(() => { })
+      .catch(() => {})
 
-    if (role === "student") {
-      fetch("/api/student/notifications")
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (d && d.notifications) {
-            setNotifications(d.notifications)
-            setUnreadCount(d.unreadCount || 0)
-          }
-        })
-        .catch(() => {})
-    }
+    loadNotifications()
 
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement)
@@ -125,13 +154,18 @@ export function DashboardHeader({ role }) {
   const markNotificationAsRead = async (id, e) => {
     if (e) e.stopPropagation()
     try {
-      await fetch("/api/student/notifications", {
+      const endpoint = isAdmin ? "/api/admin/notifications" : "/api/student/notifications"
+      await fetch(endpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id })
       })
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
-      setUnreadCount(prev => Math.max(0, prev - 1))
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)))
+      setUnreadCount((prev) => Math.max(0, prev - 1))
+      try {
+        sessionStorage.removeItem(isAdmin ? "admin_notifications_cache" : "student_notifications_cache")
+        sessionStorage.removeItem("admin_notifications_page_cache")
+      } catch {}
     } catch (err) {
       console.error("Error marking notification read:", err)
     }
@@ -140,9 +174,19 @@ export function DashboardHeader({ role }) {
   const deleteAllNotifications = async (e) => {
     if (e) e.stopPropagation()
     try {
-      await fetch("/api/student/notifications", { method: "DELETE" })
+      const endpoint = isAdmin ? "/api/admin/notifications" : "/api/student/notifications"
+      const payload = isAdmin ? { notificationIds: notifications.map((n) => n.id) } : undefined
+      await fetch(endpoint, {
+        method: "DELETE",
+        headers: payload ? { "Content-Type": "application/json" } : {},
+        body: payload ? JSON.stringify(payload) : undefined
+      })
       setNotifications([])
       setUnreadCount(0)
+      try {
+        sessionStorage.removeItem(isAdmin ? "admin_notifications_cache" : "student_notifications_cache")
+        sessionStorage.removeItem("admin_notifications_page_cache")
+      } catch {}
     } catch (err) {
       console.error("Error deleting notifications:", err)
     }
@@ -200,7 +244,11 @@ export function DashboardHeader({ role }) {
         {/* Notifications Dropdown - Minimal borderless/backgroundless */}
         <div className="relative">
           <button
-            onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+            onClick={() => {
+              const next = !showNotifDropdown
+              setShowNotifDropdown(next)
+              if (next) loadNotifications()
+            }}
             className="relative inline-flex items-center justify-center size-9 rounded-xl text-[#696969] hover:text-[#3B3B3B] dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer active:scale-95"
             aria-label="Notifications"
           >
@@ -235,7 +283,7 @@ export function DashboardHeader({ role }) {
                     <Trash className="h-4 w-4" />
                   </button>
                   <Link
-                    href={role === "admin" ? "/admin/notifications" : "/student/notifications"}
+                    href={isAdmin ? "/admin/notifications" : "/student/notifications"}
                     onClick={() => setShowNotifDropdown(false)}
                     className="text-xs font-semibold text-[#4382DF] hover:underline ml-1"
                   >
@@ -247,33 +295,45 @@ export function DashboardHeader({ role }) {
               {notifications.length === 0 ? (
                 <div className="py-8 text-center space-y-1">
                   <CheckCheck className="h-6 w-6 text-muted-foreground/50 mx-auto" />
-                  <p className="text-xs text-muted-foreground font-medium">You're all caught up!</p>
+                  <p className="text-xs text-muted-foreground font-medium">You&apos;re all caught up!</p>
                 </div>
               ) : (
                 <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
-                  {notifications.slice(0, 5).map((n) => (
-                    <Link
-                      key={n.id}
-                      href={n.link || (role === "admin" ? "/admin/notifications" : "/student/notifications")}
-                      onClick={() => {
-                        if (!n.is_read) markNotificationAsRead(n.id)
-                        setShowNotifDropdown(false)
-                      }}
-                      className="block p-3 rounded-xl border border-border/50 bg-background hover:bg-muted/50 transition-all cursor-pointer"
-                    >
-                      <div className="flex justify-between items-start gap-2">
-                        <span className="font-semibold text-foreground text-xs leading-snug">
-                          {n.title}
-                        </span>
-                        {!n.is_read && (
-                          <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0 mt-1" />
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground font-medium line-clamp-2 mt-1">
-                        {n.message}
-                      </p>
-                    </Link>
-                  ))}
+                  {notifications.slice(0, 5).map((n) => {
+                    const isIntegrity = n.type === "integrity"
+                    const isConcurrency = n.type === "concurrency"
+                    return (
+                      <Link
+                        key={n.id}
+                        href={n.link || (isAdmin ? "/admin/settings/sessions" : "/student/notifications")}
+                        onClick={() => {
+                          if (!n.is_read) markNotificationAsRead(n.id)
+                          setShowNotifDropdown(false)
+                        }}
+                        className="block p-3 rounded-xl border border-border/50 bg-background hover:bg-muted/50 transition-all cursor-pointer"
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {isIntegrity && (
+                              <ShieldAlert className="size-3.5 text-rose-500 shrink-0" />
+                            )}
+                            {isConcurrency && (
+                              <AlertTriangle className="size-3.5 text-amber-500 shrink-0" />
+                            )}
+                            <span className="font-semibold text-foreground text-xs leading-snug truncate">
+                              {n.title}
+                            </span>
+                          </div>
+                          {!n.is_read && (
+                            <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0 mt-1" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground font-medium line-clamp-2 mt-1">
+                          {n.message}
+                        </p>
+                      </Link>
+                    )
+                  })}
                 </div>
               )}
             </div>

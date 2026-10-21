@@ -57,6 +57,19 @@ export function SecurityShield({
 
             if (!isRedirectingRef.current) {
                 isRedirectingRef.current = true
+                try {
+                    fetch("/api/security/incident", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            eventType: "EXAM_INTEGRITY_VIOLATION",
+                            description: "Developer tools / element inspection detected during student test session",
+                            details: typeof window !== "undefined" ? window.location.pathname : ""
+                        })
+                    }).catch(() => {})
+                } catch {
+                    // Ignore reporting errors
+                }
                 if (redirectToOnDevTools) {
                     setTimeout(() => {
                         if (typeof window !== "undefined" && window.location.pathname !== redirectToOnDevTools) {

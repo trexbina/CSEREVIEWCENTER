@@ -7,7 +7,7 @@ import { isAdminRole } from "@/lib/auth"
 import {
   Calendar, MapPin, GraduationCap, Phone, Mail, User,
   Edit, BarChart3, Clock, ArrowLeft, Loader2, Save, X, AlertCircle,
-  Key, Lock, Eye, EyeOff, Shield, Info, Camera,
+  Key, Lock, Eye, EyeOff, Shield, Info, Camera, BookOpen,
   ChevronDown, ChevronUp
 } from "lucide-react"
 
@@ -306,6 +306,56 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
     return name.trim().charAt(0).toUpperCase()
   }
 
+  const openEditModal = () => {
+    let fName = user.first_name || ""
+    let lName = user.last_name || ""
+    let mName = user.middle_name || ""
+    let sName = user.suffix || ""
+
+    if (!fName && user.name) {
+      const parts = user.name.trim().split(" ")
+      if (parts.length === 1) {
+        fName = parts[0]
+      } else if (parts.length === 2) {
+        fName = parts[0]
+        lName = parts[1]
+      } else {
+        fName = parts[0]
+        mName = parts.slice(1, -1).join(" ")
+        lName = parts[parts.length - 1]
+      }
+    }
+
+    setFirstName(fName)
+    setMiddleName(mName)
+    setLastName(lName)
+    setSuffix(sName)
+    setBirthday(user.birthday ? new Date(user.birthday).toISOString().split('T')[0] : "")
+    setGender(user.gender || "")
+    setPhone(user.phone || "")
+    setPersonalEmail(user.personal_email || "")
+    setAddress(user.address || "")
+    setCity(user.city || "")
+    setProvince(user.province || "")
+    setZipCode(user.zip_code || "")
+    setEmail(user.email || "")
+    setRole(user.role || "student")
+    setJobRoleDescription(user.job_role_description || "")
+    setSchoolId(user.school_id ? user.school_id.toString() : "")
+    setAcademicCourseId(user.academic_course_id ? user.academic_course_id.toString() : "")
+    setYearGraduated(user.year_graduated || "")
+    setHighestEducation(user.highest_education || "")
+    setExamId(user.exam_id ? user.exam_id.toString() : "")
+    setBatchId(user.batch_id ? user.batch_id.toString() : "")
+    setProgramId(user.program_id ? user.program_id.toString() : "")
+    setMajorId(user.major_id ? user.major_id.toString() : "")
+    setAvatarUrl(user.avatar_url || "")
+    setNewPassword("")
+    setConfirmPassword("")
+    setError("")
+    setIsEditing(true)
+  }
+
   const handleEditSubmit = async (e) => {
     e.preventDefault()
     setError("")
@@ -403,37 +453,14 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
         {/* Profile Info Row */}
         <div className="px-6 md:px-10 pb-6 pt-0 relative flex flex-col items-center gap-3 -mt-16 md:-mt-20 z-10 text-center">
 
-          {/* Avatar (overlapping the banner, with hover camera overlay) */}
-          <div className="group relative h-32 w-32 md:h-36 md:w-36 rounded-full border-4 border-card bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden z-20 shrink-0 shadow-sm">
+          {/* Avatar (overlapping the banner) */}
+          <div className="relative h-32 w-32 md:h-36 md:w-36 rounded-full border-4 border-card bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden z-20 shrink-0 shadow-sm">
             {user.avatar_url ? (
               <img src={user.avatar_url} alt={user.name} className="h-full w-full object-cover" />
             ) : (
               <span className="text-4xl font-bold text-slate-600 dark:text-slate-200">
                 {getAvatarInitial(user.name)}
               </span>
-            )}
-
-            {/* Hover overlay with camera button */}
-            <label
-              htmlFor="direct-avatar-upload"
-              className="absolute inset-0 bg-black/45 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-30"
-              title="Change Profile Photo"
-            >
-              <Camera className="size-6 mb-1 text-white" />
-              <span className="text-[10px] font-semibold tracking-wide uppercase text-white">Change</span>
-            </label>
-            <input
-              id="direct-avatar-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarUpload}
-            />
-
-            {uploadingAvatar && (
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-40">
-                <span className="size-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              </div>
             )}
           </div>
 
@@ -458,19 +485,17 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
               Logins: {user.login_count || 1} · Last login: {formatActivityTime(user.last_login_at || user.created_at)}
             </p>
 
-            {/* Minimal Edit Profile button (hidden for admin roles; edited in Roles & Limitations) */}
-            {!isAdminRole(user.role) && (
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#3B3B3B] dark:text-gray-200 hover:text-black dark:hover:text-white bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 rounded-xl border border-black/5 dark:border-white/10 transition-all cursor-pointer shadow-2xs active:scale-95"
-                >
-                  <Edit className="size-3.5" />
-                  <span>Edit Profile</span>
-                </button>
-              </div>
-            )}
+            {/* Edit Profile button (functional for both student and admin) */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={openEditModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#3B3B3B] dark:text-gray-200 hover:text-black dark:hover:text-white bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 rounded-xl border border-black/5 dark:border-white/10 transition-all cursor-pointer shadow-2xs active:scale-95"
+              >
+                <Edit className="size-3.5" />
+                <span>Edit Profile</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1147,18 +1172,18 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
         )}
       </div>
 
-      {/* Advanced Edit Modal Styled like Edit User Form */}
+      {/* Edit Profile Modal Styled like Registration / Add User Dialog */}
       {isEditing && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#1E1E1E] rounded-2xl border border-black/10 dark:border-white/10 w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col my-8 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-black/10 dark:border-white/10 w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] my-4 animate-in zoom-in-95 duration-150">
             {/* Header */}
-            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4 flex items-center justify-between bg-white dark:bg-[#1E1E1E]">
+            <div className="border-b border-black/5 dark:border-white/10 px-6 py-4 flex items-center justify-between bg-white/50 dark:bg-white/[0.02] shrink-0">
               <div>
-                <h2 className="text-lg font-bold tracking-tight text-[#3B3B3B] dark:text-white">
+                <h2 className="text-base sm:text-lg font-bold text-[#3B3B3B] dark:text-white">
                   Edit Profile
                 </h2>
-                <p className="text-xs text-[#696969]">
-                  Update your personal details, credentials, and account settings.
+                <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
+                  Update personal information, credentials, and profile photo for {user.name || "user"}.
                 </p>
               </div>
               <button
@@ -1538,6 +1563,41 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                 </section>
               )}
 
+              {/* ═══ Administrative Role (Admin / Staff) ═══ */}
+              {["admin", "super_admin", "academic_admin", "registrar"].includes(role) && (
+                <section className="space-y-4 pt-6 border-t border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-2.5 pt-1">
+                    <Shield className="size-4.5 text-[#696969]" />
+                    <h3 className="text-base font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white">
+                      Administrative Role
+                    </h3>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-semibold text-[#696969]">Assigned Role</Label>
+                      <input
+                        type="text"
+                        readOnly
+                        disabled
+                        value={user.role}
+                        className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white uppercase cursor-not-allowed shadow-2xs font-semibold"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="admin-job-role-desc" className="text-sm font-semibold text-[#696969]">Job Description / Responsibility</Label>
+                      <input
+                        id="admin-job-role-desc"
+                        value={jobRoleDescription}
+                        onChange={(e) => setJobRoleDescription(e.target.value)}
+                        placeholder="e.g. Lead Administrator, System Operations"
+                        className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
+                      />
+                    </div>
+                  </div>
+                </section>
+              )}
+
               {/* ═══ Account Details ═══ */}
               <section className="space-y-4 pt-6 border-t border-black/5 dark:border-white/10">
                 <div className="flex items-center gap-2.5 pt-1">
@@ -1548,7 +1608,7 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5 sm:col-span-2">
+                  <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
                       <Label htmlFor="account-login-id" className="text-sm font-semibold text-[#696969]">Login ID</Label>
                       <TooltipProvider delayDuration={150}>
@@ -1574,7 +1634,20 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                       readOnly
                       disabled
                       value={user.login_id || user.email || "—"}
-                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white cursor-not-allowed shadow-2xs"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white cursor-not-allowed shadow-2xs font-mono"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="account-email" className="text-sm font-semibold text-[#696969]">Account Email *</Label>
+                    <input
+                      id="account-email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="account@email.com"
+                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-black/15 shadow-2xs transition-all"
                     />
                   </div>
 
@@ -1627,8 +1700,8 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
               </section>
             </form>
 
-            {/* Footer Actions matching Edit User Form */}
-            <div className="border-t border-black/5 dark:border-white/10 px-6 py-4 flex items-center justify-end gap-2.5 bg-white dark:bg-[#1E1E1E]">
+            {/* Footer Actions matching Registration / Add User Dialog */}
+            <div className="border-t border-black/5 dark:border-white/10 px-6 py-4 flex items-center justify-end gap-2.5 bg-white/50 dark:bg-white/[0.02] shrink-0">
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
@@ -1640,7 +1713,7 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                 type="button"
                 onClick={handleEditSubmit}
                 disabled={saving}
-                className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
+                className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-5 py-2 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
               >
                 {saving ? (
                   <>

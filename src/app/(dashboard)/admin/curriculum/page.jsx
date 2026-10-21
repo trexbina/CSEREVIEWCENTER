@@ -445,10 +445,10 @@ export default function CurriculumManagerPage() {
 
             if (subModalMode === "add") {
                 setSubcategories((prev) => [...prev, data.subcategory])
-                toast("Successfully created subcategory.")
+                toast("Successfully created subject.")
             } else {
                 setSubcategories((prev) => prev.map(s => s.id === subModalData.id ? data.subcategory : s))
-                toast("Successfully updated subcategory.")
+                toast("Successfully updated subject.")
             }
 
             setIsSubModalOpen(false)
@@ -459,18 +459,18 @@ export default function CurriculumManagerPage() {
     async function deleteSubcategory(subId) {
         try {
             const res = await fetch(`/api/admin/subcategories?id=${subId}`, { method: "DELETE" })
-            if (!res.ok) throw new Error("Failed to delete subcategory")
+            if (!res.ok) throw new Error("Failed to delete subject")
             setSubcategories((prev) => prev.filter((s) => s.id !== subId))
             if (selectedSubcategory?.id === subId) setSelectedSubcategory(null)
-            toast("Successfully moved subcategory to trash.")
+            toast("Successfully moved subject to trash.")
         } catch (err) { showError(err.message) }
     }
 
     // this asks the user first before deleting a subcategory
     function handleDeleteSubcategory(subId) {
         showConfirm({
-            title: "Delete subcategory?",
-            description: "This will remove the selected subcategory.",
+            title: "Delete subject?",
+            description: "This will remove the selected subject.",
             onConfirm: () => deleteSubcategory(subId),
         })
     }
@@ -550,10 +550,10 @@ export default function CurriculumManagerPage() {
 
             if (subjectModalMode === "add") {
                 setSubjects((prev) => [data.subject, ...prev])
-                toast("Successfully created subject.")
+                toast("Successfully created module.")
             } else {
                 setSubjects((prev) => prev.map(s => s.id === subjectModalData.id ? data.subject : s))
-                toast("Successfully updated subject.")
+                toast("Successfully updated module.")
             }
 
             setIsSubjectModalOpen(false)
@@ -566,18 +566,18 @@ export default function CurriculumManagerPage() {
             const res = await fetch(`/api/admin/subjects?id=${subId}`, { method: "DELETE" })
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}))
-                throw new Error(errData.error || "Failed to delete subject")
+                throw new Error(errData.error || "Failed to delete module")
             }
             setSubjects((prev) => prev.filter((s) => s.id !== subId))
-            toast("Successfully moved subject to trash.")
+            toast("Successfully moved module to trash.")
         } catch (err) { showError(err.message) }
     }
 
     // this asks the user first before deleting a subject
     function handleDeleteSubject(subId) {
         showConfirm({
-            title: "Delete subject?",
-            description: "This subject and its related content will be removed.",
+            title: "Delete module?",
+            description: "This module and its related content will be removed.",
             onConfirm: () => deleteSubject(subId),
         })
     }
@@ -913,13 +913,13 @@ export default function CurriculumManagerPage() {
                                 <div className="pb-1">
                                     <div className="flex items-center gap-2">
                                         <h2 className="text-lg font-bold tracking-wider text-foreground uppercase">
-                                            SUB-CATEGORY
+                                            SUBJECTS
                                         </h2>
                                         <span className="ml-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-muted text-muted-foreground uppercase tracking-wider">
                                             {subcategories.length} AVAILABLE
                                         </span>
                                     </div>
-                                    <p className="text-muted-foreground text-sm font-medium mt-0.5">Select a sub-category to view subjects, or add a new one.</p>
+                                    <p className="text-muted-foreground text-sm font-medium mt-0.5">Select a subject to view modules, or add a new one.</p>
                                 </div>
 
                                 {/* controls row below the line divider: sort (left) & pagination (right) */}
@@ -1021,14 +1021,14 @@ export default function CurriculumManagerPage() {
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); openSubModal("edit", sub) }}
                                                                 className="p-1 hover:text-[#4d4d4d] transition-colors shrink-0"
-                                                                title="Edit subcategory"
+                                                                title="Edit subject"
                                                             >
                                                                 <Pencil className="h-3.5 w-3.5" />
                                                             </button>
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); handleDeleteSubcategory(sub.id) }}
                                                                 className="p-1 hover:text-[#4d4d4d] transition-colors shrink-0"
-                                                                title="Delete subcategory"
+                                                                title="Delete subject"
                                                             >
                                                                 <Trash className="h-3.5 w-3.5" />
                                                             </button>
@@ -1039,14 +1039,14 @@ export default function CurriculumManagerPage() {
                                         )
                                     })}
 
-                                    {/* Show ADD SUB-CATEGORY button on last page */}
+                                    {/* Show ADD SUBJECT button on last page */}
                                     {currentSubPage === totalSubPages && (
                                         <button
                                             onClick={() => openSubModal("add")}
                                             className="flex aspect-square w-full items-center justify-center rounded-xl bg-gray-100 border border-gray-200/50 shadow-sm transition-all hover:bg-gray-200 hover:border-gray-300 group"
                                         >
                                             <span className="text-xs font-bold tracking-wider text-gray-600 group-hover:text-gray-900 uppercase">
-                                                ADD SUB-CATEGORY +
+                                                ADD SUBJECT +
                                             </span>
                                         </button>
                                     )}
@@ -1077,11 +1077,11 @@ export default function CurriculumManagerPage() {
                         const paginatedSubjects = sortedSubjects.slice((currentSubjPage - 1) * SUBJECT_ITEMS_PER_PAGE, currentSubjPage * SUBJECT_ITEMS_PER_PAGE)
 
                         const rawTitle = selectedSubcategory ? selectedSubcategory.name : (selectedCategory?.name || "")
-                        const cleanTitle = rawTitle.replace(/\s*\/\s*SUBJECTS$/i, "")
+                        const cleanTitle = rawTitle.replace(/\s*\/\s*(SUBJECTS|MODULES)$/i, "")
 
                         return (
                             <>
-                                {/* top bar with back button and add subject button */}
+                                {/* top bar with back button and add module button */}
                                 <div className="flex items-center justify-between gap-3 border-b border-black/5 dark:border-white/10 pb-4">
                                     <div className="flex items-center gap-3.5 min-w-0 flex-1">
                                         <button
@@ -1103,17 +1103,17 @@ export default function CurriculumManagerPage() {
                                                 }
                                             }}
                                             className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-all shadow-2xs shrink-0 cursor-pointer"
-                                            title={selectedSubcategory ? "Back to subcategories" : "Back to categories"}
+                                            title={selectedSubcategory ? "Back to subjects" : "Back to categories"}
                                         >
                                             <ChevronLeft className="h-4.5 w-4.5" />
                                         </button>
                                         <div className="flex items-center gap-2.5 min-w-0 overflow-hidden flex-1">
-                                            <h2 className="text-lg sm:text-xl font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white flex items-center min-w-0 overflow-hidden" title={`${cleanTitle} / SUBJECTS`}>
+                                            <h2 className="text-lg sm:text-xl font-bold uppercase tracking-wider text-[#3B3B3B] dark:text-white flex items-center min-w-0 overflow-hidden" title={`${cleanTitle} / MODULES`}>
                                                 <span className="truncate max-w-[240px] sm:max-w-[400px] md:max-w-[600px]">
                                                     {cleanTitle}
                                                 </span>
                                                 <span className="text-[#696969]/30 dark:text-white/20 mx-2 shrink-0">/</span>
-                                                <span className="shrink-0 text-[#696969] dark:text-gray-400 font-semibold">SUBJECTS</span>
+                                                <span className="shrink-0 text-[#696969] dark:text-gray-400 font-semibold">MODULES</span>
                                             </h2>
                                             <span className="shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-black/5 dark:bg-white/10 text-[#696969] dark:text-gray-300 uppercase tracking-wider">
                                                 {currentSubjects.length} AVAILABLE
@@ -1121,22 +1121,22 @@ export default function CurriculumManagerPage() {
                                         </div>
                                     </div>
 
-                                    {/* button to add a new subject */}
+                                    {/* button to add a new module */}
                                     <button
                                         onClick={() => openSubjectModal("add")}
                                         className="shrink-0 rounded-xl bg-[#E9C46A] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#dfb550] transition-colors shadow-xs uppercase tracking-wider cursor-pointer"
                                     >
-                                        ADD SUBJECT
+                                        ADD MODULE
                                     </button>
                                 </div>
 
                                 {currentSubjects.length === 0 ? (
                                     <div className="flex-1 flex flex-col items-center justify-center min-h-[48vh] px-4 text-center animate-in fade-in duration-300">
                                         <h3 className="text-base font-bold text-foreground uppercase tracking-wider mb-1">
-                                            No Subjects Created Yet
+                                            No Modules Created Yet
                                         </h3>
                                         <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
-                                            Click &quot;ADD SUBJECT&quot; above to create a new subject for this curriculum.
+                                            Click &quot;ADD MODULE&quot; above to create a new module for this curriculum.
                                         </p>
                                     </div>
                                 ) : (
@@ -1288,7 +1288,7 @@ export default function CurriculumManagerPage() {
                                                                         {/* Inline Stats & Metadata Row */}
                                                                         <div className="flex items-center flex-wrap gap-x-7 gap-y-3 text-[13px] text-[#696969] dark:text-gray-400">
                                                                             <div className="flex items-center gap-1.5">
-                                                                                <span className="font-semibold uppercase tracking-wider text-[11px]">Modules:</span>
+                                                                                <span className="font-semibold uppercase tracking-wider text-[11px]">Chapters:</span>
                                                                                 <strong className="text-[#3B3B3B] dark:text-white font-bold text-[14px]">{modulesCount}</strong>
                                                                             </div>
                                                                             <div className="flex items-center gap-1.5">
@@ -1369,12 +1369,12 @@ export default function CurriculumManagerPage() {
                                                                                         type="button"
                                                                                         onClick={() => handleDeleteSubject(subject.id)}
                                                                                         className="h-8 w-8 rounded-lg flex items-center justify-center text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                                                                        aria-label="Delete subject"
+                                                                                        aria-label="Delete module"
                                                                                     >
                                                                                         <Trash className="h-4 w-4" />
                                                                                     </button>
                                                                                     <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block bg-white dark:bg-[#1E1E1E] text-[#3B3B3B] dark:text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md border border-black/5 dark:border-white/10 whitespace-nowrap z-30 animate-in fade-in zoom-in-95 duration-150">
-                                                                                        Delete Subject
+                                                                                        Delete Module
                                                                                     </span>
                                                                                 </div>
                                                                             </div>
@@ -1445,10 +1445,10 @@ export default function CurriculumManagerPage() {
                                     />
                                     <div>
                                         <span className="block text-xs font-semibold text-[#4d4d4d] uppercase">
-                                            Includes Sub-categories
+                                            Includes Subjects
                                         </span>
                                         <span className="block text-xs font-normal text-gray-500 mt-0.5">
-                                            Uncheck if this category links directly to subjects.
+                                            Uncheck if this category links directly to modules.
                                         </span>
                                     </div>
                                 </label>
@@ -1556,7 +1556,7 @@ export default function CurriculumManagerPage() {
                         {/* modal top bar */}
                         <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
                             <h2 className="text-base font-semibold uppercase tracking-wider text-[#4d4d4d]">
-                                {subModalMode === "add" ? "Add Sub-category" : "Edit Sub-category"}
+                                {subModalMode === "add" ? "Add Subject" : "Edit Subject"}
                             </h2>
                             <button
                                 onClick={() => setIsSubModalOpen(false)}
@@ -1605,13 +1605,13 @@ export default function CurriculumManagerPage() {
                                 <div className="flex-1 space-y-3">
                                     <div>
                                         <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1">
-                                            Subcategory Name:
+                                            Subject Name:
                                         </label>
                                         <input
                                             type="text"
                                             value={subModalData.name}
                                             onChange={e => setSubModalData({ ...subModalData, name: e.target.value })}
-                                            placeholder="e.g. English Literature"
+                                            placeholder="e.g. Social Science"
                                             className="w-full h-10 rounded-xl border border-gray-200 px-3 text-sm focus:outline-none focus:border-gray-400 font-medium text-gray-800"
                                         />
                                     </div>
@@ -1660,7 +1660,7 @@ export default function CurriculumManagerPage() {
                                         disabled={saving || !subModalData.name.trim()}
                                         className="rounded-lg px-5 py-2 text-xs font-bold text-white bg-[#E9C46A] hover:bg-[#dfb550] transition-colors disabled:opacity-50 shadow-sm uppercase tracking-wide"
                                     >
-                                        {saving ? "..." : "Save"}
+                                        {saving ? "..." : "Save Subject"}
                                     </button>
                                 </div>
                             </div>
@@ -1676,7 +1676,7 @@ export default function CurriculumManagerPage() {
                         {/* modal top bar */}
                         <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
                             <h2 className="text-base font-semibold uppercase tracking-wider text-[#4d4d4d]">
-                                {subjectModalMode === "add" ? "Add Subject" : "Edit Subject"}
+                                {subjectModalMode === "add" ? "Add Module" : "Edit Module"}
                             </h2>
                             <button
                                 onClick={() => setIsSubjectModalOpen(false)}
@@ -1696,7 +1696,7 @@ export default function CurriculumManagerPage() {
                                         type="text"
                                         value={subjectModalData.title}
                                         onChange={e => setSubjectModalData({ ...subjectModalData, title: e.target.value })}
-                                        placeholder="Subject Title..."
+                                        placeholder="Module Title..."
                                         className="w-full h-10 rounded-xl border border-gray-200 px-3 text-sm focus:outline-none focus:border-gray-400 font-medium text-gray-800"
                                     />
                                 </div>
@@ -1708,7 +1708,7 @@ export default function CurriculumManagerPage() {
                                         type="text"
                                         value={subjectModalData.code}
                                         onChange={e => setSubjectModalData({ ...subjectModalData, code: e.target.value })}
-                                        placeholder="e.g. ENG-101"
+                                        placeholder="e.g. SOC 12"
                                         className="w-full h-10 rounded-xl border border-gray-200 px-3 text-sm uppercase focus:outline-none focus:border-gray-400 font-medium text-gray-800"
                                     />
                                 </div>
@@ -1757,7 +1757,7 @@ export default function CurriculumManagerPage() {
                                         value={subjectModalData.description}
                                         onChange={e => setSubjectModalData({ ...subjectModalData, description: e.target.value })}
                                         rows={4}
-                                        placeholder="Subject description and overview..."
+                                        placeholder="Module description and overview..."
                                         className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:border-gray-400 font-medium text-gray-800"
                                     />
                                 </div>
@@ -1824,7 +1824,7 @@ export default function CurriculumManagerPage() {
                                         disabled={saving || !subjectModalData.title.trim() || !subjectModalData.code.trim()}
                                         className="rounded-lg px-5 py-2 text-xs font-bold text-white bg-[#E9C46A] hover:bg-[#dfb550] transition-colors disabled:opacity-50 shadow-sm uppercase tracking-wide"
                                     >
-                                        {saving ? "..." : "Save Subject"}
+                                        {saving ? "..." : "Save Module"}
                                     </button>
                                 </div>
                             </div>

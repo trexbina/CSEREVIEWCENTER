@@ -422,7 +422,7 @@ export default function SubjectContentLayout({ children }) {
                             router.push('/admin/curriculum')
                         }}
                         className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200/50 bg-gray-100 text-gray-600 transition-all hover:bg-gray-200 hover:text-gray-900 shadow-sm shrink-0 cursor-pointer"
-                        title="Back to Subjects"
+                        title="Back to Modules"
                     >
                         <ChevronLeft className="h-4 w-4" />
                     </button>
@@ -432,7 +432,7 @@ export default function SubjectContentLayout({ children }) {
                             onClick={() => setActiveTab("modules")}
                             className={`flex-1 py-1.5 text-xs rounded-lg transition-all cursor-pointer ${activeTab === "modules" ? "bg-white text-gray-700 font-semibold shadow-2xs" : "text-gray-400 hover:text-gray-600 font-medium"}`}
                         >
-                            Modules
+                            Chapters
                         </button>
                         <button
                             onClick={() => setActiveTab("files")}
@@ -458,7 +458,7 @@ export default function SubjectContentLayout({ children }) {
                                     No files uploaded yet in this subject.
                                 </p>
                                 <p className="text-[11px] text-gray-400 mt-1">
-                                    Files uploaded to modules, lessons, or quizzes will appear here.
+                                    Files uploaded to chapters, lessons, or quizzes will appear here.
                                 </p>
                             </div>
                         ) : (
@@ -532,14 +532,14 @@ export default function SubjectContentLayout({ children }) {
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleEdit("module", module.id, module.title) }}
                                         className={`p-1.5 rounded-lg transition-colors ${editingModuleId === module.id ? "bg-[#E9C46A] text-slate-900 font-bold text-[10px] w-auto px-2" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
-                                        title="Edit Module"
+                                        title="Edit Chapter"
                                     >
                                         {editingModuleId === module.id ? "SAVE" : <Pencil className="h-3.5 w-3.5" />}
                                     </button>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleDelete("module", module.id) }}
                                         className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                                        title="Delete Module"
+                                        title="Delete Chapter"
                                     >
                                         <Trash className="h-3.5 w-3.5" />
                                     </button>
@@ -737,20 +737,20 @@ export default function SubjectContentLayout({ children }) {
                         </div>
                     ))}
 
-                    {/* add new module section */}
+                    {/* add new chapter section */}
                     <div className="pt-4 border-t border-gray-100">
                         {!addingModule ? (
                             <button
                                 onClick={() => setAddingModule(true)}
                                 className="w-full py-2.5 bg-[#E9C46A] hover:bg-[#dfb550] text-white text-xs font-bold tracking-wide rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 cursor-pointer uppercase"
                             >
-                                ADD NEW MODULE
+                                ADD NEW CHAPTER
                             </button>
                         ) : (
                             <div className="space-y-2.5 bg-white p-3 rounded-xl border border-gray-200/80 shadow-2xs">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                                        New Module
+                                        New Chapter
                                     </span>
                                     <button
                                         onClick={() => setAddingModule(false)}
@@ -761,7 +761,7 @@ export default function SubjectContentLayout({ children }) {
                                 </div>
                                 <input
                                     type="text"
-                                    placeholder="Module name..."
+                                    placeholder="Chapter name..."
                                     className="w-full px-2.5 py-1.5 text-xs font-medium text-gray-800 rounded-lg border border-gray-200/80 bg-gray-50/80 focus:outline-none focus:bg-white focus:border-gray-300 transition-all placeholder:text-gray-400"
                                     value={newModuleName}
                                     onChange={e => setNewModuleName(e.target.value)}
@@ -805,8 +805,8 @@ export default function SubjectContentLayout({ children }) {
             {/* popup modal to confirm delete */}
             <ConfirmDeleteModal
                 isOpen={!!deleteTarget}
-                title={`Delete ${deleteTarget?.type || "Item"}`}
-                description={`Are you sure you want to delete this ${deleteTarget?.type || "item"}? This action cannot be undone.`}
+                title={`Delete ${deleteTarget?.type === "module" ? "Chapter" : deleteTarget?.type || "Item"}`}
+                description={`Are you sure you want to delete this ${deleteTarget?.type === "module" ? "chapter" : deleteTarget?.type || "item"}? This action cannot be undone.`}
                 confirmText="Delete"
                 onConfirm={async () => {
                     if (!deleteTarget) return

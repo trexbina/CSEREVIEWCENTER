@@ -23,7 +23,7 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
         enabled: true,
         template: "{name} - {email}",
         opacity: 0.15,
-        size: "medium",
+        size: 100,
         count: 1,
         userEmail: ""
     })
@@ -37,11 +37,18 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
             .then(res => res.json())
             .then(data => {
                 if (isMounted && data?.watermark) {
+                    const rawSize = String(data.watermark.size ?? "100").toLowerCase()
+                    let parsedSize = parseInt(rawSize, 10)
+                    if (rawSize === "small") parsedSize = 75
+                    else if (rawSize === "large") parsedSize = 130
+                    else if (rawSize === "medium" || isNaN(parsedSize)) parsedSize = 100
+                    parsedSize = Math.min(200, Math.max(50, parsedSize))
+
                     setWatermarkConfig({
                         enabled: data.watermark.enabled ?? true,
                         template: data.watermark.template || "{name} - {email}",
                         opacity: data.watermark.opacity ?? 0.15,
-                        size: data.watermark.size || "medium",
+                        size: parsedSize,
                         count: Math.min(3, Math.max(1, parseInt(data.watermark.count, 10) || 1)),
                         userEmail: data.user?.email || ""
                     })
@@ -279,12 +286,12 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
                                                 totalCount === 2 ? (stampIdx === 0 ? "28%" : "72%") :
                                                 (stampIdx === 0 ? "20%" : stampIdx === 1 ? "50%" : "80%")
 
-                                            const fontSizeClamped =
-                                                watermarkConfig.size === "small" || watermarkConfig.size === "1" || watermarkConfig.size === 1
-                                                    ? "clamp(13px, 1.4vw, 20px)"
-                                                    : watermarkConfig.size === "large" || watermarkConfig.size === "3" || watermarkConfig.size === 3
-                                                    ? "clamp(24px, 3.2vw, 44px)"
-                                                    : "clamp(18px, 2.2vw, 32px)"
+                                            const sizePercent = typeof watermarkConfig.size === "number" ? watermarkConfig.size : (parseInt(watermarkConfig.size, 10) || 100)
+                                            const scaleFactor = Math.min(2, Math.max(0.5, sizePercent / 100))
+                                            const minPx = Math.round(18 * scaleFactor)
+                                            const vw = (2.2 * scaleFactor).toFixed(2)
+                                            const maxPx = Math.round(32 * scaleFactor)
+                                            const fontSizeClamped = `clamp(${minPx}px, ${vw}vw, ${maxPx}px)`
 
                                             return (
                                                 <div

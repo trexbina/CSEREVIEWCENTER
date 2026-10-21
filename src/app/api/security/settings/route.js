@@ -22,12 +22,19 @@ export async function GET() {
       watermark_count: 1
     }
 
+    const rawSize = String(config.watermark_size ?? "100").toLowerCase()
+    let parsedSize = parseInt(rawSize, 10)
+    if (rawSize === "small") parsedSize = 75
+    else if (rawSize === "large") parsedSize = 130
+    else if (rawSize === "medium" || isNaN(parsedSize)) parsedSize = 100
+    parsedSize = Math.min(200, Math.max(50, parsedSize))
+
     return NextResponse.json({
       watermark: {
         enabled: config.watermark_enabled ?? true,
         template: config.watermark_text || "{name} - {email}",
         opacity: (config.watermark_opacity ?? 15) / 100,
-        size: config.watermark_size || "medium",
+        size: parsedSize,
         count: Math.min(3, Math.max(1, parseInt(config.watermark_count, 10) || 1))
       },
       user: {
@@ -42,7 +49,7 @@ export async function GET() {
         enabled: true,
         template: "{name} - {email}",
         opacity: 0.15,
-        size: "medium",
+        size: 100,
         count: 1
       }
     })

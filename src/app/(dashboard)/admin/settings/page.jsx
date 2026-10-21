@@ -25,6 +25,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/toast"
 
+const parseWatermarkSizePercent = (val) => {
+    if (!val) return 100
+    const str = String(val).toLowerCase()
+    if (str === "small") return 75
+    if (str === "medium") return 100
+    if (str === "large") return 130
+    const num = parseInt(str, 10)
+    return isNaN(num) ? 100 : Math.min(200, Math.max(50, num))
+}
+
 export default function SystemSettingsPage() {
     const [loading, setLoading] = useState(true)
     const [canAccessSecurity, setCanAccessSecurity] = useState(false)
@@ -35,7 +45,7 @@ export default function SystemSettingsPage() {
         watermark_enabled: true,
         watermark_text: "{name} - {email}",
         watermark_opacity: 15,
-        watermark_size: "medium",
+        watermark_size: 100,
         watermark_count: 1
     })
     const [auditLogs, setAuditLogs] = useState([])
@@ -62,7 +72,7 @@ export default function SystemSettingsPage() {
     const [watermarkForm, setWatermarkForm] = useState({
         watermark_text: "{name} - {email}",
         watermark_opacity: 15,
-        watermark_size: "medium",
+        watermark_size: 100,
         watermark_count: 1
     })
 
@@ -81,7 +91,7 @@ export default function SystemSettingsPage() {
                         setWatermarkForm({
                             watermark_text: data.settings.watermark_text || "{name} - {email}",
                             watermark_opacity: data.settings.watermark_opacity ?? 15,
-                            watermark_size: data.settings.watermark_size || "medium",
+                            watermark_size: parseWatermarkSizePercent(data.settings.watermark_size),
                             watermark_count: data.settings.watermark_count ?? 1
                         })
                     }
@@ -476,7 +486,7 @@ export default function SystemSettingsPage() {
                                         <span className="text-muted-foreground/40">•</span>
                                         <span>{settings.watermark_opacity ?? 15}% opacity</span>
                                         <span className="text-muted-foreground/40">•</span>
-                                        <span className="capitalize">{settings.watermark_size || "medium"} size</span>
+                                        <span>{parseWatermarkSizePercent(settings.watermark_size)}% size</span>
                                         <span className="text-muted-foreground/40">•</span>
                                         <span>{settings.watermark_count || 1} {(settings.watermark_count || 1) === 1 ? "stamp" : "stamps"}</span>
                                     </div>
@@ -489,7 +499,7 @@ export default function SystemSettingsPage() {
                                             setWatermarkForm({
                                                 watermark_text: settings.watermark_text || "{name} - {email}",
                                                 watermark_opacity: settings.watermark_opacity ?? 15,
-                                                watermark_size: settings.watermark_size || "medium",
+                                                watermark_size: parseWatermarkSizePercent(settings.watermark_size),
                                                 watermark_count: settings.watermark_count ?? 1
                                             })
                                             setActiveModal("watermark")
@@ -922,45 +932,30 @@ export default function SystemSettingsPage() {
                                 />
                             </div>
 
-                            {/* Watermark Size Slider (Scroll Bar - Max 3 levels) */}
+                            {/* Watermark Size Slider (Scroll Bar - Percentage) */}
                             <div className="space-y-1.5">
                                 <div className="flex justify-between text-xs">
                                     <label className="font-semibold text-foreground">
-                                        Size of Watermark (
-                                        {watermarkForm.watermark_size === "small"
-                                            ? "Small"
-                                            : watermarkForm.watermark_size === "large"
-                                            ? "Large"
-                                            : "Medium"}
-                                        )
+                                        Watermark Size ({parseWatermarkSizePercent(watermarkForm.watermark_size)}%)
                                     </label>
-                                    <span className="text-muted-foreground text-[11px]">
-                                        Level {watermarkForm.watermark_size === "small" ? 1 : watermarkForm.watermark_size === "large" ? 3 : 2} of 3
-                                    </span>
+                                    <span className="text-muted-foreground text-[11px]">Recommended: 80% – 120%</span>
                                 </div>
                                 <input
                                     type="range"
-                                    min="1"
-                                    max="3"
-                                    step="1"
-                                    value={
-                                        watermarkForm.watermark_size === "small"
-                                            ? 1
-                                            : watermarkForm.watermark_size === "large"
-                                            ? 3
-                                            : 2
-                                    }
+                                    min="50"
+                                    max="150"
+                                    step="5"
+                                    value={parseWatermarkSizePercent(watermarkForm.watermark_size)}
                                     onChange={(e) => {
                                         const val = parseInt(e.target.value, 10)
-                                        const sizeStr = val === 1 ? "small" : val === 3 ? "large" : "medium"
-                                        setWatermarkForm(prev => ({ ...prev, watermark_size: sizeStr }))
+                                        setWatermarkForm(prev => ({ ...prev, watermark_size: val }))
                                     }}
                                     className="w-full cursor-pointer accent-[#E9C46A]"
                                 />
                                 <div className="flex justify-between text-[11px] text-muted-foreground px-0.5">
-                                    <span className={watermarkForm.watermark_size === "small" ? "font-bold text-[#E9C46A]" : ""}>1 (Small)</span>
-                                    <span className={(watermarkForm.watermark_size || "medium") === "medium" ? "font-bold text-[#E9C46A]" : ""}>2 (Medium)</span>
-                                    <span className={watermarkForm.watermark_size === "large" ? "font-bold text-[#E9C46A]" : ""}>3 (Large)</span>
+                                    <span>50%</span>
+                                    <span className={parseWatermarkSizePercent(watermarkForm.watermark_size) === 100 ? "font-bold text-[#E9C46A]" : ""}>100% (Default)</span>
+                                    <span>150%</span>
                                 </div>
                             </div>
 
@@ -1002,7 +997,7 @@ export default function SystemSettingsPage() {
                             <div className="space-y-1">
                                 <div className="flex justify-between text-[11px] text-muted-foreground">
                                     <span>Live Preview</span>
-                                    <span>{watermarkForm.watermark_count || 1}x {watermarkForm.watermark_size || "medium"}</span>
+                                    <span>{watermarkForm.watermark_count || 1}x ({parseWatermarkSizePercent(watermarkForm.watermark_size)}% size)</span>
                                 </div>
                                 <div className="rounded-xl border border-border/80 bg-background/50 p-4 relative overflow-hidden h-28 flex items-center justify-center text-center">
                                     <span className="text-xs text-muted-foreground pointer-events-none select-none">
@@ -1015,12 +1010,8 @@ export default function SystemSettingsPage() {
                                             count === 2 ? (idx === 0 ? "26%" : "74%") :
                                             (idx === 0 ? "18%" : idx === 1 ? "50%" : "82%")
 
-                                        const fontClass =
-                                            watermarkForm.watermark_size === "small" || watermarkForm.watermark_size === "1" || watermarkForm.watermark_size === 1
-                                                ? "text-[9px] font-semibold tracking-wide"
-                                                : watermarkForm.watermark_size === "large" || watermarkForm.watermark_size === "3" || watermarkForm.watermark_size === 3
-                                                ? "text-[13px] font-black tracking-widest"
-                                                : "text-[11px] font-bold tracking-wider"
+                                        const sizePercent = parseWatermarkSizePercent(watermarkForm.watermark_size)
+                                        const fontSizePx = Math.max(7, Math.min(22, 11 * (sizePercent / 100)))
 
                                         return (
                                             <div
@@ -1029,8 +1020,11 @@ export default function SystemSettingsPage() {
                                                 style={{ top: topPos }}
                                             >
                                                 <div
-                                                    className={`text-foreground uppercase -rotate-12 ${fontClass}`}
-                                                    style={{ opacity: watermarkForm.watermark_opacity / 100 }}
+                                                    className="text-foreground uppercase -rotate-12 font-bold tracking-wider"
+                                                    style={{
+                                                        opacity: watermarkForm.watermark_opacity / 100,
+                                                        fontSize: `${fontSizePx.toFixed(1)}px`
+                                                    }}
                                                 >
                                                     {watermarkForm.watermark_text
                                                         .replace("{name}", "Juan Dela Cruz")

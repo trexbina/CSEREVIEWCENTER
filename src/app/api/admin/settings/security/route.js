@@ -14,16 +14,16 @@ async function ensureTables() {
       watermark_enabled BOOLEAN DEFAULT true,
       watermark_text VARCHAR(100) DEFAULT '{name} - {email}',
       watermark_opacity INT DEFAULT 15,
-      watermark_size VARCHAR(20) DEFAULT 'medium',
+      watermark_size VARCHAR(20) DEFAULT '100',
       watermark_count INT DEFAULT 1,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    ALTER TABLE system_security_settings ADD COLUMN IF NOT EXISTS watermark_size VARCHAR(20) DEFAULT 'medium';
+    ALTER TABLE system_security_settings ADD COLUMN IF NOT EXISTS watermark_size VARCHAR(20) DEFAULT '100';
     ALTER TABLE system_security_settings ADD COLUMN IF NOT EXISTS watermark_count INT DEFAULT 1;
 
     INSERT INTO system_security_settings (id, single_session_enabled, audit_logging_enabled, watermark_enabled, watermark_text, watermark_opacity, watermark_size, watermark_count)
-    VALUES (1, true, true, true, '{name} - {email}', 15, 'medium', 1)
+    VALUES (1, true, true, true, '{name} - {email}', 15, '100', 1)
     ON CONFLICT (id) DO NOTHING;
 
     CREATE TABLE IF NOT EXISTS security_audit_logs (
@@ -118,7 +118,9 @@ export async function GET(request) {
       audit_logging_enabled: true,
       watermark_enabled: true,
       watermark_text: "{name} - {email}",
-      watermark_opacity: 15
+      watermark_opacity: 15,
+      watermark_size: "100",
+      watermark_count: 1
     }
 
     // 2. Fetch real audit logs only (ordered latest first)
@@ -207,6 +209,13 @@ export async function POST(request) {
     if (body.action === "update_settings") {
       const { single_session_enabled, audit_logging_enabled, watermark_enabled, watermark_text, watermark_opacity, watermark_size, watermark_count } = body
       
+      const rawSize = String(watermark_size ?? "100").toLowerCase()
+      let parsedSize = parseInt(rawSize, 10)
+      if (rawSize === "small") parsedSize = 75
+      else if (rawSize === "large") parsedSize = 130
+      else if (rawSize === "medium" || isNaN(parsedSize)) parsedSize = 100
+      parsedSize = Math.min(200, Math.max(50, parsedSize))
+
       await pool.query(`
         UPDATE system_security_settings
         SET single_session_enabled = $1,
@@ -224,7 +233,7 @@ export async function POST(request) {
         watermark_enabled, 
         watermark_text || "{name} - {email}", 
         watermark_opacity || 15,
-        watermark_size || "medium",
+        String(parsedSize),
         Math.min(3, Math.max(1, parseInt(watermark_count, 10) || 1))
       ])
 

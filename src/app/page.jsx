@@ -11,8 +11,6 @@ export default function Home() {
       <main className="flex-1 relative z-10 flex flex-col w-full">
         <HeroSection />
         <AboutSystemSection />
-        <AboutUsSection />
-        <ProgramsSection />
       </main>
       <LandingFooter />
     </div>

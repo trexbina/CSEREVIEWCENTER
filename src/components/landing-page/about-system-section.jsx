@@ -1,156 +1,63 @@
 "use client"
 
-import { CheckCircle2, Zap, LayoutDashboard } from "lucide-react"
-import { motion } from "motion/react"
-import { LordIcon } from "@/components/ui/lord-icon"
+import { CheckCircle2, Award, Zap, Layers, BarChart3, Clock } from "lucide-react"
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.18,
-      delayChildren: 0.1,
-    },
+const FEATURES = [
+  {
+    icon: CheckCircle2,
+    title: "Civil Service Aligned",
+    desc: "Targeted coverage for Verbal, Analytical, Numerical, and General Information test scopes.",
   },
-}
-
-const cardVariants = {
-  hidden: {
-    opacity: 0,
-    y: 40,
-    scale: 0.94,
-    borderRadius: "1.25rem",
+  {
+    icon: Clock,
+    title: "Timed Mock Exams",
+    desc: "Train under authentic exam conditions with real-time countdown timers and auto-evaluations.",
   },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    borderRadius: "0.375rem",
-    transition: {
-      type: "spring",
-      stiffness: 90,
-      damping: 18,
-      mass: 0.8,
-    },
+  {
+    icon: BarChart3,
+    title: "Instant Performance Analytics",
+    desc: "Pinpoint your strengths and areas needing improvement with detailed breakdown charts.",
   },
-}
+  {
+    icon: Layers,
+    title: "Modular Lessons & PDF Guides",
+    desc: "Study at your own pace with curated module summaries and downloadable materials.",
+  },
+]
 
 export function AboutSystemSection() {
   return (
-    <section id="features" className="pt-24 sm:pt-32 md:pt-36 pb-16 sm:pb-20 md:pb-24 bg-[#fafafa] relative border-t border-b border-border/50 overflow-hidden">
-      {/* Subtle decorative background morphing blur sphere */}
-      <motion.div
-        animate={{
-          scale: [1, 1.15, 1],
-          opacity: [0.35, 0.55, 0.35],
-          rotate: [0, 45, 0],
-        }}
-        transition={{
-          duration: 12,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        className="absolute -top-24 -right-24 w-96 h-96 bg-[#ebd9a6]/30 rounded-full blur-3xl pointer-events-none"
-      />
-      <motion.div
-        animate={{
-          scale: [1.1, 0.95, 1.1],
-          opacity: [0.25, 0.45, 0.25],
-        }}
-        transition={{
-          duration: 14,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        className="absolute -bottom-24 -left-24 w-96 h-96 bg-[#ebd9a6]/25 rounded-full blur-3xl pointer-events-none"
-      />
-
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 25, filter: "blur(4px)" }}
-          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center mb-10 sm:mb-16 flex flex-col items-center"
-        >
-          <div className="flex items-center gap-3 text-[#505459] justify-center mb-4">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#505459]">
-              <span className="font-serif italic font-bold text-sm leading-none translate-y-[-0.5px]">i</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-wide text-[#505459]">
-              About this system
-            </h2>
-          </div>
-          <p className="text-xs sm:text-sm md:text-base text-[#808489] font-medium max-w-3xl mx-auto tracking-wide px-2">
-            Leadership, Compassion, Empowerment, Professionalism and Excellence - that is what we believe in.
+    <section id="features" className="py-20 bg-slate-950 text-slate-100 border-t border-slate-800">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <span className="text-xs font-semibold text-amber-400 uppercase tracking-widest">
+            Platform Capabilities
+          </span>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white mt-2">
+            Engineered for Civil Service Success
+          </h2>
+          <p className="mt-3 text-sm text-slate-400">
+            Everything examinees and review centers need in a centralized, secure environment.
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-60px" }}
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8"
-        >
-          {/* Card 1 */}
-          <motion.div
-            variants={cardVariants}
-            className="bg-[#F2F2F3] rounded-md shadow-xs flex flex-col min-h-[280px] sm:min-h-[320px] md:min-h-[350px] overflow-hidden"
-          >
-            <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
-              <LordIcon
-                src="/icons/knowifready.json"
-                size={130}
-              />
-            </div>
-            <div className="p-6 sm:p-8 md:p-10 pt-4">
-              <h3 className="text-base sm:text-lg font-semibold text-[#505459] text-center mb-3 sm:mb-4 tracking-wide">Know If You&apos;re Ready</h3>
-              <p className="text-[#808489] text-xs sm:text-sm leading-relaxed text-center font-normal min-h-[4.5rem]">
-                The system tracks which subjects you are good at and which ones you are failing, giving you a clear score that shows if you are actually ready for the board exam.
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Card 2 */}
-          <motion.div
-            variants={cardVariants}
-            className="bg-[#F2F2F3] rounded-md shadow-xs flex flex-col min-h-[280px] sm:min-h-[320px] md:min-h-[350px] overflow-hidden"
-          >
-            <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
-              <LordIcon
-                src="/icons/instantresults.json"
-                size={130}
-              />
-            </div>
-            <div className="p-6 sm:p-8 md:p-10 pt-4">
-              <h3 className="text-base sm:text-lg font-semibold text-[#505459] text-center mb-3 sm:mb-4 tracking-wide">Instant Results</h3>
-              <p className="text-[#808489] text-xs sm:text-sm leading-relaxed text-center font-normal min-h-[4.5rem]">
-                You don&apos;t have to wait days for a teacher to grade your work; you get your score and see your mistakes the second you finish a practice exam.
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Card 3 */}
-          <motion.div
-            variants={cardVariants}
-            className="bg-[#F2F2F3] rounded-md shadow-xs flex flex-col min-h-[280px] sm:min-h-[320px] md:min-h-[350px] overflow-hidden sm:col-span-2 md:col-span-1 sm:max-w-sm sm:mx-auto md:max-w-none"
-          >
-            <div className="flex-1 flex items-center justify-center pt-8 sm:pt-10">
-              <LordIcon
-                src="/icons/allinonespot.json"
-                size={130}
-              />
-            </div>
-            <div className="p-6 sm:p-8 md:p-10 pt-4">
-              <h3 className="text-base sm:text-lg font-semibold text-[#505459] text-center mb-3 sm:mb-4 tracking-wide">All-in-One Spot</h3>
-              <p className="text-[#808489] text-xs sm:text-sm leading-relaxed text-center font-normal min-h-[4.5rem]">
-                All your videos, handouts, and quizzes are organized in one simple dashboard.
-              </p>
-            </div>
-          </motion.div>
-        </motion.div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {FEATURES.map((item, idx) => {
+            const Icon = item.icon
+            return (
+              <div
+                key={idx}
+                className="rounded-xl bg-slate-900 border border-slate-800 p-6 hover:border-slate-700 transition-colors shadow-sm"
+              >
+                <div className="h-10 w-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-100">{item.title}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">{item.desc}</p>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </section>
   )

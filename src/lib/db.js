@@ -1,72 +1,141 @@
-import pg from "pg"
+// Universal Database Bridge (Cloudflare D1 + PostgreSQL fallback)
+// Provides a standard pg-like interface `db.query(text, params)` across the application
+// - When running inside Cloudflare Workers: executes against Cloudflare D1 (SQLite binding `DB`)
+// - When running in standard Node.js (local dev without Cloudflare / scripts): falls back to pg pool
 
-// PostgreSQL Connection Pool (Singleton)
-// Reused across API routes & Server Components.
-// Supports DATABASE_URL, POSTGRES_URL, POSTGRES_PRISMA_URL (Vercel, Prisma Postgres, Supabase).
+let pgPool = null
 
-const { Pool } = pg
+function getCloudflareDb() {
+  try {
+    const { getCloudflareContext } = require("@opennextjs/cloudflare")
+    const ctx = getCloudflareContext()
+    if (ctx?.env?.DB) {
+      return ctx.env.DB
+    }
+  } catch (_) {
+    // Not running inside OpenNext / Cloudflare edge runtime
+  }
 
-// CRITICAL: Disable Node.js strict TLS certificate validation for cloud-hosted databases
-// (Prisma Postgres, Supabase, Neon, etc. use internal/self-signed certificates)
-if (
-  process.env.NODE_ENV === "production" ||
-  process.env.DATABASE_URL?.includes("prisma.io") ||
-  process.env.POSTGRES_URL?.includes("prisma.io") ||
-  process.env.Database_URL1_DATABASE_URL?.includes("prisma.io") ||
-  process.env.DATABASE_URL?.includes("supabase") ||
-  process.env.POSTGRES_URL?.includes("supabase")
-) {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+  // Check globalThis (in case injected by edge worker entry)
+  if (globalThis?.DB) {
+    return globalThis.DB
+  }
+  return null
 }
 
-function getConnectionString() {
+function getPgPool() {
+  if (pgPool) return pgPool
+
+  const pg = require("pg")
+  const { Pool } = pg
+
   let raw =
     process.env.DATABASE_URL ||
     process.env.POSTGRES_URL ||
     process.env.POSTGRES_PRISMA_URL ||
-    process.env.Database_URL1_DATABASE_URL ||
-    process.env.Database_URL1_POSTGRES_URL ||
-    process.env.Database_URL1_PRISMA_DATABASE_URL ||
-    process.env.POSTGRES_URL_NON_POOLING ||
     ""
 
-  // Strip sslmode parameter — pg v8+ treats sslmode=require as verify-full
-  // which rejects self-signed certificates from cloud database providers.
-  // We handle SSL ourselves via the Pool `ssl` option below.
   if (raw) {
     raw = raw
       .replace(/[?&]sslmode=[^&]*/gi, "")
       .replace(/[?&]sslrejectunauthorized=[^&]*/gi, "")
-      .replace(/\?$/, "") // clean trailing ? if it was the only param
+      .replace(/\?$/, "")
   }
 
-  return raw
-}
-
-function createPool() {
-  const connectionString = getConnectionString()
-
-  const pool = new Pool({
-    connectionString: connectionString || undefined,
-    ssl: process.env.NODE_ENV === "production" || connectionString.includes("prisma.io") || connectionString.includes("supabase")
-      ? { rejectUnauthorized: false }
-      : undefined,
-    max: 2, // Serverless-friendly: keep connections low per lambda
-    idleTimeoutMillis: 10000, // Close idle connections quickly
-    connectionTimeoutMillis: 15000, // Generous timeout for serverless cold starts to cloud DBs
-    keepAlive: true,
+  pgPool = new Pool({
+    connectionString: raw || undefined,
+    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+    max: 2,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 15000,
   })
 
-  pool.on("error", (err) => {
+  pgPool.on("error", (err) => {
     console.error("[pgPool error]:", err?.message || err)
   })
 
-  return pool
+  return pgPool
 }
 
-if (!global._pgPool) {
-  global._pgPool = createPool()
+/**
+ * Convert PostgreSQL syntax ($1, $2, NOW(), RETURNING) to SQLite/D1 syntax
+ */
+function translatePgToD1(text, params = []) {
+  let sql = text
+
+  // Replace NOW() with datetime('now')
+  sql = sql.replace(/\bNOW\(\)/gi, "datetime('now')")
+
+  // Replace CURRENT_TIMESTAMP with datetime('now')
+  sql = sql.replace(/\bCURRENT_TIMESTAMP\b/gi, "datetime('now')")
+
+  // Replace boolean true/false keywords in SQL comparisons
+  sql = sql.replace(/=\s*true\b/gi, "= 1")
+  sql = sql.replace(/=\s*false\b/gi, "= 0")
+  sql = sql.replace(/\bIS\s+true\b/gi, "= 1")
+  sql = sql.replace(/\bIS\s+false\b/gi, "= 0")
+
+  // Replace PostgreSQL positional placeholders ($1, $2, etc.) with ?
+  // and map the provided params array to match each occurrence in order
+  const orderedParams = []
+  sql = sql.replace(/\$(\d+)/g, (_, num) => {
+    const idx = parseInt(num, 10) - 1
+    orderedParams.push(params[idx])
+    return "?"
+  })
+
+  return { sql, params: orderedParams }
 }
 
-export default global._pgPool
+export async function query(text, params = []) {
+  const d1 = getCloudflareDb()
 
+  if (d1) {
+    // ── Execute on Cloudflare D1 ──────────────────────────────────
+    const hasReturning = /\bRETURNING\b/i.test(text)
+    const isReturningMatch = text.match(/\bRETURNING\s+([a-zA-Z0-9_,\s]+)/i)
+    const returningFields = isReturningMatch ? isReturningMatch[1].split(",").map(f => f.trim()) : []
+
+    // Strip RETURNING for standard D1 statement if it's an UPDATE/DELETE
+    let cleanSql = text
+    if (hasReturning && !/^\s*INSERT\b/i.test(text)) {
+      cleanSql = cleanSql.replace(/\s+RETURNING\s+.*$/i, "")
+    }
+
+    const { sql: translatedSql, params: translatedParams } = translatePgToD1(cleanSql, params)
+
+    const stmt = d1.prepare(translatedSql)
+    const boundStmt = translatedParams.length > 0 ? stmt.bind(...translatedParams) : stmt
+
+    const isSelect = /^\s*(SELECT|PRAGMA)\b/i.test(translatedSql)
+
+    if (isSelect || hasReturning) {
+      const { results } = await boundStmt.all()
+      return {
+        rows: results || [],
+        rowCount: results?.length || 0,
+      }
+    } else {
+      const res = await boundStmt.run()
+      return {
+        rows: [],
+        rowCount: res?.meta?.changes || 0,
+      }
+    }
+  }
+
+  // ── Fallback to pg Pool ──────────────────────────────────────────
+  const pool = getPgPool()
+  return await pool.query(text, params)
+}
+
+const db = {
+  query,
+  on: (event, handler) => {
+    try {
+      getPgPool().on(event, handler)
+    } catch (_) {}
+  }
+}
+
+export default db

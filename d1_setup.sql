@@ -480,16 +480,60 @@ VALUES
 INSERT OR IGNORE INTO system_security_settings (id, single_session_enabled, audit_logging_enabled, watermark_enabled, watermark_text, watermark_opacity, watermark_size, watermark_count)
 VALUES (1, 1, 1, 1, '{name} - {email}', 15, '100', 1);
 
--- Default Super Administrator (Password: password123)
+-- Default Accounts (Password: password123 for all)
+-- 1. Super Admin
 INSERT OR IGNORE INTO users (id, name, email, login_id, password, role, is_active, status, targets)
 VALUES (
   1,
   'System Administrator',
   'admin@csereview.local',
   'admin00001',
-  '$2b$10$fJtH3r6w0D78WlH94c7z6OBjZ7N4VspT21bT1eSjPzXl6oN/aT8kS',
+  '$2b$10$euk/FLO/KMBI3JN/ctdFNuhYQokIwFCzE0uOpjOHil7TP/KP8Ngri',
   'super_admin',
   1,
   'active',
   '[]'
 );
+
+-- 2. Staff Admin
+INSERT OR IGNORE INTO users (id, name, email, login_id, password, role, is_active, status, targets)
+VALUES (
+  2,
+  'CSE Administrator',
+  'staff@csereview.local',
+  'admin00002',
+  '$2b$10$euk/FLO/KMBI3JN/ctdFNuhYQokIwFCzE0uOpjOHil7TP/KP8Ngri',
+  'admin',
+  1,
+  'active',
+  '[]'
+);
+
+-- 3. Teacher / Reviewer
+INSERT OR IGNORE INTO users (id, name, email, login_id, password, role, is_active, status, targets)
+VALUES (
+  3,
+  'Lead Instructor',
+  'instructor@csereview.local',
+  'teacher00001',
+  '$2b$10$euk/FLO/KMBI3JN/ctdFNuhYQokIwFCzE0uOpjOHil7TP/KP8Ngri',
+  'teacher',
+  1,
+  'active',
+  '[]'
+);
+
+-- 4. Sample Student
+INSERT OR IGNORE INTO users (id, name, email, login_id, password, role, is_active, status, targets)
+VALUES (
+  4,
+  'CSE Examinee Student',
+  'student@csereview.local',
+  'student00001',
+  '$2b$10$euk/FLO/KMBI3JN/ctdFNuhYQokIwFCzE0uOpjOHil7TP/KP8Ngri',
+  'student',
+  1,
+  'active',
+  '[]'
+);
+

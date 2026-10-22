@@ -599,19 +599,13 @@ INSERT INTO system_security_settings (id, single_session_enabled, audit_logging_
 VALUES (1, true, true, true, '{name} - {email}', 15, '100', 1)
 ON CONFLICT (id) DO NOTHING;
 
--- Default Super Administrator Account (Password: password123)
+-- Default Super Administrator Account (Password: password123 for all)
 INSERT INTO users (id, name, email, login_id, password, role, is_active, status, targets)
-VALUES (
-  1,
-  'System Administrator',
-  'admin@csereview.local',
-  'admin00001',
-  '$2b$10$fJtH3r6w0D78WlH94c7z6OBjZ7N4VspT21bT1eSjPzXl6oN/aT8kS',
-  'super_admin',
-  true,
-  'active',
-  '[]'::jsonb
-)
+VALUES 
+  (1, 'System Administrator', 'admin@csereview.local', 'admin00001', '$2b$10$euk/FLO/KMBI3JN/ctdFNuhYQokIwFCzE0uOpjOHil7TP/KP8Ngri', 'super_admin', true, 'active', '[]'::jsonb),
+  (2, 'CSE Administrator', 'staff@csereview.local', 'admin00002', '$2b$10$euk/FLO/KMBI3JN/ctdFNuhYQokIwFCzE0uOpjOHil7TP/KP8Ngri', 'admin', true, 'active', '[]'::jsonb),
+  (3, 'Lead Instructor', 'instructor@csereview.local', 'teacher00001', '$2b$10$euk/FLO/KMBI3JN/ctdFNuhYQokIwFCzE0uOpjOHil7TP/KP8Ngri', 'teacher', true, 'active', '[]'::jsonb),
+  (4, 'CSE Examinee Student', 'student@csereview.local', 'student00001', '$2b$10$euk/FLO/KMBI3JN/ctdFNuhYQokIwFCzE0uOpjOHil7TP/KP8Ngri', 'student', true, 'active', '[]'::jsonb)
 ON CONFLICT (id) DO NOTHING;
 
 -- Reset users sequence to allow subsequent user additions safely

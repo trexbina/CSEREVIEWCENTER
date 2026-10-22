@@ -66,3 +66,7 @@ const nextConfig = {
 };
 
 export default nextConfig;
+
+// Initialize Cloudflare context for local dev bindings
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+initOpenNextCloudflareForDev();

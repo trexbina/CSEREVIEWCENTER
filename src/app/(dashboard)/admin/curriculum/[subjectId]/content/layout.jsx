@@ -374,16 +374,16 @@ export default function SubjectContentLayout({ children }) {
                     <div className="flex items-center gap-3 select-none">
                         <img
                             src="/landingpageassets/logo.png"
-                            alt="Peak Excellence Review Center"
+                            alt="CSE Review System"
                             className="size-10 shrink-0 object-contain"
                             onError={(e) => { e.target.style.display = 'none' }}
                         />
                         <div className="flex flex-col leading-tight select-none">
                             <span className="text-[15px] font-black tracking-wider text-[#3B3B3B] dark:text-white uppercase font-sans">
-                                PEAK
+                                CSE
                             </span>
                             <span className="text-[12px] font-semibold tracking-wide text-[#696969] dark:text-gray-400 font-sans -mt-0.5">
-                                Excellence
+                                Review
                             </span>
                         </div>
                     </div>

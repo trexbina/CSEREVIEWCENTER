@@ -1,7 +1,6 @@
-
 ═══════════════════════════════════════════════════════════════
-  ReviewApp — Database Deployment Guide
-  Deploy on any new device with PostgreSQL + pgAdmin
+  CSE Review System — Database Deployment & Setup Guide
+  Deploy with PostgreSQL + pgAdmin or Cloud Database
 ═══════════════════════════════════════════════════════════════
 
 
@@ -9,208 +8,66 @@ PREREQUISITES
 ─────────────────────────────────────────────────────────────
   1. Node.js (v18+)         → https://nodejs.org
   2. PostgreSQL (v14+)      → https://www.postgresql.org/download
-  3. pgAdmin 4              → Included with PostgreSQL installer on Windows
-  4. This project folder    → Copy or clone the my-app folder
+  3. pgAdmin 4 (optional)   → Included with PostgreSQL installer on Windows
+  4. Project Directory      → CSE Review System root folder
 
 
 STEP 1 — Install Dependencies
 ─────────────────────────────────────────────────────────────
-  Open a terminal in the my-app folder and run:
+  In your terminal, run:
 
     npm install
 
 
-STEP 2 — Create the Database in pgAdmin
+STEP 2 — Create the Database
 ─────────────────────────────────────────────────────────────
-  1. Open pgAdmin 4
-  2. In the left panel, expand:
-       Servers → PostgreSQL 
-     (Enter your master password if prompted)
-  3. Right-click "Databases" → Create → Database...
-  4. In the dialog:
-       Database name:  reviewapp
-       Owner:          postgres  (default)
-  5. Click "Save"
+  Option A (pgAdmin 4):
+    1. Open pgAdmin 4.
+    2. Expand: Servers → PostgreSQL.
+    3. Right-click "Databases" → Create → Database...
+    4. Database name: csereview
+    5. Click "Save".
 
-  You should now see "reviewapp" listed under Databases.
+  Option B (psql command line):
+    psql -U postgres -c "CREATE DATABASE csereview;"
 
 
-STEP 3 — Configure Environment Variables
+STEP 3 — Run the Database Schema Setup (setup.sql)
 ─────────────────────────────────────────────────────────────
-  Open the file:  .env.local  (in the my-app root folder)
+  Option A (psql command line):
+    psql -U postgres -d csereview -f setup.sql
 
-  Edit it to match your PostgreSQL credentials:
+  Option B (pgAdmin Query Tool):
+    1. Select the `csereview` database.
+    2. Click Tools → Query Tool.
+    3. Open `setup.sql` and click Execute (F5).
 
-    DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/reviewapp
-    JWT_SECRET=change-me-to-a-random-32-char-string!!
-
-  Replace YOUR_PASSWORD with the password you set when
-  installing PostgreSQL on this device.
-
-  NOTE: The port is 5432 by default. If your PostgreSQL
-  uses a different port, change it in the URL above.
-  You can check your port in pgAdmin:
-    Right-click your server → Properties → Connection tab → Port
+  This creates all tables, indexes, constraints, and default roles
+  along with the initial Super Administrator account.
 
 
-STEP 4 — Seed the Database
+STEP 4 — Configure Environment Variables (.env.local)
 ─────────────────────────────────────────────────────────────
-  In the terminal (still in the my-app folder), run:
+  Open or edit `.env.local`:
 
-    node --env-file=.env.local seed.mjs
+    DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/csereview"
+    JWT_SECRET="generate-a-secure-random-32-character-secret-key"
 
-  This will:
-    - Create all tables (users, assignments, submissions)
-    - Create indexes for fast lookups
-    - Insert sample users with hashed passwords
-    - Insert sample assignments and submissions
-
-  Expected output:
-
-    🌱 Seeding database…
-
-    ✅ Tables created
-    ✅ Users seeded  (password = password123 for all)
-    ✅ Assignments seeded
-    ✅ Submissions seeded
-
-    ─────────────────────────────────────────
-      Sample login credentials:
-      admin@test.com    / password123  (admin)
-      teacher@test.com  / password123  (teacher)
-      alice@test.com    / password123  (student)
-      bob@test.com      / password123  (student)
-    ─────────────────────────────────────────
+  Replace YOUR_PASSWORD with your actual local PostgreSQL password.
 
 
-STEP 5 — Verify in pgAdmin (Optional)
+STEP 5 — Default Super Administrator Login
 ─────────────────────────────────────────────────────────────
-  1. In pgAdmin, expand:
-       reviewapp → Schemas → public → Tables
-  2. You should see three tables:
-       - users
-       - assignments
-       - submissions
-  3. To view data:
-       Right-click any table → View/Edit Data → All Rows
-  4. Verify the 4 sample users appear in the users table
+  URL:       http://localhost:3000
+  Login ID:  admin00001  (or admin@csereview.local)
+  Password:  password123
+  Role:      super_admin
 
 
 STEP 6 — Start the Application
 ─────────────────────────────────────────────────────────────
-  Run:
-
+  For local development:
     npm run dev
 
-  Open your browser and go to:
-
-    http://localhost:3000
-
-  Sign in with any sample account, for example:
-
-    Email:     alice@test.com
-    Password:  password123
-
-
-DATABASE SCHEMA REFERENCE
-─────────────────────────────────────────────────────────────
-
-  TABLE: users
-  ┌──────────────┬───────────────┬─────────────────────────┐
-  │ Column       │ Type          │ Notes                   │
-  ├──────────────┼───────────────┼─────────────────────────┤
-  │ id           │ SERIAL PK     │ Auto-increment          │
-  │ name         │ VARCHAR(100)  │ NOT NULL                │
-  │ email        │ VARCHAR(255)  │ UNIQUE, NOT NULL        │
-  │ password     │ VARCHAR(255)  │ bcrypt hash             │
-  │ role         │ VARCHAR(20)   │ student/teacher/admin   │
-  │ created_at   │ TIMESTAMPTZ   │ Default: NOW()          │
-  └──────────────┴───────────────┴─────────────────────────┘
-
-  TABLE: assignments
-  ┌──────────────┬───────────────┬─────────────────────────┐
-  │ Column       │ Type          │ Notes                   │
-  ├──────────────┼───────────────┼─────────────────────────┤
-  │ id           │ SERIAL PK     │ Auto-increment          │
-  │ title        │ VARCHAR(255)  │ NOT NULL                │
-  │ description  │ TEXT          │ Optional                │
-  │ teacher_id   │ INT FK→users  │ ON DELETE CASCADE       │
-  │ created_at   │ TIMESTAMPTZ   │ Default: NOW()          │
-  └──────────────┴───────────────┴─────────────────────────┘
-
-  TABLE: submissions
-  ┌───────────────┬───────────────┬─────────────────────────┐
-  │ Column        │ Type          │ Notes                   │
-  ├───────────────┼───────────────┼─────────────────────────┤
-  │ id            │ SERIAL PK     │ Auto-increment          │
-  │ assignment_id │ INT FK→assign │ ON DELETE CASCADE       │
-  │ student_id    │ INT FK→users  │ ON DELETE CASCADE       │
-  │ content       │ TEXT          │ Submission text         │
-  │ status        │ VARCHAR(20)   │ pending / reviewed      │
-  │ grade         │ VARCHAR(10)   │ e.g. A-, B+             │
-  │ feedback      │ TEXT          │ Teacher's feedback      │
-  │ submitted_at  │ TIMESTAMPTZ   │ Default: NOW()          │
-  │ reviewed_at   │ TIMESTAMPTZ   │ NULL until reviewed     │
-  └───────────────┴───────────────┴─────────────────────────┘
-
-
-SAMPLE DATA SUMMARY
-─────────────────────────────────────────────────────────────
-
-  Users (4):
-    admin@test.com     → admin role
-    teacher@test.com   → teacher role (creates assignments)
-    alice@test.com     → student role (has 3 submissions)
-    bob@test.com       → student role (has 2 submissions)
-
-  Assignments (3):  All created by teacher@test.com
-    1. Math Quiz #5
-    2. Science Lab Report
-    3. English Essay
-
-  Submissions (5):
-    Alice → Math Quiz #5        (reviewed, grade: A-)
-    Alice → Science Lab Report  (pending)
-    Alice → English Essay       (reviewed, grade: B+)
-    Bob   → Math Quiz #5        (pending)
-    Bob   → English Essay       (reviewed, grade: A)
-
-
-TROUBLESHOOTING
-─────────────────────────────────────────────────────────────
-
-  ERROR: "password authentication failed"
-  FIX:   The password in .env.local does not match your
-         PostgreSQL password. Update DATABASE_URL.
-
-  ERROR: "connection refused" or "could not connect"
-  FIX:   PostgreSQL is not running. On Windows:
-         → Open Services (Win+R → services.msc)
-         → Find "postgresql-x64-*" → Start the service
-
-  ERROR: "database reviewapp does not exist"
-  FIX:   You skipped Step 2. Create the database first
-         in pgAdmin before running the seed script.
-
-  ERROR: "ECONNREFUSED 127.0.0.1:5432"
-  FIX:   Same as "connection refused" above.
-         Also check if your PostgreSQL uses a non-default port.
-
-  ERROR: "relation users already exists" (running seed twice)
-  FIX:   This is safe — the seed uses IF NOT EXISTS for tables.
-         Duplicate users are skipped with ON CONFLICT DO NOTHING.
-         Submissions will be duplicated though. To start fresh:
-           In pgAdmin → right-click reviewapp → Delete/Drop
-           Then repeat from Step 2.
-
-  ERROR: "--env-file is not recognized"
-  FIX:   Your Node.js version is below v20.6.
-         Either upgrade Node.js, or run:
-           $env:DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/reviewapp"
-           $env:JWT_SECRET="change-me-to-a-random-32-char-string!!"
-           node seed.mjs
-
-
-═══════════════════════════════════════════════════════════════
-  End of Deployment Guide
-═══════════════════════════════════════════════════════════════
+  For Cloudflare Worker preview:
+    npm run preview

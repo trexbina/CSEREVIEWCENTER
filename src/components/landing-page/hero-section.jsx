@@ -9,10 +9,10 @@ import { motion } from "motion/react"
 // Dedicated banner carousel slides
 // To add or replace photos, just add your files to: /public/banners/
 const BANNER_SLIDES = [
-  { id: 1, src: "/banners/banner-1.png", alt: "Peak Excellence Graduates" },
-  { id: 2, src: "/banners/banner-2.jpg", alt: "Peak Excellence Students" },
-  { id: 3, src: "/banners/banner-3.jpg", alt: "Peak Excellence Sessions" },
-  { id: 4, src: "/banners/banner-4.jpg", alt: "Peak Excellence Campus" },
+  { id: 1, src: "/banners/banner-1.png", alt: "CSE Review Examinees" },
+  { id: 2, src: "/banners/banner-2.jpg", alt: "CSE Review Students" },
+  { id: 3, src: "/banners/banner-3.jpg", alt: "CSE Review Sessions" },
+  { id: 4, src: "/banners/banner-4.jpg", alt: "CSE Review Classes" },
 ]
 
 export function HeroSection() {
@@ -74,11 +74,11 @@ export function HeroSection() {
           <div className="flex items-center gap-3 sm:gap-3.5 pl-1 sm:pl-2">
             <img
               src="/landingpageassets/logo.png"
-              alt="Peak Excellence Logo"
+              alt="CSE Review System Logo"
               className="h-8 sm:h-9.5 w-auto object-contain drop-shadow-xs"
             />
             <span className="text-sm sm:text-base md:text-lg font-bold tracking-wider text-[#505459] dark:text-slate-200 font-sans">
-              PEAK Excellence
+              CSE Review System
             </span>
           </div>
 

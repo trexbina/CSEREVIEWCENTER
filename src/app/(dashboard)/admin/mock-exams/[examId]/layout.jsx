@@ -65,12 +65,12 @@ export default function MockExamBuilderLayout({ children, params }) {
                     <div className="flex flex-col items-start gap-1">
                         <img
                             src="/landingpageassets/logo.png"
-                            alt="Peak Excellence"
+                            alt="CSE Review System"
                             className="h-10 md:h-12 w-auto object-contain"
                             onError={(e) => { e.target.style.display = 'none' }}
                         />
                         <h2 className="text-xs md:text-sm font-extrabold tracking-widest text-foreground uppercase font-sans mt-2">
-                            PEAK EXCELLENCE
+                            CSE REVIEW SYSTEM
                         </h2>
                     </div>
                     {/* Close button for mobile */}

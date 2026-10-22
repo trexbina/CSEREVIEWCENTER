@@ -4,7 +4,7 @@ export function LandingFooter() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
         <div className="text-center sm:text-left">
           <p className="text-xs sm:text-sm font-medium text-[#4b5563]">
-            &copy; 2026 PEAK EXCELLENCE REVIEW CENTER
+            &copy; 2026 CSE REVIEW SYSTEM
           </p>
           <p className="text-xs sm:text-sm text-[#6b7280]">
             All rights reserved.

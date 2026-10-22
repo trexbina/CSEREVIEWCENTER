@@ -1,8 +1,8 @@
 import { HeroSection, AboutSystemSection, AboutUsSection, ProgramsSection, LandingFooter } from "@/components/landing-page"
 
 export const metadata = {
-  title: "Peak Excellence | Standard Educational Platform",
-  description: "Modernizing education with seamless online tools for administrators, teachers, and students.",
+  title: "CSE Review System | Civil Service Examination Platform",
+  description: "Comprehensive Civil Service Examination review and prep platform with modern learning tools for students and reviewers.",
 }
 
 export default function Home() {

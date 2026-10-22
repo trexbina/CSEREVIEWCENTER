@@ -359,20 +359,20 @@ export function DashboardSidebar({ role, permissions, roleName }) {
         return (
             <TooltipProvider delayDuration={150}>
                 <div className="flex h-full flex-col bg-[#F2F2F2] dark:bg-[#14161b]">
-                    {/* Logo - Emblem with 'PEAK' & 'Excellence' stacked text */}
+                    {/* Logo - Emblem with 'CSE' & 'Review' stacked text */}
                     <div className={`flex items-center pt-5 pb-3 ${collapsed ? "justify-center px-2" : "justify-start px-4 gap-3"}`}>
                         <img
                             src="/landingpageassets/logo.png"
-                            alt="Peak Excellence Review Center"
+                            alt="CSE Review System"
                             className={`shrink-0 object-contain transition-all ${collapsed ? "size-9" : "size-10 sm:size-[42px]"}`}
                         />
                         {!collapsed && (
                             <div className="flex flex-col leading-tight select-none">
                                 <span className="text-[15px] font-black tracking-wider text-[#3B3B3B] dark:text-white uppercase font-sans">
-                                    PEAK
+                                    CSE
                                 </span>
                                 <span className="text-[12px] font-semibold tracking-wide text-[#696969] dark:text-gray-400 font-sans -mt-0.5">
-                                    Excellence
+                                    Review
                                 </span>
                             </div>
                         )}

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { TrashClient } from "./trash-client"
 
 export const metadata = {
-  title: "Trash & Recovery | PEAK Review Center",
+  title: "Trash & Recovery | CSE Review System",
   description: "Recover or permanently purge deleted items in the system.",
 }
 

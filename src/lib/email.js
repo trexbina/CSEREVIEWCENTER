@@ -29,7 +29,7 @@ const transporter = nodemailer.createTransport({
  * @param {string} params.resetUrl - Full URL with token
  */
 export async function sendPasswordResetEmail({ to, name, resetUrl }) {
-  const from = process.env.SMTP_FROM || `"PEAK Review Center" <${SMTP_USER}>`
+  const from = process.env.SMTP_FROM || `"CSE Review System" <${SMTP_USER || "noreply@csereview.local"}>`
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -59,13 +59,13 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }) {
     <body>
       <div class="container">
         <div class="header">
-          <h1>PEAK Review Center</h1>
-          <p>Excellence in Board Exam Preparation</p>
+          <h1>CSE Review System</h1>
+          <p>Civil Service Examination Review & Preparation</p>
         </div>
         <div class="content">
           <div class="greeting">Hello ${name ? name : "Reviewee"},</div>
           <p class="description">
-            We received a request to reset the password associated with your PEAK Review Center account.
+            We received a request to reset the password associated with your CSE Review System account.
             Click the button below to establish a new password for your account:
           </p>
           <div class="btn-wrapper">
@@ -83,7 +83,7 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }) {
           </p>
         </div>
         <div class="footer">
-          &copy; ${new Date().getFullYear()} PEAK Review Center. All rights reserved.<br>
+          &copy; ${new Date().getFullYear()} CSE Review System. All rights reserved.<br>
           This is an automated system notification. Please do not reply directly to this email.
         </div>
       </div>
@@ -94,20 +94,20 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }) {
   const textContent = `
 Hello ${name ? name : "Reviewee"},
 
-We received a request to reset your PEAK Review Center account password.
+We received a request to reset your CSE Review System account password.
 Please visit the following link to reset your password:
 
 ${resetUrl}
 
 This link is valid for 1 hour. If you did not request this, you can safely ignore this email.
 
-PEAK Review Center
+CSE Review System
   `.trim()
 
   const info = await transporter.sendMail({
     from,
     to,
-    subject: "Password Reset Request - PEAK Review Center",
+    subject: "Password Reset Request - CSE Review System",
     text: textContent,
     html: htmlContent,
   })

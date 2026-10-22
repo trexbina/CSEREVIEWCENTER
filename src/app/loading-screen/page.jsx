@@ -140,7 +140,7 @@ function LoadingScreenInner() {
         <div className="relative w-28 md:w-32 flex justify-center mb-6">
           <img 
             src="/landingpageassets/logo.png" 
-            alt="Peak Excellence" 
+            alt="CSE Review System" 
             className="w-full h-auto object-contain drop-shadow-md"
           />
         </div>

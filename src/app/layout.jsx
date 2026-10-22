@@ -3,7 +3,6 @@ import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FontProvider } from "@/components/font-provider";
 import { ToastProvider } from "@/components/ui/toast";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,8 +11,8 @@ const geistSans = Geist({
 });
 
 export const metadata = {
-  title: "Review App",
-  description: "Student & Teacher Review Application",
+  title: "CSE Review System | Civil Service Examination Review",
+  description: "Comprehensive Civil Service Examination Review and Educational Platform",
 };
 
 export default function RootLayout({ children }) {
@@ -36,7 +35,6 @@ export default function RootLayout({ children }) {
           </FontProvider>
         </ThemeProvider>
         <Script src="https://cdn.lordicon.com/lordicon.js" strategy="lazyOnload" />
-        <SpeedInsights />
       </body>
     </html>
   );

@@ -211,7 +211,7 @@ function LoginFormInner({ initialMode = "login" }) {
         <div className="size-10 flex items-center justify-center p-1 mb-1">
           <img
             src="/landingpageassets/logo.png"
-            alt="Peak Excellence"
+            alt="CSE Review System"
             className="h-full w-full object-contain"
           />
         </div>
@@ -219,7 +219,7 @@ function LoginFormInner({ initialMode = "login" }) {
           Sign In
         </DialogTitle>
         <DialogDescription className="sr-only">
-          Sign in to your PEAK Review Center account
+          Sign in to your CSE Review System account
         </DialogDescription>
       </div>
 

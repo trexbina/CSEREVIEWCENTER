@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# CSE Review System
+
+A comprehensive online review and examination management platform tailored for Civil Service Examination (CSE) reviewees, educators, and administrators.
+
+---
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Deployment & Edge Runtime**: Cloudflare Workers via OpenNext (`@opennextjs/cloudflare` + `wrangler`)
+- **Database**: PostgreSQL (Prisma-compatible / Supabase / Hyperdrive / Neon)
+- **Styling**: Tailwind CSS & Base UI
+- **Authentication**: Stateless JWT session tokens (`jose`) with bcrypt password hashing
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure Environment
+
+Copy `.env.example` to `.env.local`:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` to configure your PostgreSQL database connection:
+
+```env
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/csereview"
+JWT_SECRET="generate-a-secure-random-32-character-secret-key"
+```
+
+### 3. Initialize Database Schema
+
+Run `setup.sql` on your PostgreSQL database (via `psql` or pgAdmin Query Tool):
+
+```bash
+psql -U postgres -d csereview -f setup.sql
+```
+
+Default Super Administrator login credentials:
+- **Login ID**: `admin00001` (or `admin@csereview.local`)
+- **Password**: `password123`
+- **Role**: `super_admin`
+
+---
+
+## Development & Deployment
+
+### Local Development
+
+Run the local Next.js development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Cloudflare Worker Preview
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Build with OpenNext and preview locally in the Cloudflare Workers runtime (`workerd`):
 
-## Learn More
+```bash
+npm run preview
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Deploy to Cloudflare Workers
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Deploy the application directly to Cloudflare:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run deploy
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Database Schema
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+All database tables, constraints, indexes, and initial roles are consolidated in [`setup.sql`](file:///e:/CSE%20website/CSE%20Review%20System/setup.sql).
+See [`database deployment guide.txt`](file:///e:/CSE%20website/CSE%20Review%20System/database%20deployment%20guide.txt) for step-by-step setup instructions.

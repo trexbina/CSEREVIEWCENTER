@@ -50,3 +50,8 @@ graphify-out/
 # database dumps
 vercel_prisma_postgres_*.sql
 
+# cloudflare & open-next
+.wrangler/
+.open-next/
+
+

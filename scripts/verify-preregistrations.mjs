@@ -7,11 +7,12 @@ if (!process.env.DATABASE_URL) {
 }
 
 const { Pool } = pg;
-const cloudUrl = 'postgres://d1f728379b70c227e9665d0157a02039f9cdea920d3e48202a4ea36d40482e01:sk_dFxUy0xqZtKe-9RilpDcr@db.prisma.io:5432/postgres';
+const targetUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
-const targetUrl = process.env.TARGET === 'local' 
-  ? (process.env.DATABASE_URL || process.env.POSTGRES_URL)
-  : cloudUrl;
+if (!targetUrl) {
+  console.error("Please configure DATABASE_URL in your .env or .env.local file.");
+  process.exit(1);
+}
 
 const isCloud = targetUrl.includes('prisma.io') || targetUrl.includes('supabase');
 

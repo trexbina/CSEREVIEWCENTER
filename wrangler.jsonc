@@ -10,6 +10,13 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "csereview-d1",
+      "database_id": "2f325295-c5cc-4b63-8418-bb09c14c0018"
+    }
+  ],
   "observability": {
     "enabled": true
   }

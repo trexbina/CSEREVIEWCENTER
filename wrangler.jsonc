@@ -20,5 +20,16 @@
   ],
   "observability": {
     "enabled": true
-  }
+  },
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "reviewerexam.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.reviewerexam.com",
+      "custom_domain": true
+    }
+  ]
 }

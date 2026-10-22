@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer"
 
-const SMTP_USER = process.env.SMTP_USER || "developerpatrickjakebina@gmail.com"
-const SMTP_PASS = (process.env.SMTP_PASSWORD || "ebmx fzzd hlwe nqdm").replace(/["']/g, "").trim()
+const SMTP_USER = process.env.SMTP_USER || "trexbina3@gmail.com"
+const SMTP_PASS = (process.env.SMTP_PASSWORD || "").replace(/["']/g, "").trim()
 
 /**
  * Configure SMTP transporter:

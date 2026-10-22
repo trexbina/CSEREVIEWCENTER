@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cse-review-system",
+  "account_id": "3210a808df867f2f92d6a5fcf332ad7b",
   "main": ".open-next/worker.js",
   "compatibility_date": "2024-09-23",
   "compatibility_flags": [
@@ -13,7 +14,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "csereview-d1",
+      "database_name": "csdatabase",
       "database_id": "2f325295-c5cc-4b63-8418-bb09c14c0018"
     }
   ],

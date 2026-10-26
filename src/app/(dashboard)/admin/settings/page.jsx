@@ -590,7 +590,7 @@ export default function SystemSettingsPage() {
                                                                     </div>
                                                                     <div>
                                                                         <p className="font-semibold text-foreground truncate">{sess.name}</p>
-                                                                        <p className="text-[10px] text-muted-foreground">{sess.email || sess.login_id || ""}</p>
+                                                                        <p className="text-[10px] text-muted-foreground">{sess.email || ""}</p>
                                                                     </div>
                                                                 </div>
                                                             </td>

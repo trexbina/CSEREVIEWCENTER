@@ -11,7 +11,7 @@ export async function GET() {
     }
 
     const { rows } = await pool.query(
-      "SELECT id, name, email, login_id, role, created_at, last_login_at, login_count, first_name, middle_name, last_name, suffix, birthday, gender, phone, address, city, province, zip_code, school, course, year_graduated, highest_education, avatar, avatar_url, job_role_description FROM users WHERE id = $1",
+      "SELECT id, name, email, role, created_at, last_login_at, login_count, first_name, middle_name, last_name, suffix, birthday, gender, phone, address, city, province, zip_code, school, course, year_graduated, highest_education, avatar, avatar_url, job_role_description FROM users WHERE id = $1",
       [session.userId]
     )
 

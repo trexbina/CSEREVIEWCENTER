@@ -6,6 +6,12 @@
 let pgPool = null
 
 function getCloudflareDb() {
+  // If local PostgreSQL is configured via DATABASE_URL and USE_D1 is not explicitly forced,
+  // prioritize PostgreSQL (for local development / pgAdmin / direct database connections)
+  if (process.env.USE_D1 !== "true" && (process.env.DATABASE_URL || process.env.POSTGRES_URL)) {
+    return null
+  }
+
   try {
     const { getCloudflareContext } = require("@opennextjs/cloudflare")
     const ctx = getCloudflareContext()

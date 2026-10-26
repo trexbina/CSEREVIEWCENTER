@@ -23,6 +23,7 @@
     "@animate-ui": "https://animate-ui.com/r/{name}.json",
     "@basecn": "https://basecn.dev/r/{name}.json",
     "@gooseui": "https://gooseui.pro/r/{name}.json",
-    "@lytenyte": "https://www.1771technologies.com/r/{name}.json"
+    "@lytenyte": "https://www.1771technologies.com/r/{name}.json",
+    "@react-bits": "https://reactbits.dev/r/{name}.json"
   }
 }

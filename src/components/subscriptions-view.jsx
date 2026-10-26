@@ -107,16 +107,9 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
     return count
   }, [statusFilter, examFilter, batchFilter])
 
-  // Format login ID matching the system standard
+  // Format user identifier (email)
   const formatLoginId = (item) => {
-    if (item?.loginId && !item.loginId.includes("@") && !item.loginId.startsWith("ID: ")) return item.loginId
-    if (item?.login_id && !item.login_id.includes("@") && !item.login_id.startsWith("ID: ")) return item.login_id
-    if (item?.name) {
-      const parts = item.name.trim().split(/\s+/)
-      const surname = parts[parts.length - 1]?.toLowerCase().replace(/[^a-z0-9]/g, "") || "user"
-      return `${surname}${String(item.id || 1).padStart(5, "0")}`
-    }
-    return `user${String(item?.id || 1).padStart(5, "0")}`
+    return item?.email || item?.name || "—"
   }
 
   // Sorting state for students and batches
@@ -226,7 +219,7 @@ export function SubscriptionsView({ initialBatchFilter = "all" }) {
     const list = (data.students || []).filter(s => {
       const matchSearch = !q || 
         (s.name || "").toLowerCase().includes(q) || 
-        (s.login_id || "").toLowerCase().includes(q) ||
+        (s.email || "").toLowerCase().includes(q) ||
         (s.batch_name || "").toLowerCase().includes(q) ||
         (s.exam_name || "").toLowerCase().includes(q)
 

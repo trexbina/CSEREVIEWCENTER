@@ -10,12 +10,12 @@ export const runtime = "nodejs"
 export async function POST(request) {
   try {
     const body = await request.json()
-    const rawIdentifier = body.username || body.loginId || body.login_id || body.email || ""
+    const rawIdentifier = body.email || body.username || body.loginId || body.login_id || ""
     const identifier = rawIdentifier.trim().toLowerCase()
 
     if (!identifier) {
       return NextResponse.json(
-        { error: "Please enter your username or email address." },
+        { error: "Please enter your email address." },
         { status: 400 }
       )
     }
@@ -34,11 +34,11 @@ export async function POST(request) {
       CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
     `)
 
-    // Query user by login_id, email, or personal_email
+    // Query user by email or personal_email
     const userRes = await pool.query(
-      `SELECT id, name, email, personal_email, login_id, role, is_active
+      `SELECT id, name, email, personal_email, role, is_active
        FROM users
-       WHERE LOWER(login_id) = $1 OR LOWER(email) = $1 OR LOWER(personal_email) = $1
+       WHERE LOWER(email) = $1 OR LOWER(personal_email) = $1
        LIMIT 1`,
       [identifier]
     )

@@ -36,7 +36,7 @@ function LoginFormInner({ initialMode = "login" }) {
   const [mode, setMode] = useState(initialMode) // "login" | "forgot"
 
   // Login form state
-  const [loginId, setLoginId] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
@@ -57,13 +57,13 @@ function LoginFormInner({ initialMode = "login" }) {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ loginId, password }),
+        body: JSON.stringify({ email, password }),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || "Invalid Login ID or password.")
+        setError(data.error || "Invalid email or password.")
         setLoading(false)
         return
       }
@@ -90,7 +90,7 @@ function LoginFormInner({ initialMode = "login" }) {
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: forgotIdentifier }),
+        body: JSON.stringify({ email: forgotIdentifier }),
       })
 
       const data = await res.json()
@@ -103,7 +103,7 @@ function LoginFormInner({ initialMode = "login" }) {
 
       setForgotSuccess(
         data.message ||
-          "If an account matching that username exists, a password reset link has been dispatched to its registered email address."
+          "If an account matching that email exists, a password reset link has been dispatched to its registered email address."
       )
     } catch {
       setForgotError("Network error. Please try again.")
@@ -122,7 +122,7 @@ function LoginFormInner({ initialMode = "login" }) {
             Forgot Password
           </DialogTitle>
           <DialogDescription className="text-xs text-[#696969] dark:text-gray-400 max-w-[280px] leading-relaxed">
-            Enter your Login ID to receive a secure password reset link at your registered email address.
+            Enter your registered email address to receive a secure password reset link.
           </DialogDescription>
         </div>
 
@@ -155,14 +155,15 @@ function LoginFormInner({ initialMode = "login" }) {
         ) : (
           <form onSubmit={handleForgotSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="forgot-identifier" className="text-xs font-semibold text-[#3B3B3B] dark:text-gray-300">
-                Login ID / Username
+              <Label htmlFor="forgot-email" className="text-xs font-semibold text-[#3B3B3B] dark:text-gray-300">
+                Email Address
               </Label>
               <Input
-                id="forgot-identifier"
-                type="text"
+                id="forgot-email"
+                type="email"
                 required
-                autoComplete="username"
+                placeholder="name@example.com"
+                autoComplete="email"
                 value={forgotIdentifier}
                 onChange={(e) => setForgotIdentifier(e.target.value)}
                 className="h-10.5 text-xs sm:text-sm rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-3.5 text-[#1E1E1E] dark:text-white focus-visible:ring-1.5 focus-visible:ring-[#E9C46A] focus-visible:border-[#E9C46A] transition-all shadow-2xs"
@@ -231,16 +232,17 @@ function LoginFormInner({ initialMode = "login" }) {
 
       <form onSubmit={handleLoginSubmit} className="space-y-3.5">
         <div className="space-y-1.5">
-          <Label htmlFor="login-id" className="text-xs font-semibold text-[#3B3B3B] dark:text-gray-300">
-            Login ID
+          <Label htmlFor="login-email" className="text-xs font-semibold text-[#3B3B3B] dark:text-gray-300">
+            Email
           </Label>
           <Input
-            id="login-id"
-            type="text"
+            id="login-email"
+            type="email"
             required
-            autoComplete="username"
-            value={loginId}
-            onChange={(e) => setLoginId(e.target.value)}
+            placeholder="name@example.com"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="h-10.5 text-xs sm:text-sm rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] px-3.5 text-[#1E1E1E] dark:text-white focus-visible:ring-1.5 focus-visible:ring-[#E9C46A] focus-visible:border-[#E9C46A] transition-all shadow-2xs"
           />
         </div>

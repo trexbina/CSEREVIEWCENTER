@@ -39,16 +39,19 @@ JWT_SECRET="generate-a-secure-random-32-character-secret-key"
 
 ### 3. Initialize Database Schema
 
-Run `setup.sql` on your PostgreSQL database (via `psql` or pgAdmin Query Tool):
+You can automatically initialize the database schema and default accounts using:
 
 ```bash
-psql -U postgres -d csereview -f setup.sql
+npm run db:setup
 ```
 
-Default Super Administrator login credentials:
-- **Login ID**: `admin00001` (or `admin@csereview.local`)
-- **Password**: `password123`
-- **Role**: `super_admin`
+*(Alternatively, run `setup.sql` directly using `psql -U postgres -d csereview -f setup.sql` or via the pgAdmin Query Tool).*
+
+Default seed accounts (Password: `password123` for all):
+- **Super Admin**: `admin@csereview.local`
+- **Admin**: `staff@csereview.local`
+- **Instructor**: `instructor@csereview.local`
+- **Student**: `student@csereview.local`
 
 ---
 

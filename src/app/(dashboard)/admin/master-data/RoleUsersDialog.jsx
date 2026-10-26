@@ -23,8 +23,8 @@ export function isSuperAdminUser(user) {
   if (!user) return false
   if (user.role === "super_admin" || user.role === "admin") return true
   if (user.id === 1 || user.userId === 1) return true
-  const loginId = user.login_id || user.loginId
-  if (typeof loginId === "string" && loginId.toLowerCase() === "admin00001") return true
+  const email = (user.email || "").toLowerCase()
+  if (email === "trexbina3@gmail.com") return true
   return false
 }
 
@@ -188,8 +188,7 @@ export default function RoleUsersDialog({
       (u) =>
         u.name?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
-        u.personal_email?.toLowerCase().includes(q) ||
-        u.login_id?.toLowerCase().includes(q)
+        u.personal_email?.toLowerCase().includes(q)
     )
   }, [users, search])
 
@@ -374,7 +373,7 @@ export default function RoleUsersDialog({
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder={`Search ${users.length} assigned user${users.length === 1 ? "" : "s"} by name, email, or login ID…`}
+                  placeholder={`Search ${users.length} assigned user${users.length === 1 ? "" : "s"} by name or email…`}
                   className="w-full h-9.5 pl-9 pr-8 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] shadow-2xs transition-all"
                 />
                 {search && (
@@ -420,7 +419,7 @@ export default function RoleUsersDialog({
                 <div className="divide-y divide-black/5 dark:divide-white/5">
                   {filteredUsers.map((user) => {
                     const isActive = user.is_active !== false
-                    const isProtectedSuperAdmin = user.login_id?.toLowerCase() === "admin00001" || user.id === 1
+                    const isProtectedSuperAdmin = user.id === 1 || user.email?.toLowerCase() === "trexbina3@gmail.com"
                     const isTargetSuperAdmin = isSuperAdminUser(user)
                     const isCurrentSuperAdmin = !currentUser || isSuperAdminUser(currentUser)
                     const canEditThisUser = !isTargetSuperAdmin || isCurrentSuperAdmin
@@ -461,9 +460,9 @@ export default function RoleUsersDialog({
                               </span>
                             </div>
 
-                            {user.login_id && (
+                            {user.email && (
                               <p className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
-                                {user.login_id}
+                                {user.email}
                               </p>
                             )}
                           </div>
@@ -597,7 +596,7 @@ export default function RoleUsersDialog({
                   type="text"
                   value={globalSearch}
                   onChange={(e) => setGlobalSearch(e.target.value)}
-                  placeholder="Type name, email, or login ID (min. 2 characters)…"
+                  placeholder="Type name or email (min. 2 characters)…"
                   autoFocus
                   className="w-full h-9.5 pl-9 pr-8 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-white/5 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/50 focus:outline-none focus:ring-1.5 focus:ring-[#E9C46A] shadow-2xs transition-all"
                 />
@@ -667,16 +666,16 @@ export default function RoleUsersDialog({
                                 Current: {user.role_name || user.role}
                               </span>
                             </div>
-                            {user.login_id && (
+                            {user.email && (
                               <p className="text-[11px] text-[#696969] dark:text-gray-400 mt-0.5">
-                                {user.login_id}
+                                {user.email}
                               </p>
                             )}
                           </div>
                         </div>
 
                         <div className="shrink-0">
-                          {user.login_id?.toLowerCase() === "admin00001" || user.id === 1 ? (
+                          {user.id === 1 || user.email?.toLowerCase() === "trexbina3@gmail.com" ? (
                             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-black/[0.05] dark:bg-white/[0.08] text-neutral-500 dark:text-neutral-400">
                               Primary Super Admin
                             </span>

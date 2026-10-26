@@ -5,7 +5,6 @@ import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { moveToTrash } from "@/lib/trash"
 
-import { generateNextLoginId } from "@/lib/login-id"
 import { isSuperAdmin } from "@/lib/role-permissions"
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
@@ -20,7 +19,7 @@ export async function GET() {
     }
 
     const { rows } = await pool.query(
-      "SELECT id, name, email, login_id, login_prefix, login_number, role, created_at FROM users ORDER BY created_at DESC"
+      "SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC"
     )
     return NextResponse.json({ users: rows })
   } catch (err) {
@@ -33,11 +32,7 @@ async function ensureTable() {
   await pool.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS targets JSONB DEFAULT '[]'::jsonb;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS personal_email VARCHAR(255);
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS login_prefix VARCHAR(100);
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS login_number VARCHAR(20);
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS login_id VARCHAR(120);
     ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_login_id_unique ON users(LOWER(login_id));
   `).catch(console.error)
 }
 
@@ -76,16 +71,13 @@ export async function POST(request) {
       )
     }
 
-    // Automatically generate next Login ID based on last_name, name, and role
-    const generated = await generateNextLoginId(
-      pool,
-      body.last_name,
-      name,
-      role || "student"
-    )
-
-    // Fallback for legacy email NOT NULL column if email is not provided
-    const userEmail = (body.email || `${generated.login_id}@peak.edu.ph`).toLowerCase().trim()
+    const userEmail = (body.email || personal_email || "").toLowerCase().trim()
+    if (!userEmail) {
+      return NextResponse.json(
+        { error: "Email is required." },
+        { status: 400 }
+      )
+    }
 
     // Check if email already exists
     const existing = await pool.query("SELECT id FROM users WHERE email = $1", [userEmail])
@@ -106,10 +98,10 @@ export async function POST(request) {
         school, course, year_graduated, highest_education,
         exam_id, batch_id, program_id, major_id, job_role_description,
         school_id, academic_course_id, avatar_url, targets, personal_email,
-        is_active, subscription_end_date, login_prefix, login_number, login_id, created_at
+        is_active, subscription_end_date, created_at
       )
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34, NOW())
-       RETURNING id, name, email, login_id, login_prefix, login_number, personal_email, role, is_active, subscription_end_date, created_at, avatar_url`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31, NOW())
+       RETURNING id, name, email, personal_email, role, is_active, subscription_end_date, created_at, avatar_url`,
       [
         name.trim(),
         userEmail,
@@ -142,9 +134,6 @@ export async function POST(request) {
         personal_email?.toLowerCase().trim() || userEmail,
         body.is_active !== undefined ? Boolean(body.is_active) : true,
         body.subscription_end_date ? body.subscription_end_date : null,
-        generated.login_prefix,
-        generated.login_number,
-        generated.login_id,
       ]
     )
 
@@ -193,14 +182,14 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "User id(s) required." }, { status: 400 })
     }
 
-    // Check for default system Super Admin (admin00001 or id=1)
+    // Check for default system Super Admin (id=1 or protected email)
     const protectedUsers = await pool.query(
-      "SELECT id, login_id FROM users WHERE id = ANY($1::int[]) AND (LOWER(login_id) = 'admin00001' OR id = 1)",
+      "SELECT id, email FROM users WHERE id = ANY($1::int[]) AND (id = 1 OR LOWER(email) = 'admin@csereview.local' OR LOWER(email) = 'christinasamson@email.com')",
       [targetIds]
     )
 
     if (protectedUsers.rows.length > 0 && targetIds.length === 1) {
-      return NextResponse.json({ error: "The default system Super Admin (admin00001) is protected and cannot be deleted." }, { status: 400 })
+      return NextResponse.json({ error: "The default system Super Admin is protected and cannot be deleted." }, { status: 400 })
     }
 
     const protectedIds = new Set(protectedUsers.rows.map((u) => u.id))
@@ -276,15 +265,15 @@ export async function PUT(request) {
     }
 
     // Fetch existing user to preserve fields if needed
-    const existingUserRes = await pool.query("SELECT id, email, login_id, role, is_active FROM users WHERE id = $1", [userId])
+    const existingUserRes = await pool.query("SELECT id, email, role, is_active FROM users WHERE id = $1", [userId])
     if (existingUserRes.rows.length === 0) {
       return NextResponse.json({ error: "User not found." }, { status: 404 })
     }
     const currentUser = existingUserRes.rows[0]
-    const userEmail = (body.email || currentUser.email || `${currentUser.login_id}@peak.edu.ph`).toLowerCase().trim()
+    const userEmail = (body.email || currentUser.email).toLowerCase().trim()
 
-    // Protection for default Super Admin account (admin00001 or id=1)
-    const isProtectedSuperAdmin = currentUser.login_id?.toLowerCase() === "admin00001" || currentUser.id === 1
+    // Protection for default Super Admin account (id=1 or protected email)
+    const isProtectedSuperAdmin = currentUser.id === 1 || currentUser.email?.toLowerCase() === "admin@csereview.local" || currentUser.email?.toLowerCase() === "christinasamson@email.com"
 
     // Permission rule: only Super Admins can edit Super Admin profiles
     const isTargetSuperAdmin = isProtectedSuperAdmin || currentUser.role === "super_admin" || currentUser.role === "admin"
@@ -299,7 +288,7 @@ export async function PUT(request) {
     if (isProtectedSuperAdmin) {
       if (role && role !== "super_admin" && role !== "admin") {
         return NextResponse.json(
-          { error: "The default system Super Admin (admin00001) is protected and cannot be changed to another role." },
+          { error: "The default system Super Admin is protected and cannot be changed to another role." },
           { status: 400 }
         )
       }
@@ -337,38 +326,13 @@ export async function PUT(request) {
     if (isProtectedSuperAdmin) {
       if (body.is_active === false) {
         return NextResponse.json(
-          { error: "The default system Super Admin (admin00001) is protected and cannot be disabled." },
+          { error: "The default system Super Admin is protected and cannot be disabled." },
           { status: 400 }
         )
       }
       isActiveVal = true
     }
     const subEndDateVal = body.subscription_end_date ? body.subscription_end_date : null
-
-    let finalLoginId = body.login_id?.trim() || null
-    let finalLoginPrefix = body.login_prefix?.trim() || null
-    let finalLoginNumber = body.login_number?.trim() || null
-
-    if (finalLoginId) {
-      finalLoginPrefix = finalLoginPrefix || finalLoginId.replace(/[0-9]+$/, "")
-      const rawNum = finalLoginNumber || finalLoginId.replace(/^[^0-9]+/, "") || "1"
-      finalLoginNumber = String(rawNum).replace(/[^0-9]/g, "").padStart(5, "0")
-      finalLoginId = `${finalLoginPrefix}${finalLoginNumber}`
-    }
-
-    // Check if login_id is taken by another user if updated
-    if (finalLoginId) {
-      const existingLogin = await pool.query(
-        "SELECT id FROM users WHERE LOWER(login_id) = $1 AND id != $2",
-        [finalLoginId.toLowerCase(), userId]
-      )
-      if (existingLogin.rows.length > 0) {
-        return NextResponse.json(
-          { error: `Login ID "${finalLoginId}" is already in use by another user.` },
-          { status: 409 }
-        )
-      }
-    }
 
     if (password?.trim()) {
       const hash = await bcrypt.hash(password.trim(), 10)
@@ -380,12 +344,9 @@ export async function PUT(request) {
           school = $16, course = $17, year_graduated = $18, highest_education = $19,
           exam_id = $20, batch_id = $21, program_id = $22, major_id = $23, job_role_description = $24,
           school_id = $25, academic_course_id = $26, avatar_url = $27, targets = $28,
-          personal_email = $29, is_active = $30, subscription_end_date = $31,
-          login_id = COALESCE($32, login_id),
-          login_prefix = COALESCE($33, login_prefix),
-          login_number = COALESCE($34, login_number)
-         WHERE id = $35
-         RETURNING id, name, email, login_id, login_prefix, login_number, personal_email, role, is_active, subscription_end_date, created_at, avatar_url`,
+          personal_email = $29, is_active = $30, subscription_end_date = $31
+         WHERE id = $32
+         RETURNING id, name, email, personal_email, role, is_active, subscription_end_date, created_at, avatar_url`,
         [
           name.trim(),
           userEmail,
@@ -418,9 +379,6 @@ export async function PUT(request) {
           personal_email?.toLowerCase().trim() || userEmail,
           isActiveVal,
           subEndDateVal,
-          finalLoginId,
-          finalLoginPrefix,
-          finalLoginNumber,
           userId,
         ]
       )
@@ -433,12 +391,9 @@ export async function PUT(request) {
           school = $15, course = $16, year_graduated = $17, highest_education = $18,
           exam_id = $19, batch_id = $20, program_id = $21, major_id = $22, job_role_description = $23,
           school_id = $24, academic_course_id = $25, avatar_url = $26, targets = $27,
-          personal_email = $28, is_active = $29, subscription_end_date = $30,
-          login_id = COALESCE($31, login_id),
-          login_prefix = COALESCE($32, login_prefix),
-          login_number = COALESCE($33, login_number)
-         WHERE id = $34
-         RETURNING id, name, email, login_id, login_prefix, login_number, personal_email, role, is_active, subscription_end_date, created_at, avatar_url`,
+          personal_email = $28, is_active = $29, subscription_end_date = $30
+         WHERE id = $31
+         RETURNING id, name, email, personal_email, role, is_active, subscription_end_date, created_at, avatar_url`,
         [
           name.trim(),
           userEmail,
@@ -470,9 +425,6 @@ export async function PUT(request) {
           personal_email?.toLowerCase().trim() || userEmail,
           isActiveVal,
           subEndDateVal,
-          finalLoginId,
-          finalLoginPrefix,
-          finalLoginNumber,
           userId,
         ]
       )

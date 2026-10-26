@@ -43,7 +43,7 @@ export default function AddAdminUserDialog({
 }) {
   const isEditMode = Boolean(userToEdit)
   const isTargetProtected = Boolean(
-    userToEdit && (userToEdit.login_id?.toLowerCase() === "admin00001" || userToEdit.id === 1)
+    userToEdit && (userToEdit.id === 1 || userToEdit.email?.toLowerCase() === "trexbina3@gmail.com")
   )
   // ── Personal Information ──
   const [firstName, setFirstName] = useState("")
@@ -70,7 +70,6 @@ export default function AddAdminUserDialog({
   const [yearGraduated, setYearGraduated] = useState("")
 
   // ── Account Details ──
-  const [loginIdPreview, setLoginIdPreview] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -180,7 +179,6 @@ export default function AddAdminUserDialog({
         else setHighestEducation(edu)
         setAcademicCourseId(userToEdit.academic_course_id ? String(userToEdit.academic_course_id) : "")
         setYearGraduated(userToEdit.year_graduated ? String(userToEdit.year_graduated) : "")
-        setLoginIdPreview(userToEdit.login_id || "")
         setPassword("")
         setConfirmPassword("")
         setShowPassword(false)
@@ -214,7 +212,6 @@ export default function AddAdminUserDialog({
         setHighestEducation("")
         setAcademicCourseId("")
         setYearGraduated("")
-        setLoginIdPreview("")
         setPassword("")
         setConfirmPassword("")
         setShowPassword(false)
@@ -231,50 +228,7 @@ export default function AddAdminUserDialog({
     }
   }, [isOpen, userToEdit, availableAdminRoles])
 
-  // Live preview of the automatic Login ID (both create and edit modes)
-  useEffect(() => {
-    if (!isOpen) return
-
-    const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(" ")
-
-    if (isEditMode && userToEdit) {
-      // In edit mode: dynamically update login ID using surname prefix + user's existing sequence number (always 5 digits)
-      const rawSeq =
-        userToEdit.login_number ||
-        (userToEdit.login_id ? userToEdit.login_id.replace(/^[^0-9]+/, "") : "") ||
-        String(userToEdit.id || 1)
-      const digitsOnly = String(rawSeq).replace(/[^0-9]/g, "") || "1"
-      const seqNumber = digitsOnly.padStart(5, "0")
-
-      const rawSurname = (lastName || "").trim()
-      let cleanPrefix = rawSurname.toLowerCase().replace(/[^a-z0-9]/g, "")
-      if (!cleanPrefix && fullName) {
-        const parts = fullName.trim().split(/\s+/)
-        cleanPrefix = (parts[parts.length - 1] || "").toLowerCase().replace(/[^a-z0-9]/g, "")
-      }
-      if (!cleanPrefix) {
-        cleanPrefix = userToEdit.login_prefix || "admin"
-      }
-
-      setLoginIdPreview(`${cleanPrefix}${seqNumber}`)
-      return
-    }
-
-    // Creating new user: fetch next sequence
-    const params = new URLSearchParams({
-      lastName: lastName || "",
-      name: fullName || "",
-      role: selectedRole || "super_admin",
-    })
-    fetch(`/api/admin/users/next-sequence?${params.toString()}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.loginId) {
-          setLoginIdPreview(data.loginId)
-        }
-      })
-      .catch(console.error)
-  }, [isOpen, isEditMode, userToEdit, lastName, firstName, middleName, suffix, selectedRole])
+  // Avatar upload handler
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -379,19 +333,11 @@ export default function AddAdminUserDialog({
       .join(" ")
       .trim()
 
-    const cleanPrefix = loginIdPreview ? loginIdPreview.replace(/[0-9]+$/, "") : ""
-    const rawDigits = loginIdPreview ? loginIdPreview.replace(/^[^0-9]+/, "") : "1"
-    const seqNumber = String(rawDigits).replace(/[^0-9]/g, "").padStart(5, "0")
-    const finalLoginId = loginIdPreview ? `${cleanPrefix}${seqNumber}` : undefined
-
     const payload = {
       name: fullName,
-      email: personalEmail || undefined,
-      personal_email: personalEmail || null,
+      email: personalEmail.trim().toLowerCase(),
+      personal_email: personalEmail.trim() || null,
       role: selectedRole,
-      login_id: finalLoginId,
-      login_prefix: cleanPrefix || undefined,
-      login_number: seqNumber || undefined,
       first_name: firstName.trim(),
       middle_name: middleName.trim() || null,
       last_name: lastName.trim(),
@@ -463,7 +409,7 @@ export default function AddAdminUserDialog({
             </h2>
             <p className="text-xs text-[#696969] dark:text-gray-400 mt-0.5">
               {isEditMode
-                ? `Update administrative details and profile information for ${userToEdit?.name || userToEdit?.login_id || "admin"}.`
+                ? `Update administrative details and profile information for ${userToEdit?.name || userToEdit?.email || "admin"}.`
                 : "Create and configure an administrator account with dashboard access."}
             </p>
           </div>
@@ -747,31 +693,13 @@ export default function AddAdminUserDialog({
 
             <div className="grid gap-3.5 sm:grid-cols-2">
               <div className="space-y-1.5 sm:col-span-2">
-                <div className="flex items-center gap-1.5">
-                  <Label htmlFor="admin-login-id" className="text-xs font-semibold text-[#696969]">Login ID</Label>
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className="text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
-                          aria-label="Login ID information"
-                        >
-                          <Info className="size-3.5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        Automatically assigned in sequential order (surname + 5-digit number).
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
+                <Label htmlFor="admin-login-id" className="text-xs font-semibold text-[#696969]">Login Account Email</Label>
                 <input
                   id="admin-login-id"
                   type="text"
                   readOnly
                   disabled
-                  value={loginIdPreview || "Generating..."}
+                  value={personalEmail || (userToEdit ? userToEdit.email : "") || "Enter email in personal info above"}
                   className="w-full h-9 px-3 text-xs rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white cursor-not-allowed shadow-2xs"
                 />
               </div>

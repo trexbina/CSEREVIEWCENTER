@@ -74,7 +74,6 @@ CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
-  login_id TEXT UNIQUE,
   password TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'student',
   is_active INTEGER NOT NULL DEFAULT 1,
@@ -96,7 +95,6 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_users_login_id ON users(login_id);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_batch_id ON users(batch_id);
 
@@ -482,12 +480,11 @@ VALUES (1, 1, 1, 1, '{name} - {email}', 15, '100', 1);
 
 -- Default Accounts (Password: password123 for all)
 -- 1. Super Admin
-INSERT OR IGNORE INTO users (id, name, email, login_id, password, role, is_active, status, targets)
+INSERT OR IGNORE INTO users (id, name, email, password, role, is_active, status, targets)
 VALUES (
   1,
   'System Administrator',
   'admin@csereview.local',
-  'admin00001',
   '$2b$10$euk/FLO/KMBI3JN/ctdFNuhYQokIwFCzE0uOpjOHil7TP/KP8Ngri',
   'super_admin',
   1,
@@ -496,12 +493,11 @@ VALUES (
 );
 
 -- 2. Staff Admin
-INSERT OR IGNORE INTO users (id, name, email, login_id, password, role, is_active, status, targets)
+INSERT OR IGNORE INTO users (id, name, email, password, role, is_active, status, targets)
 VALUES (
   2,
   'CSE Administrator',
   'staff@csereview.local',
-  'admin00002',
   '$2b$10$euk/FLO/KMBI3JN/ctdFNuhYQokIwFCzE0uOpjOHil7TP/KP8Ngri',
   'admin',
   1,
@@ -510,12 +506,11 @@ VALUES (
 );
 
 -- 3. Teacher / Reviewer
-INSERT OR IGNORE INTO users (id, name, email, login_id, password, role, is_active, status, targets)
+INSERT OR IGNORE INTO users (id, name, email, password, role, is_active, status, targets)
 VALUES (
   3,
   'Lead Instructor',
   'instructor@csereview.local',
-  'teacher00001',
   '$2b$10$euk/FLO/KMBI3JN/ctdFNuhYQokIwFCzE0uOpjOHil7TP/KP8Ngri',
   'teacher',
   1,
@@ -524,12 +519,11 @@ VALUES (
 );
 
 -- 4. Sample Student
-INSERT OR IGNORE INTO users (id, name, email, login_id, password, role, is_active, status, targets)
+INSERT OR IGNORE INTO users (id, name, email, password, role, is_active, status, targets)
 VALUES (
   4,
   'CSE Examinee Student',
   'student@csereview.local',
-  'student00001',
   '$2b$10$euk/FLO/KMBI3JN/ctdFNuhYQokIwFCzE0uOpjOHil7TP/KP8Ngri',
   'student',
   1,

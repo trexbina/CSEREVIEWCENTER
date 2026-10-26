@@ -138,7 +138,6 @@ export async function GET(request) {
         s.user_id as "userId",
         COALESCE(u.name, s.user_name, 'Unknown User') as name,
         COALESCE(u.email, s.email, '') as email,
-        u.login_id,
         COALESCE(u.role, s.role, 'student') as role,
         s.device,
         s.device_type as "deviceType",

@@ -1030,16 +1030,12 @@ export default function AnalyticalOverviewPage() {
     }
   }
 
-  // Format login ID matching the system standard (e.g. dianalan00002)
+  // Format student identifier (display email)
   const formatLoginId = (item) => {
-    if (item?.loginId && !item.loginId.includes("@") && !item.loginId.startsWith("ID: ")) return item.loginId
-    if (item?.login_id && !item.login_id.includes("@") && !item.login_id.startsWith("ID: ")) return item.login_id
-    if (item?.name) {
-      const parts = item.name.trim().split(/\s+/)
-      const surname = parts[parts.length - 1]?.toLowerCase().replace(/[^a-z0-9]/g, "") || "user"
-      return `${surname}${String(item.id || 1).padStart(5, "0")}`
-    }
-    return `user${String(item?.id || 1).padStart(5, "0")}`
+    if (item?.email) return item.email
+    if (item?.loginId) return item.loginId
+    if (item?.login_id) return item.login_id
+    return item?.name || `user${item?.id || 1}`
   }
 
   // Reset sorting when switching tabs

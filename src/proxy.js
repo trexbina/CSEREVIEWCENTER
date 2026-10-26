@@ -104,7 +104,7 @@ export default async function proxy(request) {
           const clonedRequest = request.clone()
           const body = await clonedRequest.json()
           const rawTarget =
-            body.loginId || body.login_id || body.email || body.username || ""
+            body.email || body.loginId || body.username || ""
           if (rawTarget) {
             identifier = String(rawTarget).toLowerCase().trim()
           }

@@ -159,7 +159,6 @@ export default function ActiveSessionsPage() {
         !q ||
         (s.name || "").toLowerCase().includes(q) ||
         (s.email || "").toLowerCase().includes(q) ||
-        (s.login_id || "").toLowerCase().includes(q) ||
         (s.ip || "").toLowerCase().includes(q) ||
         (s.device || "").toLowerCase().includes(q) ||
         (s.location || "").toLowerCase().includes(q)
@@ -783,11 +782,6 @@ export default function ActiveSessionsPage() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
                               <span className="font-semibold text-foreground truncate">{sess.name}</span>
-                              {sess.login_id && (
-                                <span className="text-[10px] px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
-                                  {sess.login_id}
-                                </span>
-                              )}
                             </div>
                             <p className="text-[11px] text-muted-foreground truncate">{sess.email || "No email"}</p>
                           </div>

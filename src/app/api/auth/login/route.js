@@ -7,30 +7,30 @@ import { parseDeviceFromUserAgent, getClientIp } from "@/lib/device-utils"
 export async function POST(request) {
   try {
     const body = await request.json()
-    const identifier = (body.loginId || body.login_id || body.email || "").toLowerCase().trim()
+    const email = (body.email || body.loginId || body.login_id || "").toLowerCase().trim()
     const password = body.password
 
-    if (!identifier || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: "Login ID and password are required." },
+        { error: "Email and password are required." },
         { status: 400 }
       )
     }
 
     const result = await pool.query(
-      `SELECT u.id, u.name, u.email, u.login_id, u.password, u.role, u.is_active, u.subscription_end_date,
+      `SELECT u.id, u.name, u.email, u.password, u.role, u.is_active, u.subscription_end_date,
               b.end_date as batch_end_date, b.name as batch_name
        FROM users u
        LEFT JOIN batches b ON u.batch_id = b.id
-       WHERE LOWER(u.login_id) = $1 OR LOWER(u.email) = $1`,
-      [identifier]
+       WHERE LOWER(u.email) = $1`,
+      [email]
     )
 
     const user = result.rows[0]
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return NextResponse.json(
-        { error: "Invalid Login ID or password." },
+        { error: "Invalid email or password." },
         { status: 401 }
       )
     }
@@ -75,7 +75,6 @@ export async function POST(request) {
     const token = await signToken({
       userId: user.id,
       email: user.email,
-      loginId: user.login_id,
       role: user.role,
     })
 

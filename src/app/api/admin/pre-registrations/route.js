@@ -202,15 +202,7 @@ export async function PATCH(request) {
     const defaultPassword = customPassword?.trim() || "Student@123"
     const hash = await bcrypt.hash(defaultPassword, 10)
 
-    // Generate atomic Login ID for this student
-    const generated = await generateNextLoginId(
-      pool,
-      app.last_name,
-      fullName,
-      "student"
-    )
-
-    const accountEmail = (body.accountEmail || body.customEmail || app.email || `${generated.login_id}@peak.edu.ph`).toLowerCase().trim()
+    const accountEmail = (body.accountEmail || body.customEmail || app.email).toLowerCase().trim()
     const chosenBatchId = body.batch_id !== undefined
       ? (body.batch_id ? parseInt(body.batch_id, 10) : null)
       : (body.batchId !== undefined ? (body.batchId ? parseInt(body.batchId, 10) : null) : (app.batch_id || null))
@@ -222,10 +214,9 @@ export async function PATCH(request) {
         birthday, gender, phone, address, city, province, zip_code,
         school, course, year_graduated, highest_education,
         exam_id, batch_id, program_id, major_id,
-        school_id, academic_course_id, targets,
-        login_prefix, login_number, login_id, created_at
+        school_id, academic_course_id, targets, created_at
       )
-      VALUES ($1,$2,$3,$4,'student',$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,'[]'::jsonb,$26,$27,$28, NOW())
+      VALUES ($1,$2,$3,$4,'student',$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,'[]'::jsonb, NOW())
       ON CONFLICT (email) DO UPDATE SET
         name = EXCLUDED.name,
         personal_email = EXCLUDED.personal_email,
@@ -251,11 +242,8 @@ export async function PATCH(request) {
         program_id = EXCLUDED.program_id,
         major_id = EXCLUDED.major_id,
         school_id = EXCLUDED.school_id,
-        academic_course_id = EXCLUDED.academic_course_id,
-        login_prefix = COALESCE(users.login_prefix, EXCLUDED.login_prefix),
-        login_number = COALESCE(users.login_number, EXCLUDED.login_number),
-        login_id = COALESCE(users.login_id, EXCLUDED.login_id)
-      RETURNING id, name, email, login_id, login_prefix, login_number, personal_email, role, created_at`,
+        academic_course_id = EXCLUDED.academic_course_id
+      RETURNING id, name, email, personal_email, role, created_at`,
       [
         fullName,
         accountEmail,
@@ -282,9 +270,6 @@ export async function PATCH(request) {
         app.major_id,
         app.school_id,
         app.academic_course_id,
-        generated.login_prefix,
-        generated.login_number,
-        generated.login_id,
       ]
     )
 
@@ -303,7 +288,7 @@ export async function PATCH(request) {
       user: insertUserRes.rows[0],
       initialPassword: defaultPassword,
       accountEmail: accountEmail,
-      loginId: insertUserRes.rows[0]?.login_id || generated.login_id,
+      loginId: accountEmail,
     })
   } catch (err) {
     console.error("[admin/pre-registrations PATCH] error:", err)

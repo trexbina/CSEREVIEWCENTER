@@ -79,7 +79,6 @@ export async function GET(request) {
       SELECT 
         u.id AS student_id,
         u.name AS student_name,
-        u.login_id,
         u.email,
         u.avatar_url,
         u.avatar,
@@ -119,16 +118,11 @@ export async function GET(request) {
     rawScoreRows.forEach((row) => {
       const sId = row.student_id
       if (!studentMap[sId]) {
-        const parts = (row.student_name || "").trim().split(/\s+/)
-        const lastName = parts[parts.length - 1]?.toLowerCase().replace(/[^a-z0-9]/g, "") || "user"
-        const fallbackLoginId = `${lastName}${String(sId).padStart(5, "0")}`
-        const resolvedLoginId = row.login_id || fallbackLoginId
-
         studentMap[sId] = {
           id: sId,
           name: row.student_name,
-          loginId: resolvedLoginId,
-          login_id: resolvedLoginId,
+          loginId: row.email || `user${sId}`,
+          login_id: row.email || `user${sId}`,
           email: row.email,
           avatarUrl: row.avatar_url || row.avatar || null,
           avatar_url: row.avatar_url || row.avatar || null,
@@ -887,7 +881,7 @@ export async function GET(request) {
     const [allUsersRes, dailyRegStatsRes] = await Promise.all([
       pool.query(`
         SELECT 
-          u.id, u.name, u.email, u.login_id, u.role, u.created_at,
+          u.id, u.name, u.email, u.role, u.created_at,
           u.avatar_url, u.avatar,
           COALESCE(u.target_exam, 'General') AS target_exam,
           u.target_exam_date,
@@ -986,19 +980,14 @@ export async function GET(request) {
         statusColor = "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
       }
 
-      const candidateParts = (u.name || "").trim().split(/\s+/)
-      const candidateSurname = candidateParts[candidateParts.length - 1]?.toLowerCase().replace(/[^a-z0-9]/g, "") || "user"
-      const fallbackCandLoginId = `${candidateSurname}${String(u.id || 1).padStart(5, "0")}`
-      const resolvedCandLoginId = u.login_id || fallbackCandLoginId
-
       return {
         id: u.id,
         name: u.name,
         email: u.email,
         avatarUrl: u.avatar_url || u.avatar || null,
         avatar_url: u.avatar_url || u.avatar || null,
-        login_id: resolvedCandLoginId,
-        loginId: resolvedCandLoginId,
+        login_id: u.email || `user${u.id}`,
+        loginId: u.email || `user${u.id}`,
         role: u.role,
         target_exam: u.target_exam || "General",
         target_exam_date: u.target_exam_date || null,

@@ -454,9 +454,9 @@ export default function EditUserForm({ initialUser }) {
         }
 
         try {
-            const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(" ").trim() || initialUser.name || (personalEmail ? personalEmail.split("@")[0] : initialUser.login_id)
+            const fullName = [firstName, middleName, lastName, suffix].filter(Boolean).join(" ").trim() || initialUser.name || (personalEmail ? personalEmail.split("@")[0] : `User ${initialUser.id}`)
 
-            const resolvedEmail = (personalEmail || initialUser.email || `${initialUser.login_id || 'user'}@peak.edu.ph`).toLowerCase().trim()
+            const resolvedEmail = (personalEmail || initialUser.email || `user${initialUser.id}@peak.edu.ph`).toLowerCase().trim()
 
             const payload = {
                 name: fullName,
@@ -706,30 +706,14 @@ export default function EditUserForm({ initialUser }) {
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5 sm:col-span-2">
                             <div className="flex items-center gap-1.5">
-                                <Label htmlFor="account-login-id" className="text-sm font-semibold text-[#696969]">Login ID</Label>
-                                <TooltipProvider delayDuration={150}>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <button
-                                                type="button"
-                                                className="text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
-                                                aria-label="Login ID information"
-                                            >
-                                                <Info className="size-3.5" />
-                                            </button>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="top">
-                                            Permanent identifier used for logging into the portal.
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
+                                <Label htmlFor="account-email" className="text-sm font-semibold text-[#696969]">Email Address</Label>
                             </div>
                             <input
-                                id="account-login-id"
-                                type="text"
+                                id="account-email"
+                                type="email"
                                 readOnly
                                 disabled
-                                value={initialUser.login_id || initialUser.email || "—"}
+                                value={initialUser.email || "—"}
                                 className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white cursor-not-allowed shadow-2xs"
                             />
                         </div>
@@ -792,7 +776,7 @@ export default function EditUserForm({ initialUser }) {
                             <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-150">
                                 <Label className="text-sm font-semibold text-[#696969]">Admin Role *</Label>
                                 <Select 
-                                    disabled={initialUser.login_id?.toLowerCase() === "admin00001" || initialUser.id === 1}
+                                    disabled={initialUser.id === 1 || initialUser.email?.toLowerCase() === "admin@csereview.local" || initialUser.email?.toLowerCase() === "christinasamson@email.com"}
                                     value={role === "admin" ? "super_admin" : role} 
                                     onValueChange={(val) => setRole(val)}
                                 >

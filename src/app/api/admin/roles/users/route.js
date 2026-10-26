@@ -34,7 +34,6 @@ export async function GET(req) {
         WHERE (
           u.name ILIKE $1 
           OR u.email ILIKE $1 
-          OR u.login_id ILIKE $1 
           OR u.personal_email ILIKE $1
         )
         ORDER BY u.name ASC
@@ -86,19 +85,19 @@ export async function PATCH(req) {
       return NextResponse.json({ error: "User ID is required." }, { status: 400 })
     }
 
-    const userRes = await pool.query("SELECT id, name, role, is_active, email, login_id FROM users WHERE id = $1", [parseInt(userId)])
+    const userRes = await pool.query("SELECT id, name, role, is_active, email FROM users WHERE id = $1", [parseInt(userId)])
     if (userRes.rows.length === 0) {
       return NextResponse.json({ error: "User not found." }, { status: 404 })
     }
 
     const targetUser = userRes.rows[0]
-    const isProtectedSuperAdmin = targetUser.login_id?.toLowerCase() === "admin00001" || targetUser.id === 1
+    const isProtectedSuperAdmin = targetUser.id === 1 || targetUser.email?.toLowerCase() === "admin@csereview.local" || targetUser.email?.toLowerCase() === "christinasamson@email.com"
 
-    // Prevent transferring or disabling default Super Admin (admin00001)
+    // Prevent transferring or disabling default Super Admin
     if (isProtectedSuperAdmin) {
       if (role !== undefined && role !== "super_admin" && role !== "admin") {
         return NextResponse.json({
-          error: "The default system Super Admin (admin00001) is protected and cannot be transferred to another role."
+          error: "The default system Super Admin is protected and cannot be transferred to another role."
         }, { status: 400 })
       }
       if (is_active === false) {
@@ -154,7 +153,7 @@ export async function PATCH(req) {
       UPDATE users 
       SET ${updates.join(", ")} 
       WHERE id = $${idx} 
-      RETURNING id, name, email, login_id, role, is_active, avatar_url
+      RETURNING id, name, email, role, is_active, avatar_url
     `
 
     const updateRes = await pool.query(query, values)

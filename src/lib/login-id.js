@@ -31,30 +31,19 @@ export async function generateNextLoginId(clientOrPool, lastName, fullName = "",
   const db = clientOrPool || pool
   const prefix = sanitizeSurnamePrefix(lastName, fullName, role)
 
-  // Query highest sequence number in users table
+  // Query highest ID in users table
   const seqRes = await db.query(`
-    SELECT COALESCE(MAX(login_number::bigint), 0) + 1 AS next_seq
+    SELECT COALESCE(MAX(id), 0) + 1 AS next_seq
     FROM users
-    WHERE login_number ~ '^[0-9]+$'
   `)
 
   const nextSeq = Number(seqRes.rows[0]?.next_seq || 1)
   const login_number = String(nextSeq).padStart(5, "0")
-  let login_id = `${prefix}${login_number}`
-
-  // Guard against any collision
-  let counter = nextSeq
-  let exists = await db.query("SELECT id FROM users WHERE LOWER(login_id) = $1", [login_id.toLowerCase()])
-  while (exists.rows.length > 0) {
-    counter++
-    const altNumber = String(counter).padStart(5, "0")
-    login_id = `${prefix}${altNumber}`
-    exists = await db.query("SELECT id FROM users WHERE LOWER(login_id) = $1", [login_id.toLowerCase()])
-  }
+  const login_id = `${prefix}${login_number}`
 
   return {
     login_prefix: prefix,
-    login_number: login_id.slice(prefix.length),
+    login_number,
     login_id,
   }
 }

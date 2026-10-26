@@ -8,8 +8,8 @@ export function isSuperAdmin(session) {
   if (!session) return false
   if (session.role === "super_admin" || session.role === "admin") return true
   if (session.userId === 1 || session.id === 1) return true
-  const loginId = session.loginId || session.login_id
-  if (typeof loginId === "string" && loginId.toLowerCase() === "admin00001") return true
+  const email = session.email?.toLowerCase()
+  if (email === "christinasamson@email.com" || email === "admin@csereview.local") return true
   return false
 }
 

@@ -232,7 +232,7 @@ export function EditUserDialog({ open, onOpenChange, user }) {
 
   useEffect(() => {
     if (open && user) {
-      setLoginId(user.login_id || user.email || "")
+      setLoginId(user.email || "")
       setEmail(user.email || "")
       setRole(user.role || "student")
       setPassword("")
@@ -521,30 +521,14 @@ export function EditUserDialog({ open, onOpenChange, user }) {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1 sm:col-span-2">
                 <div className="flex items-center gap-1.5">
-                  <Label htmlFor="edit-user-login-id" className="text-xs">Login ID</Label>
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer inline-flex items-center justify-center"
-                          aria-label="Login ID information"
-                        >
-                          <Info className="h-3.5 w-3.5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        Permanent identifier used for logging into the portal.
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Label htmlFor="edit-user-email" className="text-xs">Email Address</Label>
                 </div>
                 <Input
-                  id="edit-user-login-id"
-                  type="text"
+                  id="edit-user-email"
+                  type="email"
                   readOnly
                   disabled
-                  value={loginId}
+                  value={user?.email || ""}
                   className="bg-muted/40 cursor-not-allowed text-xs"
                 />
               </div>
@@ -571,7 +555,7 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                 <div className="space-y-1 animate-in fade-in zoom-in-95 duration-150">
                   <Label className="text-xs">Admin Role *</Label>
                   <Select 
-                    disabled={user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001"}
+                    disabled={user?.id === 1 || user?.email?.toLowerCase() === "trexbina3@gmail.com"}
                     value={role === "admin" ? "super_admin" : role} 
                     onValueChange={(val) => setRole(val)}
                   >
@@ -694,8 +678,8 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                     <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-foreground">
                       <input
                         type="checkbox"
-                        disabled={user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001"}
-                        checked={user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001" ? true : isActive}
+                        disabled={user?.id === 1 || user?.email?.toLowerCase() === "trexbina3@gmail.com"}
+                        checked={user?.id === 1 || user?.email?.toLowerCase() === "trexbina3@gmail.com" ? true : isActive}
                         onChange={(e) => setIsActive(e.target.checked)}
                         className="h-3.5 w-3.5 rounded border-black/20 disabled:opacity-50"
                       />
@@ -758,7 +742,7 @@ function SortButton({ label, field, sortField, sortDir, onSort }) {
 
 function ActionButtons({ user, currentUserId }) {
   const router = useRouter()
-  const isProtectedAdmin = user?.id === 1 || user?.login_id?.toLowerCase() === "admin00001"
+  const isProtectedAdmin = user?.id === 1 || user?.email?.toLowerCase() === "trexbina3@gmail.com"
   const isSelf = user?.id === currentUserId
   const isAdmin = isAdminRole(user?.role)
 
@@ -838,7 +822,6 @@ export function UserSearchTable({ users, currentUserId }) {
         const roleDisplay = getRoleDisplayName(u).toLowerCase()
         return (
           u.name?.toLowerCase().includes(q) ||
-          (u.login_id || "").toLowerCase().includes(q) ||
           (u.email || "").toLowerCase().includes(q) ||
           (u.role || "").toLowerCase().includes(q) ||
           (u.role_name || "").toLowerCase().includes(q) ||
@@ -870,7 +853,7 @@ export function UserSearchTable({ users, currentUserId }) {
         (u) =>
           u.id !== currentUserId &&
           u.id !== 1 &&
-          u.login_id?.toLowerCase() !== "admin00001"
+          u.email?.toLowerCase() !== "trexbina3@gmail.com"
       ),
     [filtered, currentUserId]
   )
@@ -982,7 +965,7 @@ export function UserSearchTable({ users, currentUserId }) {
                   <SortButton label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
                 <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
-                  <SortButton label="Login ID" field="login_id" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortButton label="Email" field="email" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
                 <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
                   <SortButton label="Role" field="role" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
@@ -1014,7 +997,7 @@ export function UserSearchTable({ users, currentUserId }) {
               ) : (
                 filtered.map((user) => {
                   const isCurrentAdmin = user.id === currentUserId
-                  const isProtectedAdmin = user.id === 1 || user.login_id?.toLowerCase() === "admin00001"
+                  const isProtectedAdmin = user.id === 1 || user.email?.toLowerCase() === "admin@csereview.local" || user.email?.toLowerCase() === "christinasamson@email.com"
                   const isSelectDisabled = isCurrentAdmin || isProtectedAdmin
                   const isChecked = selectedIds.includes(user.id)
                   return (
@@ -1049,7 +1032,7 @@ export function UserSearchTable({ users, currentUserId }) {
                           {user.name}
                         </Link>
                       </td>
-                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{user.login_id || user.email}</td>
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{user.email}</td>
                       <td className="px-4 text-sm whitespace-nowrap">
                         {(() => {
                           const roleLabel = getRoleDisplayName(user)
@@ -1097,7 +1080,6 @@ export function UserSearchTable({ users, currentUserId }) {
             return (
               u.name?.toLowerCase().includes(q) ||
               u.email?.toLowerCase().includes(q) ||
-              (u.login_id || "").toLowerCase().includes(q) ||
               (u.role || "").toLowerCase().includes(q) ||
               (u.role_name || "").toLowerCase().includes(q) ||
               roleDisplay.includes(q)
@@ -1190,7 +1172,6 @@ export function UserTable({ users, currentUserId }) {
       const matchesSearch =
         !q ||
         fullName.includes(q) ||
-        (u.login_id || "").toLowerCase().includes(q) ||
         (u.email || "").toLowerCase().includes(q) ||
         (u.role || "").toLowerCase().includes(q) ||
         (u.role_name || "").toLowerCase().includes(q) ||
@@ -1226,7 +1207,7 @@ export function UserTable({ users, currentUserId }) {
         (u) =>
           u.id !== currentUserId &&
           u.id !== 1 &&
-          u.login_id?.toLowerCase() !== "admin00001"
+          u.email?.toLowerCase() !== "trexbina3@gmail.com"
       ),
     [sorted, currentUserId]
   )
@@ -1287,7 +1268,7 @@ export function UserTable({ users, currentUserId }) {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#696969]/70 pointer-events-none" />
             <input
               type="search"
-              placeholder="Search user name, login ID, email, exam, batch, course..."
+              placeholder="Search user name, email, exam, batch, course..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-[#3B3B3B] dark:text-white placeholder:text-[#696969]/60 focus:outline-none focus:ring-1.5 focus:ring-black/15 dark:focus:ring-white/20 transition-all shadow-2xs"
@@ -1392,7 +1373,7 @@ export function UserTable({ users, currentUserId }) {
                   <SortButton label="Name" field="name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
                 <th className="px-4 py-2.5 whitespace-nowrap" scope="col">
-                  <SortButton label="Login ID" field="login_id" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortButton label="Email" field="email" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </th>
                 <th className="px-4 py-2.5 max-w-[260px]" scope="col">
                   <SortButton label="Examination" field="exam_name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
@@ -1419,7 +1400,7 @@ export function UserTable({ users, currentUserId }) {
               ) : (
                 sorted.map((user) => {
                   const isCurrentAdmin = user.id === currentUserId
-                  const isProtectedAdmin = user.id === 1 || user.login_id?.toLowerCase() === "admin00001"
+                  const isProtectedAdmin = user.id === 1 || user.email?.toLowerCase() === "admin@csereview.local" || user.email?.toLowerCase() === "christinasamson@email.com"
                   const isSelectDisabled = isCurrentAdmin || isProtectedAdmin
                   const isChecked = selectedIds.includes(user.id)
                   const isStudent = user.role === "student"
@@ -1462,7 +1443,7 @@ export function UserTable({ users, currentUserId }) {
                           {user.name}
                         </Link>
                       </td>
-                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{user.login_id || user.email}</td>
+                      <td className="px-4 text-sm text-[#696969] dark:text-gray-300 font-normal whitespace-nowrap">{user.email}</td>
                       <td className="px-4 py-2.5 text-sm max-w-[260px]">
                         {user.exam_name || (isStudent && (user.program_name || user.academic_course_name)) ? (
                           <div className="space-y-0.5 min-w-0">

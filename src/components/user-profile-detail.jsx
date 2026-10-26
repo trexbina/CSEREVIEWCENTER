@@ -582,12 +582,6 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
 
                 <div className="space-y-5">
                   <div className="space-y-1">
-                    <p className="text-[13px] text-muted-foreground font-medium">Login ID</p>
-                    <p className="text-[15px] font-semibold text-foreground">
-                      {user.login_id || user.email || "—"}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
                     <p className="text-[13px] text-muted-foreground font-medium">Email Address</p>
                     <a
                       href={user.personal_email || user.email ? `mailto:${user.personal_email || user.email}` : undefined}
@@ -1608,35 +1602,6 @@ export function UserProfileDetail({ initialUser, showBackBtn = true }) {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <Label htmlFor="account-login-id" className="text-sm font-semibold text-[#696969]">Login ID</Label>
-                      <TooltipProvider delayDuration={150}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              className="text-[#696969] hover:text-[#3B3B3B] dark:hover:text-white transition-colors cursor-pointer inline-flex items-center justify-center"
-                              aria-label="Login ID information"
-                            >
-                              <Info className="size-3.5" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top">
-                            Permanent identifier used for logging into the portal.
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <input
-                      id="account-login-id"
-                      type="text"
-                      readOnly
-                      disabled
-                      value={user.login_id || user.email || "—"}
-                      className="w-full h-10.5 px-3.5 text-sm rounded-xl border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/5 text-[#3B3B3B] dark:text-white cursor-not-allowed shadow-2xs font-mono"
-                    />
-                  </div>
 
                   <div className="space-y-1.5">
                     <Label htmlFor="account-email" className="text-sm font-semibold text-[#696969]">Account Email *</Label>

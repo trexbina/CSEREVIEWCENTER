@@ -72,7 +72,6 @@ export async function RecentEnrollmentsFeed() {
         u.name, 
         u.email, 
         u.role, 
-        u.login_id, 
         u.created_at,
         b.name as batch_name,
         e.name as exam_name
@@ -143,9 +142,9 @@ export async function RecentEnrollmentsFeed() {
                       <span className="text-xs sm:text-sm font-medium text-[#3B3B3B] dark:text-white truncate">
                         {user.name}
                       </span>
-                      {user.login_id && (
-                        <span className="text-[11px] sm:text-xs text-neutral-400 dark:text-neutral-500 font-normal">
-                          {user.login_id}
+                      {user.email && (
+                        <span className="text-[11px] sm:text-xs text-neutral-400 dark:text-neutral-500 font-normal truncate">
+                          {user.email}
                         </span>
                       )}
                     </div>

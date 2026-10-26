@@ -26,9 +26,8 @@ export async function GET(request) {
     const prefix = sanitizeSurnamePrefix(lastName, fullName, role)
 
     const seqRes = await pool.query(`
-      SELECT COALESCE(MAX(login_number::bigint), 0) + 1 AS next_seq
+      SELECT COALESCE(MAX(id), 0) + 1 AS next_seq
       FROM users
-      WHERE login_number ~ '^[0-9]+$'
     `)
 
     const nextSeq = Number(seqRes.rows[0]?.next_seq || 1)

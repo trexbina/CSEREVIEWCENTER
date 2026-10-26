@@ -59,7 +59,7 @@ export async function GET(request) {
       // 1. Users (Students, Instructors, Admins)
       safeQuery(`
         SELECT 
-          u.id, u.name, u.email, u.login_id, u.role, u.avatar_url,
+          u.id, u.name, u.email, u.role, u.avatar_url,
           COALESCE(c.name, u.course, '—') AS course_name,
           COALESCE(s.name, u.school, '—') AS school_name
         FROM users u
@@ -67,7 +67,6 @@ export async function GET(request) {
         LEFT JOIN schools s ON u.school_id = s.id
         WHERE 
           u.name ILIKE $1 
-          OR u.login_id ILIKE $1
           OR u.email ILIKE $1 
           OR u.first_name ILIKE $1 
           OR u.last_name ILIKE $1
@@ -236,7 +235,6 @@ export async function GET(request) {
         id: u.id,
         name: u.name,
         email: u.email,
-        login_id: u.login_id,
         role: u.role,
         avatar_url: u.avatar_url,
         course: u.course_name,

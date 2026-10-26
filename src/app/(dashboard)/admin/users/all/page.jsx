@@ -17,7 +17,7 @@ export const revalidate = 0
 async function getAllUsers() {
     const result = await pool.query(
         `SELECT 
-            u.id, u.name, u.email, u.login_id, u.login_prefix, u.login_number, u.role, u.created_at, u.avatar_url,
+            u.id, u.name, u.email, u.role, u.created_at, u.avatar_url,
             u.first_name, u.middle_name, u.last_name, u.suffix,
             u.birthday, u.gender, u.phone, u.address, u.city, u.province, u.zip_code,
             u.school, u.course, u.year_graduated, u.highest_education,

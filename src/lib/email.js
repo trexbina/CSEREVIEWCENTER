@@ -29,7 +29,7 @@ const transporter = nodemailer.createTransport({
  * @param {string} params.resetUrl - Full URL with token
  */
 export async function sendPasswordResetEmail({ to, name, resetUrl }) {
-  const from = process.env.SMTP_FROM || `"CSE Review System" <${SMTP_USER || "noreply@csereview.local"}>`
+  const from = process.env.SMTP_FROM || `"Reviewer Exam - RE" <${SMTP_USER || "noreply@csereview.local"}>`
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -59,13 +59,13 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }) {
     <body>
       <div class="container">
         <div class="header">
-          <h1>CSE Review System</h1>
-          <p>Civil Service Examination Review & Preparation</p>
+          <h1>Reviewer Exam - RE</h1>
+          <p>Owl Review Center · Global Examination Review</p>
         </div>
         <div class="content">
           <div class="greeting">Hello ${name ? name : "Reviewee"},</div>
           <p class="description">
-            We received a request to reset the password associated with your CSE Review System account.
+            We received a request to reset the password associated with your Reviewer Exam - RE account.
             Click the button below to establish a new password for your account:
           </p>
           <div class="btn-wrapper">
@@ -83,7 +83,7 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }) {
           </p>
         </div>
         <div class="footer">
-          &copy; ${new Date().getFullYear()} CSE Review System. All rights reserved.<br>
+          &copy; ${new Date().getFullYear()} Owl Review Center. All rights reserved.<br>
           This is an automated system notification. Please do not reply directly to this email.
         </div>
       </div>
@@ -94,20 +94,20 @@ export async function sendPasswordResetEmail({ to, name, resetUrl }) {
   const textContent = `
 Hello ${name ? name : "Reviewee"},
 
-We received a request to reset your CSE Review System account password.
+We received a request to reset your Reviewer Exam - RE account password.
 Please visit the following link to reset your password:
 
 ${resetUrl}
 
 This link is valid for 1 hour. If you did not request this, you can safely ignore this email.
 
-CSE Review System
+Reviewer Exam - RE
   `.trim()
 
   const info = await transporter.sendMail({
     from,
     to,
-    subject: "Password Reset Request - CSE Review System",
+    subject: "Password Reset Request - Reviewer Exam - RE",
     text: textContent,
     html: htmlContent,
   })

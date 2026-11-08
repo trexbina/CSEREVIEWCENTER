@@ -1,8 +1,8 @@
 import { HeroSection, AboutSystemSection, AboutUsSection, ProgramsSection, LandingFooter } from "@/components/landing-page"
 
 export const metadata = {
-  title: "CSE Review System | Civil Service Examination Platform",
-  description: "Comprehensive Civil Service Examination review and prep platform with modern learning tools for students and reviewers.",
+  title: "Reviewer Exam - RE | Global Examination Review Platform",
+  description: "Prepare for examinations worldwide with learning tools from Owl Review Center.",
 }
 
 export default function Home() {

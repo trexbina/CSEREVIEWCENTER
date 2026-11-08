@@ -1,5 +1,5 @@
 -- ==============================================================================
--- CSE Review System — Cloudflare D1 Database Schema Setup (SQLite Dialect)
+-- Reviewer Exam - RE — Cloudflare D1 Database Schema Setup (SQLite Dialect)
 -- Target Database ID: 2f325295-c5cc-4b63-8418-bb09c14c0018
 -- Execute via: npx wrangler d1 execute csereview-d1 --file=d1_setup.sql --remote
 -- ==============================================================================

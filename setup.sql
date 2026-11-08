@@ -1,5 +1,5 @@
 -- ==============================================================================
--- CSE Review System — Database Initialization & Schema Setup
+-- Reviewer Exam - RE — Database Initialization & Schema Setup
 -- Rebranded & Cleaned for Civil Service Examination (CSE) Review Platform
 -- Compatible with PostgreSQL 14+, Neon, Supabase, and Cloudflare Hyperdrive
 -- ==============================================================================

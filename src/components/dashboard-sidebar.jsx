@@ -363,7 +363,7 @@ export function DashboardSidebar({ role, permissions, roleName }) {
                     <div className={`flex items-center pt-5 pb-3 ${collapsed ? "justify-center px-2" : "justify-start px-4 gap-3"}`}>
                         <img
                             src="/landingpageassets/logo.png"
-                            alt="CSE Review System"
+                            alt="Reviewer Exam - RE"
                             className={`shrink-0 object-contain transition-all ${collapsed ? "size-9" : "size-10 sm:size-[42px]"}`}
                         />
                         {!collapsed && (

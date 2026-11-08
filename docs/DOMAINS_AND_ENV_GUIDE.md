@@ -1,4 +1,8 @@
-# CSE Review System — Domain, Environment & Deployment Guide
+# Reviewer Exam - RE — Domain, Environment & Deployment Guide
+
+**Product:** Reviewer Exam - RE
+
+**Organization:** Owl Review Center — a global provider of examination review programs.
 
 This document details the project's production URLs, local development workflows, database bindings, and deployment procedures.
 

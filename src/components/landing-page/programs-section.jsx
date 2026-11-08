@@ -4,14 +4,14 @@ import { motion } from "motion/react"
 
 export function ProgramsSection() {
   return (
-    <section className="py-10 sm:py-16 bg-white overflow-hidden">
+    <section id="programs" className="scroll-mt-8 bg-white py-10 sm:py-16">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 35, scale: 0.97 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-2xl bg-[#e5e7eb] overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-500"
+          className="overflow-hidden rounded-2xl bg-[#eef4f7] shadow-[0_18px_48px_rgba(38,45,118,.10)] transition-shadow duration-500 hover:shadow-[0_24px_56px_rgba(38,45,118,.14)]"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 items-center">
             {/* Left: Text */}
@@ -22,8 +22,9 @@ export function ProgramsSection() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="p-6 sm:p-8 md:p-12 lg:p-14 order-2 md:order-1"
             >
-              <p className="text-[#4b5563] text-xs sm:text-sm md:text-[15px] leading-relaxed font-medium text-justify">
-                We administer review program for Philippine Nursing Licensure Examination (<strong className="text-[#1a1a1a]">PNLE</strong>), Commission on Graduates of Foreign Nursing Schools (<strong className="text-[#1a1a1a]">CGFNS</strong>), National Council Licensure Examination (<strong className="text-[#1a1a1a]">NCLEX</strong>), Health Authority-Abu Dhabi (<strong className="text-[#1a1a1a]">HAAD</strong>), Board Licensure Exam for Professional Teachers (<strong className="text-[#1a1a1a]">BLEPT</strong>), Board Licensure Exam for Psychometrician and Psychology (<strong className="text-[#1a1a1a]">BLEPP</strong>), International English Language Testing Service (<strong className="text-[#1a1a1a]">IELTS</strong>), Pharmacy, Midwifery and Career Civil Service Examination.
+              <h2 className="max-w-xl text-2xl font-bold leading-tight text-[#2f327d] sm:text-3xl">Built to organize every <span className="text-[#f48c06]">review track.</span></h2>
+              <p className="mt-5 max-w-xl text-sm font-medium leading-7 text-[#4b5563] sm:text-[15px]">
+                Support program-specific paths for <strong className="text-[#252641]">NCLEX</strong>, <strong className="text-[#252641]">PNLE</strong>, <strong className="text-[#252641]">BLEPT</strong>, <strong className="text-[#252641]">CSE</strong>, and the next exam your review center serves—without separating the learner experience.
               </p>
             </motion.div>
 

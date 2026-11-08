@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { LoginDialog } from "@/components/login-dialog"
 import { Button } from "@/components/ui/button"
+import { MascotOwl } from "@/components/mascot-owl"
 
 const PLANS = [
   {
@@ -52,10 +53,10 @@ export function SubscriptionPage() {
   return (
     <main className="min-h-screen bg-[#fffaf5] text-[#252641]">
       <header className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-7 lg:px-10">
-        <Link href="/" className="flex items-center gap-2" aria-label="CSE Review System home">
-          <span className="flex h-10 w-10 rotate-45 items-center justify-center rounded-sm bg-[#49c8f0]">
-            <span className="-rotate-45 text-[9px] font-black text-[#113c49]">CSE</span>
-          </span>
+        <Link href="/" className="group flex items-center gap-2.5" aria-label="CSE Review System home">
+          <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-[#38bdf8] to-[#67e8f9] shadow-sm transition-transform duration-300 group-hover:scale-105">
+            <MascotOwl size={36} trigger="loop" className="drop-shadow-sm" />
+          </div>
           <span className="text-base font-black tracking-tight text-[#113c49]">CSE Review System</span>
         </Link>
         <nav className="hidden items-center gap-8 text-sm lg:flex">
@@ -84,7 +85,7 @@ export function SubscriptionPage() {
         </nav>
         <div className="flex items-center gap-3">
           <LoginDialog><Button className="h-10 rounded-full bg-white px-6 text-sm font-medium text-[#6c6c6c] shadow-[0_10px_24px_rgba(0,0,0,.05)] hover:bg-white">Log in</Button></LoginDialog>
-          <Link href="/pre-register"><Button className="h-10 rounded-full bg-[#f48c06] px-6 text-sm font-medium text-white hover:bg-[#dc7900]">Sign up</Button></Link>
+          <Link href="/register"><Button className="h-10 rounded-full bg-[#f48c06] px-6 text-sm font-medium text-white hover:bg-[#dc7900]">Register</Button></Link>
         </div>
       </header>
 
@@ -110,7 +111,7 @@ export function SubscriptionPage() {
                   <span className="text-5xl font-extrabold text-[#252641]">₱{plan.price}</span>
                   <span className="pb-2 text-sm text-[#696984]">/ plan</span>
                 </div>
-                <Link href="/pre-register" className="mt-7">
+                <Link href="/register" className="mt-7">
                   <Button className={`h-12 w-full rounded-full font-semibold ${plan.popular ? "bg-[#f48c06] text-white hover:bg-[#dc7900]" : "bg-[#fff0dc] text-[#d97800] hover:bg-[#ffe4bd]"}`}>
                     Get started
                   </Button>
@@ -130,7 +131,7 @@ export function SubscriptionPage() {
       <section className="bg-[#252641] px-6 py-16 text-center text-white lg:px-10">
         <h2 className="text-2xl font-bold sm:text-3xl">One subscription. Full preparation.</h2>
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-[#b2b3cf]">Stay ready with updated practice content, comprehensive modules, and the insights you need to improve every day.</p>
-        <Link href="/pre-register"><Button className="mt-7 rounded-full bg-[#f48c06] px-7 text-white hover:bg-[#dc7900]">Start your review journey</Button></Link>
+        <Link href="/register"><Button className="mt-7 rounded-full bg-[#f48c06] px-7 text-white hover:bg-[#dc7900]">Start your review journey</Button></Link>
       </section>
 
       <footer className="border-t border-[#e9dfd5] bg-white px-6 py-6 text-center text-xs text-[#696984]">

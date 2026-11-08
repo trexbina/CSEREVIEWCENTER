@@ -6,7 +6,7 @@ const BENEFIT_SLIDES = [
   {
     id: "modules",
     title: "All review modules",
-    description: "Study every Civil Service Examination topic with complete access to organized lessons and review materials.",
+    description: "Study with organized lessons and review materials for your assigned exam program.",
     image: "/landingpageassets/figma/design-37948.png",
   },
   {
@@ -40,8 +40,7 @@ export function SubscriptionBenefitsCarousel() {
     <section className="bg-[#fffaf5] px-6 py-14 lg:px-10 lg:py-20">
       <div className="mx-auto max-w-[980px] rounded-[28px] bg-white p-5 shadow-[0_10px_45px_rgba(38,45,118,.08)] sm:p-8">
         <div className="mb-6 text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#f48c06]">Every plan includes</p>
-          <h2 className="mt-2 text-2xl font-bold text-[#2f327d] sm:text-3xl">Tools that keep your review moving.</h2>
+          <h2 className="text-2xl font-bold text-[#2f327d] sm:text-3xl">Tools that keep your review moving.</h2>
         </div>
         <MotionCarousel
           slides={BENEFIT_SLIDES}

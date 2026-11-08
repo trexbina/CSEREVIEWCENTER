@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -22,6 +23,8 @@ const BANNER_SLIDES = [
 ]
 
 export default function PreRegisterPage() {
+  const searchParams = useSearchParams()
+  const selectedExamSlug = searchParams.get("exam")?.toLowerCase()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [dropdownData, setDropdownData] = useState({
     examinations: [],
@@ -81,8 +84,19 @@ export default function PreRegisterPage() {
         if (res.ok) {
           const data = await res.json()
           setDropdownData(data)
-          // Auto-select LEPT or single exam so Program/Level is immediately visible
-          if (data.examinations?.length === 1) {
+          const examKeywords = {
+            nclex: ["nclex"],
+            pnle: ["pnle", "philippine nursing"],
+            blept: ["blept", "lept", "teachers"],
+            cse: ["civil service", "cse"],
+          }
+          const matchingExam = examKeywords[selectedExamSlug]?.length
+            ? data.examinations.find((exam) => examKeywords[selectedExamSlug].some((keyword) => exam.name?.toLowerCase().includes(keyword)))
+            : null
+
+          if (matchingExam) {
+            setExamId(matchingExam.id.toString())
+          } else if (data.examinations?.length === 1) {
             setExamId(data.examinations[0].id.toString())
           } else if (data.examinations?.length > 1) {
             const lept = data.examinations.find(
@@ -98,7 +112,7 @@ export default function PreRegisterPage() {
       }
     }
     loadData()
-  }, [])
+  }, [selectedExamSlug])
 
   // Filtered lists based on hierarchy
   const availablePrograms = dropdownData.programs.filter(
@@ -218,7 +232,7 @@ export default function PreRegisterPage() {
                 Begin Your Journey
               </h2>
               <p className="text-xs sm:text-sm text-white/80 leading-relaxed font-normal">
-                Join hundreds of successful examinees. Complete your pre-registration to reserve your review slot.
+                Complete your registration to apply for your preferred review program.
               </p>
             </div>
 
@@ -249,7 +263,7 @@ export default function PreRegisterPage() {
                   Application Received
                 </h1>
                 <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                  Thank you for pre-registering, <span className="font-bold text-foreground">{firstName}</span>! Your application has been submitted to the administration. Once verified and approved, your student account will be activated.
+                  Thank you for registering, <span className="font-bold text-foreground">{firstName}</span>! Your application has been submitted to the administration. Once verified and approved, your student account will be activated.
                 </p>
                 <div className="pt-6">
                   <Link
@@ -265,7 +279,7 @@ export default function PreRegisterPage() {
                 {/* Header Title Section */}
                 <div className="border-b border-border pb-5">
                   <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground uppercase">
-                    Student Pre-Registration
+                    Student Registration
                   </h1>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
                     Please fill out the form below to apply for enrollment. Our administration will review and process your registration.
@@ -629,7 +643,7 @@ export default function PreRegisterPage() {
                     disabled={submitting}
                     className="w-full sm:w-auto bg-[#E9C46A] hover:bg-[#dfb550] text-white font-bold text-xs uppercase tracking-wider px-8 py-3 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                   >
-                    {submitting ? "Submitting Application…" : "Submit Pre-Registration"}
+                    {submitting ? "Submitting Application…" : "Submit Registration"}
                   </button>
                 </div>
               </form>

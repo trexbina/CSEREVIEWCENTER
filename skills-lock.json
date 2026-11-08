@@ -49,6 +49,12 @@
       "skillPath": "skills/durable-objects/SKILL.md",
       "computedHash": "7e395e50364589ccc84543eb607ae21cbb7ac18b346e9a0bb36fa4f5bc10b3ac"
     },
+    "figma-code-connect": {
+      "source": "figma/mcp-server-guide",
+      "sourceType": "github",
+      "skillPath": "skills/figma-code-connect/SKILL.md",
+      "computedHash": "8d8a2aabe7321388c3c7f2bdcae08c6cc47c7d4ee60ac7254a27f8f5a1713e89"
+    },
     "gateway-workers": {
       "source": "cloudflare/skills",
       "sourceType": "github",

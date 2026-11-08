@@ -374,7 +374,7 @@ export default function SubjectContentLayout({ children }) {
                     <div className="flex items-center gap-3 select-none">
                         <img
                             src="/landingpageassets/logo.png"
-                            alt="CSE Review System"
+                            alt="Reviewer Exam - RE"
                             className="size-10 shrink-0 object-contain"
                             onError={(e) => { e.target.style.display = 'none' }}
                         />

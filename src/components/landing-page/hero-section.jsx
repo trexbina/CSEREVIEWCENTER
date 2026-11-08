@@ -20,11 +20,11 @@ export function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-[#fff2e2] text-[#252641]">
       <header className="relative z-20 mx-auto flex max-w-[1200px] items-center justify-between px-6 py-7 lg:px-10">
-        <a href="/" className="flex items-center gap-2" aria-label="CSE Review System home">
+        <a href="/" className="flex items-center gap-2" aria-label="Reviewer Exam - RE home">
           <span className="flex h-10 w-10 rotate-45 items-center justify-center rounded-sm bg-[#49c8f0]">
-            <span className="-rotate-45 text-[9px] font-black text-[#113c49]">CSE</span>
+            <span className="-rotate-45 text-[9px] font-black text-[#113c49]">RE</span>
           </span>
-          <span className="text-base font-black tracking-tight text-[#113c49]">CSE Review System</span>
+          <span className="text-base font-black tracking-tight text-[#113c49]">Reviewer Exam - RE</span>
         </a>
         <nav className="hidden items-center gap-8 text-sm text-[#252641] lg:flex">
           <a href="/" className="hover:text-[#f48c06]">Home</a>
@@ -38,7 +38,7 @@ export function HeroSection() {
             {contactOpen && (
               <div className="absolute right-0 top-full mt-3 w-72 rounded-2xl border border-[#f4d8bd] bg-white p-4 text-xs text-[#696984] shadow-xl">
                 <div className="mb-3 flex items-center justify-between border-b border-[#f4d8bd] pb-2 font-bold text-[#252641]">Contact us <button type="button" onClick={() => setContactOpen(false)} aria-label="Close contact details"><X className="h-4 w-4" /></button></div>
-                <div className="space-y-2.5"><div className="flex gap-2"><Mail className="h-4 w-4 text-[#f48c06]" /> support@reviewerexam.com</div><div className="flex gap-2"><Phone className="h-4 w-4 text-[#f48c06]" /> +63 900 000 0000</div><div className="flex gap-2"><MapPin className="h-4 w-4 shrink-0 text-[#f48c06]" /> Civil Service Review Center, Philippines</div></div>
+                <div className="space-y-2.5"><div className="flex gap-2"><Mail className="h-4 w-4 text-[#f48c06]" /> support@reviewerexam.com</div><div className="flex gap-2"><Phone className="h-4 w-4 text-[#f48c06]" /> +63 900 000 0000</div><div className="flex gap-2"><MapPin className="h-4 w-4 shrink-0 text-[#f48c06]" /> Owl Review Center · Global examination review</div></div>
               </div>
             )}
           </div>
@@ -54,7 +54,7 @@ export function HeroSection() {
           <h1 className="max-w-xl text-4xl font-extrabold leading-[1.2] text-[#2f327d] sm:text-5xl lg:text-[3.45rem]">
             <span className="text-[#f48c06]">Studying</span> Online is now much easier
           </h1>
-          <p className="mt-7 max-w-lg text-base leading-7 text-[#464646]">Build your Civil Service Examination confidence with an interactive platform that makes every lesson, practice set, and progress milestone easier to manage.</p>
+          <p className="mt-7 max-w-lg text-base leading-7 text-[#464646]">Build confidence for the examination that matters to you with an interactive platform for lessons, practice sets, and measurable progress.</p>
           <div className="mt-8 flex items-center gap-5">
             <LoginDialog><Button className="h-12 rounded-full bg-[#f48c06] px-7 font-semibold text-white shadow-lg hover:bg-[#dc7900]">Join for free</Button></LoginDialog>
             <a href="#about" className="group flex items-center gap-3 text-sm text-[#252641]"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#49c8f0] shadow-lg transition-transform group-hover:scale-105"><Play className="ml-0.5 h-4 w-4 fill-current" /></span> See how it works</a>

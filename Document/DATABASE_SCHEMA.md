@@ -1,7 +1,7 @@
 # PostgreSQL Database Schema & Data Dictionary
 
 ## Overview
-This document serves as the complete technical specification and data dictionary for the **ReviewApp** PostgreSQL database (`reviewapp`).
+This document serves as the complete technical specification and data dictionary for the **Reviewer Exam - RE** PostgreSQL database. Reviewer Exam - RE is operated by **Owl Review Center** for examination review programs worldwide.
 
 - **Database Engine**: PostgreSQL 14+
 - **Total Tables**: 25 Normalized Tables (0 Duplicates)

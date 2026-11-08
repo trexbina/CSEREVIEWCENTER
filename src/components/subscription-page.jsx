@@ -52,11 +52,11 @@ export function SubscriptionPage() {
   return (
     <main className="min-h-screen bg-[#fffaf5] text-[#252641]">
       <header className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-7 lg:px-10">
-        <Link href="/" className="flex items-center gap-2" aria-label="CSE Review System home">
+        <Link href="/" className="flex items-center gap-2" aria-label="Reviewer Exam - RE home">
           <span className="flex h-10 w-10 rotate-45 items-center justify-center rounded-sm bg-[#49c8f0]">
             <span className="-rotate-45 text-[9px] font-black text-[#113c49]">CSE</span>
           </span>
-          <span className="text-base font-black tracking-tight text-[#113c49]">CSE Review System</span>
+          <span className="text-base font-black tracking-tight text-[#113c49]">Reviewer Exam - RE</span>
         </Link>
         <nav className="hidden items-center gap-8 text-sm lg:flex">
           <Link href="/" className="hover:text-[#f48c06]">Home</Link>
@@ -134,7 +134,7 @@ export function SubscriptionPage() {
       </section>
 
       <footer className="border-t border-[#e9dfd5] bg-white px-6 py-6 text-center text-xs text-[#696984]">
-        © 2026 CSE Review System · <Link href="/" className="hover:text-[#f48c06]">Back to home</Link>
+        © 2026 Owl Review Center · <Link href="/" className="hover:text-[#f48c06]">Reviewer Exam - RE</Link>
       </footer>
     </main>
   )

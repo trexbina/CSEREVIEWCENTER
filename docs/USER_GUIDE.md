@@ -1,4 +1,6 @@
-# PEAK Review System — User Guide
+# Reviewer Exam - RE — User Guide
+
+Reviewer Exam - RE is Owl Review Center's platform for review programs across examinations worldwide.
 
 A concise guide to navigating and utilizing the PEAK Review Center platform for both **Administrators** and **Students**.
 

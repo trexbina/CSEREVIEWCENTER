@@ -15,10 +15,10 @@ import {
 import { ArrowLeft } from "lucide-react"
 
 const BANNER_SLIDES = [
-  { id: 1, src: "/banners/banner-1.png", alt: "CSE Review Examinees" },
-  { id: 2, src: "/banners/banner-2.jpg", alt: "CSE Review Students" },
-  { id: 3, src: "/banners/banner-3.jpg", alt: "CSE Review Sessions" },
-  { id: 4, src: "/banners/banner-4.jpg", alt: "CSE Review Classes" },
+  { id: 1, src: "/banners/banner-1.png", alt: "Reviewer Exam - RE examinees" },
+  { id: 2, src: "/banners/banner-2.jpg", alt: "Reviewer Exam - RE students" },
+  { id: 3, src: "/banners/banner-3.jpg", alt: "Reviewer Exam - RE study session" },
+  { id: 4, src: "/banners/banner-4.jpg", alt: "Reviewer Exam - RE review class" },
 ]
 
 export default function PreRegisterPage() {

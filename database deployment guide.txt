@@ -1,5 +1,8 @@
 ═══════════════════════════════════════════════════════════════
-  CSE Review System — Database Deployment & Setup Guide
+  Reviewer Exam - RE — Database Deployment & Setup Guide
+
+  Product: Reviewer Exam - RE
+  Organization: Owl Review Center (global examination review programs)
   Deploy with PostgreSQL + pgAdmin or Cloud Database
 ═══════════════════════════════════════════════════════════════
 
@@ -9,7 +12,7 @@ PREREQUISITES
   1. Node.js (v18+)         → https://nodejs.org
   2. PostgreSQL (v14+)      → https://www.postgresql.org/download
   3. pgAdmin 4 (optional)   → Included with PostgreSQL installer on Windows
-  4. Project Directory      → CSE Review System root folder
+  4. Project Directory      → Reviewer Exam - RE root folder
 
 
 STEP 1 — Install Dependencies

@@ -1,6 +1,6 @@
-# CSE Review System
+# Reviewer Exam - RE
 
-A comprehensive online review and examination management platform tailored for Civil Service Examination (CSE) reviewees, educators, and administrators.
+Reviewer Exam - RE is Owl Review Center's global online review and examination management platform. It supports learners, educators, and administrators across multiple examination programs worldwide.
 
 ---
 

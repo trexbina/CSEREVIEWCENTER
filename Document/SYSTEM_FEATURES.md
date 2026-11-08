@@ -1,6 +1,6 @@
-# PEAK System Features Documentation
+# Reviewer Exam - RE — System Features Documentation
 
-This document serves as the central registry and reference guide for system features implemented across the PEAK Review System. Whenever a new feature or enhancement is introduced, add it to this file to keep documentation organized, transparent, and easy to maintain.
+This document serves as the central registry and reference guide for features in Reviewer Exam - RE, Owl Review Center's global examination review platform. Whenever a new feature or enhancement is introduced, add it to this file to keep documentation organized, transparent, and easy to maintain.
 
 ---
 

@@ -28,7 +28,7 @@ export function LandingFooter() {
         <div className="mt-14 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-[#b2b3cf]">
           <a href="#features" className="hover:text-white">Features</a><span className="text-[#83839a]">|</span><a href="/pre-register" className="hover:text-white">Pre-register</a><span className="text-[#83839a]">|</span><a href="#about" className="hover:text-white">About Us</a>
         </div>
-        <p className="mt-12 text-sm text-[#b2b3cf]">© 2026 CSE Review System</p>
+        <p className="mt-12 text-sm text-[#b2b3cf]">© 2026 Owl Review Center · Reviewer Exam - RE</p>
       </div>
     </footer>
   )

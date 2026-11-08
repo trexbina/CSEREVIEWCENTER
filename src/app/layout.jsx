@@ -11,8 +11,8 @@ const geistSans = Geist({
 });
 
 export const metadata = {
-  title: "CSE Review System | Civil Service Examination Review",
-  description: "Comprehensive Civil Service Examination Review and Educational Platform",
+  title: "Reviewer Exam - RE | Owl Review Center",
+  description: "A global examination review and learning platform by Owl Review Center.",
 };
 
 export default function RootLayout({ children }) {

@@ -13,7 +13,13 @@
     "start": "next start",
     "lint": "eslint",
     "db:setup": "node --env-file=.env.local scripts/setup-database.mjs",
-    "db:wipe": "node scripts/wipe-database.mjs"
+    "db:wipe": "node scripts/wipe-database.mjs",
+    "db:remove-security-access-policies": "node --env-file=.env.local scripts/remove-security-access-policies.mjs",
+    "db:migrate-subscriptions": "node --env-file=.env.local scripts/migrate-subscriptions.mjs",
+    "db:migrate-examination-catalog": "node --env-file=.env.local scripts/migrate-examination-catalog.mjs",
+    "db:migrate-curriculum-examinations": "node --env-file=.env.local scripts/migrate-curriculum-examinations.mjs",
+    "db:migrate-examination-first": "node --env-file=.env.local scripts/migrate-examination-first.mjs",
+    "db:migrate-curriculum-tiers": "node --env-file=.env.local scripts/migrate-curriculum-tiers.mjs"
   },
   "dependencies": {
     "@1771technologies/lytenyte-core": "^2.0.1",
@@ -58,6 +64,7 @@
     "shadcn": "^3.8.5",
     "tailwindcss": "^4.2.1",
     "tw-animate-css": "^1.4.0",
+    "typescript": "^5.9.3",
     "wrangler": "^4.152.0"
   },
   "browserslist": "> 1%",

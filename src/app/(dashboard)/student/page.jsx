@@ -7,7 +7,9 @@ import { UpcomingExamTimer } from "@/components/upcoming-exam-timer"
 import { StudentTodoWidget } from "./student-todo-widget"
 import { StudentCalendarWidget } from "./student-calendar-widget"
 import { LordIcon } from "@/components/ui/lord-icon"
-import { getStudentCurriculumContext } from "@/lib/student-curriculum"
+import { getAccessibleSubjectIds } from "@/lib/subscriptions"
+import { getStudentDashboardPath } from "@/lib/examination-dashboard"
+import { redirect } from "next/navigation"
 
 const DashboardCarousel = dynamic(
   () => import("@/components/dashboard-carousel").then((m) => m.DashboardCarousel),
@@ -46,8 +48,7 @@ const RecentLearningActivityList = dynamic(
 )
 
 async function getStudentDashboardData(userId) {
-  const curriculumCtx = await getStudentCurriculumContext(userId)
-  const curriculumSubjectIds = curriculumCtx.subjectIds
+  const curriculumSubjectIds = await getAccessibleSubjectIds(userId)
   const subjectIdsParam = curriculumSubjectIds.length > 0 ? curriculumSubjectIds : null
 
   const [
@@ -383,7 +384,7 @@ async function getStudentDashboardData(userId) {
   }
 }
 
-export default async function StudentDashboard() {
+export async function StudentDashboardView({ dashboardName = "LEPT Student Dashboard" } = {}) {
   const session = await getSession()
   const firstName = session?.name?.split(" ")[0] || "Student"
 
@@ -416,12 +417,12 @@ export default async function StudentDashboard() {
   }
 
   return (
-    <div className="space-y-9 sm:space-y-10 pb-10">
+    <div className="space-y-8 pb-10 sm:space-y-9">
       {/* ── Dashboard heading row ── */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#3B3B3B] dark:text-white">
-            Dashboard
+            {dashboardName}
           </h1>
           <p className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500 font-normal">
             Welcome back, {firstName}! Here is how you are doing so far.
@@ -433,7 +434,7 @@ export default async function StudentDashboard() {
       </div>
 
       {/* ── Top Section: 9-col Carousel + Metric Cards / 3-col To-Do List + Calendar ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-7 items-stretch">
+      <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12 lg:gap-6">
         {/* Left Column (spans 9 cols): Carousel Banner + Overview Metrics Strip */}
         <div className="lg:col-span-9 flex flex-col justify-between gap-6 sm:gap-7">
           <DashboardCarousel />
@@ -442,7 +443,7 @@ export default async function StudentDashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
             {/* Metric 1: Study Streak */}
             <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
-              <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+              <div className="relative z-10 flex items-center justify-between border-b border-[#cfeaf3] bg-[#dff3fa] px-5 py-3 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] sm:px-6 sm:py-3.5 dark:border-white/5 dark:bg-[#E9C46A]/25 dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
                 <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
                   Study Streak
                 </span>
@@ -459,7 +460,7 @@ export default async function StudentDashboard() {
 
             {/* Metric 2: Active Days */}
             <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
-              <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#2A9D8F]/20 dark:bg-[#2A9D8F]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+              <div className="relative z-10 flex items-center justify-between border-b border-[#cfeaf3] bg-[#dff3fa] px-5 py-3 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] sm:px-6 sm:py-3.5 dark:border-white/5 dark:bg-[#2A9D8F]/25 dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
                 <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
                   Active Days
                 </span>
@@ -476,7 +477,7 @@ export default async function StudentDashboard() {
 
             {/* Metric 3: Quizzes Taken */}
             <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
-              <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#E17055]/20 dark:bg-[#E17055]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+              <div className="relative z-10 flex items-center justify-between border-b border-[#cfeaf3] bg-[#dff3fa] px-5 py-3 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] sm:px-6 sm:py-3.5 dark:border-white/5 dark:bg-[#E17055]/25 dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
                 <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
                   Quizzes Taken
                 </span>
@@ -493,7 +494,7 @@ export default async function StudentDashboard() {
 
             {/* Metric 4: Quiz Accuracy */}
             <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between select-none">
-              <div className="relative z-10 px-5 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-[#3B82F6]/20 dark:bg-[#3B82F6]/25 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+              <div className="relative z-10 flex items-center justify-between border-b border-[#cfeaf3] bg-[#dff3fa] px-5 py-3 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] sm:px-6 sm:py-3.5 dark:border-white/5 dark:bg-[#3B82F6]/25 dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
                 <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 select-none">
                   Quiz Accuracy
                 </span>
@@ -741,4 +742,11 @@ export default async function StudentDashboard() {
   <RecentLearningActivityList activities={activities} />
     </div>
   )
+}
+
+// Compatibility entry point: legacy /student links route each student to their examination workspace.
+export default async function StudentDashboardEntry() {
+  const session = await getSession()
+  if (!session?.userId) redirect("/?login=1")
+  redirect(await getStudentDashboardPath(session.userId))
 }

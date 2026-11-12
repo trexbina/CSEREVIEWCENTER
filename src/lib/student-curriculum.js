@@ -1,4 +1,5 @@
 import pool from "./db.js"
+import { ensureCurriculumTierSchema } from "./curriculum-tier.js"
 
 /**
  * Checks if a target rule matches a user's value.
@@ -32,17 +33,16 @@ export function isMatch(targetValue, userValue) {
  * - Eligible categories (e.g., General Education, Professional Education, and Specialization)
  * - Array of subject IDs that belong to the student's curriculum
  */
-export async function getStudentCurriculumContext(userId, client = pool) {
+export async function getStudentCurriculumContext(userId, client = pool, subscriptionTier = "free") {
+  await ensureCurriculumTierSchema(client)
   const userRes = await client.query(
-    `SELECT u.id, u.program_id, u.major_id, u.batch_id, u.exam_id,
+    `SELECT u.id, u.program_id, u.major_id, u.exam_id,
             p.name as program_name, m.name as major_name,
-            COALESCE(e.name, be.name, u.target_exam) as exam_name
+            COALESCE(e.name, u.target_exam) as exam_name
      FROM users u 
      LEFT JOIN programs p ON u.program_id = p.id 
      LEFT JOIN majors m ON u.major_id = m.id 
      LEFT JOIN examinations e ON u.exam_id = e.id
-     LEFT JOIN batches b ON u.batch_id = b.id
-     LEFT JOIN examinations be ON b.exam_id = be.id
      WHERE u.id = $1`,
     [userId]
   ).catch(() => ({ rows: [] }))
@@ -52,43 +52,39 @@ export async function getStudentCurriculumContext(userId, client = pool) {
   const userProg = (userObj.program_name || "").toLowerCase()
   const userMajor = (userObj.major_name || "").toLowerCase()
 
-  // Fetch all categories
+  // Categories are scoped to the student's examination and subscription tier.
   const { rows: categories } = await client.query(
     "SELECT * FROM categories ORDER BY created_at ASC"
   ).catch(() => ({ rows: [] }))
 
   // Filter eligible categories
   const eligibleCategories = categories.filter((cat) => {
+    if (!userObj.exam_id || Number(cat.exam_id) !== Number(userObj.exam_id)) return false
+    if (cat.access_tier === "paid" && subscriptionTier !== "paid") return false
     if (!isMatch(cat.target_course, userExam)) return false
     if (!isMatch(cat.target_program, userProg)) return false
     if (!isMatch(cat.target_major, userMajor)) return false
     return true
   })
 
-  // If student has no profile match yet, fallback to all categories to avoid blank state
-  const activeCategories = eligibleCategories.length > 0 ? eligibleCategories : categories
+  const activeCategories = eligibleCategories
   const eligibleCategoryIds = activeCategories.map(c => c.id)
   const eligibleCategoryNames = activeCategories.map(c => c.name)
 
   // Query matching subjects:
-  // 1. Explicitly assigned via student_subjects table
-  // 2. OR subcategory belongs to an eligible category
-  // 3. OR subject's category name matches an eligible category
+  // Direct subject assignments do not bypass an unavailable category tier.
   const subjectRes = await client.query(
     `SELECT DISTINCT s.id
      FROM subjects s
      LEFT JOIN subcategories sub ON s.subcategory_id = sub.id
-     LEFT JOIN student_subjects ss ON ss.subject_id = s.id AND ss.student_id = $1
      WHERE s.status = 'active'
        AND (
-         ss.id IS NOT NULL
-         OR (sub.category_id IS NOT NULL AND sub.category_id = ANY($2::int[]))
-         OR s.category = ANY($3::text[])
-         OR LOWER(s.category) = ANY($4::text[])
+         (sub.category_id IS NOT NULL AND sub.category_id = ANY($1::int[]))
+         OR s.category = ANY($2::text[])
+         OR LOWER(s.category) = ANY($3::text[])
        )
      ORDER BY s.id ASC`,
     [
-      userId,
       eligibleCategoryIds.length > 0 ? eligibleCategoryIds : [-1],
       eligibleCategoryNames.length > 0 ? eligibleCategoryNames : ["__none__"],
       eligibleCategoryNames.map(n => n.toLowerCase())

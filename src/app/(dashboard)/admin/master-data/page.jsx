@@ -45,6 +45,7 @@ import GradebookView from "./GradebookView"
 
 // roles and limitation view component
 import RolesAndLimitationView from "./RolesAndLimitationView"
+import SubscriptionPlansView from "./SubscriptionPlansView"
 
 // modal dialog to confirm deleting items
 import ConfirmDeleteModal from "@/components/confirm-delete-modal"
@@ -188,26 +189,26 @@ const SchoolDialog = ({ isOpen, schoolForm, setSchoolForm, onSubmit, onCancel, i
   )
 }
 
-// batch create and edit modal
+// cohort create and edit modal (legacy batches remain the persistence model for gradebooks)
 const BatchDialog = ({ isOpen, batchForm, setBatchForm, onSubmit, onCancel, tree, isEdit }) => {
   if (!isOpen) return null
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
       <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-lg space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="font-bold text-foreground text-base">{isEdit ? "Edit Batch" : "Add Batch"}</h3>
+          <h3 className="font-bold text-foreground text-base">{isEdit ? "Edit Cohort" : "Add Cohort"}</h3>
           <button onClick={onCancel} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
         </div>
         <form onSubmit={onSubmit} className="space-y-3">
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-foreground">Batch Name</label>
+            <label className="text-xs font-semibold text-foreground">Cohort Name</label>
             <input
               type="text"
               required
               className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
               value={batchForm.batchNumber}
               onChange={(e) => setBatchForm({ ...batchForm, batchNumber: e.target.value })}
-              placeholder="e.g. Batch 1"
+              placeholder="e.g. June 2026 Cohort"
             />
           </div>
           <div className="space-y-1">
@@ -269,7 +270,7 @@ const BatchDialog = ({ isOpen, batchForm, setBatchForm, onSubmit, onCancel, tree
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
-            <button type="submit" className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer">{isEdit ? "Save Changes" : "Create Batch"}</button>
+            <button type="submit" className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer">{isEdit ? "Save Changes" : "Create Cohort"}</button>
           </div>
         </form>
       </div>
@@ -297,17 +298,11 @@ const ExamSettingsDialog = ({ isOpen, examSettings, setExamSettings, onSave, onC
               onChange={(e) => setExamSettings({ ...examSettings, name: e.target.value })}
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-foreground">Max Depth Level</label>
-            <input
-              type="number"
-              min="1"
-              max="5"
-              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
-              value={examSettings.maxLevel}
-              onChange={(e) => setExamSettings({ ...examSettings, maxLevel: e.target.value })}
-            />
-          </div>
+          <label className="flex items-center gap-2 rounded-lg border border-border bg-muted/20 px-3 py-2.5 text-sm font-medium text-foreground">
+            <input type="checkbox" checked={Boolean(examSettings.isLegacy)} onChange={(e) => setExamSettings({ ...examSettings, isLegacy: e.target.checked })} />
+            Mark this examination as Legacy
+          </label>
+          <p className="text-xs leading-relaxed text-muted-foreground">Legacy examinations remain available for historical records but are not intended for new enrollment.</p>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
             <button type="button" onClick={onSave} className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg hover:bg-primary/90">Save Settings</button>
@@ -347,7 +342,7 @@ export default function MasterDataBuilderPage() {
 
       // organize exams programs and majors into a hierarchy
       const builtTree = (data.examinations || []).map(exam => ({
-        id: exam.id, name: exam.name, maxLevel: 3, hasSettings: true,
+        id: exam.id, name: exam.name, is_legacy: Boolean(exam.is_legacy), maxLevel: 3, hasSettings: true,
         programs: (data.programs || []).filter(p => p.exam_id === exam.id).map(prog => ({
           id: prog.id, name: prog.name,
           majors: (data.majors || []).filter(m => m.program_id === prog.id).map(maj => ({
@@ -357,7 +352,7 @@ export default function MasterDataBuilderPage() {
       }))
 
       setTree(builtTree)
-      setBatches(data.batches || [])
+      setBatches([])
       setSchools(data.schools || [])
       setAcademicCourses(data.academic_courses || [])
       setGradebooks(data.gradebooks || [])
@@ -433,20 +428,23 @@ export default function MasterDataBuilderPage() {
     })
   }
 
-  const [examSettings, setExamSettings] = useState({ examId: "", name: "", maxLevel: 3 })
+  const [examSettings, setExamSettings] = useState({ examId: "", name: "", isLegacy: false })
 
   const openExamSettings = (exam) => {
-    setExamSettings({ examId: exam.id, name: exam.name, maxLevel: exam.maxLevel || 3 })
+    setExamSettings({ examId: exam.id, name: exam.name, isLegacy: Boolean(exam.is_legacy) })
     setIsExamSettingsOpen(true)
   }
-  const handleSaveExamSettings = () => {
+  const handleSaveExamSettings = async () => {
     if (!examSettings.name.trim()) return;
-    const level = parseInt(examSettings.maxLevel);
-    setTree(tree.map(e => {
-      if (e.id === examSettings.examId) return { ...e, name: examSettings.name, maxLevel: isNaN(level) ? 3 : level }
-      return e
-    }))
-    setIsExamSettingsOpen(false)
+    try {
+      await apiCall("RENAME", "EXAM", { id: examSettings.examId, name: examSettings.name.trim() })
+      await apiCall("SET_LEGACY", "EXAM", { id: examSettings.examId, is_legacy: examSettings.isLegacy })
+      await fetchData()
+      setIsExamSettingsOpen(false)
+      toast("Examination settings updated.")
+    } catch {
+      toast("Unable to update examination settings.")
+    }
   }
 
   // Batch State
@@ -542,7 +540,7 @@ export default function MasterDataBuilderPage() {
   const [userPermissions, setUserPermissions] = useState([])
 
   const canAccessTree = isSuperAdmin || userPermissions.includes("ALL") || userPermissions.includes("/admin/master-data") || userPermissions.includes("/admin/master-data/tree")
-  const canAccessBatches = isSuperAdmin || userPermissions.includes("ALL") || userPermissions.includes("/admin/master-data") || userPermissions.includes("/admin/master-data/batches")
+  const canAccessBatches = false
   const canAccessEducation = isSuperAdmin || userPermissions.includes("ALL") || userPermissions.includes("/admin/master-data") || userPermissions.includes("/admin/master-data/education")
   const canAccessGradebook = isSuperAdmin || userPermissions.includes("ALL") || userPermissions.includes("/admin/master-data") || userPermissions.includes("/admin/master-data/gradebook")
 
@@ -552,7 +550,6 @@ export default function MasterDataBuilderPage() {
     if (activeTab === "menu") {
       const accessible = []
       if (canAccessTree) accessible.push("tree")
-      if (canAccessBatches) accessible.push("batches")
       if (canAccessEducation) accessible.push("education")
       if (canAccessGradebook) accessible.push("gradebook")
       if (canManageRoles) accessible.push("roles")
@@ -894,7 +891,7 @@ export default function MasterDataBuilderPage() {
             MASTER DATA
           </h1>
           <p className="text-muted-foreground text-sm font-medium">
-            Manage exams, review batches, schools, and grade settings.
+            Manage examinations, subscription plans, cohorts, schools, and grade settings.
           </p>
         </div>
 
@@ -938,25 +935,13 @@ export default function MasterDataBuilderPage() {
                   </div>
                 )}
 
-                {/* Batch Management Data */}
-                {canAccessBatches && (
-                  <div
-                    className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group"
-                    onClick={() => handleTabChange("batches")}
-                  >
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">
-                        Batch Management Data
-                      </h3>
-                      <p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">
-                        Create and manage review batches and target exam years
-                      </p>
-                    </div>
-                    <div className="flex items-center shrink-0 ml-4">
-                      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
-                    </div>
+                {canAccessTree && (
+                  <div className="p-5 sm:p-6 flex items-center justify-between cursor-pointer transition-all group" onClick={() => handleTabChange("subscription-plans")}>
+                    <div className="min-w-0"><h3 className="font-bold text-[#4d4d4d] text-base group-hover:text-[#E9C46A] transition-colors truncate">Subscription Plans</h3><p className="text-xs sm:text-sm text-[#8c8c8c] mt-0.5 truncate">Create Free and paid access plans for each examination</p></div>
+                    <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
                   </div>
                 )}
+
 
                 {/* Academic Institutions & Courses */}
                 {canAccessEducation && (
@@ -1064,12 +1049,7 @@ export default function MasterDataBuilderPage() {
                           <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
                             {tree.length} {tree.length === 1 ? "Exam" : "Exams"}
                           </span>
-                          <button
-                            onClick={() => openPrompt("Enter Examination Name:", "ADD_EXAM", null)}
-                            className="bg-[#E9C46A] hover:bg-[#dfb550] text-white font-semibold py-1.5 px-3.5 rounded-lg flex items-center gap-1.5 transition-all text-xs cursor-pointer active:scale-95"
-                          >
-                            Add Examination
-                          </button>
+                          <span className="hidden text-xs font-medium text-muted-foreground sm:inline">Catalog: LEPT + NCLEX-RN</span>
                         </div>
                       </div>
 
@@ -1084,14 +1064,13 @@ export default function MasterDataBuilderPage() {
                                 onClick={() => setSelectedExamId(exam.id)}
                               >
                                 <div>
-                                  <h3 className="font-bold text-foreground text-sm sm:text-base group-hover:text-[#E9C46A] transition-colors">{exam.name}</h3>
+                                  <div className="flex items-center gap-2"><h3 className="font-bold text-foreground text-sm sm:text-base group-hover:text-[#E9C46A] transition-colors">{exam.name}</h3>{exam.is_legacy && <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Legacy</span>}</div>
                                   <p className="text-xs text-muted-foreground mt-0.5">
                                     {exam.programs.length} course{exam.programs.length !== 1 ? "s" : ""} · {totalMajors} specialization{totalMajors !== 1 ? "s" : ""} · Max depth: {exam.maxLevel || 3}
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0 ml-4" onClick={e => e.stopPropagation()}>
                                   <SettingsBtn onClick={() => openExamSettings(exam)} />
-                                  <DeleteBtn onClick={() => handleDeleteExam(exam.id, exam.name)} />
                                   <ChevronRight className="h-4 w-4 text-muted-foreground ml-1 group-hover:text-[#E9C46A] group-hover:translate-x-0.5 transition-all" />
                                 </div>
                               </div>
@@ -1103,7 +1082,7 @@ export default function MasterDataBuilderPage() {
                       {tree.length === 0 && (
                         <div className="text-center py-16 text-muted-foreground">
                           <p className="font-semibold text-foreground text-sm">No examinations yet.</p>
-                          <p className="text-xs mt-1">Click &quot;Add Examination&quot; above to create your first one.</p>
+                          <p className="text-xs mt-1">The catalog is managed in code and includes LEPT and NCLEX-RN.</p>
                         </div>
                       )}
                     </motion.div>
@@ -1133,9 +1112,7 @@ export default function MasterDataBuilderPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2.5">
                               <h2 className="text-lg font-bold text-foreground truncate">{exam.name}</h2>
-                              <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
-                                Max Depth: {exam.maxLevel || 3}
-                              </span>
+                              {exam.is_legacy && <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Legacy</span>}
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5">Manage courses and specializations under this examination.</p>
                           </div>
@@ -1862,7 +1839,6 @@ export default function MasterDataBuilderPage() {
               canAccessGradebook ? (
                 <GradebookView
                   onBack={() => handleTabChange("menu")}
-                  batches={batches}
                   tree={tree}
                   schools={schools}
                   gradebooks={gradebooks}
@@ -1883,6 +1859,10 @@ export default function MasterDataBuilderPage() {
                   </button>
                 </div>
               )
+            )}
+
+            {activeTab === "subscription-plans" && canAccessTree && (
+              <SubscriptionPlansView onBack={() => handleTabChange("menu")} />
             )}
 
             {/* TAB 5: ROLES AND LIMITATION */}

@@ -219,7 +219,7 @@ export function BannerSection() {
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="relative w-full h-full aspect-[16/8] sm:aspect-[16/7] rounded-2xl bg-neutral-900 shadow-md overflow-hidden select-none flex items-center justify-center"
+        className="relative flex h-full w-full aspect-[16/8] items-center justify-center overflow-hidden rounded-2xl bg-neutral-900 shadow-[0_12px_30px_rgba(38,70,89,.14)] select-none sm:aspect-[16/6]"
       >
         {/* Floating Action Controls Inside the Banner Container (Pure fade-in on hover) */}
         <div

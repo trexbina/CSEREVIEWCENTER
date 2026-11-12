@@ -34,13 +34,14 @@ async function adminGuard() {
 }
 
 // ── GET /api/admin/subjects ─────────────────────────────
-export async function GET() {
+export async function GET(request) {
     try {
         const session = await adminGuard()
         if (!session) {
             return NextResponse.json({ error: "Forbidden." }, { status: 403 })
         }
 
+        const examId = Number(new URL(request.url).searchParams.get("exam_id")) || null
         const { rows } = await pool.query(`
             SELECT 
                 s.*,
@@ -55,6 +56,7 @@ export async function GET() {
                 COALESCE(q.quizzes_count, 0)::int AS quizzes_count,
                 COALESCE(a.assignments_count, 0)::int AS assignments_count
             FROM subjects s
+            LEFT JOIN categories curriculum_category ON curriculum_category.id = s.category_id
             LEFT JOIN (
                 SELECT subject_id, COUNT(*) AS modules_count 
                 FROM subject_modules 
@@ -87,8 +89,9 @@ export async function GET() {
                 JOIN subject_contents sc ON sm.id = sc.module_id
                 GROUP BY sm.subject_id
             ) sc_updates ON s.id = sc_updates.subject_id
+            WHERE ($1::int IS NULL OR curriculum_category.exam_id = $1)
             ORDER BY s.created_at DESC
-        `)
+        `, [examId])
         return NextResponse.json({ subjects: rows })
     } catch (err) {
         console.error("[admin/subjects GET]", err)

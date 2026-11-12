@@ -2,7 +2,8 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import pool from "@/lib/db"
 import { signToken, SESSION_COOKIE_OPTIONS } from "@/lib/auth"
-import { parseDeviceFromUserAgent, getClientIp } from "@/lib/device-utils"
+import { getActiveSubscriptions, migrateLegacyCohorts } from "@/lib/subscriptions"
+import { dashboardPathForExamination } from "@/lib/examination-dashboard"
 
 export async function POST(request) {
   try {
@@ -18,11 +19,8 @@ export async function POST(request) {
     }
 
     const result = await pool.query(
-      `SELECT u.id, u.name, u.email, u.password, u.role, u.is_active, u.subscription_end_date,
-              b.end_date as batch_end_date, b.name as batch_name
-       FROM users u
-       LEFT JOIN batches b ON u.batch_id = b.id
-       WHERE LOWER(u.email) = $1`,
+      `SELECT u.id, u.name, u.email, u.password, u.role, u.is_active, u.exam_id, e.name AS examination_name
+       FROM users u LEFT JOIN examinations e ON e.id = u.exam_id WHERE LOWER(u.email) = $1`,
       [email]
     )
 
@@ -43,20 +41,15 @@ export async function POST(request) {
       )
     }
 
-    // Check student subscription expiry (inherited from batch or custom student extension)
+    // Student access is controlled exclusively by active subscription assignments.
     if (user.role === "student") {
-      const effectiveEndDate = user.subscription_end_date || user.batch_end_date
-      if (effectiveEndDate) {
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const expDate = new Date(effectiveEndDate)
-        if (expDate < today) {
-          const formattedDate = expDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-          return NextResponse.json(
-            { error: `Your review term completed on ${formattedDate}. Please contact your administrator for renewal or extension.` },
-            { status: 403 }
-          )
-        }
+      await migrateLegacyCohorts()
+      const activeSubscriptions = await getActiveSubscriptions(user.id)
+      if (!activeSubscriptions.length) {
+        return NextResponse.json(
+          { error: "Your subscription is inactive or expired. Please contact your administrator for access." },
+          { status: 403 }
+        )
       }
     }
 
@@ -78,47 +71,9 @@ export async function POST(request) {
       role: user.role,
     })
 
-    // Record active session and audit log dynamically
-    try {
-      const userAgent = request.headers.get("user-agent") || ""
-      const clientIp = getClientIp(request)
-      const deviceInfo = parseDeviceFromUserAgent(userAgent)
-      const sessionId = `sess_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
-
-      await pool.query(
-        `INSERT INTO user_active_sessions (
-           id, user_id, user_name, email, role, device, device_type, ip_address, location, login_time, last_active, is_current, status
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW(), true, 'active')`,
-        [
-          sessionId,
-          user.id,
-          user.name,
-          user.email,
-          user.role,
-          deviceInfo.device,
-          deviceInfo.deviceType,
-          clientIp,
-          "Philippines"
-        ]
-      )
-
-      await pool.query(
-        `INSERT INTO security_audit_logs (user_id, user_name, user_role, event_type, description, ip_address, status, created_at)
-         VALUES ($1, $2, $3, 'AUTH_LOGIN', $4, $5, 'success', NOW())`,
-        [
-          user.id,
-          user.name,
-          user.role,
-          `User signed in from ${deviceInfo.device}`,
-          clientIp
-        ]
-      )
-    } catch (sessErr) {
-      console.error("[login] session tracking error:", sessErr)
-    }
-
     const { password: _, ...safeUser } = updatedUser
-    const response = NextResponse.json({ user: safeUser })
+    const dashboardPath = user.role === "student" ? dashboardPathForExamination(user.examination_name) : null
+    const response = NextResponse.json({ user: safeUser, dashboardPath })
     response.cookies.set("session", token, SESSION_COOKIE_OPTIONS)
     return response
   } catch (err) {

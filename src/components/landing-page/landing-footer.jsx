@@ -18,9 +18,7 @@ export function LandingFooter() {
     <footer className="bg-[#252641] px-6 py-16 text-white lg:px-10 lg:py-20">
       <div className="mx-auto max-w-[900px] text-center">
         <div className="flex items-center justify-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-[#38bdf8] to-[#67e8f9] shadow-sm">
-            <MascotOwl size={38} trigger="loop" />
-          </div>
+          <MascotOwl size={52} trigger="loop" />
           <span className="border-l border-white/50 pl-4 text-left text-sm font-semibold">Virtual review<br />for every exam path</span>
         </div>
         <h2 className="mt-14 text-lg font-medium text-[#b2b3cf]">Subscribe to get our Newsletter</h2>

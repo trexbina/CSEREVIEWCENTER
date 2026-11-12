@@ -22,7 +22,7 @@ import ConfirmDeleteModal from "@/components/confirm-delete-modal"
 import { toast } from "@/components/ui/toast"
 
 // this is the main screen for managing categories subcategories and subjects
-export default function CurriculumManagerPage() {
+export default function CurriculumManagerPage({ initialExamId = "", initialCategoryId = "" }) {
     // these hold the lists of items from our database
     const [categories, setCategories] = useState([])
     const [subcategories, setSubcategories] = useState([])
@@ -50,6 +50,10 @@ export default function CurriculumManagerPage() {
 
     // this holds the list of courses programs and majors for the dropdowns
     const [masterData, setMasterData] = useState({ examinations: [], programs: [], majors: [] })
+    const [curriculumExamId, setCurriculumExamId] = useState(initialExamId)
+    const activeCurriculumExam = masterData.examinations.find((exam) => String(exam.id) === String(curriculumExamId))
+    const isNclexCurriculum = /nclex/i.test(activeCurriculumExam?.name || "")
+    const categoryOpensModules = Boolean(selectedCategory) && (isNclexCurriculum || selectedCategory.has_subcategories === false)
 
     // this remembers information when adding or editing a category
     const [isCatModalOpen, setIsCatModalOpen] = useState(false)
@@ -60,7 +64,10 @@ export default function CurriculumManagerPage() {
         has_subcategories: true,
         target_course: "all",
         target_program: "all",
-        target_major: "all"
+        target_major: "all",
+        access_tier: "free",
+        image_url: "",
+        imageFile: null
     })
 
     // this remembers information when adding or editing a subcategory
@@ -190,12 +197,12 @@ export default function CurriculumManagerPage() {
         try {
             // check if there is a category or subcategory id saved in the url or browser memory
             const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null
-            const targetCatId = urlParams?.get("cat") || (typeof window !== "undefined" ? sessionStorage.getItem("admin_curriculum_cat_id") : null)
+            const targetCatId = urlParams?.get("cat") || initialCategoryId || (typeof window !== "undefined" ? sessionStorage.getItem("admin_curriculum_cat_id") : null)
             const targetSubId = urlParams?.get("sub") || (typeof window !== "undefined" ? sessionStorage.getItem("admin_curriculum_sub_id") : null)
 
             // request all the data at the same time to make it faster
-            const catPromise = fetch("/api/admin/categories").catch((e) => { console.warn(e); return null })
-            const subjPromise = fetch("/api/admin/subjects").catch((e) => { console.warn(e); return null })
+            const catPromise = fetch(`/api/admin/categories${curriculumExamId ? `?exam_id=${curriculumExamId}` : ""}`).catch((e) => { console.warn(e); return null })
+            const subjPromise = fetch(`/api/admin/subjects${curriculumExamId ? `?exam_id=${curriculumExamId}` : ""}`).catch((e) => { console.warn(e); return null })
             const masterPromise = fetch("/api/admin/master-data/dropdowns").catch((e) => { console.warn(e); return null })
             const subPromise = targetCatId ? fetch(`/api/admin/subcategories?category_id=${targetCatId}`).catch(() => null) : null
 
@@ -247,7 +254,14 @@ export default function CurriculumManagerPage() {
         } finally {
             setLoading(false)
         }
-    }, [])
+    }, [curriculumExamId, initialCategoryId])
+
+    // Opening the NCLEX category list from its dedicated page preserves the examination.
+    useEffect(() => {
+        if (initialExamId || typeof window === "undefined") return
+        const requestedExamId = new URLSearchParams(window.location.search).get("exam")
+        if (requestedExamId) setCurriculumExamId(requestedExamId)
+    }, [initialExamId])
 
     // run data download as soon as the page opens
     useEffect(() => {
@@ -287,7 +301,7 @@ export default function CurriculumManagerPage() {
         if (selectedSubcategory) {
             return s.subcategory_id === selectedSubcategory.id
         }
-        if (selectedCategory && selectedCategory.has_subcategories === false) {
+        if (categoryOpensModules) {
             return s.category_id === selectedCategory.id || s.category?.toLowerCase() === selectedCategory.name?.toLowerCase()
         }
         return false
@@ -320,7 +334,10 @@ export default function CurriculumManagerPage() {
                 has_subcategories: cat.has_subcategories !== false,
                 target_course: parseTargetArray(cat.target_course),
                 target_program: parseTargetArray(cat.target_program),
-                target_major: parseTargetArray(cat.target_major)
+                target_major: parseTargetArray(cat.target_major),
+                access_tier: cat.access_tier === "paid" ? "paid" : "free",
+                image_url: cat.image_url || "",
+                imageFile: null
             })
         } else {
             setCatModalData({
@@ -329,7 +346,10 @@ export default function CurriculumManagerPage() {
                 has_subcategories: true,
                 target_course: ["all"],
                 target_program: ["all"],
-                target_major: ["all"]
+                target_major: ["all"],
+                access_tier: "free",
+                image_url: "",
+                imageFile: null
             })
         }
         setIsCatModalOpen(true)
@@ -340,6 +360,15 @@ export default function CurriculumManagerPage() {
         if (!catModalData.name.trim()) return
         setSaving(true)
         try {
+            let imageUrl = catModalData.image_url || null
+            if (catModalData.imageFile) {
+                const uploadData = new FormData()
+                uploadData.append("file", catModalData.imageFile)
+                const uploadRes = await fetch("/api/admin/upload", { method: "POST", body: uploadData })
+                const uploadJson = await uploadRes.json()
+                if (!uploadRes.ok || !uploadJson?.url) throw new Error(uploadJson?.error || "Unable to upload category image.")
+                imageUrl = uploadJson.url
+            }
             const method = catModalMode === "add" ? "POST" : "PUT"
             const url = catModalMode === "add" ? "/api/admin/categories" : `/api/admin/categories?id=${catModalData.id}`
 
@@ -353,10 +382,13 @@ export default function CurriculumManagerPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     name: catModalData.name.trim(),
-                    has_subcategories: catModalData.has_subcategories,
-                    target_course: formatTarget(catModalData.target_course),
-                    target_program: formatTarget(catModalData.target_program),
-                    target_major: formatTarget(catModalData.target_major)
+                    image_url: imageUrl,
+                    has_subcategories: isNclexCurriculum ? false : catModalData.has_subcategories,
+                    target_course: isNclexCurriculum ? "all" : formatTarget(catModalData.target_course),
+                    target_program: isNclexCurriculum ? "all" : formatTarget(catModalData.target_program),
+                    target_major: isNclexCurriculum ? "all" : formatTarget(catModalData.target_major),
+                    access_tier: catModalData.access_tier
+                    , exam_id: Number(curriculumExamId)
                 }),
             })
             if (!res.ok) throw new Error((await res.json()).error || `Failed to ${catModalMode} category`)
@@ -644,12 +676,26 @@ export default function CurriculumManagerPage() {
         )
     }
 
+    if (!curriculumExamId) {
+        return <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6"><div><p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#C9952F]">Curriculum Manager</p><h1 className="mt-1 text-3xl font-bold text-foreground">Choose an examination</h1><p className="mt-2 text-muted-foreground">Curriculum is organized separately for each examination.</p></div><div className="grid gap-5 md:grid-cols-2">{masterData.examinations.map((exam) => <button key={exam.id} onClick={() => setCurriculumExamId(String(exam.id))} className="rounded-2xl border border-border bg-card p-7 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#E9C46A] hover:shadow-md"><p className="text-xl font-bold text-foreground">{exam.name}</p><p className="mt-2 text-sm text-muted-foreground">Open and manage this examination&apos;s categories, subjects, modules, and lessons.</p></button>)}</div></div>
+    }
+
     // this is the main page design that appears on the screen
     return (
-        <div className="flex flex-col min-h-[calc(100vh-10rem)] space-y-6 w-full max-w-6xl mx-auto px-4 py-4 relative">
+        <div className="flex flex-col min-h-[calc(100vh-10rem)] space-y-6 w-full max-w-6xl mx-auto px-4 py-4 relative"><button onClick={() => { setCurriculumExamId(""); setSelectedCategory(null); setSelectedSubcategory(null) }} className="w-fit text-sm font-semibold text-muted-foreground hover:text-foreground">← All examinations</button><p className="-mt-3 text-sm font-semibold text-[#B7811D]">{masterData.examinations.find((exam) => String(exam.id) === curriculumExamId)?.name} curriculum</p>
+
+            {isNclexCurriculum && selectedCategory && (
+                <button
+                    type="button"
+                    onClick={() => window.location.assign(`/admin/curriculum?exam=${curriculumExamId}`)}
+                    className="-mt-2 w-fit text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                >
+                    ← NCLEX-RN categories
+                </button>
+            )}
 
             {/* top category buttons */}
-            {!selectedSubcategory && !(selectedCategory && selectedCategory.has_subcategories === false) && (
+            {!selectedSubcategory && !(selectedCategory && selectedCategory.has_subcategories === false) && (!isNclexCurriculum || !selectedCategory) && (
                 <div className="space-y-4 border-b border-border pb-6">
                     <div>
                         <div className="flex items-center gap-2">
@@ -703,6 +749,76 @@ export default function CurriculumManagerPage() {
                             }
                         }
 
+                        if (isNclexCurriculum) {
+                            return (
+                                <div className="grid flex-1 grid-cols-1 gap-5 pt-2 sm:grid-cols-2 xl:grid-cols-3">
+                                    {displayCategories.map((cat) => (
+                                        <article
+                                            key={cat.id}
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => window.location.assign(`/admin/curriculum/nclex/${cat.id}`)}
+                                            onKeyDown={(event) => {
+                                                if (event.key === "Enter" || event.key === " ") {
+                                                    event.preventDefault()
+                                                    window.location.assign(`/admin/curriculum/nclex/${cat.id}`)
+                                                }
+                                            }}
+                                            className="group relative min-h-[320px] cursor-pointer overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#E9C46A] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#E9C46A]"
+                                        >
+                                            <img
+                                                src={cat.image_url || "/images/default-subcategory.png"}
+                                                alt=""
+                                                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-950/10" />
+                                            <div className="absolute inset-x-0 bottom-0 p-6 text-white">
+                                                <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] backdrop-blur-sm">
+                                                    {cat.access_tier === "paid" ? "Paid tier" : "Free tier"}
+                                                </span>
+                                                <h2 className="mt-4 text-2xl font-bold leading-tight uppercase tracking-wide">{cat.name}</h2>
+                                                <p className="mt-2 text-sm font-medium text-white/75">Open category and manage NCLEX content</p>
+                                            </div>
+                                            <div className="absolute right-3 top-3 z-10 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                                                <button
+                                                    type="button"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation()
+                                                        openCatModal("edit", cat)
+                                                    }}
+                                                    className="rounded-lg bg-white/90 p-2 text-slate-700 shadow-sm transition-colors hover:bg-white"
+                                                    title="Edit category"
+                                                >
+                                                    <Settings className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation()
+                                                        handleDeleteCategory(cat.id)
+                                                    }}
+                                                    className="rounded-lg bg-white/90 p-2 text-rose-600 shadow-sm transition-colors hover:bg-white"
+                                                    title="Delete category"
+                                                >
+                                                    <Trash className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        </article>
+                                    ))}
+
+                                    <button
+                                        type="button"
+                                        onClick={() => openCatModal("add")}
+                                        className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#E9C46A]/70 bg-[#FFF9EA] p-6 text-center transition-colors hover:bg-[#FFF3D1]"
+                                    >
+                                        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#E9C46A] text-white shadow-sm"><Plus className="h-7 w-7" /></span>
+                                        <span className="mt-4 text-lg font-bold text-foreground">Add NCLEX category</span>
+                                        <span className="mt-2 text-sm text-muted-foreground">Create a new content area</span>
+                                    </button>
+                                </div>
+                            )
+                        }
+
                         return (
                             <div className="flex flex-wrap items-center gap-2.5">
                                 {visibleCategories.map((cat) => {
@@ -712,11 +828,12 @@ export default function CurriculumManagerPage() {
                                         <div
                                             key={cat.id}
                                             onClick={() => handleSelectCategory(cat)}
-                                            className={`group cursor-pointer flex items-center rounded-lg px-3.5 py-1.5 transition-all duration-300 ${isSelected
-                                                ? "bg-[#E9C46A] text-white shadow-sm"
-                                                : "bg-card text-foreground border border-border/80 shadow-xs hover:bg-muted/80"
+                                            className={`group cursor-pointer flex items-center rounded-xl px-3.5 py-2 transition-all duration-300 ${isSelected
+                                                ? "bg-[#E9C46A] text-white shadow-md"
+                                                : "bg-card text-foreground border border-border/80 shadow-sm hover:bg-muted/80"
                                                 }`}
                                         >
+                                            {isNclexCurriculum && <img src={cat.image_url || "/images/default-subcategory.png"} alt="" className="mr-2 h-8 w-8 rounded-lg object-cover ring-1 ring-black/10" />}
                                             <span className="text-xs font-bold uppercase tracking-wider whitespace-nowrap select-none">
                                                 {cat.name}
                                             </span>
@@ -920,7 +1037,7 @@ export default function CurriculumManagerPage() {
             )}
 
             {/* empty screen message when no category is selected yet */}
-            {!selectedCategory && (
+            {!selectedCategory && !isNclexCurriculum && (
                 <div className="flex-1 flex flex-col items-center justify-center min-h-[48vh] px-4 text-center animate-in fade-in duration-300">
                     <h3 className="text-base font-bold text-foreground uppercase tracking-wider mb-1">
                         Select or Add a Category
@@ -932,7 +1049,7 @@ export default function CurriculumManagerPage() {
             )}
 
             {/* subcategory cards grid */}
-            {!selectedSubcategory && selectedCategory && selectedCategory.has_subcategories !== false && (
+            {!selectedSubcategory && selectedCategory && !categoryOpensModules && (
                 <div className="space-y-6 flex-1 animate-in fade-in duration-300">
                     {(() => {
                         const SUB_ITEMS_PER_PAGE = 8
@@ -1101,7 +1218,7 @@ export default function CurriculumManagerPage() {
             )}
 
             {/* subjects section shows up when a subcategory or direct category is clicked */}
-            {(selectedSubcategory || (selectedCategory && selectedCategory.has_subcategories === false)) && (
+            {(selectedSubcategory || categoryOpensModules) && (
                 <div className="flex-1 flex flex-col space-y-4 animate-in slide-in-from-right-8 duration-300">
                     {(() => {
                         const SUBJECT_ITEMS_PER_PAGE = 5
@@ -1135,6 +1252,8 @@ export default function CurriculumManagerPage() {
                                                         sessionStorage.removeItem("admin_curriculum_sub_id")
                                                         window.history.pushState({ catId: selectedCategory?.id, subId: null }, "", `?catId=${selectedCategory?.id}`)
                                                     }
+                                                } else if (isNclexCurriculum) {
+                                                    window.location.assign(`/admin/curriculum?exam=${curriculumExamId}`)
                                                 } else {
                                                     setSelectedCategory(null)
                                                     setSelectedSubcategory(null)
@@ -1477,8 +1596,16 @@ export default function CurriculumManagerPage() {
                                 />
                             </div>
 
-                            {/* Has Subcategories Toggle */}
-                            <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-200/50">
+                            {isNclexCurriculum && <div className="flex gap-4 rounded-2xl border border-[#E9C46A]/30 bg-gradient-to-br from-[#fff9e9] to-white p-4">
+                                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[#E9C46A]/35 bg-[#E9C46A]/10 group">
+                                    <img src={catModalData.imageFile ? URL.createObjectURL(catModalData.imageFile) : (catModalData.image_url || "/images/default-subcategory.png")} alt="Category preview" className="h-full w-full object-cover" />
+                                    <input type="file" accept="image/*" onChange={(event) => event.target.files?.[0] && setCatModalData({ ...catModalData, imageFile: event.target.files[0] })} className="absolute inset-0 cursor-pointer opacity-0" title="Upload category image" />
+                                </div>
+                                <div className="min-w-0"><p className="text-sm font-bold text-[#4d4d4d]">Category image</p><p className="mt-1 text-xs leading-relaxed text-gray-500">Upload a visual cover for this NCLEX category. A temporary image is shown until you choose one.</p><label className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#E9C46A] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#dfb550]"><ImageIcon className="h-3.5 w-3.5" />Upload image<input type="file" accept="image/*" onChange={(event) => event.target.files?.[0] && setCatModalData({ ...catModalData, imageFile: event.target.files[0] })} className="hidden" /></label></div>
+                            </div>}
+
+                            {/* LEPT may choose direct-category behavior. NCLEX categories open directly to modules. */}
+                            {!isNclexCurriculum && <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-200/50">
                                 <label className="flex items-start gap-3 cursor-pointer">
                                     <input
                                         type="checkbox"
@@ -1496,9 +1623,27 @@ export default function CurriculumManagerPage() {
                                     </div>
                                 </label>
                             </div>
+                            }
 
-                            {/* course program and major dropdown choices */}
-                            {(() => {
+                            <div>
+                                <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-2">Subscription Tier</label>
+                                <div className="grid grid-cols-2 gap-2.5">
+                                    {[{ value: "free", label: "Free Tier", note: "Available with the default free subscription." }, { value: "paid", label: "Paid Tier", note: "Requires an active monthly or annual paid plan." }].map((tier) => {
+                                        const selected = catModalData.access_tier === tier.value
+                                        return <button key={tier.value} type="button" onClick={() => setCatModalData({ ...catModalData, access_tier: tier.value })} className={`rounded-xl border p-3 text-left transition-all ${selected ? "border-[#E9C46A] bg-[#E9C46A]/10 ring-1 ring-[#E9C46A]/40" : "border-gray-200 hover:border-gray-300"}`}>
+                                            <span className="flex items-center justify-between gap-2 text-xs font-bold text-[#4d4d4d]"><span>{tier.label}</span>{selected && <Check className="h-4 w-4 text-[#b7811d]" />}</span>
+                                            <span className="mt-1 block text-[11px] leading-snug text-gray-500">{tier.note}</span>
+                                        </button>
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* LEPT can target a course, program, or major. NCLEX is already scoped by its examination. */}
+                            {isNclexCurriculum ? (
+                                <div className="rounded-xl border border-[#E9C46A]/35 bg-[#E9C46A]/10 px-3 py-3 text-xs text-[#74530e]">
+                                    This category applies to all NCLEX-RN curriculum. Course, program, and major targeting are not needed.
+                                </div>
+                            ) : (() => {
                                 const selectedCourses = Array.isArray(catModalData.target_course)
                                     ? catModalData.target_course
                                     : [catModalData.target_course || "all"]

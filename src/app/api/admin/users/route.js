@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
+import { assignDefaultFreeSubscription } from "@/lib/subscriptions"
 import bcrypt from "bcryptjs"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
@@ -123,7 +124,7 @@ export async function POST(request) {
         body.year_graduated?.toString().trim() || null,
         body.highest_education || null,
         body.exam_id || null,
-        body.batch_id || null,
+        null,
         body.program_id || null,
         body.major_id || null,
         body.job_role_description?.trim() || null,
@@ -136,6 +137,10 @@ export async function POST(request) {
         body.subscription_end_date ? body.subscription_end_date : null,
       ]
     )
+
+    if (role === "student" && body.exam_id) {
+      await assignDefaultFreeSubscription(result.rows[0].id, Number(body.exam_id), session.userId)
+    }
 
     revalidatePath("/admin/users")
     revalidatePath("/admin/users/all")
@@ -368,7 +373,7 @@ export async function PUT(request) {
           body.year_graduated?.toString().trim() || null,
           body.highest_education || null,
           body.exam_id || null,
-          body.batch_id || null,
+          null,
           body.program_id || null,
           body.major_id || null,
           body.job_role_description?.trim() || null,
@@ -414,7 +419,7 @@ export async function PUT(request) {
           body.year_graduated?.toString().trim() || null,
           body.highest_education || null,
           body.exam_id || null,
-          body.batch_id || null,
+          null,
           body.program_id || null,
           body.major_id || null,
           body.job_role_description?.trim() || null,

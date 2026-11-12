@@ -105,7 +105,6 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
     const [timeTakenSeconds, setTimeTakenSeconds] = useState(null)
     const [isFullscreen, setIsFullscreen] = useState(false)
     const [attemptsCount, setAttemptsCount] = useState(1)
-    const [currentUserName, setCurrentUserName] = useState("")
     const startTimeRef = useRef(null)
     const fileInputRefs = useRef({})
     const pdfInputRef = useRef(null)
@@ -161,17 +160,6 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                 delete window.__peak_is_quiz_dirty
             }
         }
-    }, [])
-
-    useEffect(() => {
-        fetch("/api/security/settings")
-            .then(res => res.json())
-            .then(data => {
-                if (data?.user?.name) {
-                    setCurrentUserName(data.user.name)
-                }
-            })
-            .catch(() => { })
     }, [])
 
     useEffect(() => {
@@ -2254,7 +2242,6 @@ export default function QuizBuilder({ lessonId, subjectId, isStudent = false, on
                         <div className="flex-1 w-full h-full bg-gray-100 relative overflow-hidden">
                             <CustomPdfViewer
                                 url={viewingPdf.url}
-                                watermarkText={currentUserName}
                                 isStudent={effectiveIsStudent}
                             />
                         </div>

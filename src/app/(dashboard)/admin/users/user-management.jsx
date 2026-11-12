@@ -644,9 +644,9 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                     </div>
                   )}
                   <div className="space-y-1">
-                    <Label className="text-xs">Batch</Label>
+                    <Label className="text-xs">Cohort (optional)</Label>
                     <Select value={batchId || "none"} onValueChange={(val) => setBatchId(val === "none" ? "" : val)}>
-                      <SelectTrigger className="w-full"><SelectValue placeholder="Select Batch" /></SelectTrigger>
+                      <SelectTrigger className="w-full"><SelectValue placeholder="Select Cohort" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
                         {dropdownData.batches
@@ -654,17 +654,17 @@ export function EditUserDialog({ open, onOpenChange, user }) {
                           .map(b => (
                           <SelectItem key={b.id} value={b.id.toString()}>{b.name} ({b.target_year})</SelectItem>
                         ))}
-                        {dropdownData.batches.length === 0 && <SelectItem value="no_batches" disabled>No batches available</SelectItem>}
+                        {dropdownData.batches.length === 0 && <SelectItem value="no_batches" disabled>No cohorts available</SelectItem>}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs">Custom Extension Date</Label>
+                      <Label className="text-xs">Legacy Extension Date</Label>
                       {(() => {
                         const selBatch = dropdownData.batches.find(b => b.id.toString() === batchId);
                         const bEnd = selBatch?.end_date ? new Date(selBatch.end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : null;
-                        return bEnd ? <span className="text-[10px] text-muted-foreground">Batch ends: {bEnd}</span> : null;
+                        return bEnd ? <span className="text-[10px] text-muted-foreground">Cohort end: {bEnd} (no longer controls access)</span> : null;
                       })()}
                     </div>
                     <Input

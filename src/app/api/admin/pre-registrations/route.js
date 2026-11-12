@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
+import { assignDefaultFreeSubscription } from "@/lib/subscriptions"
 import bcrypt from "bcryptjs"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
@@ -272,6 +273,12 @@ export async function PATCH(request) {
         app.academic_course_id,
       ]
     )
+
+    // Every approved student starts with the examination's default Free plan.
+    // A paid plan can later replace it through the subscription assignment flow.
+    if (app.exam_id) {
+      await assignDefaultFreeSubscription(insertUserRes.rows[0].id, app.exam_id, session.userId)
+    }
 
     // Mark application as APPROVED and sync chosen batch
     await pool.query(

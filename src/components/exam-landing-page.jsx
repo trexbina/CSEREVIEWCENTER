@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowRight, Check, LogIn } from "lucide-react"
 import { LoginDialog } from "@/components/login-dialog"
 import { EXAM_LANDING_PAGES } from "@/components/exam-landing-data"
+import { MascotOwl } from "@/components/mascot-owl"
 
 export function ExamLandingPage({ exam }) {
   const page = EXAM_LANDING_PAGES[exam]
@@ -15,7 +16,7 @@ export function ExamLandingPage({ exam }) {
     <div className="min-h-screen overflow-x-hidden bg-white text-[#252641]" style={{ "--exam-accent": page.accent, "--exam-soft": page.soft }}>
       <header className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-6 lg:px-10">
         <Link href="/" className="flex items-center gap-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--exam-accent)] focus-visible:ring-offset-4" aria-label="CSE Review System home">
-          <span className="flex h-9 w-9 rotate-45 items-center justify-center rounded-sm bg-[#49c8f0]"><span className="-rotate-45 text-[8px] font-black text-[#113c49]">CSE</span></span>
+          <MascotOwl size={50} trigger="loop" className="transition-transform duration-300 group-hover:scale-105" />
           <span className="text-sm font-black tracking-tight text-[#113c49]">CSE Review System</span>
         </Link>
         <div className="flex items-center gap-3">

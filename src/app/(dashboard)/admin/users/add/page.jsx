@@ -316,11 +316,10 @@ export default function AddUserPage() {
 
     // ── Master Data ──
     const [examId, setExamId] = useState("")
-    const [batchId, setBatchId] = useState("")
     const [programId, setProgramId] = useState("")
     const [majorId, setMajorId] = useState("")
     const [teacherTargets, setTeacherTargets] = useState([])
-    const [dropdownData, setDropdownData] = useState({ examinations: [], batches: [], programs: [], majors: [], schools: [], academic_courses: [], roles: [] })
+    const [dropdownData, setDropdownData] = useState({ examinations: [], programs: [], majors: [], schools: [], academic_courses: [], roles: [] })
 
     // Course tree for multi-select
     const courseTree = useMemo(() => {
@@ -419,8 +418,8 @@ export default function AddUserPage() {
             setError("Passwords do not match.")
             return
         }
-        if (role === "student" && (!examId || !batchId)) {
-            setError("Target Examination and Batch are required for students.")
+        if (role === "student" && !examId) {
+            setError("Target Examination is required for students.")
             return
         }
         if (role === "teacher" && !examId && teacherTargets.length === 0) {
@@ -473,7 +472,6 @@ export default function AddUserPage() {
                     year_graduated: yearGraduated || null,
                     highest_education: highestEducation || null,
                     exam_id: resolvedExamId ? parseInt(resolvedExamId) : null,
-                    batch_id: !isAdminRole && batchId ? parseInt(batchId) : null,
                     program_id: !isAdminRole && programId ? parseInt(programId) : null,
                     major_id: !isAdminRole && majorId ? parseInt(majorId) : null,
                     job_role_description: isAdminRole ? jobRoleDescription : null,
@@ -821,21 +819,6 @@ export default function AddUserPage() {
                                 </Select>
                             </div>
                         )}
-                        <div className="space-y-1.5">
-                            <Label className="text-sm font-semibold text-[#696969]">Assigned Batch *</Label>
-                            <Select value={batchId || "none"} onValueChange={(val) => setBatchId(val === "none" ? "" : val)}>
-                                <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Batch" /></SelectTrigger>
-                                <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                                    <SelectItem value="none">None</SelectItem>
-                                    {dropdownData.batches
-                                        .filter(b => !examId || b.exam_id.toString() === examId)
-                                        .map(b => (
-                                        <SelectItem key={b.id} value={b.id.toString()}>{b.name} ({b.target_year})</SelectItem>
-                                    ))}
-                                    {dropdownData.batches.length === 0 && <SelectItem value="no_batches" disabled>No batches available</SelectItem>}
-                                </SelectContent>
-                            </Select>
-                        </div>
                     </div>
                 </section>
 

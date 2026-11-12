@@ -51,9 +51,8 @@ async function wipeDatabase() {
     await client.query("TRUNCATE TABLE daily_registration_stats CASCADE");
     await client.query("TRUNCATE TABLE daily_student_stats CASCADE");
 
-    // 5. Wipe Logs, Trash, and Notifications
-    console.log("Clearing audit logs, notifications, and trash...");
-    await client.query("TRUNCATE TABLE security_audit_logs CASCADE");
+    // 5. Wipe Trash and Notifications
+    console.log("Clearing notifications and trash...");
     await client.query("TRUNCATE TABLE trash_items CASCADE");
     await client.query("TRUNCATE TABLE notifications CASCADE");
 

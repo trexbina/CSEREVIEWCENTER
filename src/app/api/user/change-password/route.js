@@ -68,16 +68,6 @@ export async function POST(request) {
       [hashedPassword, session.userId]
     )
 
-    // Audit log
-    try {
-      await pool.query(`
-        INSERT INTO security_audit_logs (user_id, user_name, user_role, event_type, description, status, created_at)
-        VALUES ($1, $2, $3, 'PASSWORD_CHANGE', 'Account password was successfully changed', 'success', NOW())
-      `, [user.id, user.name || session.email, user.role || session.role])
-    } catch (auditErr) {
-      console.warn("[change-password audit log]:", auditErr.message)
-    }
-
     return NextResponse.json({
       success: true,
       message: "Password updated successfully.",

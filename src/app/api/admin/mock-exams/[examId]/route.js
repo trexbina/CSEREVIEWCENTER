@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { moveToTrash } from "@/lib/trash"
+import { ensureMockExamExaminationSchema } from "@/lib/mock-exam-schema"
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 
@@ -16,6 +17,7 @@ export async function GET(request, { params }) {
     try {
         const session = await adminGuard()
         if (!session) return NextResponse.json({ error: "Forbidden." }, { status: 403 })
+        await ensureMockExamExaminationSchema()
 
         const { examId } = await params
         const { rows } = await pool.query(
@@ -39,6 +41,7 @@ export async function PUT(request, { params }) {
     try {
         const session = await adminGuard()
         if (!session) return NextResponse.json({ error: "Forbidden." }, { status: 403 })
+        await ensureMockExamExaminationSchema()
 
         const { examId } = await params
         const body = await request.json()
@@ -61,10 +64,15 @@ export async function PUT(request, { params }) {
         }
 
         // Otherwise, it's updating metadata (title, description, status, targets, unlockDate, settings)
-        const { title, description, examCode, targetCourses, unlockDate, startDate, startTime, timeLimitMinutes, maxRetries, status } = body
+        const { title, description, examCode, examinationId, unlockDate, startDate, startTime, timeLimitMinutes, maxRetries, status } = body
 
-        if (!title?.trim() || !examCode?.trim()) {
-            return NextResponse.json({ error: "Title and Exam Code are required." }, { status: 400 })
+        if (!title?.trim() || !examCode?.trim() || !Number.isInteger(Number(examinationId))) {
+            return NextResponse.json({ error: "Title, exam code, and target examination are required." }, { status: 400 })
+        }
+
+        const examination = await pool.query("SELECT id FROM examinations WHERE id = $1", [Number(examinationId)])
+        if (examination.rows.length === 0) {
+            return NextResponse.json({ error: "The selected examination does not exist." }, { status: 400 })
         }
 
         // check duplicate code (excluding current ID)
@@ -117,18 +125,20 @@ export async function PUT(request, { params }) {
              SET title = $1, 
                  description = $2, 
                  exam_code = $3, 
-                 targets = $4, 
-                 unlock_date = $5, 
-                 status = $6, 
-                 questions = $7,
+                 examination_id = $4,
+                 targets = $5,
+                 unlock_date = $6,
+                 status = $7,
+                 questions = $8,
                  updated_at = NOW()
-             WHERE id = $8
+             WHERE id = $9
              RETURNING *`,
             [
                 title.trim(),
                 description?.trim() || null,
                 examCode.trim().toUpperCase(),
-                JSON.stringify(targetCourses || []),
+                Number(examinationId),
+                JSON.stringify([`exam_${Number(examinationId)}`]),
                 computedUnlockDate,
                 status === "Active" ? "active" : "locked",
                 JSON.stringify(updatedQuestionsJson),

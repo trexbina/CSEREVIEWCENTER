@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { canAccessSubject } from "@/lib/subscriptions"
+
+async function canAccessContent(studentId, contentId) {
+  const { rows } = await pool.query(`SELECT sm.subject_id FROM subject_contents sc JOIN subject_modules sm ON sm.id = sc.module_id WHERE sc.id = $1`, [contentId])
+  return rows[0]?.subject_id ? canAccessSubject(studentId, rows[0].subject_id) : false
+}
 
 /** GET /api/student/quiz-submissions?contentId=123 */
 export async function GET(request) {
@@ -15,6 +21,9 @@ export async function GET(request) {
 
     if (!contentId) {
       return NextResponse.json({ error: "contentId is required" }, { status: 400 })
+    }
+    if (!(await canAccessContent(session.userId, Number(contentId)))) {
+      return NextResponse.json({ error: "Your subscription does not include this quiz." }, { status: 403 })
     }
 
     const res = await pool.query(
@@ -46,6 +55,9 @@ export async function POST(request) {
 
     if (!contentId) {
       return NextResponse.json({ error: "contentId is required" }, { status: 400 })
+    }
+    if (!(await canAccessContent(session.userId, Number(contentId)))) {
+      return NextResponse.json({ error: "Your subscription does not include this quiz." }, { status: 403 })
     }
 
     const query = `

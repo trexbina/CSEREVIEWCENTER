@@ -67,11 +67,6 @@ export const DASHBOARD_MODULES = [
     description: "Set up board exams, programs, and majors"
   },
   {
-    path: "/admin/master-data/batches",
-    name: "Batch Management Data",
-    description: "Create and manage review batches and target exam years"
-  },
-  {
     path: "/admin/master-data/education",
     name: "Academic Institutions & Courses",
     description: "Manage schools, universities, and college degrees"
@@ -99,7 +94,7 @@ export const DASHBOARD_MODULES = [
   {
     path: "/admin/settings/security",
     name: "Security & Policies",
-    description: "View active sessions, audit logs, and security"
+    description: "Manage administrative access and role limitations"
   }
 ]
 
@@ -535,7 +530,6 @@ export default function RolesAndLimitationView({ onBack, roles = [], fetchData, 
       perms = perms.filter((p) => p !== "/admin/master-data")
       const masterSub = [
         "/admin/master-data/tree",
-        "/admin/master-data/batches",
         "/admin/master-data/education",
         "/admin/master-data/gradebook"
       ]

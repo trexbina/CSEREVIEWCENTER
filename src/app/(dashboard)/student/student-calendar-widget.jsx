@@ -82,7 +82,7 @@ export function StudentCalendarWidget({ upcomingExamDate }) {
     <div className="w-full rounded-2xl border border-black/5 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md shadow-2xs overflow-hidden flex flex-col justify-between transition-all">
       {/* ── Top Bar / Header: Very light gray (#f5f5f5) with soft shadow ── */}
       <div>
-        <div className="relative z-10 px-4 py-3 sm:px-4.5 sm:py-3.5 flex items-center justify-between border-b border-black/5 dark:border-white/5 bg-neutral-100 dark:bg-white/[0.05] shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
+        <div className="relative z-10 flex items-center justify-between border-b border-[#cfeaf3] bg-[#e5f6fb] px-4 py-3 shadow-[0_2px_4px_-1px_rgba(0,0,0,0.05)] sm:px-4.5 sm:py-3.5 dark:border-white/5 dark:bg-white/[0.05] dark:shadow-[0_2px_4px_-1px_rgba(0,0,0,0.3)]">
           <span className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 capitalize select-none">
             {MONTH_NAMES[month].toLowerCase()} {year}
           </span>

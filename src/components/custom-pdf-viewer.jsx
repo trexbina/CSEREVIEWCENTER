@@ -9,7 +9,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     import.meta.url
 ).toString()
 
-export default function CustomPdfViewer({ url, watermarkText: userName = "", isStudent = false }) {
+export default function CustomPdfViewer({ url, isStudent = false }) {
     const containerRef = useRef(null)
     const viewerRef = useRef(null)
     const [isFullscreen, setIsFullscreen] = useState(false)
@@ -19,59 +19,8 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
     const [numPages, setNumPages] = useState(0)
     const [loadError, setLoadError] = useState("")
     const [viewerWidth, setViewerWidth] = useState(0)
-    const [watermarkConfig, setWatermarkConfig] = useState({
-        enabled: true,
-        template: "{name} - {email}",
-        opacity: 0.15,
-        size: 100,
-        count: 1,
-        userEmail: ""
-    })
     const qualityTier = 1 // Default High Quality Tier
     const enhanceImage = true // Default High Quality Image Enhancement
-
-    // Load active watermark rules from settings
-    useEffect(() => {
-        let isMounted = true
-        fetch("/api/security/settings")
-            .then(res => res.json())
-            .then(data => {
-                if (isMounted && data?.watermark) {
-                    const rawSize = String(data.watermark.size ?? "100").toLowerCase()
-                    let parsedSize = parseInt(rawSize, 10)
-                    if (rawSize === "small") parsedSize = 75
-                    else if (rawSize === "large") parsedSize = 130
-                    else if (rawSize === "medium" || isNaN(parsedSize)) parsedSize = 100
-                    parsedSize = Math.min(200, Math.max(50, parsedSize))
-
-                    setWatermarkConfig({
-                        enabled: data.watermark.enabled ?? true,
-                        template: data.watermark.template || "{name} - {email}",
-                        opacity: data.watermark.opacity ?? 0.15,
-                        size: parsedSize,
-                        count: Math.min(3, Math.max(1, parseInt(data.watermark.count, 10) || 1)),
-                        userEmail: data.user?.email || ""
-                    })
-                }
-            })
-            .catch(() => {})
-        return () => { isMounted = false }
-    }, [])
-
-    const watermarkText = useMemo(() => {
-        if (!watermarkConfig.enabled) return ""
-        const displayName = userName || "Student"
-        const email = watermarkConfig.userEmail || ""
-        const dateStr = new Date().toISOString().split("T")[0]
-
-        return watermarkConfig.template
-            .replace(/{name}/gi, displayName)
-            .replace(/{email}/gi, email)
-            .replace(/{date}/gi, dateStr)
-            || displayName
-    }, [userName, watermarkConfig])
-
-    const watermarkOpacity = watermarkConfig.opacity ?? 0.15
 
     useEffect(() => {
         setLoading(true)
@@ -278,41 +227,6 @@ export default function CustomPdfViewer({ url, watermarkText: userName = "", isS
                                         ].join(" ")}
                                     />
 
-                                    <div className="pointer-events-none absolute inset-0 overflow-hidden select-none z-10">
-                                        {Array.from({ length: watermarkConfig.count || 1 }).map((_, stampIdx) => {
-                                            const totalCount = watermarkConfig.count || 1
-                                            const topPercent =
-                                                totalCount === 1 ? "50%" :
-                                                totalCount === 2 ? (stampIdx === 0 ? "28%" : "72%") :
-                                                (stampIdx === 0 ? "20%" : stampIdx === 1 ? "50%" : "80%")
-
-                                            const sizePercent = typeof watermarkConfig.size === "number" ? watermarkConfig.size : (parseInt(watermarkConfig.size, 10) || 100)
-                                            const scaleFactor = Math.min(2, Math.max(0.5, sizePercent / 100))
-                                            const minPx = Math.round(18 * scaleFactor)
-                                            const vw = (2.2 * scaleFactor).toFixed(2)
-                                            const maxPx = Math.round(32 * scaleFactor)
-                                            const fontSizeClamped = `clamp(${minPx}px, ${vw}vw, ${maxPx}px)`
-
-                                            return (
-                                                <div
-                                                    key={stampIdx}
-                                                    className="absolute inset-x-0 flex items-center justify-center -translate-y-1/2"
-                                                    style={{ top: topPercent }}
-                                                >
-                                                    <div
-                                                        className="rotate-[-22deg] whitespace-nowrap text-center font-semibold tracking-[0.18em] uppercase select-none"
-                                                        style={{
-                                                            color: "#111111",
-                                                            opacity: watermarkOpacity,
-                                                            fontSize: fontSizeClamped
-                                                        }}
-                                                    >
-                                                        {watermarkText}
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
                                 </div>
                             ))}
                         </Document>

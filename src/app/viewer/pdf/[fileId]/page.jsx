@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useEffect, useState } from "react"
+import { use } from "react"
 import dynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
 import { SecurityShield } from "@/components/security-shield"
@@ -17,30 +17,13 @@ const CustomPdfViewer = dynamic(() => import("@/components/custom-pdf-viewer"), 
 
 export default function DocumentViewerPage({ params }) {
     const { fileId } = use(params)
-    const [userName, setUserName] = useState("")
-
-    useEffect(() => {
-        fetch("/api/security/settings")
-            .then(res => res.json())
-            .then(data => {
-                if (data?.user?.name) {
-                    setUserName(data.user.name)
-                }
-            })
-            .catch(() => {})
-    }, [])
-
     const pdfUrl = `/api/files/${fileId}`
 
     return (
         <SecurityShield blurOnFocusLoss={true}>
             <div className="w-full h-screen flex flex-col bg-background select-none">
                 <div className="flex-1 w-full h-full relative overflow-hidden">
-                    <CustomPdfViewer
-                        url={pdfUrl}
-                        watermarkText={userName}
-                        isStudent={true}
-                    />
+                    <CustomPdfViewer url={pdfUrl} isStudent={true} />
                 </div>
             </div>
         </SecurityShield>

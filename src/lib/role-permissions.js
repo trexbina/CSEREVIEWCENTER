@@ -62,29 +62,3 @@ export async function canManageRoles(session) {
   }
   return false
 }
-
-/**
- * Specific check for viewing and managing Security & Access Policies in Settings.
- * Super admin always has access; custom roles must have "/admin/settings/security".
- */
-export async function canManageSecurityPolicies(session) {
-  if (!session || !session.role) return false
-  if (isSuperAdmin(session)) return true
-
-  try {
-    const res = await pool.query(
-      "SELECT permissions FROM custom_roles WHERE role_key = $1",
-      [session.role]
-    )
-    if (res.rows.length > 0) {
-      const perms = res.rows[0].permissions
-      if (Array.isArray(perms)) {
-        return perms.includes("/admin/settings/security")
-      }
-    }
-  } catch (err) {
-    console.error("[canManageSecurityPolicies] Error checking permission:", err)
-  }
-  return false
-}
-

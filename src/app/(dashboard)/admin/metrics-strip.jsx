@@ -53,7 +53,7 @@ export async function MetricsStrip() {
       iconKey: "users",
       lordIcon: "/icons/knowifready.json",
       meta: "Active student accounts",
-      headerBg: "bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25",
+      headerBg: "bg-[#dff3fa] dark:bg-[#E9C46A]/25",
     },
     {
       label: "Active Batches",
@@ -62,7 +62,7 @@ export async function MetricsStrip() {
       iconKey: "calendar",
       lordIcon: "/icons/allinonespot.json",
       meta: "Ongoing review terms",
-      headerBg: "bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25",
+      headerBg: "bg-[#dff3fa] dark:bg-[#E9C46A]/25",
     },
     {
       label: "Examinations",
@@ -71,7 +71,7 @@ export async function MetricsStrip() {
       iconKey: "award",
       lordIcon: "/icons/instantresults.json",
       meta: "Active board exams (LEPT, etc.)",
-      headerBg: "bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25",
+      headerBg: "bg-[#dff3fa] dark:bg-[#E9C46A]/25",
     },
     {
       label: "Expiring Soon",
@@ -80,7 +80,7 @@ export async function MetricsStrip() {
       iconKey: "alertTriangle",
       lordIcon: "/icons/knowifready.json",
       meta: "Within next 14 days",
-      headerBg: "bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25",
+      headerBg: "bg-[#dff3fa] dark:bg-[#E9C46A]/25",
     },
     {
       label: "Pre-Registrations",
@@ -89,7 +89,7 @@ export async function MetricsStrip() {
       iconKey: "userPlus",
       lordIcon: "/icons/allinonespot.json",
       meta: "Pending application review",
-      headerBg: "bg-[#E9C46A]/20 dark:bg-[#E9C46A]/25",
+      headerBg: "bg-[#dff3fa] dark:bg-[#E9C46A]/25",
     },
   ]
 

@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS examinations (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
+  is_legacy BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -41,7 +42,7 @@ CREATE TABLE IF NOT EXISTS majors (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Batches / Cohorts
+-- Legacy batch archive. Access, reporting, gradebooks, and curriculum use examinations.
 CREATE TABLE IF NOT EXISTS batches (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -115,6 +116,45 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(LOWER(email));
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_batch_id ON users(batch_id);
 
+-- Subscription plans govern student access. Batches remain optional cohorts for gradebooks/reporting.
+CREATE TABLE IF NOT EXISTS subscription_plans (
+  id SERIAL PRIMARY KEY,
+  examination_id INTEGER NOT NULL REFERENCES examinations(id) ON DELETE CASCADE,
+  name VARCHAR(150) NOT NULL,
+  description TEXT,
+  price NUMERIC(10, 2),
+  duration_days INTEGER,
+  billing_interval VARCHAR(20) NOT NULL DEFAULT 'monthly',
+  plan_type VARCHAR(20) NOT NULL DEFAULT 'paid',
+  access_mode VARCHAR(20) NOT NULL DEFAULT 'all',
+  is_default_free BOOLEAN NOT NULL DEFAULT FALSE,
+  status VARCHAR(20) NOT NULL DEFAULT 'active',
+  legacy_cohort_id INTEGER UNIQUE REFERENCES batches(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS subscription_plans_one_default_free_per_exam
+  ON subscription_plans(examination_id) WHERE is_default_free;
+CREATE TABLE IF NOT EXISTS user_subscriptions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  subscription_plan_id INTEGER NOT NULL REFERENCES subscription_plans(id) ON DELETE RESTRICT,
+  examination_id INTEGER NOT NULL REFERENCES examinations(id) ON DELETE RESTRICT,
+  cohort_id INTEGER REFERENCES batches(id) ON DELETE SET NULL,
+  activated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ,
+  status VARCHAR(20) NOT NULL DEFAULT 'active',
+  plan_name_snapshot VARCHAR(150) NOT NULL,
+  plan_type_snapshot VARCHAR(20) NOT NULL,
+  access_mode_snapshot VARCHAR(20) NOT NULL,
+  duration_days_snapshot INTEGER,
+  billing_interval_snapshot VARCHAR(20),
+  source_legacy_cohort_id INTEGER REFERENCES batches(id) ON DELETE SET NULL,
+  assigned_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_user_subscriptions_active ON user_subscriptions(user_id, examination_id, status, expires_at);
+
 -- Password Reset Tokens
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id SERIAL PRIMARY KEY,
@@ -129,54 +169,6 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user ON password_reset_tokens(user_id);
 
--- Security Settings
-CREATE TABLE IF NOT EXISTS system_security_settings (
-  id INT PRIMARY KEY DEFAULT 1,
-  single_session_enabled BOOLEAN DEFAULT TRUE,
-  audit_logging_enabled BOOLEAN DEFAULT TRUE,
-  watermark_enabled BOOLEAN DEFAULT TRUE,
-  watermark_text VARCHAR(100) DEFAULT '{name} - {email}',
-  watermark_opacity INT DEFAULT 15,
-  watermark_size VARCHAR(20) DEFAULT '100',
-  watermark_count INT DEFAULT 1,
-  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-
--- Security Audit Logs
-CREATE TABLE IF NOT EXISTS security_audit_logs (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER,
-  user_name VARCHAR(150),
-  user_role VARCHAR(50),
-  event_type VARCHAR(100) NOT NULL,
-  description TEXT NOT NULL,
-  ip_address VARCHAR(45) DEFAULT '127.0.0.1',
-  status VARCHAR(20) DEFAULT 'success',
-  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_security_audit_logs_event ON security_audit_logs(event_type);
-CREATE INDEX IF NOT EXISTS idx_security_audit_logs_user ON security_audit_logs(user_id);
-
--- User Active Sessions
-CREATE TABLE IF NOT EXISTS user_active_sessions (
-  id VARCHAR(100) PRIMARY KEY,
-  user_id INTEGER,
-  user_name VARCHAR(150),
-  email VARCHAR(150),
-  role VARCHAR(50) DEFAULT 'student',
-  device VARCHAR(150) NOT NULL,
-  device_type VARCHAR(50) DEFAULT 'desktop',
-  ip_address VARCHAR(50) NOT NULL,
-  location VARCHAR(100) DEFAULT 'Manila, Philippines',
-  login_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  last_active TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  is_current BOOLEAN DEFAULT FALSE,
-  status VARCHAR(20) DEFAULT 'active'
-);
-
-CREATE INDEX IF NOT EXISTS idx_user_active_sessions_user ON user_active_sessions(user_id);
-
 -- ==============================================================================
 -- 4. CURRICULUM, SUBJECTS & LESSONS
 -- ==============================================================================
@@ -184,12 +176,15 @@ CREATE INDEX IF NOT EXISTS idx_user_active_sessions_user ON user_active_sessions
 -- Categories (e.g., Numerical Ability, Verbal Ability, General Information)
 CREATE TABLE IF NOT EXISTS categories (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(255) UNIQUE NOT NULL,
+  exam_id INTEGER REFERENCES examinations(id) ON DELETE RESTRICT,
+  name VARCHAR(255) NOT NULL,
   description TEXT,
+  image_url TEXT,
   has_subcategories BOOLEAN DEFAULT TRUE,
   target_course TEXT DEFAULT 'all',
   target_program TEXT DEFAULT 'all',
   target_major TEXT DEFAULT 'all',
+  access_tier VARCHAR(10) NOT NULL DEFAULT 'free' CHECK (access_tier IN ('free', 'paid')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -207,6 +202,8 @@ CREATE TABLE IF NOT EXISTS subcategories (
 );
 
 CREATE INDEX IF NOT EXISTS idx_subcategories_category ON subcategories(category_id);
+CREATE INDEX IF NOT EXISTS idx_categories_exam ON categories(exam_id);
+CREATE UNIQUE INDEX IF NOT EXISTS categories_exam_name_unique ON categories(exam_id, LOWER(name));
 
 -- Subjects / Courses
 CREATE TABLE IF NOT EXISTS subjects (
@@ -278,6 +275,7 @@ CREATE TABLE IF NOT EXISTS mock_exams (
   exam_code VARCHAR(50) UNIQUE NOT NULL,
   title VARCHAR(255) NOT NULL,
   description TEXT,
+  examination_id INTEGER REFERENCES examinations(id) ON DELETE SET NULL,
   targets JSONB DEFAULT '[]'::jsonb,
   unlock_date TIMESTAMPTZ,
   status VARCHAR(20) DEFAULT 'active',
@@ -288,6 +286,28 @@ CREATE TABLE IF NOT EXISTS mock_exams (
 );
 
 CREATE INDEX IF NOT EXISTS idx_mock_exams_code ON mock_exams(exam_code);
+CREATE INDEX IF NOT EXISTS idx_mock_exams_examination_id ON mock_exams(examination_id);
+
+CREATE TABLE IF NOT EXISTS subscription_plan_subjects (
+  subscription_plan_id INTEGER NOT NULL REFERENCES subscription_plans(id) ON DELETE CASCADE,
+  subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+  PRIMARY KEY (subscription_plan_id, subject_id)
+);
+CREATE TABLE IF NOT EXISTS subscription_plan_mock_exams (
+  subscription_plan_id INTEGER NOT NULL REFERENCES subscription_plans(id) ON DELETE CASCADE,
+  mock_exam_id INTEGER NOT NULL REFERENCES mock_exams(id) ON DELETE CASCADE,
+  PRIMARY KEY (subscription_plan_id, mock_exam_id)
+);
+CREATE TABLE IF NOT EXISTS user_subscription_subjects (
+  user_subscription_id INTEGER NOT NULL REFERENCES user_subscriptions(id) ON DELETE CASCADE,
+  subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_subscription_id, subject_id)
+);
+CREATE TABLE IF NOT EXISTS user_subscription_mock_exams (
+  user_subscription_id INTEGER NOT NULL REFERENCES user_subscriptions(id) ON DELETE CASCADE,
+  mock_exam_id INTEGER NOT NULL REFERENCES mock_exams(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_subscription_id, mock_exam_id)
+);
 
 -- Mock Exam Targets (Filtering by exam, program, major, batch)
 CREATE TABLE IF NOT EXISTS mock_exam_targets (
@@ -586,16 +606,11 @@ CREATE INDEX IF NOT EXISTS idx_trash_deleted_at ON trash_items(deleted_at DESC);
 -- Default System Roles
 INSERT INTO custom_roles (role_key, name, description, permissions, is_system)
 VALUES 
-  ('super_admin', 'Super Administrator', 'Full system access and master controls across all features', '["/admin/dashboard", "/admin/users", "/admin/pre-registrations", "/admin/subscriptions", "/admin/curriculum", "/admin/subjects", "/admin/categories", "/admin/mock-exams", "/admin/master-data", "/admin/master-data/tree", "/admin/master-data/batches", "/admin/master-data/education", "/admin/master-data/gradebook", "/admin/settings/security", "/admin/trash", "/admin/analytics", "/admin/roles"]'::jsonb, true),
+  ('super_admin', 'Super Administrator', 'Full system access and master controls across all features', '["/admin/dashboard", "/admin/users", "/admin/pre-registrations", "/admin/subscriptions", "/admin/curriculum", "/admin/subjects", "/admin/categories", "/admin/mock-exams", "/admin/master-data", "/admin/master-data/tree", "/admin/master-data/batches", "/admin/master-data/education", "/admin/master-data/gradebook", "/admin/trash", "/admin/analytics", "/admin/roles"]'::jsonb, true),
   ('admin', 'Administrator', 'Administrative management and student oversight', '["/admin/dashboard", "/admin/users", "/admin/pre-registrations", "/admin/subscriptions", "/admin/curriculum", "/admin/subjects", "/admin/categories", "/admin/mock-exams", "/admin/master-data", "/admin/analytics"]'::jsonb, true),
   ('teacher', 'Instructor / Reviewer', 'Content authoring, quiz builder, and subject management', '["/teacher", "/teacher/subjects", "/teacher/modules", "/teacher/quiz-builder"]'::jsonb, true),
   ('student', 'Student Examinee', 'Student learning portal, lessons, mock exams, and review tools', '["/student"]'::jsonb, true)
 ON CONFLICT (role_key) DO NOTHING;
-
--- Default System Security Settings
-INSERT INTO system_security_settings (id, single_session_enabled, audit_logging_enabled, watermark_enabled, watermark_text, watermark_opacity, watermark_size, watermark_count)
-VALUES (1, true, true, true, '{name} - {email}', 15, '100', 1)
-ON CONFLICT (id) DO NOTHING;
 
 -- Default Super Administrator Account (Password: password123 for all)
 INSERT INTO users (id, name, email, password, role, is_active, status, targets)

@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth-session"
 import { ADMIN_ROLES, isAdminRole } from "@/lib/auth"
 import { moveToTrash } from "@/lib/trash"
 import { hasPermission } from "@/lib/role-permissions"
+import { ensureExaminationCatalog } from "@/lib/examination-catalog"
 
 export async function POST(req) {
   try {
@@ -14,6 +15,8 @@ export async function POST(req) {
 
     const { action, entity, payload } = await req.json()
 
+    if (entity === "EXAM") await ensureExaminationCatalog()
+
     if (["EXAM", "PROGRAM", "MAJOR"].includes(entity)) {
       const allowed = await hasPermission(session, "/admin/master-data/tree")
       if (!allowed) {
@@ -21,10 +24,7 @@ export async function POST(req) {
       }
     }
     if (entity === "BATCH") {
-      const allowed = await hasPermission(session, "/admin/master-data/batches")
-      if (!allowed) {
-        return NextResponse.json({ error: "Forbidden: You do not have permission for Batch Management Data." }, { status: 403 })
-      }
+      return NextResponse.json({ error: "Batch management has been retired. Use examination-based subscriptions, gradebooks, and analytics." }, { status: 410 })
     }
     if (["SCHOOL", "ACADEMIC_COURSE"].includes(entity)) {
       const allowed = await hasPermission(session, "/admin/master-data/education")
@@ -42,14 +42,19 @@ export async function POST(req) {
     // ── EXAM ──
     if (entity === "EXAM") {
       if (action === "ADD") {
-        const res = await pool.query("INSERT INTO examinations (name) VALUES ($1) RETURNING id, name", [payload.name])
-        return NextResponse.json(res.rows[0])
+        return NextResponse.json({ error: "The examination catalog is managed in code. Only LEPT and NCLEX-RN are available." }, { status: 403 })
       }
       if (action === "RENAME") {
         await pool.query("UPDATE examinations SET name = $1 WHERE id = $2", [payload.name, parseInt(payload.id)])
         return NextResponse.json({ success: true })
       }
+      if (action === "SET_LEGACY") {
+        await pool.query("UPDATE examinations SET is_legacy = $1 WHERE id = $2", [Boolean(payload.is_legacy), parseInt(payload.id)])
+        return NextResponse.json({ success: true })
+      }
       if (action === "DELETE") {
+        return NextResponse.json({ error: "Examinations cannot be deleted. Mark an examination as Legacy instead." }, { status: 403 })
+        /* Legacy deletion code intentionally retained below for historical reference.
         const examId = parseInt(payload.id)
         const examRes = await pool.query("SELECT * FROM examinations WHERE id = $1", [examId])
         if (examRes.rows.length > 0) {
@@ -179,7 +184,7 @@ export async function POST(req) {
         }
 
         await pool.query("DELETE FROM examinations WHERE id = $1", [examId])
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ success: true }) */
       }
     }
 
@@ -420,30 +425,32 @@ export async function POST(req) {
     // ── GRADEBOOK ──
     if (entity === "GRADEBOOK") {
       if (action === "ADD") {
-        const { name, code, batch_id, targets } = payload
+        const { name, code, exam_id, targets } = payload
+        if (!name?.trim() || !Number.isInteger(Number(exam_id))) {
+          return NextResponse.json({ error: "Gradebook name and examination are required." }, { status: 400 })
+        }
         const targetsJson = JSON.stringify(Array.isArray(targets) ? targets : [])
         const res = await pool.query(
-          `INSERT INTO gradebooks (name, code, batch_id, exam_id, targets)
-           SELECT $1, $2, $3, exam_id, $4::jsonb FROM batches WHERE id = $3
+          `INSERT INTO gradebooks (name, code, exam_id, targets)
+           VALUES ($1, $2, $3, $4::jsonb)
            RETURNING *`,
-          [name, code, parseInt(batch_id), targetsJson]
+          [name.trim(), code || null, Number(exam_id), targetsJson]
         )
-        if (res.rows.length === 0) {
-          return NextResponse.json({ error: "Failed to create gradebook. Batch not found." }, { status: 400 })
-        }
         return NextResponse.json(res.rows[0])
       }
       if (action === "UPDATE") {
-        const { id, name, code, batch_id, status, targets } = payload
+        const { id, name, code, exam_id, status, targets } = payload
+        if (!name?.trim() || !Number.isInteger(Number(exam_id))) {
+          return NextResponse.json({ error: "Gradebook name and examination are required." }, { status: 400 })
+        }
         const targetsJson = JSON.stringify(Array.isArray(targets) ? targets : [])
         const res = await pool.query(
           `UPDATE gradebooks 
-           SET name = $1, code = $2, batch_id = $3, 
-               exam_id = COALESCE((SELECT exam_id FROM batches WHERE id = $3), exam_id), 
+           SET name = $1, code = $2, exam_id = $3,
                status = $4, targets = $5::jsonb, updated_at = NOW() 
            WHERE id = $6
            RETURNING id`,
-          [name, code, parseInt(batch_id), status || 'ACTIVE', targetsJson, parseInt(id)]
+          [name.trim(), code || null, Number(exam_id), status || 'ACTIVE', targetsJson, parseInt(id)]
         )
         if (res.rows.length === 0) {
           return NextResponse.json({ error: "Gradebook not found." }, { status: 404 })

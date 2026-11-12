@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { canAccessSubject } from "@/lib/subscriptions"
 
 export async function GET(request, props) {
     try {
@@ -12,7 +13,11 @@ export async function GET(request, props) {
         const params = await props.params
         const { subjectId } = params
 
-        // Basic verification that the subject is active and assigned (optional deep check)
+        if (!(await canAccessSubject(session.userId, subjectId))) {
+            return NextResponse.json({ error: "Your subscription does not include this subject." }, { status: 403 })
+        }
+
+        // Verify that the entitled subject remains active.
         const check = await pool.query(
             "SELECT id FROM subjects WHERE id = $1 AND status = 'active'",
             [subjectId]

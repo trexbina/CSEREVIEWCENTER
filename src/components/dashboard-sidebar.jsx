@@ -31,6 +31,7 @@ import {
 
 import { Settings as AnimatedSettingsBase } from "@/components/animate-ui/icons/settings"
 import { LogoutButton } from "@/components/logout-button"
+import { MascotOwl } from "@/components/mascot-owl"
 
 /* ------------------------------------------------------------------ */
 /*  Icon mapping                                                       */
@@ -115,7 +116,7 @@ const superAdminNav = [
     { label: "User Management", href: "/admin/users", icon: "User", description: "Manage students, teachers, and accounts" },
     { label: "Curriculum Manager", href: "/admin/curriculum", icon: "FileText", description: "Manage exam programs, subjects, and topics" },
     { label: "Mock Exams", href: "/admin/mock-exams", icon: "PencilLine", description: "Create and configure mock exams" },
-    { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "Manage courses, batches, and gradebooks" },
+    { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "Manage examinations, subscriptions, and gradebooks" },
     { label: "Analytical Overview", href: "/admin/analytical-overview", icon: "BarChart3", description: "Performance reports and learning insights" },
     { section: "OTHER" },
     { label: "Trash", href: "/admin/trash", icon: "Trash", description: "Item recovery and recycle bin" },
@@ -135,7 +136,7 @@ const registrarNav = [
     { section: "GENERAL" },
     { label: "Admin Dashboard", href: "/admin", icon: "Home", description: "System overview & enrollment counts" },
     { label: "User Management", href: "/admin/users", icon: "User", description: "Manage students and pre-registrations" },
-    { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "Manage batches, programs, and schools" },
+    { label: "Master Data", href: "/admin/master-data", icon: "Layers", description: "Manage examinations, programs, and schools" },
 ]
 
 const navByRole = {
@@ -214,17 +215,13 @@ export function DashboardSidebar({ role, permissions, roleName }) {
                     const hasMasterDataPerm = isMasterData && (
                         allowed.includes("/admin/master-data") ||
                         allowed.includes("/admin/master-data/tree") ||
-                        allowed.includes("/admin/master-data/batches") ||
                         allowed.includes("/admin/master-data/education") ||
                         allowed.includes("/admin/master-data/gradebook") ||
                         allowed.includes("/admin/master-data/roles") ||
                         allowed.includes("/admin/roles")
                     )
 
-                    const isAllowed = 
-                        allowed.includes(item.href) ||
-                        (item.href === "/admin/settings" && allowed.includes("/admin/settings/security")) ||
-                        hasMasterDataPerm
+                    const isAllowed = allowed.includes(item.href) || hasMasterDataPerm
 
                     if (isAllowed) {
                         if (pendingSection) {
@@ -236,7 +233,6 @@ export function DashboardSidebar({ role, permissions, roleName }) {
                         if (isMasterData && !allowed.includes("/admin/master-data")) {
                             const permitted = []
                             if (allowed.includes("/admin/master-data/tree")) permitted.push("tree")
-                            if (allowed.includes("/admin/master-data/batches")) permitted.push("batches")
                             if (allowed.includes("/admin/master-data/education")) permitted.push("education")
                             if (allowed.includes("/admin/master-data/gradebook")) permitted.push("gradebook")
                             if (allowed.includes("/admin/master-data/roles") || allowed.includes("/admin/roles")) permitted.push("roles")
@@ -306,14 +302,14 @@ export function DashboardSidebar({ role, permissions, roleName }) {
                     }
                 }}
                 className={`group relative flex items-center gap-3.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${active
-                    ? "bg-white dark:bg-white/[0.12] text-[#3B3B3B] dark:text-white shadow-xs"
-                    : "text-[#696969] dark:text-[#e5e7eb] hover:bg-black/[0.035] dark:hover:bg-white/[0.04] hover:text-[#3B3B3B] dark:hover:text-white"
+                    ? "bg-white/95 text-[#155267] shadow-[0_6px_18px_rgba(52,148,184,.13)] dark:bg-white/[0.12] dark:text-white"
+                    : "text-[#4f7180] hover:bg-white/55 hover:text-[#155267] dark:text-[#e5e7eb] dark:hover:bg-white/[0.04] dark:hover:text-white"
                     } ${collapsed ? "justify-center px-2" : ""}`}
             >
                 {jsonSrc ? (
                     <div className={`shrink-0 flex items-center justify-center pointer-events-none transition-colors duration-200 ${active
-                        ? "[&_path]:!fill-[#3B3B3B] dark:[&_path]:!fill-white [&_path]:!stroke-[#3B3B3B] dark:[&_path]:!stroke-white [&_circle]:!stroke-[#3B3B3B] dark:[&_circle]:!stroke-white [&_rect]:!stroke-[#3B3B3B] dark:[&_rect]:!stroke-white"
-                        : "[&_path]:!fill-[#696969] dark:[&_path]:!fill-[#9ca3af] [&_path]:!stroke-[#696969] dark:[&_path]:!stroke-[#9ca3af] [&_circle]:!stroke-[#696969] dark:[&_circle]:!stroke-[#9ca3af] [&_rect]:!stroke-[#696969] dark:[&_rect]:!stroke-[#9ca3af]"
+                        ? "[&_path]:!fill-[#155267] dark:[&_path]:!fill-white [&_path]:!stroke-[#155267] dark:[&_path]:!stroke-white [&_circle]:!stroke-[#155267] dark:[&_circle]:!stroke-white [&_rect]:!stroke-[#155267] dark:[&_rect]:!stroke-white"
+                        : "[&_path]:!fill-[#4f7180] dark:[&_path]:!fill-[#9ca3af] [&_path]:!stroke-[#4f7180] dark:[&_path]:!stroke-[#9ca3af] [&_circle]:!stroke-[#4f7180] dark:[&_circle]:!stroke-[#9ca3af] [&_rect]:!stroke-[#4f7180] dark:[&_rect]:!stroke-[#9ca3af]"
                         }`}>
                         <LordIcon
                             ref={iconRef}
@@ -324,10 +320,10 @@ export function DashboardSidebar({ role, permissions, roleName }) {
                         />
                     </div>
                 ) : (
-                    <Icon className={`h-5.5 w-5.5 shrink-0 transition-colors ${active ? "text-[#3B3B3B] dark:text-white" : "text-[#696969] dark:text-[#9ca3af]"}`} />
+                    <Icon className={`h-5.5 w-5.5 shrink-0 transition-colors ${active ? "text-[#155267] dark:text-white" : "text-[#4f7180] dark:text-[#9ca3af]"}`} />
                 )}
                 {!collapsed && (
-                    <span className={`text-[13.5px] leading-none truncate transition-colors ${active ? "text-[#3B3B3B] dark:text-white font-semibold" : "text-[#696969] dark:text-[#e5e7eb]"}`}>
+                    <span className={`text-[13.5px] leading-none truncate transition-colors ${active ? "text-[#155267] dark:text-white font-semibold" : "text-[#4f7180] dark:text-[#e5e7eb]"}`}>
                         {item.label}
                     </span>
                 )}
@@ -358,21 +354,17 @@ export function DashboardSidebar({ role, permissions, roleName }) {
     function SidebarContent() {
         return (
             <TooltipProvider delayDuration={150}>
-                <div className="flex h-full flex-col bg-[#F2F2F2] dark:bg-[#14161b]">
-                    {/* Logo - Emblem with 'CSE' & 'Review' stacked text */}
-                    <div className={`flex items-center pt-5 pb-3 ${collapsed ? "justify-center px-2" : "justify-start px-4 gap-3"}`}>
-                        <img
-                            src="/landingpageassets/logo.png"
-                            alt="CSE Review System"
-                            className={`shrink-0 object-contain transition-all ${collapsed ? "size-9" : "size-10 sm:size-[42px]"}`}
-                        />
+                <div className="flex h-full flex-col bg-[#eaf7fc] dark:bg-[#14161b]">
+                    {/* Brand mark */}
+                    <div className={`flex items-center pt-5 pb-4 ${collapsed ? "justify-center px-2" : "justify-start px-4 gap-3"}`}>
+                        <MascotOwl size={collapsed ? 38 : 48} trigger="loop" className="shrink-0" />
                         {!collapsed && (
                             <div className="flex flex-col leading-tight select-none">
-                                <span className="text-[15px] font-black tracking-wider text-[#3B3B3B] dark:text-white uppercase font-sans">
-                                    CSE
+                                <span className="text-[15px] font-black tracking-wide text-[#155267] dark:text-white font-sans">
+                                    CSE Review
                                 </span>
-                                <span className="text-[12px] font-semibold tracking-wide text-[#696969] dark:text-gray-400 font-sans -mt-0.5">
-                                    Review
+                                <span className="text-[11px] font-semibold tracking-wide text-[#4f7180] dark:text-gray-400 font-sans -mt-0.5">
+                                    Admin workspace
                                 </span>
                             </div>
                         )}
@@ -384,7 +376,7 @@ export function DashboardSidebar({ role, permissions, roleName }) {
                             // Section header support
                             if (item.section) {
                                 return (
-                                    <p key={`section-${idx}`} className={`px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-widest text-[#696969]/50 dark:text-[#6b7280]/60 ${collapsed ? "hidden" : ""}`}>
+                                    <p key={`section-${idx}`} className={`px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#4f7180]/70 dark:text-[#6b7280]/60 ${collapsed ? "hidden" : ""}`}>
                                         {item.section}
                                     </p>
                                 )
@@ -405,7 +397,7 @@ export function DashboardSidebar({ role, permissions, roleName }) {
                     </nav>
 
                     {/* Bottom section */}
-                    <div className="border-t border-black/5 dark:border-white/10 p-3">
+                    <div className="border-t border-[#bfe5f1] dark:border-white/10 p-3">
                         <div className={`flex ${collapsed ? "justify-center" : "justify-start"}`}>
                             <LogoutButton iconOnly={collapsed} />
                         </div>
@@ -421,7 +413,7 @@ export function DashboardSidebar({ role, permissions, roleName }) {
             {/* Mobile hamburger */}
             <button
                 onClick={() => setMobileOpen(true)}
-                className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-[#F2F2F2] dark:bg-[#14161b] text-foreground shadow-sm lg:hidden"
+                className="fixed left-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border border-[#bfe5f1] bg-[#eaf7fc] text-[#155267] shadow-sm lg:hidden"
                 aria-label="Open sidebar"
             >
                 <Menu className="h-5 w-5" />
@@ -437,7 +429,7 @@ export function DashboardSidebar({ role, permissions, roleName }) {
 
             {/* Mobile drawer */}
             <aside
-                className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-[#F2F2F2] dark:bg-[#14161b] transition-transform duration-200 ease-in-out lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+                className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-[#eaf7fc] dark:bg-[#14161b] transition-transform duration-200 ease-in-out lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"
                     }`}
             >
                 <button
@@ -452,14 +444,14 @@ export function DashboardSidebar({ role, permissions, roleName }) {
 
             {/* Desktop sidebar */}
             <aside
-                className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:border-r lg:border-black/5 dark:lg:border-white/10 lg:bg-[#F2F2F2] dark:lg:bg-[#14161b] transition-all duration-200 ${collapsed ? "lg:w-[68px]" : "lg:w-64"
+                className={`hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:border-r lg:border-[#bfe5f1] dark:lg:border-white/10 lg:bg-[#eaf7fc] dark:lg:bg-[#14161b] transition-all duration-200 ${collapsed ? "lg:w-[68px]" : "lg:w-64"
                     }`}
             >
                 <SidebarContent />
                 {/* Collapse toggle */}
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border border-black/10 dark:border-white/15 bg-[#F2F2F2] dark:bg-[#14161b] text-[#696969] shadow-sm hover:text-black dark:hover:text-white cursor-pointer"
+                    className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border border-[#bfe5f1] bg-white text-[#4f7180] shadow-sm hover:text-[#155267] dark:border-white/15 dark:bg-[#14161b] dark:hover:text-white cursor-pointer"
                     aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
                     <ChevronLeft className={`h-3.5 w-3.5 transition-transform ${collapsed ? "rotate-180" : ""}`} />

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { ensureStudentSubjectProgressTable } from "@/lib/student-progress-db"
-import { getStudentCurriculumContext } from "@/lib/student-curriculum"
+import { getAccessibleSubjectIds, getStudentEntitlements } from "@/lib/subscriptions"
 
 /**
  * GET /api/student/progress
@@ -22,6 +22,8 @@ export async function GET() {
 
     const studentId = session.userId
     await ensureStudentSubjectProgressTable()
+    const accessibleSubjectIds = await getAccessibleSubjectIds(studentId)
+    const entitlements = await getStudentEntitlements(studentId)
 
     // 1. Fetch Quizzes & Assignments from subject_contents + student_quiz_submissions
     const [quizAssignmentRes, mockExamRes] = await Promise.all([
@@ -49,8 +51,9 @@ export async function GET() {
          LEFT JOIN student_quiz_submissions sqs ON sqs.content_id = sc.id AND sqs.student_id = $1
          WHERE LOWER(COALESCE(sc.lesson_type, '')) IN ('quiz', 'assignment')
            AND sub.status = 'active'
+           AND sm.subject_id = ANY($2::int[])
          ORDER BY COALESCE(sqs.submitted_at, sc.created_at) DESC`,
-        [studentId]
+        [studentId, accessibleSubjectIds.length ? accessibleSubjectIds : [-1]]
       ).catch(() => ({ rows: [] })),
 
       // 2. Fetch Mock Exams and Student Scores
@@ -71,9 +74,12 @@ export async function GET() {
            COALESCE(mes.attempts_count, CASE WHEN mes.score IS NOT NULL THEN 1 ELSE 0 END) AS attempts_count
          FROM mock_exams me
          LEFT JOIN mock_exam_scores mes ON mes.mock_exam_id = me.id AND mes.student_id = $1
-         WHERE me.status = 'active'
+         WHERE me.status = 'active' AND (
+           me.id = ANY($2::int[])
+           OR ($3::boolean = true AND me.examination_id = ANY($4::int[]))
+         )
          ORDER BY COALESCE(mes.completed_at, me.created_at) DESC`,
-        [studentId]
+        [studentId, entitlements.mockExamIds.length ? entitlements.mockExamIds : [-1], entitlements.hasFullAccess, entitlements.examinationIds.length ? entitlements.examinationIds : [-1]]
       ).catch(() => ({ rows: [] }))
     ])
 
@@ -155,8 +161,7 @@ export async function GET() {
     })
 
     // 3. Compute dynamic User Subject Progression, Active Study Days, and Study Streak
-    const curriculumCtx = await getStudentCurriculumContext(studentId)
-    const curriculumSubjectIds = curriculumCtx.subjectIds
+    const curriculumSubjectIds = accessibleSubjectIds
 
     const [
       subjectsRes,

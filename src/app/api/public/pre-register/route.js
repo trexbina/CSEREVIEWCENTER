@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
+import { ensureExaminationCatalog } from "@/lib/examination-catalog"
 
 async function ensurePreRegistrationsTable() {
   await pool.query(`
@@ -40,10 +41,11 @@ async function ensurePreRegistrationsTable() {
 /** GET /api/public/pre-register — public dropdown data for applicants */
 export async function GET() {
   try {
+    await ensureExaminationCatalog()
     await ensurePreRegistrationsTable()
 
     const [examsResult, batchesResult, programsResult, majorsResult, schoolsResult, academicCoursesResult] = await Promise.all([
-      pool.query("SELECT id, name FROM examinations ORDER BY name ASC"),
+      pool.query("SELECT id, name FROM examinations WHERE COALESCE(is_legacy, FALSE) = FALSE ORDER BY name ASC"),
       pool.query("SELECT id, name, exam_id, target_year, status FROM batches WHERE status = 'active' OR status IS NULL ORDER BY name ASC"),
       pool.query("SELECT id, name, exam_id FROM programs ORDER BY name ASC"),
       pool.query("SELECT id, name, program_id FROM majors ORDER BY name ASC"),

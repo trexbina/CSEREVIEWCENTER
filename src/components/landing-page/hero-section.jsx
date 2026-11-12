@@ -10,9 +10,7 @@ export function HeroSection() {
     <section className="relative overflow-hidden bg-[#fff2e2] text-[#252641]">
       <header className="relative z-20 mx-auto flex max-w-[1200px] items-center justify-between px-6 py-7 lg:px-10">
         <a href="/" className="group flex items-center gap-2.5" aria-label="CSE Review System home">
-          <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-[#38bdf8] to-[#67e8f9] shadow-sm transition-transform duration-300 group-hover:scale-105">
-            <MascotOwl size={36} trigger="loop" className="drop-shadow-sm" />
-          </div>
+          <MascotOwl size={50} trigger="loop" className="transition-transform duration-300 group-hover:scale-105" />
           <span className="text-base font-black tracking-tight text-[#113c49]">CSE Review System</span>
         </a>
         <nav className="hidden items-center gap-8 text-sm text-[#252641] lg:flex">

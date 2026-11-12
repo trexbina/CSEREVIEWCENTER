@@ -3,6 +3,7 @@ import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { ADMIN_ROLES, isAdminRole } from "@/lib/auth"
 import { canManageRoles, isSuperAdmin } from "@/lib/role-permissions"
+import { ensureExaminationCatalog } from "@/lib/examination-catalog"
 
 export async function GET() {
   try {
@@ -21,24 +22,22 @@ export async function GET() {
       }
     }
 
-    const [examsResult, batchesResult, programsResult, majorsResult, schoolsResult, academicCoursesResult, categoriesResult, gradebooksResult, rolesResult] = await Promise.all([
-      pool.query("SELECT id, name FROM examinations ORDER BY name ASC"),
-      pool.query("SELECT id, name, exam_id, target_year, status, start_date, end_date FROM batches ORDER BY name ASC"),
+    await ensureExaminationCatalog()
+    const [examsResult, programsResult, majorsResult, schoolsResult, academicCoursesResult, categoriesResult, gradebooksResult, rolesResult] = await Promise.all([
+      pool.query("SELECT id, name, is_legacy FROM examinations ORDER BY is_legacy ASC, name ASC"),
       pool.query("SELECT id, name, exam_id FROM programs ORDER BY name ASC"),
       pool.query("SELECT id, name, program_id FROM majors ORDER BY name ASC"),
       pool.query("SELECT id, name, address FROM schools ORDER BY name ASC"),
       pool.query("SELECT id, name FROM academic_courses ORDER BY name ASC"),
       pool.query("SELECT id, name, target_course, target_program, target_major FROM categories ORDER BY created_at ASC"),
       pool.query(`
-        SELECT g.id, g.name, g.code, g.batch_id, g.exam_id, g.status, g.targets, g.created_at,
-               b.name as batch_name, b.target_year,
+        SELECT g.id, g.name, g.code, g.exam_id, g.status, g.targets, g.created_at,
                e.name as exam_name,
-               (SELECT COUNT(*) FROM users u WHERE u.batch_id = g.batch_id AND u.role = 'student') as student_count,
+               (SELECT COUNT(*) FROM users u WHERE u.exam_id = g.exam_id AND u.role = 'student') as student_count,
                (SELECT COUNT(DISTINCT mes.mock_exam_id) FROM mock_exam_scores mes 
                 JOIN users u2 ON mes.student_id = u2.id 
-                WHERE u2.batch_id = g.batch_id) as mock_exams_taken
+                WHERE u2.exam_id = g.exam_id) as mock_exams_taken
         FROM gradebooks g
-        JOIN batches b ON g.batch_id = b.id
         JOIN examinations e ON g.exam_id = e.id
         ORDER BY g.created_at DESC
       `),
@@ -52,7 +51,9 @@ export async function GET() {
 
     return NextResponse.json({
       examinations: examsResult.rows,
-      batches: batchesResult.rows,
+      // Compatibility field for older registration forms. It is deliberately
+      // empty: batches are no longer a selectable or persisted workflow.
+      batches: [],
       programs: programsResult.rows,
       majors: majorsResult.rows,
       schools: schoolsResult.rows,

@@ -7,6 +7,7 @@ import { Shield } from "lucide-react"
 
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { DashboardHeader } from "@/components/dashboard-header"
+import { ThemeTransitionLoader } from "@/components/theme-transition-loader"
 
 export function DashboardShell({ role, permissions, roleName, children }) {
     const pathname = usePathname()
@@ -47,13 +48,9 @@ export function DashboardShell({ role, permissions, roleName, children }) {
 
         for (const mod of guardedModules) {
             if (pathname === mod || pathname.startsWith(mod + "/")) {
-                if (mod === "/admin/settings" && permissions.includes("/admin/settings/security")) {
-                    return false
-                }
                 if (mod === "/admin/master-data" && (
                     permissions.includes("/admin/master-data") ||
                     permissions.includes("/admin/master-data/tree") ||
-                    permissions.includes("/admin/master-data/batches") ||
                     permissions.includes("/admin/master-data/education") ||
                     permissions.includes("/admin/master-data/gradebook") ||
                     permissions.includes("/admin/master-data/roles") ||
@@ -74,6 +71,7 @@ export function DashboardShell({ role, permissions, roleName, children }) {
 
     return (
         <div className="flex min-h-screen bg-background">
+            <ThemeTransitionLoader />
             {/* Side Panel Navbar — z-30 so it overlaps the header (z-20) */}
             {!isCourseViewer && (
                 <DashboardSidebar

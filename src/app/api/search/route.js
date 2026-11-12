@@ -52,20 +52,6 @@ export async function GET(request) {
     if (role === "student") {
       const studentId = session.userId
 
-      // Fetch student's batch and exam details for mock exams
-      const studentRes = await safeQuery(
-        "SELECT batch_id, exam_id FROM users WHERE id = $1",
-        [studentId]
-      )
-      const studentInfo = studentRes.rows[0] || {}
-      const studentBatchId = studentInfo.batch_id
-
-      let batchName = ""
-      if (studentBatchId) {
-        const bRes = await safeQuery("SELECT name FROM batches WHERE id = $1", [studentBatchId])
-        batchName = bRes.rows[0]?.name || ""
-      }
-
       const [subjectsRes, modulesRes, mockExamsRes, assignmentsRes] = await Promise.all([
         // Active unlocked subjects
         safeQuery(`
@@ -179,7 +165,6 @@ export async function GET(request) {
         mockExamsRes,
         schoolsRes,
         coursesRes,
-        batchesRes,
         examsRes,
         programsRes,
         majorsRes
@@ -282,17 +267,6 @@ export async function GET(request) {
           ? safeQuery(`SELECT id, name FROM academic_courses WHERE name ILIKE $1 LIMIT 4`, [searchPattern])
           : Promise.resolve({ rows: [] }),
 
-        // Master Data: Batches (Super Admin & Registrar)
-        canViewMasterData && (isSuperAdmin || isRegistrar)
-          ? safeQuery(`
-              SELECT b.id, b.name, b.target_year, b.status, e.name AS exam_name
-              FROM batches b
-              LEFT JOIN examinations e ON b.exam_id = e.id
-              WHERE b.name ILIKE $1 OR CAST(b.target_year AS TEXT) ILIKE $1
-              LIMIT 4
-            `, [searchPattern])
-          : Promise.resolve({ rows: [] }),
-
         // Master Data: Examinations (Super Admin & Academic Admin)
         canViewMasterData && (isSuperAdmin || isAcademicAdmin)
           ? safeQuery(`SELECT id, name FROM examinations WHERE name ILIKE $1 LIMIT 4`, [searchPattern])
@@ -334,12 +308,6 @@ export async function GET(request) {
           id: r.id,
           title: r.name,
           href: "/admin/master-data?tab=education"
-        })),
-        ...batchesRes.rows.map(r => ({
-          type: "Batch",
-          id: r.id,
-          title: r.name,
-          href: "/admin/master-data?tab=batches"
         })),
         ...examsRes.rows.map(r => ({
           type: "Exam Board",

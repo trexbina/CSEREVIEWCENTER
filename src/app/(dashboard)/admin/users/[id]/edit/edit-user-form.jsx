@@ -323,7 +323,6 @@ export default function EditUserForm({ initialUser }) {
 
     // ── Master Data ──
     const [examId, setExamId] = useState(initialUser.exam_id ? String(initialUser.exam_id) : "")
-    const [batchId, setBatchId] = useState(initialUser.batch_id ? String(initialUser.batch_id) : "")
     const [programId, setProgramId] = useState(initialUser.program_id ? String(initialUser.program_id) : "")
     const [majorId, setMajorId] = useState(initialUser.major_id ? String(initialUser.major_id) : "")
     const [isActive, setIsActive] = useState(initialUser.is_active !== undefined ? Boolean(initialUser.is_active) : true)
@@ -339,7 +338,7 @@ export default function EditUserForm({ initialUser }) {
         }
         return []
     })
-    const [dropdownData, setDropdownData] = useState({ examinations: [], batches: [], programs: [], majors: [], schools: [], academic_courses: [], roles: [] })
+    const [dropdownData, setDropdownData] = useState({ examinations: [], programs: [], majors: [], schools: [], academic_courses: [], roles: [] })
 
     // Course tree for multi-select
     const courseTree = useMemo(() => {
@@ -428,8 +427,8 @@ export default function EditUserForm({ initialUser }) {
             return
         }
 
-        if (role === "student" && (!examId || !batchId)) {
-            setError("Target Examination and Batch are required for students.")
+        if (role === "student" && !examId) {
+            setError("A target examination is required for students.")
             return
         }
 
@@ -479,7 +478,6 @@ export default function EditUserForm({ initialUser }) {
                 year_graduated: yearGraduated || null,
                 highest_education: highestEducation && highestEducation !== "none" ? highestEducation : null,
                 exam_id: resolvedExamId ? parseInt(resolvedExamId) : null,
-                batch_id: !isAdminRole && batchId && batchId !== "none" ? parseInt(batchId) : null,
                 program_id: !isAdminRole && programId && programId !== "none" ? parseInt(programId) : null,
                 major_id: !isAdminRole && majorId && majorId !== "none" ? parseInt(majorId) : null,
                 job_role_description: isAdminRole ? jobRoleDescription.trim() : null,
@@ -869,33 +867,7 @@ export default function EditUserForm({ initialUser }) {
                                     </div>
                                 )}
                                 <div className="space-y-1.5">
-                                    <Label className="text-sm font-semibold text-[#696969]">Assigned Batch *</Label>
-                                    <Select value={batchId || "none"} onValueChange={(val) => setBatchId(val === "none" ? "" : val)}>
-                                        <SelectTrigger className="w-full h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"><SelectValue placeholder="Select Batch" /></SelectTrigger>
-                                        <SelectContent className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl">
-                                            <SelectItem value="none">None</SelectItem>
-                                            {dropdownData.batches.map(b => (
-                                                <SelectItem key={b.id} value={b.id.toString()}>
-                                                    {b.name} ({b.target_year}) - {b.status}
-                                                </SelectItem>
-                                            ))}
-                                            {dropdownData.batches.length === 0 && <SelectItem value="no_batches" disabled>No batches available</SelectItem>}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <Label className="text-sm font-semibold text-[#696969]">Custom Subscription Extension Date</Label>
-                                        {(() => {
-                                            const selBatch = dropdownData.batches.find(b => b.id.toString() === batchId);
-                                            const batchEnd = selBatch?.end_date ? new Date(selBatch.end_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : null;
-                                            return batchEnd ? (
-                                                <span className="text-xs text-muted-foreground">
-                                                    Inherited from batch: <span className="text-[#3B3B3B] dark:text-gray-200 font-medium">{batchEnd}</span>
-                                                </span>
-                                            ) : null;
-                                        })()}
-                                    </div>
+                                    <Label className="text-sm font-semibold text-[#696969]">Custom Subscription Extension Date</Label>
                                     <Input
                                         type="date"
                                         value={subscriptionEndDate}
@@ -903,7 +875,7 @@ export default function EditUserForm({ initialUser }) {
                                         className="h-10.5 rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-white/10 text-sm text-[#3B3B3B] dark:text-white shadow-2xs"
                                     />
                                     <p className="text-[11px] text-[#696969]">
-                                        Leave empty to follow the assigned batch end date, or set an individual extension date.
+                                        Legacy value only. Assign a subscription plan to control student access.
                                     </p>
                                 </div>
                                 <div className="space-y-1.5 sm:col-span-2 pt-2 border-t border-black/5 dark:border-white/10">

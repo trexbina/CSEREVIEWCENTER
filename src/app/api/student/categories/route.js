@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { getStudentEntitlements } from "@/lib/subscriptions"
+import { ensureCurriculumTierSchema } from "@/lib/curriculum-tier"
 
 /** GET /api/student/categories — categories with subcategories for students */
 export async function GET() {
@@ -9,17 +11,19 @@ export async function GET() {
         if (!session?.userId) {
             return NextResponse.json({ error: "Forbidden." }, { status: 403 })
         }
+        await ensureCurriculumTierSchema()
+        const entitlements = await getStudentEntitlements(session.userId)
+        if (!entitlements.subscriptions.length) return NextResponse.json({ categories: [], tier: "free" })
 
         // Fetch user profile course (exam), program, and major info
         const userRes = await pool.query(
-            `SELECT u.id, u.program_id, u.major_id, u.batch_id,
+            `SELECT u.id, u.program_id, u.major_id, u.exam_id,
                     p.name as program_name, m.name as major_name,
                     e.name as exam_name
              FROM users u 
              LEFT JOIN programs p ON u.program_id = p.id 
              LEFT JOIN majors m ON u.major_id = m.id 
-             LEFT JOIN batches b ON u.batch_id = b.id
-             LEFT JOIN examinations e ON b.exam_id = e.id
+             LEFT JOIN examinations e ON u.exam_id = e.id
              WHERE u.id = $1`,
             [session.userId]
         ).catch(() => ({ rows: [] }))
@@ -67,18 +71,20 @@ export async function GET() {
 
         // Filter categories according to target_course, target_program, and target_major
         const eligibleCategories = categories.filter((cat) => {
+            if (!userObj.exam_id || Number(cat.exam_id) !== Number(userObj.exam_id)) return false
+            if (cat.access_tier === "paid" && entitlements.tier !== "paid") return false
             if (!isMatch(cat.target_course, userExam)) return false
             if (!isMatch(cat.target_program, userProg)) return false
             if (!isMatch(cat.target_major, userMajor)) return false
             return true
         })
 
-        const result = (eligibleCategories.length > 0 ? eligibleCategories : categories).map((cat) => ({
+        const result = eligibleCategories.map((cat) => ({
             ...cat,
             subcategories: grouped[cat.id] || [],
         }))
 
-        return NextResponse.json({ categories: result })
+        return NextResponse.json({ categories: result, tier: entitlements.tier })
     } catch (err) {
         console.error("[student/categories GET]", err)
         return NextResponse.json({ error: "Internal server error." }, { status: 500 })

@@ -2,6 +2,7 @@ import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { redirect } from "next/navigation"
 import SubjectBuilderClient from "@/components/subject-builder-client"
+import { canAccessSubject } from "@/lib/subscriptions"
 
 export default async function StudentSubjectContentPage({ params }) {
     const session = await getSession()
@@ -14,6 +15,10 @@ export default async function StudentSubjectContentPage({ params }) {
     const currentUserName = userResult.rows[0]?.name || "Student"
 
     const { subjectId } = await params
+
+    if (session.role === "student" && !(await canAccessSubject(session.userId, subjectId))) {
+        redirect("/student/subjects")
+    }
 
     const { rows } = await pool.query(
         "SELECT * FROM subjects WHERE id = $1 AND status = 'active'",

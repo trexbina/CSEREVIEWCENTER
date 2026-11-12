@@ -7,7 +7,7 @@ import { ensureUserRegistrationTables } from "@/lib/user-registration-db"
 
 /**
  * GET /api/admin/analytical-overview
- * Query params: ?school_id=...&major_id=...&batch_id=...&student_id=...&exam_id=...&activity_date=...&activity_range=...&reg_date=...&reg_range=...&reg_exam=...&reg_batch=...
+ * Query params: ?school_id=...&major_id=...&student_id=...&exam_id=...&activity_date=...&activity_range=...&reg_date=...&reg_range=...&reg_exam=...
  */
 export async function GET(request) {
   try {
@@ -19,7 +19,6 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const schoolFilter = searchParams.get("school_id") || ""
     const majorFilter = searchParams.get("major_id") || ""
-    const batchFilter = searchParams.get("batch_id") || ""
     const studentFilter = searchParams.get("student_id") || ""
     const examFilter = searchParams.get("exam_id") || ""
     const activityDateParam = searchParams.get("activity_date") || ""
@@ -27,23 +26,20 @@ export async function GET(request) {
     const regDateParam = searchParams.get("reg_date") || ""
     const regRangeParam = searchParams.get("reg_range") || "today" // 'today' | 'yesterday' | '7days' | '30days' | 'all'
     const regExamParam = searchParams.get("reg_exam") || "ALL"
-    const regBatchParam = searchParams.get("reg_batch") || "ALL"
 
     await ensureStudentActivityTables()
     await ensureUserRegistrationTables()
 
     // 1. Fetch Master Data, Examinations, and Mock Exams for filters and analytics
-    const [schoolsRes, majorsRes, batchesRes, examinationsRes, mockExamsRes] = await Promise.all([
+    const [schoolsRes, majorsRes, examinationsRes, mockExamsRes] = await Promise.all([
       pool.query("SELECT id, name FROM schools ORDER BY name ASC").catch(() => ({ rows: [] })),
       pool.query("SELECT id, name FROM majors ORDER BY name ASC").catch(() => ({ rows: [] })),
-      pool.query("SELECT id, name, exam_id FROM batches ORDER BY name ASC").catch(() => ({ rows: [] })),
       pool.query("SELECT id, name FROM examinations WHERE name NOT ILIKE 'TEST_%' ORDER BY name ASC").catch(() => ({ rows: [] })),
       pool.query("SELECT id, exam_code, title, targets, created_at FROM mock_exams ORDER BY created_at ASC").catch(() => ({ rows: [] })),
     ])
 
     const schoolsList = schoolsRes.rows || []
     const majorsList = majorsRes.rows || []
-    const batchesList = batchesRes.rows || []
     const examinationsList = examinationsRes.rows || []
     const mockExamsList = mockExamsRes.rows || []
 
@@ -62,11 +58,6 @@ export async function GET(request) {
       queryParams.push(majorFilter)
       paramIndex += 1
     }
-    if (batchFilter) {
-      whereClauses.push(`u.batch_id = $${paramIndex}`)
-      queryParams.push(batchFilter)
-      paramIndex += 1
-    }
     if (examFilter) {
       whereClauses.push(`u.exam_id = $${paramIndex}`)
       queryParams.push(examFilter)
@@ -83,11 +74,9 @@ export async function GET(request) {
         u.avatar_url,
         u.avatar,
         u.exam_id,
-        u.batch_id,
         COALESCE(e.name, 'General Examination') AS examination_name,
         COALESCE(s.name, u.school, 'Unassigned School') AS school_name,
         COALESCE(m.name, 'General Major') AS major_name,
-        b.name AS batch_name,
         mes.mock_exam_id,
         me.title AS exam_title,
         mes.score,
@@ -98,7 +87,6 @@ export async function GET(request) {
       LEFT JOIN examinations e ON u.exam_id = e.id
       LEFT JOIN schools s ON u.school_id = s.id
       LEFT JOIN majors m ON u.major_id = m.id
-      LEFT JOIN batches b ON u.batch_id = b.id
       LEFT JOIN mock_exam_scores mes ON u.id = mes.student_id
       LEFT JOIN mock_exams me ON mes.mock_exam_id = me.id
       ${whereString}
@@ -130,8 +118,6 @@ export async function GET(request) {
           examination: row.examination_name,
           school: row.school_name,
           major: row.major_name,
-          batchId: row.batch_id,
-          batch: row.batch_name || "Active Batch",
           scores: [],
           totalPctSum: 0,
           attemptCount: 0,
@@ -160,8 +146,6 @@ export async function GET(request) {
         examination: st.examination,
         school: st.school,
         major: st.major,
-        batchId: st.batchId,
-        batch: st.batch,
         avgScore,
         attemptCount: st.attemptCount,
         completionRate,
@@ -337,15 +321,13 @@ export async function GET(request) {
       }
     })
 
-    // Raw attempts list for granular client-side filtering by examination, batch, and mock exam
+    // Raw attempts list for granular client-side filtering by examination and mock exam.
     const mockExamAttempts = rawScoreRows
       .filter((r) => r.mock_exam_id !== null)
       .map((r) => ({
         studentId: r.student_id,
         examId: r.exam_id,
         examinationName: r.examination_name,
-        batchId: r.batch_id,
-        batchName: r.batch_name,
         mockExamId: r.mock_exam_id,
         examTitle: r.exam_title,
         percentage: parseFloat(r.percentage) || 0,
@@ -841,8 +823,6 @@ export async function GET(request) {
         examination: st.examination,
         school: st.school,
         major: st.major,
-        batchId: st.batchId,
-        batch: st.batch,
         avgScore: st.avgScore || 0,
         statusBadge,
         statusColor,
@@ -889,18 +869,15 @@ export async function GET(request) {
           u.is_active,
           u.exam_id,
           e.name AS exam_name,
-          u.batch_id,
-          b.name AS batch_name,
           COALESCE(s.name, u.school, '—') AS school_name
         FROM users u
         LEFT JOIN examinations e ON u.exam_id = e.id
-        LEFT JOIN batches b ON u.batch_id = b.id
         LEFT JOIN schools s ON u.school_id = s.id
         WHERE u.role = 'student'
         ORDER BY u.created_at DESC
       `).catch(() => ({ rows: [] })),
       pool.query(`
-        SELECT date, exam_type, batch_id, new_registrations_count, active_users_count
+        SELECT date, exam_type, new_registrations_count, active_users_count
         FROM daily_registration_stats
         ORDER BY date ASC
       `).catch(() => ({ rows: [] })),
@@ -993,8 +970,6 @@ export async function GET(request) {
         target_exam_date: u.target_exam_date || null,
         exam_id: u.exam_id,
         exam_name: u.exam_name || "General",
-        batch_id: u.batch_id,
-        batch_name: u.batch_name || "Unassigned",
         school_name: u.school_name || "—",
         status: u.status || "active",
         statusBadge,
@@ -1012,10 +987,7 @@ export async function GET(request) {
       String(c.exam_id) === String(regExamParam) ||
       c.target_exam.toUpperCase() === regExamParam.toUpperCase()
 
-    const matchesBatchFilter = (c) =>
-      regBatchParam === "ALL" || String(c.batch_id) === String(regBatchParam)
-
-    const scopedCandidates = allCandidatesFormatted.filter((c) => matchesExamFilter(c) && matchesBatchFilter(c))
+    const scopedCandidates = allCandidatesFormatted.filter(matchesExamFilter)
 
     // Period filtering
     const currentPeriodCandidates = scopedCandidates.filter(
@@ -1204,7 +1176,6 @@ export async function GET(request) {
       filters: {
         schools: schoolsList,
         majors: majorsList,
-        batches: batchesList,
         examinations: examinationsList,
         mockExams: mockExamsList,
       },
@@ -1214,7 +1185,7 @@ export async function GET(request) {
         overallMeanScore,
         overallPassRate,
         topPerformingSchool: schoolLeaderboard[0]?.schoolName || "N/A",
-        activeBatchesCount: Math.max(1, batchesList.length),
+        activeExaminationsCount: examinationsList.length,
       },
       individualAnalytics: {
         selectedStudent,

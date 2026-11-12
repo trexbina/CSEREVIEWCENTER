@@ -21,15 +21,12 @@ async function getAllUsers() {
             u.first_name, u.middle_name, u.last_name, u.suffix,
             u.birthday, u.gender, u.phone, u.address, u.city, u.province, u.zip_code,
             u.school, u.course, u.year_graduated, u.highest_education,
-            u.exam_id, u.batch_id, u.program_id, u.major_id, u.job_role_description,
+            u.exam_id, u.program_id, u.major_id, u.job_role_description,
             u.school_id, u.academic_course_id, u.is_active, u.subscription_end_date,
             COALESCE(c.name, u.course, '—') AS academic_course_name,
             COALESCE(p.name, '—') AS program_name,
             COALESCE(m.name, '—') AS major_name,
             COALESCE(s.name, u.school, '—') AS school_name,
-            b.name AS batch_name,
-            b.end_date AS batch_end_date,
-            b.start_date AS batch_start_date,
             e.name AS exam_name,
             COALESCE(cr.name, u.role) AS role_name
          FROM users u
@@ -37,7 +34,6 @@ async function getAllUsers() {
          LEFT JOIN programs p ON u.program_id = p.id
          LEFT JOIN majors m ON u.major_id = m.id
          LEFT JOIN schools s ON u.school_id = s.id
-         LEFT JOIN batches b ON u.batch_id = b.id
          LEFT JOIN examinations e ON u.exam_id = e.id
          LEFT JOIN custom_roles cr ON cr.role_key = u.role
          ORDER BY u.created_at DESC`

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { canAccessMockExam, getStudentEntitlements } from "@/lib/subscriptions"
 
 // Ensure student_answers & attempts_count columns and unique constraint exist in mock_exam_scores
 async function ensureStudentAnswersColumn() {
@@ -15,7 +16,7 @@ async function ensureStudentAnswersColumn() {
   }
 }
 
-// GET /api/student/mock-exams — list exams for student's batch + attempt history
+// GET /api/student/mock-exams — list exams for the student's entitled examinations.
 export async function GET() {
   try {
     const session = await getSession()
@@ -25,31 +26,12 @@ export async function GET() {
 
     await ensureStudentAnswersColumn()
 
-    // Get student details
-    const studentRes = await pool.query(
-      "SELECT batch_id, exam_id FROM users WHERE id = $1",
-      [session.userId]
-    )
-    if (studentRes.rows.length === 0) {
-      return NextResponse.json({ error: "Student not found." }, { status: 404 })
-    }
-    const { batch_id, exam_id } = studentRes.rows[0]
-
-    if (!batch_id) {
-      return NextResponse.json({ exams: [], message: "You are not assigned to a batch yet." })
+    const entitlements = await getStudentEntitlements(session.userId)
+    if (!entitlements.subscriptions.length) {
+      return NextResponse.json({ exams: [], message: "Your subscription is inactive or expired." })
     }
 
-    // Get batch name and exam name for matching
-    const batchRes = await pool.query("SELECT name FROM batches WHERE id = $1", [batch_id])
-    const batchName = batchRes.rows[0]?.name || ""
-
-    let examName = ""
-    if (exam_id) {
-      const examRes = await pool.query("SELECT name FROM examinations WHERE id = $1", [exam_id])
-      examName = examRes.rows[0]?.name || ""
-    }
-
-    // Get mock exams targeting this batch/course (or general ones)
+    // Selected plans use their snapshot list. Full plans use examination targets.
     const { rows: exams } = await pool.query(`
       SELECT me.id, me.exam_code, me.title, me.description, me.questions, me.unlock_date, me.created_at, me.status,
              (SELECT COUNT(*) FROM jsonb_array_elements(
@@ -61,43 +43,12 @@ export async function GET() {
              COALESCE(mes.attempts_count, CASE WHEN mes.score IS NOT NULL THEN 1 ELSE 0 END) as attempts_count
       FROM mock_exams me
       LEFT JOIN mock_exam_scores mes ON mes.mock_exam_id = me.id AND mes.student_id = $1
-      WHERE (
-        EXISTS (
-          SELECT 1 
-          FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(me.targets::jsonb) = 'array' THEN me.targets::jsonb ELSE '[]'::jsonb END) t
-          WHERE t = 'all'
-             OR t = 'batch_' || $2::text
-             OR t = 'batch_' || $3::text
-             OR t = 'course_' || $4::text
-             OR t ILIKE '%' || $3 || '%'
-        )
-        OR me.targets IS NULL
-        OR jsonb_typeof(me.targets::jsonb) != 'array'
-        OR jsonb_array_length(me.targets::jsonb) = 0
-        OR me.targets::text ILIKE '%all%'
+      WHERE me.status = 'active' AND (
+        me.id = ANY($2::int[])
+        OR ($3::boolean = true AND me.examination_id = ANY($4::int[]))
       )
-        AND me.status = 'active'
       ORDER BY me.created_at DESC
-    `, [session.userId, batch_id, batchName, examName])
-
-    // If no targeted exams, return all active exams for demo/learning
-    if (exams.length === 0) {
-      const { rows: allExams } = await pool.query(`
-        SELECT me.id, me.exam_code, me.title, me.description, me.questions, me.unlock_date, me.created_at, me.status,
-               (SELECT COUNT(*) FROM jsonb_array_elements(
-                 CASE WHEN jsonb_typeof(me.questions::jsonb->'questions') = 'array' 
-                      THEN me.questions::jsonb->'questions' 
-                      ELSE '[]'::jsonb END
-               )) as question_count,
-               mes.score, mes.max_score, mes.completed_at, mes.student_answers,
-               COALESCE(mes.attempts_count, CASE WHEN mes.score IS NOT NULL THEN 1 ELSE 0 END) as attempts_count
-        FROM mock_exams me
-        LEFT JOIN mock_exam_scores mes ON mes.mock_exam_id = me.id AND mes.student_id = $1
-        WHERE me.status = 'active'
-        ORDER BY me.created_at DESC
-      `, [session.userId])
-      return NextResponse.json({ exams: allExams })
-    }
+    `, [session.userId, entitlements.mockExamIds.length ? entitlements.mockExamIds : [-1], entitlements.hasFullAccess, entitlements.examinationIds.length ? entitlements.examinationIds : [-1]])
 
     return NextResponse.json({ exams })
   } catch (err) {
@@ -115,6 +66,10 @@ export async function POST(req) {
     }
 
     const { examId, answers } = await req.json() // answers: { [questionId]: selectedOptionId(s) or shortAnswerText }
+
+    if (!(await canAccessMockExam(session.userId, examId))) {
+      return NextResponse.json({ error: "Your subscription does not include this mock exam." }, { status: 403 })
+    }
 
     // Fetch the exam questions to check correct answers
     const examRes = await pool.query(

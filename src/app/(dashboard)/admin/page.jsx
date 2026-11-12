@@ -35,9 +35,9 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-9 sm:space-y-10 pb-10">
+    <div className="space-y-8 pb-10 sm:space-y-9">
       {/* ── Top Section: 9-col Banner + Metrics Strip / 3-col To-Do List + Calendar ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-7 items-stretch">
+      <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12 lg:gap-6">
         {/* Left Column (spans 9 cols): Banner + Metric Strip (same width as banner) */}
         <div className="lg:col-span-9 flex flex-col justify-between gap-6 sm:gap-7">
           <BannerSection />

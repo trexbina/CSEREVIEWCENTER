@@ -86,55 +86,12 @@ function SortButton({ label, field, sortField, sortDir, onSort }) {
 
 // helper function to turn master data into a nested course tree for filters
 function buildCourseTreeFromMasterData(masterData) {
-    const { batches = [], examinations = [], programs = [], majors = [] } = masterData
+    const { examinations = [], programs = [], majors = [] } = masterData
 
-    if (batches.length === 0 && examinations.length === 0) {
+    if (examinations.length === 0) {
         return []
     }
-
-    const buildExamSubtree = (batchId, examIdFilter = null) => {
-        const filteredExams = examIdFilter 
-            ? examinations.filter(e => e.id === examIdFilter)
-            : examinations
-
-        return filteredExams.map(exam => {
-            const examPrograms = programs.filter(p => p.exam_id === exam.id || !p.exam_id)
-            return {
-                id: `batch_${batchId}_exam_${exam.id}`,
-                entityType: 'exam',
-                rawId: exam.id,
-                label: exam.name,
-                children: examPrograms.map(prog => {
-                    const progMajors = majors.filter(m => m.program_id === prog.id)
-                    return {
-                        id: `batch_${batchId}_prog_${prog.id}`,
-                        entityType: 'program',
-                        rawId: prog.id,
-                        label: prog.name,
-                        children: progMajors.map(maj => ({
-                            id: `batch_${batchId}_maj_${maj.id}`,
-                            entityType: 'major',
-                            rawId: maj.id,
-                            label: maj.name,
-                            children: []
-                        }))
-                    }
-                })
-            }
-        })
-    }
-
-    if (batches.length > 0) {
-        return batches.map(batch => ({
-            id: `batch_${batch.id}`,
-            entityType: 'batch',
-            rawId: batch.id,
-            label: batch.target_year ? `${batch.name} / ${batch.target_year}` : batch.name,
-            year: batch.target_year,
-            children: buildExamSubtree(batch.id, batch.exam_id)
-        }))
-    } else {
-        return examinations.map(exam => {
+    return examinations.map(exam => {
             const examPrograms = programs.filter(p => p.exam_id === exam.id || !p.exam_id)
             return {
                 id: `exam_${exam.id}`,
@@ -158,8 +115,7 @@ function buildCourseTreeFromMasterData(masterData) {
                     }
                 })
             }
-        })
-    }
+    })
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -390,10 +346,9 @@ function CourseMultiSelect({ selected, onChange, tree }) {
 // ─── Target Label Parser ─────────────────────────────────────────────────────
 function parseTargets(targets, tree = [], masterData = null) {
     if (!targets || targets.length === 0 || (targets.length === 1 && targets[0] === 'all')) {
-        return { batch: "All", type: "All", course: "All" }
+        return { type: "All", course: "All" }
     }
     
-    const batches = []
     const types = []
     const courses = []
 
@@ -403,13 +358,9 @@ function parseTargets(targets, tree = [], masterData = null) {
                 const cName = t.replace('course_', '')
                 courses.push(cName)
                 types.push(cName)
-            } else if (t.startsWith('batch_')) {
-                const bName = t.replace('batch_', '')
-                batches.push(bName)
-            } else if (t.toLowerCase().includes('batch1')) {
-                batches.push("Batch 1")
-            } else if (t.toLowerCase().includes('batch2')) {
-                batches.push("Batch 2")
+            } else if (t.startsWith('exam_')) {
+                const examination = masterData?.examinations?.find((item) => String(item.id) === t.replace('exam_', ''))
+                if (examination) types.push(examination.name)
             } else if (t.toLowerCase().includes('lept')) {
                 types.push("LEPT")
             }
@@ -418,8 +369,7 @@ function parseTargets(targets, tree = [], masterData = null) {
 
     const traverse = (node) => {
         if (targets.includes(node.id)) {
-            if (node.entityType === 'batch') batches.push(node.label)
-            else if (node.entityType === 'exam') types.push(node.label)
+            if (node.entityType === 'exam') types.push(node.label)
             else if (node.entityType === 'program' || node.entityType === 'major') courses.push(node.label)
         }
         if (node.children) {
@@ -430,7 +380,6 @@ function parseTargets(targets, tree = [], masterData = null) {
     tree.forEach(traverse)
 
     return {
-        batch: batches.length > 0 ? Array.from(new Set(batches)).join(", ") : "All",
         type: types.length > 0 ? Array.from(new Set(types)).join(", ") : "All",
         course: courses.length > 0 
             ? (courses.length > 2 ? `${courses.length} Courses` : Array.from(new Set(courses)).join(", ")) 
@@ -490,7 +439,6 @@ export default function MockExamsPage() {
     // list of mock exams and school master data
     const [exams, setExams] = useState([])
     const [masterData, setMasterData] = useState({
-        batches: [],
         examinations: [],
         programs: [],
         majors: [],
@@ -498,6 +446,7 @@ export default function MockExamsPage() {
     })
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
+    const [selectedExaminationId, setSelectedExaminationId] = useState("")
 
     // Tab state: "all" | "ongoing" | "upcoming" | "complete"
     const [activeTab, setActiveTab] = useState("all")
@@ -518,10 +467,8 @@ export default function MockExamsPage() {
     }, [searchQuery])
 
     // dropdown filter states
-    const [selectedBatch, setSelectedBatch] = useState("All")
     const [selectedType, setSelectedType] = useState("All")
     const [selectedCourse, setSelectedCourse] = useState("All")
-    const [selectedYear, setSelectedYear] = useState("All")
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const filterDropdownRef = useRef(null)
 
@@ -563,8 +510,7 @@ export default function MockExamsPage() {
         title: "",
         description: "",
         examCode: "",
-        targetCourses: ["all"],
-        targetBatches: ["all"],
+        examinationId: "",
         unlockDate: "",
         status: "Locked"
     })
@@ -618,18 +564,13 @@ export default function MockExamsPage() {
         return buildCourseTreeFromMasterData(masterData)
     }, [masterData])
 
-    // Derive years from masterData.batches
-    const availableYears = useMemo(() => {
-        const years = masterData.batches.map(b => b.target_year).filter(Boolean)
-        return Array.from(new Set(years))
-    }, [masterData.batches])
-
     // Filter and sort exams based on active filters, active tab & sorting
     const filteredExams = useMemo(() => {
         const q = debouncedSearch.toLowerCase().trim()
 
         let list = exams.filter(exam => {
-            const { batch, type, course } = parseTargets(exam.targets, courseTree, masterData)
+            if (String(exam.examination_id) !== selectedExaminationId) return false
+            const { type, course } = parseTargets(exam.targets, courseTree, masterData)
             const status = getExamStatus(exam)
 
             // Tab filtering
@@ -640,24 +581,17 @@ export default function MockExamsPage() {
             if (q) {
                 const titleMatch = (exam.title || "").toLowerCase().includes(q)
                 const codeMatch = (exam.exam_code || "").toLowerCase().includes(q)
-                const batchMatch = batch.toLowerCase().includes(q)
                 const typeMatch = type.toLowerCase().includes(q)
                 const courseMatch = course.toLowerCase().includes(q)
-                if (!titleMatch && !codeMatch && !batchMatch && !typeMatch && !courseMatch) {
+                if (!titleMatch && !codeMatch && !typeMatch && !courseMatch) {
                     return false
                 }
             }
 
-            if (selectedBatch !== "All" && !batch.toLowerCase().includes(selectedBatch.toLowerCase())) {
-                return false
-            }
             if (selectedType !== "All" && !type.toLowerCase().includes(selectedType.toLowerCase())) {
                 return false
             }
             if (selectedCourse !== "All" && !course.toLowerCase().includes(selectedCourse.toLowerCase())) {
-                return false
-            }
-            if (selectedYear !== "All" && !batch.includes(String(selectedYear))) {
                 return false
             }
             return true
@@ -673,9 +607,6 @@ export default function MockExamsPage() {
             if (sortField === "title") {
                 av = (a.title || "").toLowerCase()
                 bv = (b.title || "").toLowerCase()
-            } else if (sortField === "batch") {
-                av = targetsA.batch.toLowerCase()
-                bv = targetsB.batch.toLowerCase()
             } else if (sortField === "type") {
                 av = targetsA.type.toLowerCase()
                 bv = targetsB.type.toLowerCase()
@@ -698,7 +629,7 @@ export default function MockExamsPage() {
             if (av > bv) return sortDir === "asc" ? 1 : -1
             return 0
         })
-    }, [exams, activeTab, debouncedSearch, selectedBatch, selectedType, selectedCourse, selectedYear, courseTree, masterData, sortField, sortDir])
+    }, [exams, selectedExaminationId, activeTab, debouncedSearch, selectedType, selectedCourse, courseTree, masterData, sortField, sortDir])
 
     const totalPages = Math.max(1, Math.ceil(filteredExams.length / PAGE_SIZE))
     const validPage = Math.min(Math.max(1, currentPage), totalPages)
@@ -706,10 +637,8 @@ export default function MockExamsPage() {
     const paginatedExams = filteredExams.slice(startIndex, startIndex + PAGE_SIZE)
 
     const activeFilterCount = 
-        (selectedBatch !== "All" ? 1 : 0) +
         (selectedType !== "All" ? 1 : 0) +
-        (selectedCourse !== "All" ? 1 : 0) +
-        (selectedYear !== "All" ? 1 : 0)
+        (selectedCourse !== "All" ? 1 : 0)
 
     const handleSaveMockExam = async (e) => {
         e.preventDefault()
@@ -720,22 +649,7 @@ export default function MockExamsPage() {
                 : "/api/admin/mock-exams"
             const method = editingExam ? "PUT" : "POST"
 
-            // Construct combined targets list for storage
-            const courses = Array.isArray(formData.targetCourses) ? formData.targetCourses : [formData.targetCourses]
-            const batches = Array.isArray(formData.targetBatches) ? formData.targetBatches : [formData.targetBatches]
-            
-            const combinedTargets = []
-            if (!courses.includes("all") && courses.length > 0) {
-                courses.forEach(c => combinedTargets.push(`course_${c}`))
-            }
-            if (!batches.includes("all") && batches.length > 0) {
-                batches.forEach(b => combinedTargets.push(`batch_${b}`))
-            }
-
-            const payload = {
-                ...formData,
-                targetCourses: combinedTargets.length === 0 ? ["all"] : combinedTargets
-            }
+            const payload = { ...formData }
 
             const res = await fetch(url, {
                 method,
@@ -828,43 +742,11 @@ export default function MockExamsPage() {
                 }
             }
 
-            // Parse targets to separate courses and batches
-            let rawTargets = Array.isArray(exam.targets) 
-                ? exam.targets 
-                : (typeof exam.targets === 'string' ? JSON.parse(exam.targets || '[]') : [])
-            
-            let loadedCourses = []
-            let loadedBatches = []
-
-            if (rawTargets.length === 0 || rawTargets.includes("all")) {
-                loadedCourses = ["all"]
-                loadedBatches = ["all"]
-            } else {
-                // Separate rawTargets into courses and batches based on masterData or entity patterns
-                rawTargets.forEach(t => {
-                    if (typeof t === 'string' && t.startsWith("course_")) {
-                        loadedCourses.push(t.replace("course_", ""))
-                    } else if (typeof t === 'string' && t.startsWith("batch_")) {
-                        loadedBatches.push(t.replace("batch_", ""))
-                    } else {
-                        // Check if it matches an exam name or a batch name
-                        const isExam = masterData.examinations.some(e => e.name.toLowerCase() === String(t).toLowerCase() || String(e.id) === String(t))
-                        const isBatch = masterData.batches.some(b => b.name.toLowerCase() === String(t).toLowerCase() || String(b.id) === String(t))
-                        if (isExam) loadedCourses.push(t)
-                        else if (isBatch) loadedBatches.push(t)
-                        else loadedCourses.push(t)
-                    }
-                })
-                if (loadedCourses.length === 0) loadedCourses = ["all"]
-                if (loadedBatches.length === 0) loadedBatches = ["all"]
-            }
-
             setFormData({
                 title: exam.title,
                 description: exam.description || "",
                 examCode: exam.exam_code,
-                targetCourses: loadedCourses,
-                targetBatches: loadedBatches,
+                examinationId: String(exam.examination_id || ""),
                 startDate: sDate,
                 startTime: sTime,
                 timeLimitMinutes: settings.timeLimitMinutes ?? 0,
@@ -877,8 +759,7 @@ export default function MockExamsPage() {
                 title: "",
                 description: "",
                 examCode: "",
-                targetCourses: ["all"],
-                targetBatches: ["all"],
+                examinationId: selectedExaminationId,
                 startDate: "",
                 startTime: "",
                 timeLimitMinutes: 0,
@@ -887,6 +768,20 @@ export default function MockExamsPage() {
             })
         }
         setIsModalOpen(true)
+    }
+
+    const selectedExamination = masterData.examinations.find((item) => String(item.id) === selectedExaminationId)
+
+    if (!selectedExaminationId) {
+        return (
+            <div className="space-y-6 pb-10 animate-in fade-in duration-300">
+                <div className="border-b border-border pb-5">
+                    <h1 className="text-2xl font-bold tracking-wider text-foreground uppercase mb-1">MOCK EXAMS</h1>
+                    <p className="text-muted-foreground text-sm font-medium">Choose an examination first. Its mock exams and builder are kept separate.</p>
+                </div>
+                {loading ? <div className="rounded-2xl border border-border p-12 text-center text-sm text-muted-foreground">Loading examinations…</div> : error ? <div className="rounded-2xl border border-destructive/30 p-8 text-center text-sm text-destructive">{error}</div> : <div className="grid gap-4 md:grid-cols-2">{masterData.examinations.map((examination) => <button key={examination.id} onClick={() => { setSelectedExaminationId(String(examination.id)); setCurrentPage(1) }} className="group rounded-2xl border border-border bg-card p-7 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#E9C46A] hover:shadow-md"><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#b58a2b]">Examination</p><h2 className="mt-2 text-xl font-bold text-foreground">{examination.name}</h2><p className="mt-2 text-sm text-muted-foreground">View and create mock exams for this examination.</p><span className="mt-6 inline-block text-sm font-semibold text-[#a87812] group-hover:underline">Manage mock exams →</span></button>)}</div>}
+            </div>
+        )
     }
 
     return (
@@ -898,15 +793,18 @@ export default function MockExamsPage() {
                         MOCK EXAMS
                     </h1>
                     <p className="text-muted-foreground text-sm font-medium">
-                        Create, schedule, and manage board examination mock exams and target courses.
+                        {selectedExamination?.name || "Selected examination"} mock exams.
                     </p>
                 </div>
+                <div className="flex items-center gap-2">
+                <button onClick={() => setSelectedExaminationId("")} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted">Change examination</button>
                 <button
                     onClick={() => openModal()}
                     className="flex items-center justify-center bg-[#E9C46A] text-white font-bold text-xs tracking-wide uppercase px-5 py-2.5 rounded-lg shadow-sm hover:bg-[#dfb550] hover:-translate-y-0.5 transition-all shrink-0 self-start sm:self-auto cursor-pointer"
                 >
                     ADD MOCK EXAM
                 </button>
+                </div>
             </div>
 
             {/* Unified Table Card matching Analytical Overview */}
@@ -1008,64 +906,7 @@ export default function MockExamsPage() {
                             {/* Filter Dropdown Popover */}
                             {isFilterOpen && (
                                 <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1b20] shadow-2xl z-[100] p-3 space-y-3 max-h-[460px] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
-                                    {/* Section 1: Batch */}
-                                    <div className="space-y-1.5">
-                                        <div className="flex items-center justify-between px-1">
-                                            <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
-                                                Batch
-                                            </span>
-                                            {selectedBatch !== "All" && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSelectedBatch("All")
-                                                        setCurrentPage(1)
-                                                    }}
-                                                    className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
-                                                >
-                                                    Clear
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
-                                            <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
-                                                <input
-                                                    type="radio"
-                                                    name="filter-batch"
-                                                    checked={selectedBatch === "All"}
-                                                    onChange={() => {
-                                                        setSelectedBatch("All")
-                                                        setCurrentPage(1)
-                                                    }}
-                                                    className="size-3.5 text-[#3B3B3B] cursor-pointer accent-[#3B3B3B]"
-                                                />
-                                                <span>All Batches</span>
-                                            </label>
-                                            {masterData.batches.map((b) => (
-                                                <label
-                                                    key={b.id}
-                                                    className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name="filter-batch"
-                                                        checked={selectedBatch === b.name}
-                                                        onChange={() => {
-                                                            setSelectedBatch(b.name)
-                                                            setCurrentPage(1)
-                                                        }}
-                                                        className="size-3.5 text-[#3B3B3B] cursor-pointer accent-[#3B3B3B]"
-                                                    />
-                                                    <span className="truncate">{b.name}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Section Divider */}
-                                    <div className="border-t border-black/5 dark:border-white/10" />
-
-                                    {/* Section 2: Examination Type */}
+                                    {/* Examination */}
                                     <div className="space-y-1.5">
                                         <div className="flex items-center justify-between px-1">
                                             <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
@@ -1176,65 +1017,6 @@ export default function MockExamsPage() {
                                         </div>
                                     </div>
 
-                                    {/* Section Divider */}
-                                    {availableYears.length > 0 && (
-                                        <>
-                                            <div className="border-t border-black/5 dark:border-white/10" />
-                                            <div className="space-y-1.5">
-                                                <div className="flex items-center justify-between px-1">
-                                                    <span className="text-[11px] font-semibold text-[#696969] dark:text-gray-400 uppercase tracking-wider">
-                                                        Year
-                                                    </span>
-                                                    {selectedYear !== "All" && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setSelectedYear("All")
-                                                                setCurrentPage(1)
-                                                            }}
-                                                            className="text-[11px] text-[#a16207] dark:text-[#facc15] hover:underline cursor-pointer"
-                                                        >
-                                                            Clear
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <div className="space-y-0.5 max-h-36 overflow-y-auto pr-1">
-                                                    <label className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-[#3B3B3B] dark:text-gray-200 select-none">
-                                                        <input
-                                                            type="radio"
-                                                            name="filter-year"
-                                                            checked={selectedYear === "All"}
-                                                            onChange={() => {
-                                                                setSelectedYear("All")
-                                                                setCurrentPage(1)
-                                                            }}
-                                                            className="size-3.5 text-[#3B3B3B] cursor-pointer accent-[#3B3B3B]"
-                                                        />
-                                                        <span>All Years</span>
-                                                    </label>
-                                                    {availableYears.map((yr) => (
-                                                        <label
-                                                            key={yr}
-                                                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs text-[#3B3B3B] dark:text-gray-200 select-none"
-                                                        >
-                                                            <input
-                                                                type="radio"
-                                                                name="filter-year"
-                                                                checked={selectedYear === yr}
-                                                                onChange={() => {
-                                                                    setSelectedYear(yr)
-                                                                    setCurrentPage(1)
-                                                                }}
-                                                                className="size-3.5 text-[#3B3B3B] cursor-pointer accent-[#3B3B3B]"
-                                                            />
-                                                            <span className="truncate">{yr}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
-
                                     {/* Bottom Reset Strip */}
                                     {activeFilterCount > 0 && (
                                         <>
@@ -1246,10 +1028,8 @@ export default function MockExamsPage() {
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        setSelectedBatch("All")
                                                         setSelectedType("All")
                                                         setSelectedCourse("All")
-                                                        setSelectedYear("All")
                                                         setCurrentPage(1)
                                                     }}
                                                     className="font-medium text-[#3B3B3B] dark:text-white hover:underline cursor-pointer"
@@ -1293,9 +1073,6 @@ export default function MockExamsPage() {
                                         <th className="px-4 py-2.5 min-w-[120px] whitespace-nowrap" scope="col">
                                             <SortButton label="Exam Code" field="exam_code" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                         </th>
-                                        <th className="px-4 py-2.5 min-w-[130px] whitespace-nowrap" scope="col">
-                                            <SortButton label="Batch" field="batch" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                                        </th>
                                         <th className="px-4 py-2.5 min-w-[150px] whitespace-nowrap" scope="col">
                                             <SortButton label="Examination" field="type" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                                         </th>
@@ -1315,7 +1092,7 @@ export default function MockExamsPage() {
                                 </thead>
                                 <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs">
                                     {paginatedExams.map((exam) => {
-                                        const { batch, type, course } = parseTargets(exam.targets, courseTree, masterData)
+                                        const { type, course } = parseTargets(exam.targets, courseTree, masterData)
                                         const status = getExamStatus(exam)
 
                                         return (
@@ -1332,9 +1109,6 @@ export default function MockExamsPage() {
                                                 </td>
                                                 <td className="px-4 py-2.5 text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
                                                     {exam.exam_code || "—"}
-                                                </td>
-                                                <td className="px-4 py-2.5 text-xs text-neutral-600 dark:text-neutral-300 whitespace-nowrap">
-                                                    {batch}
                                                 </td>
                                                 <td className="px-4 py-2.5 text-xs text-neutral-600 dark:text-neutral-300 max-w-[200px] truncate" title={type}>
                                                     {type}
@@ -1478,29 +1252,21 @@ export default function MockExamsPage() {
                                 />
                             </div>
 
-                            {/* Separate Target Course and Target Batch Multi-Select Combo Boxes */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <MultiSelectDropdown
-                                        label="Target Course:"
-                                        placeholder="All Courses"
-                                        options={masterData.examinations}
-                                        selectedValues={formData.targetCourses}
-                                        onChange={(vals) => setFormData({ ...formData, targetCourses: vals })}
-                                    />
-                                </div>
-                                <div>
-                                    <MultiSelectDropdown
-                                        label="Target Batch:"
-                                        placeholder="All Batches"
-                                        options={masterData.batches.map(b => ({
-                                            id: b.id,
-                                            name: b.target_year ? `${b.name} (${b.target_year})` : b.name
-                                        }))}
-                                        selectedValues={formData.targetBatches}
-                                        onChange={(vals) => setFormData({ ...formData, targetBatches: vals })}
-                                    />
-                                </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-[#7a7a7a] uppercase mb-1">
+                                    Target Examination:
+                                </label>
+                                <select
+                                    value={formData.examinationId}
+                                    onChange={(e) => setFormData({ ...formData, examinationId: e.target.value })}
+                                    className="w-full h-10 rounded-xl border border-gray-200 px-3 text-sm focus:outline-none focus:border-gray-400 font-medium text-gray-800"
+                                    required
+                                >
+                                    <option value="">Select an examination</option>
+                                    {masterData.examinations.map((examination) => (
+                                        <option key={examination.id} value={examination.id}>{examination.name}</option>
+                                    ))}
+                                </select>
                             </div>
 
                             {/* ACCESS & SCHEDULE */}
@@ -1597,7 +1363,7 @@ export default function MockExamsPage() {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={saving || !formData.title.trim() || !formData.examCode.trim()}
+                                    disabled={saving || !formData.title.trim() || !formData.examCode.trim() || !formData.examinationId}
                                     className="bg-[#E9C46A] hover:bg-[#dfb550] disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-xl shadow-2xs transition-all flex items-center justify-center cursor-pointer"
                                 >
                                     {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}

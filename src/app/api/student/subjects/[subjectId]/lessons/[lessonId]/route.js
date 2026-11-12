@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { canAccessSubject } from "@/lib/subscriptions"
 
 export async function GET(request, props) {
     try {
@@ -11,6 +12,10 @@ export async function GET(request, props) {
 
         const params = await props.params
         const { subjectId, lessonId } = params
+
+        if (session.role === "student" && !(await canAccessSubject(session.userId, subjectId))) {
+            return NextResponse.json({ error: "Your subscription does not include this subject." }, { status: 403 })
+        }
 
         const { rows } = await pool.query(
             `SELECT

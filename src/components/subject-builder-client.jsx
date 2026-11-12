@@ -134,7 +134,7 @@ function normalizeLessonType(rawType, hasPdfFiles = false) {
     return hasPdfFiles ? "pdf" : "module"
 }
 
-export default function SubjectBuilderClient({ subject, isStudent = false, currentUserName = "" }) {
+export default function SubjectBuilderClient({ subject, isStudent = false }) {
     const searchParams = useSearchParams()
     const lessonId = searchParams.get("lessonId")
     const lessonType = searchParams.get("type") // "module" or "pdf"
@@ -1565,14 +1565,6 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                                     />
                                 )}
 
-                                {/* ANTI-SCREENRECORDING WATERMARK OVERLAY FOR STUDENTS */}
-                                {isStudent && (
-                                    <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center overflow-hidden">
-                                        <div className="text-white/30 text-xs sm:text-sm font-black uppercase tracking-widest rotate-[-15deg] select-none text-center px-4 py-2 border border-white/10 rounded-lg bg-black/20 backdrop-blur-[1px] animate-pulse">
-                                            {currentUserName || "PROTECTED CONTENT - CONFIDENTIAL"}
-                                        </div>
-                                    </div>
-                                )}
                                 {isAdmin && (
                                     <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 opacity-0 group-hover/video:opacity-100 transition-all z-30">
                                         <button
@@ -1884,11 +1876,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false, curre
                                     <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                                 </div>
                             ) : null}
-                            <CustomPdfViewer
-                                url={activePdf}
-                                watermarkText={currentUserName}
-                                isStudent={viewMode === "student"}
-                            />
+                            <CustomPdfViewer url={activePdf} isStudent={viewMode === "student"} />
                         </div>
                     ) : (
                         <div className={`w-full space-y-8 ${isStudent ? 'pb-6' : 'pb-16'}`}>

@@ -1,14 +1,14 @@
 import { getSession } from "@/lib/auth-session"
 import { isAdminRole } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { SubscriptionsView } from "@/components/subscriptions-view"
+import SubscriptionPlansView from "@/app/(dashboard)/admin/master-data/SubscriptionPlansView"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
 export const metadata = {
   title: "Manage Subscriptions | Admin Dashboard",
-  description: "View and manage student access and batch review schedules.",
+  description: "Manage student access with examination-specific subscription plans.",
 }
 
 export default async function SubscriptionsPage() {
@@ -24,11 +24,11 @@ export default async function SubscriptionsPage() {
           Manage Subscriptions
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Track student review access, batch schedules, and expiration dates.
+          Assign examination-specific plans, record activation dates, and retain renewal history.
         </p>
       </div>
 
-      <SubscriptionsView />
+      <SubscriptionPlansView />
     </div>
   )
 }

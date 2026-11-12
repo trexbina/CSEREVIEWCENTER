@@ -69,7 +69,7 @@ function LoginFormInner({ initialMode = "login" }) {
       }
 
       const role = data.user.role
-      const destination = callbackUrl || ROLE_HOME[role] || "/student"
+      const destination = callbackUrl || data.dashboardPath || ROLE_HOME[role] || "/student"
       const userName = data.user.name || "User"
 
       // Navigate to the dedicated loading screen page

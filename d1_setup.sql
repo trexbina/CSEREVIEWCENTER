@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS examinations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   description TEXT,
+  is_legacy INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -98,6 +99,44 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_batch_id ON users(batch_id);
 
+-- Subscription plans govern student access. Batches remain optional cohorts for gradebooks/reporting.
+CREATE TABLE IF NOT EXISTS subscription_plans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  examination_id INTEGER NOT NULL REFERENCES examinations(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  price REAL,
+  duration_days INTEGER,
+  billing_interval TEXT NOT NULL DEFAULT 'monthly',
+  plan_type TEXT NOT NULL DEFAULT 'paid',
+  access_mode TEXT NOT NULL DEFAULT 'all',
+  is_default_free INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active',
+  legacy_cohort_id INTEGER UNIQUE REFERENCES batches(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS subscription_plans_one_default_free_per_exam ON subscription_plans(examination_id) WHERE is_default_free = 1;
+CREATE TABLE IF NOT EXISTS user_subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  subscription_plan_id INTEGER NOT NULL REFERENCES subscription_plans(id),
+  examination_id INTEGER NOT NULL REFERENCES examinations(id),
+  cohort_id INTEGER REFERENCES batches(id) ON DELETE SET NULL,
+  activated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at TEXT,
+  status TEXT NOT NULL DEFAULT 'active',
+  plan_name_snapshot TEXT NOT NULL,
+  plan_type_snapshot TEXT NOT NULL,
+  access_mode_snapshot TEXT NOT NULL,
+  duration_days_snapshot INTEGER,
+  billing_interval_snapshot TEXT,
+  source_legacy_cohort_id INTEGER REFERENCES batches(id) ON DELETE SET NULL,
+  assigned_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_user_subscriptions_active ON user_subscriptions(user_id, examination_id, status, expires_at);
+
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -110,58 +149,22 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
 
-CREATE TABLE IF NOT EXISTS system_security_settings (
-  id INTEGER PRIMARY KEY DEFAULT 1,
-  single_session_enabled INTEGER DEFAULT 1,
-  audit_logging_enabled INTEGER DEFAULT 1,
-  watermark_enabled INTEGER DEFAULT 1,
-  watermark_text TEXT DEFAULT '{name} - {email}',
-  watermark_opacity INTEGER DEFAULT 15,
-  watermark_size TEXT DEFAULT '100',
-  watermark_count INTEGER DEFAULT 1,
-  updated_at TEXT DEFAULT (datetime('now'))
-);
-
-CREATE TABLE IF NOT EXISTS security_audit_logs (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER,
-  user_name TEXT,
-  user_role TEXT,
-  event_type TEXT NOT NULL,
-  description TEXT NOT NULL,
-  ip_address TEXT DEFAULT '127.0.0.1',
-  status TEXT DEFAULT 'success',
-  created_at TEXT DEFAULT (datetime('now'))
-);
-
-CREATE TABLE IF NOT EXISTS user_active_sessions (
-  id TEXT PRIMARY KEY,
-  user_id INTEGER,
-  user_name TEXT,
-  email TEXT,
-  role TEXT DEFAULT 'student',
-  device TEXT NOT NULL,
-  device_type TEXT DEFAULT 'desktop',
-  ip_address TEXT NOT NULL,
-  location TEXT DEFAULT 'Manila, Philippines',
-  login_time TEXT DEFAULT (datetime('now')),
-  last_active TEXT DEFAULT (datetime('now')),
-  is_current INTEGER DEFAULT 0,
-  status TEXT DEFAULT 'active'
-);
-
 -- 3. CURRICULUM, SUBJECTS & MODULES
 CREATE TABLE IF NOT EXISTS categories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT UNIQUE NOT NULL,
+  exam_id INTEGER REFERENCES examinations(id) ON DELETE RESTRICT,
+  name TEXT NOT NULL,
   description TEXT,
+  image_url TEXT,
   has_subcategories INTEGER DEFAULT 1,
   target_course TEXT DEFAULT 'all',
   target_program TEXT DEFAULT 'all',
   target_major TEXT DEFAULT 'all',
+  access_tier TEXT NOT NULL DEFAULT 'free' CHECK (access_tier IN ('free', 'paid')),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE UNIQUE INDEX IF NOT EXISTS categories_exam_name_unique ON categories(exam_id, name COLLATE NOCASE);
 
 CREATE TABLE IF NOT EXISTS subcategories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -225,6 +228,7 @@ CREATE TABLE IF NOT EXISTS mock_exams (
   exam_code TEXT UNIQUE NOT NULL,
   title TEXT NOT NULL,
   description TEXT,
+  examination_id INTEGER REFERENCES examinations(id) ON DELETE SET NULL,
   targets TEXT DEFAULT '[]',
   unlock_date TEXT,
   status TEXT DEFAULT 'active',
@@ -233,6 +237,11 @@ CREATE TABLE IF NOT EXISTS mock_exams (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS subscription_plan_subjects (subscription_plan_id INTEGER NOT NULL REFERENCES subscription_plans(id) ON DELETE CASCADE, subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE, PRIMARY KEY (subscription_plan_id, subject_id));
+CREATE TABLE IF NOT EXISTS subscription_plan_mock_exams (subscription_plan_id INTEGER NOT NULL REFERENCES subscription_plans(id) ON DELETE CASCADE, mock_exam_id INTEGER NOT NULL REFERENCES mock_exams(id) ON DELETE CASCADE, PRIMARY KEY (subscription_plan_id, mock_exam_id));
+CREATE TABLE IF NOT EXISTS user_subscription_subjects (user_subscription_id INTEGER NOT NULL REFERENCES user_subscriptions(id) ON DELETE CASCADE, subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE, PRIMARY KEY (user_subscription_id, subject_id));
+CREATE TABLE IF NOT EXISTS user_subscription_mock_exams (user_subscription_id INTEGER NOT NULL REFERENCES user_subscriptions(id) ON DELETE CASCADE, mock_exam_id INTEGER NOT NULL REFERENCES mock_exams(id) ON DELETE CASCADE, PRIMARY KEY (user_subscription_id, mock_exam_id));
 
 CREATE TABLE IF NOT EXISTS mock_exam_targets (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -470,13 +479,10 @@ CREATE TABLE IF NOT EXISTS trash_items (
 -- 7. INITIAL DEFAULT DATA
 INSERT OR IGNORE INTO custom_roles (id, role_key, name, description, permissions, is_system)
 VALUES 
-  (1, 'super_admin', 'Super Administrator', 'Full system access and master controls across all features', '["/admin/dashboard", "/admin/users", "/admin/pre-registrations", "/admin/subscriptions", "/admin/curriculum", "/admin/subjects", "/admin/categories", "/admin/mock-exams", "/admin/master-data", "/admin/master-data/tree", "/admin/master-data/batches", "/admin/master-data/education", "/admin/master-data/gradebook", "/admin/settings/security", "/admin/trash", "/admin/analytics", "/admin/roles"]', 1),
+  (1, 'super_admin', 'Super Administrator', 'Full system access and master controls across all features', '["/admin/dashboard", "/admin/users", "/admin/pre-registrations", "/admin/subscriptions", "/admin/curriculum", "/admin/subjects", "/admin/categories", "/admin/mock-exams", "/admin/master-data", "/admin/master-data/tree", "/admin/master-data/batches", "/admin/master-data/education", "/admin/master-data/gradebook", "/admin/trash", "/admin/analytics", "/admin/roles"]', 1),
   (2, 'admin', 'Administrator', 'Administrative management and student oversight', '["/admin/dashboard", "/admin/users", "/admin/pre-registrations", "/admin/subscriptions", "/admin/curriculum", "/admin/subjects", "/admin/categories", "/admin/mock-exams", "/admin/master-data", "/admin/analytics"]', 1),
   (3, 'teacher', 'Instructor / Reviewer', 'Content authoring, quiz builder, and subject management', '["/teacher", "/teacher/subjects", "/teacher/modules", "/teacher/quiz-builder"]', 1),
   (4, 'student', 'Student Examinee', 'Student learning portal, lessons, mock exams, and review tools', '["/student"]', 1);
-
-INSERT OR IGNORE INTO system_security_settings (id, single_session_enabled, audit_logging_enabled, watermark_enabled, watermark_text, watermark_opacity, watermark_size, watermark_count)
-VALUES (1, 1, 1, 1, '{name} - {email}', 15, '100', 1);
 
 -- Default Accounts (Password: password123 for all)
 -- 1. Super Admin

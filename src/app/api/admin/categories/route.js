@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
 import { moveToTrash } from "@/lib/trash"
+import { ensureCurriculumTierSchema, normalizeAccessTier } from "@/lib/curriculum-tier"
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 
@@ -15,8 +16,9 @@ async function ensureTable() {
     await pool.query(`
     CREATE TABLE IF NOT EXISTS categories (
       id SERIAL PRIMARY KEY,
-      name VARCHAR(255) UNIQUE NOT NULL,
+      name VARCHAR(255) NOT NULL,
       description TEXT,
+      image_url TEXT,
       has_subcategories BOOLEAN DEFAULT TRUE,
       target_course TEXT DEFAULT 'all',
       target_program TEXT DEFAULT 'all',
@@ -31,11 +33,15 @@ async function ensureTable() {
     ALTER TABLE categories ADD COLUMN IF NOT EXISTS target_course TEXT DEFAULT 'all';
     ALTER TABLE categories ADD COLUMN IF NOT EXISTS target_program TEXT DEFAULT 'all';
     ALTER TABLE categories ADD COLUMN IF NOT EXISTS target_major TEXT DEFAULT 'all';
+    ALTER TABLE categories ADD COLUMN IF NOT EXISTS exam_id INTEGER REFERENCES examinations(id) ON DELETE RESTRICT;
+    ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_url TEXT;
+    ALTER TABLE categories ADD COLUMN IF NOT EXISTS access_tier VARCHAR(10) NOT NULL DEFAULT 'free';
   `)
+  await ensureCurriculumTierSchema()
 }
 
 // ── GET /api/admin/categories ─────────────────────────────
-export async function GET() {
+export async function GET(request) {
     try {
         const session = await adminGuard()
         if (!session) {
@@ -44,9 +50,10 @@ export async function GET() {
 
         await ensureTable()
 
-        const { rows } = await pool.query(
-            "SELECT * FROM categories ORDER BY created_at ASC"
-        )
+        const examId = new URL(request.url).searchParams.get("exam_id")
+        const { rows } = await pool.query(examId
+            ? "SELECT * FROM categories WHERE exam_id = $1 ORDER BY created_at ASC"
+            : "SELECT * FROM categories ORDER BY created_at ASC", examId ? [Number(examId)] : [])
         return NextResponse.json({ categories: rows })
     } catch (err) {
         console.error("[admin/categories GET]", err)
@@ -64,19 +71,19 @@ export async function POST(request) {
 
         await ensureTable()
 
-        const { name, description, has_subcategories, target_course, target_program, target_major } = await request.json()
+        const { name, description, image_url, has_subcategories, target_course, target_program, target_major, access_tier, exam_id } = await request.json()
 
-        if (!name?.trim()) {
+        if (!name?.trim() || !exam_id) {
             return NextResponse.json(
-                { error: "Category name is required." },
+                { error: "Category name and examination are required." },
                 { status: 400 }
             )
         }
 
         // check duplicate
         const existing = await pool.query(
-            "SELECT id FROM categories WHERE LOWER(name) = LOWER($1)",
-            [name.trim()]
+            "SELECT id FROM categories WHERE LOWER(name) = LOWER($1) AND exam_id = $2",
+            [name.trim(), Number(exam_id)]
         )
         if (existing.rows.length > 0) {
             return NextResponse.json(
@@ -86,16 +93,18 @@ export async function POST(request) {
         }
 
         const { rows } = await pool.query(
-            `INSERT INTO categories (name, description, has_subcategories, target_course, target_program, target_major)
-             VALUES ($1, $2, $3, $4, $5, $6)
+            `INSERT INTO categories (exam_id, name, description, image_url, has_subcategories, target_course, target_program, target_major, access_tier)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
              RETURNING *`,
             [
-                name.trim(), 
-                description?.trim() || null, 
+                Number(exam_id), name.trim(),
+                description?.trim() || null,
+                image_url || null,
                 has_subcategories !== undefined ? has_subcategories : true,
                 target_course || "all",
                 target_program || "all",
-                target_major || "all"
+                target_major || "all",
+                normalizeAccessTier(access_tier)
             ]
         )
 
@@ -292,7 +301,7 @@ export async function PUT(request) {
             return NextResponse.json({ error: "Category id is required." }, { status: 400 })
         }
 
-        const { name, has_subcategories, target_course, target_program, target_major } = await request.json()
+        const { name, image_url, has_subcategories, target_course, target_program, target_major, access_tier } = await request.json()
 
         if (!name?.trim()) {
             return NextResponse.json(
@@ -316,19 +325,23 @@ export async function PUT(request) {
         const { rows } = await pool.query(
             `UPDATE categories 
              SET name = $1, 
-                 has_subcategories = COALESCE($2, has_subcategories),
-                 target_course = COALESCE($3, target_course),
-                 target_program = COALESCE($4, target_program),
-                 target_major = COALESCE($5, target_major),
+                 image_url = COALESCE($2, image_url),
+                 has_subcategories = COALESCE($3, has_subcategories),
+                 target_course = COALESCE($4, target_course),
+                 target_program = COALESCE($5, target_program),
+                 target_major = COALESCE($6, target_major),
+                 access_tier = $7,
                  updated_at = NOW() 
-             WHERE id = $6 
+             WHERE id = $8
              RETURNING *`,
             [
                 name.trim(), 
+                image_url || null,
                 has_subcategories !== undefined ? has_subcategories : null,
                 target_course || "all",
                 target_program || "all",
                 target_major || "all",
+                normalizeAccessTier(access_tier),
                 id
             ]
         )

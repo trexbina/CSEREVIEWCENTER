@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
-import { getStudentCurriculumContext } from "@/lib/student-curriculum"
+import { getAccessibleSubjectIds } from "@/lib/subscriptions"
 
 /** GET /api/student/subjects — subjects assigned to the logged-in student */
 export async function GET() {
@@ -11,8 +11,10 @@ export async function GET() {
             return NextResponse.json({ error: "Forbidden." }, { status: 403 })
         }
 
-        const curriculumCtx = await getStudentCurriculumContext(session.userId)
-        const curriculumSubjectIds = curriculumCtx.subjectIds
+        const accessibleSubjectIds = await getAccessibleSubjectIds(session.userId)
+        if (accessibleSubjectIds.length === 0) {
+            return NextResponse.json({ subjects: [], message: "Your current subscription does not include any subjects." })
+        }
 
         const { rows: subjects } = await pool.query(
             `SELECT id, title, code, description, category, subcategory_id, status,
@@ -22,7 +24,7 @@ export async function GET() {
          AND (unlock_date IS NULL OR unlock_date <= NOW())
          AND ($1::int[] IS NULL OR id = ANY($1::int[]))
        ORDER BY created_at DESC, id DESC`,
-            [curriculumSubjectIds.length > 0 ? curriculumSubjectIds : null]
+            [accessibleSubjectIds]
         )
         // 1. Fetch total counts of lessons (modules/pdfs) and quizzes per subject
         const { rows: contentCounts } = await pool.query(

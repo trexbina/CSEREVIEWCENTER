@@ -25,10 +25,6 @@ async function getUserDetail(userId) {
         s.name AS school_name,
         ac.name AS academic_course_name,
         ex.name AS exam_name,
-        b.name AS batch_name,
-        b.target_year AS batch_year,
-        b.end_date AS batch_end_date,
-        b.start_date AS batch_start_date,
         p.name AS program_name,
         m.name AS major_name,
         COALESCE(cr.name, u.role) AS role_name
@@ -36,7 +32,6 @@ async function getUserDetail(userId) {
       LEFT JOIN schools s ON u.school_id = s.id
       LEFT JOIN academic_courses ac ON u.academic_course_id = ac.id
       LEFT JOIN examinations ex ON u.exam_id = ex.id
-      LEFT JOIN batches b ON u.batch_id = b.id
       LEFT JOIN programs p ON u.program_id = p.id
       LEFT JOIN majors m ON u.major_id = m.id
       LEFT JOIN custom_roles cr ON cr.role_key = u.role

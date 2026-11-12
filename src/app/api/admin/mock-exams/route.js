@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { ensureMockExamExaminationSchema } from "@/lib/mock-exam-schema"
 
 const ADMIN_ROLES = ["admin", "super_admin", "academic_admin", "registrar"]
 
@@ -17,9 +18,13 @@ export async function GET() {
         if (!session) {
             return NextResponse.json({ error: "Forbidden." }, { status: 403 })
         }
+        await ensureMockExamExaminationSchema()
 
         const { rows } = await pool.query(
-            "SELECT * FROM mock_exams ORDER BY created_at DESC"
+            `SELECT me.*, e.name AS examination_name
+             FROM mock_exams me
+             LEFT JOIN examinations e ON e.id = me.examination_id
+             ORDER BY me.created_at DESC`
         )
 
         return NextResponse.json({ exams: rows })
@@ -34,12 +39,18 @@ export async function POST(request) {
     try {
         const session = await adminGuard()
         if (!session) return NextResponse.json({ error: "Forbidden." }, { status: 403 })
+        await ensureMockExamExaminationSchema()
 
         const body = await request.json()
-        const { title, description, examCode, targetCourses, unlockDate, startDate, startTime, timeLimitMinutes, maxRetries, status } = body
+        const { title, description, examCode, examinationId, unlockDate, startDate, startTime, timeLimitMinutes, maxRetries, status } = body
 
-        if (!title?.trim() || !examCode?.trim()) {
-            return NextResponse.json({ error: "Title and Exam Code are required." }, { status: 400 })
+        if (!title?.trim() || !examCode?.trim() || !Number.isInteger(Number(examinationId))) {
+            return NextResponse.json({ error: "Title, exam code, and target examination are required." }, { status: 400 })
+        }
+
+        const examination = await pool.query("SELECT id FROM examinations WHERE id = $1", [Number(examinationId)])
+        if (examination.rows.length === 0) {
+            return NextResponse.json({ error: "The selected examination does not exist." }, { status: 400 })
         }
 
         // check duplicate code
@@ -71,14 +82,15 @@ export async function POST(request) {
         }
 
         const { rows } = await pool.query(
-            `INSERT INTO mock_exams (exam_code, title, description, targets, unlock_date, status, questions, created_by)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            `INSERT INTO mock_exams (exam_code, title, description, examination_id, targets, unlock_date, status, questions, created_by)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
              RETURNING *`,
             [
                 examCode.trim().toUpperCase(),
                 title.trim(),
                 description?.trim() || null,
-                JSON.stringify(targetCourses || []),
+                Number(examinationId),
+                JSON.stringify([`exam_${Number(examinationId)}`]),
                 computedUnlockDate,
                 status === "Active" ? "active" : "locked",
                 JSON.stringify(initialQuestionsJson),

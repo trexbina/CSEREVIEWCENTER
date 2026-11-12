@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getSession } from "@/lib/auth-session"
+import { getAccessibleSubjectIds } from "@/lib/subscriptions"
 
 // ── GET /api/student/assignments ──────────────────────────────────────────────
 export async function GET() {
@@ -11,6 +12,7 @@ export async function GET() {
     }
 
     const studentId = session.userId
+    const accessibleSubjectIds = await getAccessibleSubjectIds(studentId)
 
     // 1. Fetch only active subject contents where lesson_type is quiz or assignment
     const contentsRes = await pool.query(`
@@ -30,8 +32,9 @@ export async function GET() {
       INNER JOIN subjects sub ON sub.id = sm.subject_id
       WHERE LOWER(COALESCE(sc.lesson_type, '')) IN ('quiz', 'assignment')
         AND sub.status = 'active'
+        AND sub.id = ANY($1::int[])
       ORDER BY sc.created_at DESC
-    `)
+    `, [accessibleSubjectIds.length ? accessibleSubjectIds : [-1]])
 
     // 2. Fetch all submissions for this student from student_quiz_submissions
     const submissionsRes = await pool.query(`

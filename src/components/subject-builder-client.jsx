@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation"
 import { useRef, useState, useEffect, useMemo } from "react"
+import DOMPurify from "isomorphic-dompurify"
 import { DashboardHeader } from "@/components/dashboard-header"
 import {
     Search, Bell, PenTool, FileText, Upload, X, Loader2,
@@ -1190,7 +1191,7 @@ export default function SubjectBuilderClient({ subject, isStudent = false }) {
                                 isAdmin ? "empty:before:content-['Type_text_here...']" : ""
                                 }`}
                             style={textStyles}
-                            dangerouslySetInnerHTML={{ __html: block.content || "" }}
+                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(block.content || "") }}
                         />
                     </div>
                 )}
